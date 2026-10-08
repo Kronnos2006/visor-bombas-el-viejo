@@ -23,3 +23,11 @@
 .doc-links{list-style:none;margin:6px 0;padding:0}.doc-links li{margin:0 0 9px;line-height:1.35}.doc-links a{color:var(--accent);text-decoration:none}.doc-links a:hover{text-decoration:underline}.doc-links small{display:block;color:var(--muted);font-size:10.5px}
 .kind{display:inline-block;padding:1px 5px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-size:9px;letter-spacing:.5px;text-transform:uppercase;vertical-align:middle}
 .report-box{border:1px solid #2e4948;border-radius:8px;padding:12px;background:#122024}.report-box form{display:grid;gap:9px}.report-box label{display:grid;gap:4px;font-size:11px;color:var(--muted)}.report-box input,.report-box textarea{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:#0d1418;color:#dce6e8;font:inherit;font-size:12px}.report-box textarea{resize:vertical}.report-box h4{margin:14px 0 6px;font-size:12px}.report-text{white-space:pre-wrap}.form-error{color:#ff9d8a;font-size:11.5px;margin:0;min-height:0}.form-error:empty{display:none}.link-btn{background:none;border:0;color:#ff9d8a;font-size:11px;padding:2px 0;cursor:pointer;text-decoration:underline}
+
+/* Móvil / pantalla angosta: el expediente ocupa toda la pantalla y se desplaza con la página (sin caja interna) */
+@media(max-width:900px){
+ .inspector{max-height:none;display:block;min-height:100vh}
+ #panel{max-height:none;overflow:visible;padding:16px}
+ #tabs{position:sticky;top:0;z-index:5;background:#121c20}
+ .inspector-heading h2{font-size:26px}
+}
