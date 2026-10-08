@@ -1,7 +1,7 @@
 // Verifica que el despiece siga la arquitectura ANSI/ASME B73.1 y que no
 // prometa medidas que todavía no están levantadas.
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 const src=readFileSync('./public/app.js','utf8');
 
 // 1. La lista de piezas existe y tiene las diez posiciones del conjunto.
@@ -23,7 +23,9 @@ for(const campo of ['sello_modelo','sello_diametro_mm','sello_cara_rotativa','se
  assert.ok(sello.includes(campo),`El sello no consulta ${campo}`);
 
 // 5. Ninguna pieza puede inventar una clave que la ficha no tenga.
-const plantilla=readFileSync('../autocad el vieno vovatus/00-Proyecto/bombas/_plantilla-bomba.md','utf8');
+const plantillaLocal='../autocad el vieno vovatus/00-Proyecto/bombas/_plantilla-bomba.md';
+const plantillaRepo='../00-Proyecto/bombas/_plantilla-bomba.md';
+const plantilla=readFileSync(existsSync(plantillaLocal)?plantillaLocal:plantillaRepo,'utf8');
 const claves=new Set([...plantilla.matchAll(/^([a-z_0-9]+):/gm)].map(m=>m[1]));
 for(const [,clave] of bloque.matchAll(/\['[^']*','([a-z_0-9]+)'\]/g))
  assert.ok(claves.has(clave),`La pieza consulta «${clave}», que no existe en la ficha`);

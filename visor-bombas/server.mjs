@@ -7,12 +7,20 @@ import { load, JSON_SCHEMA } from './vendor/js-yaml.mjs';
 import { photoPumps } from './public/sector-fotos.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const CLOUD_DEV = process.env.CODESPACES === 'true' || process.env.VOCATUS_CLOUD_DEV === '1';
 export const DEMO = process.env.VOCATUS_DEMO === '1';
-export const VAULT = DEMO ? path.join(ROOT,'demo-vault') : path.resolve(process.env.OBSIDIAN_VAULT || path.join(ROOT,'../autocad el vieno vovatus'));
+export const VAULT = DEMO
+ ? path.join(ROOT,'demo-vault')
+ : path.resolve(process.env.OBSIDIAN_VAULT || (CLOUD_DEV ? path.join(ROOT,'..') : path.join(ROOT,'../autocad el vieno vovatus')));
 const NOTES = path.join(VAULT,'00-Proyecto/bombas');
 const LOGS = path.join(VAULT,'00-Proyecto/Mantenimiento');
 const PUBLIC = path.join(ROOT,'public');
 const PORT = Number(process.env.PORT || 8766);
+const FORWARDED_HOST = process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
+ ? `${process.env.CODESPACE_NAME}-${PORT}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
+ : '';
+const ALLOWED_HOSTS = new Set([`127.0.0.1:${PORT}`,`localhost:${PORT}`,FORWARDED_HOST].filter(Boolean));
+const ALLOWED_ORIGINS = new Set([`http://127.0.0.1:${PORT}`,`http://localhost:${PORT}`,FORWARDED_HOST && `https://${FORWARDED_HOST}`].filter(Boolean));
 const TOKEN = randomUUID();
 let apiKey = process.env.GEMINI_API_KEY || '';
 let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
@@ -97,7 +105,7 @@ Terminá con las fuentes utilizadas. Si no hay historial, decilo explícitamente
 
 export async function handler(req,res) {
  try {
-  if (![ `127.0.0.1:${PORT}`,`localhost:${PORT}` ].includes(req.headers.host)) return send(res,403,{error:'Host no permitido.'});
+  if (!ALLOWED_HOSTS.has(req.headers.host)) return send(res,403,{error:'Host no permitido.'});
   const url=new URL(req.url,`http://127.0.0.1:${PORT}`);
   if(req.method==='GET' && url.pathname==='/api/bootstrap') {
    const pumps=[],errors=[];
@@ -116,7 +124,7 @@ export async function handler(req,res) {
   if(req.method==='POST') {
    if(!verify(req)) return send(res,403,{error:'Recargá la página para renovar la sesión local.'});
    const origin=req.headers.origin;
-   if(origin && ![`http://127.0.0.1:${PORT}`,`http://localhost:${PORT}`].includes(origin)) return send(res,403,{error:'Origen no permitido.'});
+   if(origin && !ALLOWED_ORIGINS.has(origin)) return send(res,403,{error:'Origen no permitido.'});
    const body=await payload(req);
    if(url.pathname==='/api/config') {
     if(body.model && !/^gemini-[a-z0-9.\-]+$/.test(body.model)) throw new Error('Nombre de modelo inválido.');
@@ -157,5 +165,6 @@ export async function handler(req,res) {
  } catch(e) { send(res,e.code==='PUMP_NOT_AVAILABLE'?409:e.code==='ENOENT'?404:400,{code:e.code,error:e.message==='fetch failed'?'No se pudo conectar con Gemini. Revisá la conexión a internet.':e.message}); }
 }
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
- http.createServer(handler).listen(PORT,'127.0.0.1',()=>console.log(`Visor local: http://127.0.0.1:${PORT}\nBóveda: ${VAULT}\nGemini: ${apiKey?'configurado':'pendiente de clave'}`));
+ const bind=CLOUD_DEV?'0.0.0.0':'127.0.0.1';
+ http.createServer(handler).listen(PORT,bind,()=>console.log(`Visor: ${FORWARDED_HOST?`https://${FORWARDED_HOST}`:`http://127.0.0.1:${PORT}`}\nBóveda: ${VAULT}\nGemini: ${apiKey?'configurado':'pendiente de clave'}`));
 }

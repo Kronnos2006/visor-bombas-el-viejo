@@ -8,6 +8,12 @@ Para presentar la propuesta actual, usar `Iniciar visor.cmd`. El selector antigu
 
 Se necesita Node.js. El lanzador busca primero el runtime disponible en esta PC y después `node` en PATH. Las medidas, asociaciones, códigos e historiales preparados para la propuesta siguen rotulados DEMO / POR CONFIRMAR.
 
+## Trabajar en GitHub Codespaces
+
+El repositorio incluye `.devcontainer/devcontainer.json`. Al abrirlo en Codespaces, el servidor usa automáticamente `demo-vault`, escucha el puerto 8766 y GitHub abre una vista previa privada. Ejecutar `npm start` si la terminal no lo inicia automáticamente.
+
+Codespaces se usa para desarrollar y revisar la propuesta. No es el alojamiento permanente. El puerto debe mantenerse **Private** y los cambios deben guardarse con Git antes de eliminar el Codespace. La bóveda real de Obsidian, las claves y los informes reales no se incluyen en el repositorio.
+
 ## Expedientes integrados
 
 - La barra lateral muestra únicamente las nueve posiciones del sector fotografiado.
@@ -36,6 +42,7 @@ Cada consulta lee y envía a Google el expediente DEMO integrado de la bomba sel
 - `OBSIDIAN_VAULT`: ruta de la bóveda real con `00-Proyecto/bombas`.
 - `GEMINI_API_KEY`, `GEMINI_MODEL`: configuración opcional de Gemini.
 - `PORT`: 8766 por defecto.
+- `VOCATUS_CLOUD_DEV=1`: habilita el host temporal de Codespaces, escucha en la interfaz del contenedor y fuerza datos DEMO.
 
 ## Dependencias
 

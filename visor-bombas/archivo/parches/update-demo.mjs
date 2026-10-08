@@ -1,0 +1,11 @@
+import {readFile,writeFile} from 'node:fs/promises';
+let app=await readFile(new URL('public/app.js',import.meta.url),'utf8');
+function change(old,value){if(!app.includes(old))throw new Error('No se encontró fragmento: '+old.slice(0,70));app=app.replace(old,value);}
+change("const dist=normalize(p.area)==='destilacion',group=state.pumps.filter(p2=>(normalize(p2.area)==='destilacion')===dist)","const right=p=>['destilacion','alcohol'].includes(normalize(p.area));const dist=right(p),group=state.pumps.filter(p2=>right(p2)===dist)");
+change("'FICHA LEÍDA DE OBSIDIAN · '+(p.data.confianza||'sin verificar').toUpperCase()","state.demo?'DEMOSTRACIÓN · DATOS FICTICIOS':'FICHA LEÍDA DE OBSIDIAN · '+(p.data.confianza||'sin verificar').toUpperCase()");
+change("vault:'autocad el vieno vovatus'","vault:state.vaultName||'autocad el vieno vovatus'");
+change("<div class=\"notice\">${part?","<div class=\"notice\">${state.demo?'PROPUESTA: datos e historial ficticios. Las medidas no son especificaciones de compra. ':''}${part?");
+change("<a href=\"${esc(noteURI)}\">Abrir ficha en Obsidian ↗</a>","${state.demo?'<span class=\"muted\">Ficha local de demostración</span>':`<a href=\"${esc(noteURI)}\">Abrir ficha en Obsidian ↗</a>`}");
+change("toast('Informe guardado en Obsidian.');","toast(state.demo?'Informe de prueba guardado en la carpeta de demostración.':'Informe guardado en Obsidian.');");
+change("state.pumps=r.pumps;state.token=r.token;","state.pumps=r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;const area=$('#area').value;$('#area').innerHTML='<option value=\"\">Todas las áreas</option>'+[...new Set(r.pumps.map(p=>p.area).filter(Boolean))].map(a=>`<option>${esc(a)}</option>`).join('');$('#area').value=area;document.querySelector('.local').textContent=r.demo?'● PROPUESTA · DEMO':'● LOCAL · OBSIDIAN';document.querySelector('.sidebar footer p').textContent=r.demo?'Dos equipos de ejemplo. Datos e historial ficticios.':'Datos de tu bóveda. Posiciones y geometría ilustrativas.';$('#report-dialog .muted').textContent=r.demo?'Se guardará un informe de prueba en demo-vault, separado de los datos reales.':'Se creará una nota nueva en 00-Proyecto/Mantenimiento.';");
+await writeFile(new URL('public/app.js',import.meta.url),app);

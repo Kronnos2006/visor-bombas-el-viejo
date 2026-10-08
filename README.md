@@ -1,5 +1,11 @@
 # Visor de bombas · Planta El Viejo
 
+## Abrir en GitHub Codespaces
+
+En GitHub, seleccionar **Code → Codespaces → Create codespace on main**. La configuración de `.devcontainer` inicia `visor-bombas` con datos de demostración, publica el puerto 8766 como vista privada y evita depender de la bóveda instalada en una PC.
+
+Codespaces es el entorno de desarrollo. La publicación permanente se preparará por separado en Cloudflare Workers y D1. No guardar claves API en el repositorio.
+
 Buscador 3D de bombas con su información de sellado, y la base de conocimiento
 que lo alimenta. Práctica profesional de Ingeniería Mecatrónica en Vocatus
 Holding / Azucarera El Viejo (Filadelfia, Guanacaste, Costa Rica), proyecto de

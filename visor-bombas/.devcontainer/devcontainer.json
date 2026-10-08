@@ -1,0 +1,16 @@
+{
+  "name": "Vocatus · Atlas de mantenimiento",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "containerEnv": {
+    "VOCATUS_CLOUD_DEV": "1"
+  },
+  "forwardPorts": [8766],
+  "portsAttributes": {
+    "8766": {
+      "label": "Atlas de mantenimiento",
+      "onAutoForward": "openPreview",
+      "visibility": "private"
+    }
+  },
+  "postAttachCommand": "VOCATUS_DEMO=1 npm start"
+}

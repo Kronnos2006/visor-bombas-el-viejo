@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.wrangler/
+*.log
+app.js.respaldo*
+server.mjs.respaldo*
+public/*.respaldo*
+demo-vault/00-Proyecto/Mantenimiento/*.md
+

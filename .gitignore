@@ -19,6 +19,13 @@ node_modules/
 *.pptx
 *.zip
 
+# imágenes que forman parte de la demostración web
+!visor-bombas/public/fotos/
+!visor-bombas/public/fotos/**
+!visor-bombas/public/fotos3/
+!visor-bombas/public/fotos3/**
+!visor-bombas/public/sector-verificacion-2.png
+
 # respaldos y temporales
 *.respaldo
 *.respaldo[0-9]
@@ -27,6 +34,13 @@ Fuentes/
 *.log
 .DS_Store
 Thumbs.db
+
+# secretos y archivos generados por el visor
+.env
+.env.*
+!.env.example
+.wrangler/
+visor-bombas/demo-vault/00-Proyecto/Mantenimiento/*.md
 
 # configuración local de Obsidian
 .obsidian/
