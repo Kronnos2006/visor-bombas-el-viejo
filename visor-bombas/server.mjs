@@ -2,7 +2,7 @@ import http from 'node:http';
 import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID, timingSafeEqual, createHmac } from 'node:crypto';
 import { load, JSON_SCHEMA } from './vendor/js-yaml.mjs';
 import { photoPumps } from './public/sector-fotos.js';
 
@@ -21,7 +21,10 @@ const FORWARDED_HOST = process.env.CODESPACE_NAME && process.env.GITHUB_CODESPAC
  : '';
 const ALLOWED_HOSTS = new Set([`127.0.0.1:${PORT}`,`localhost:${PORT}`,FORWARDED_HOST].filter(Boolean));
 const ALLOWED_ORIGINS = new Set([`http://127.0.0.1:${PORT}`,`http://localhost:${PORT}`,FORWARDED_HOST && `https://${FORWARDED_HOST}`].filter(Boolean));
-const TOKEN = randomUUID();
+const ON_VERCEL = !!process.env.VERCEL;
+// En Vercel cada petición puede caer en una instancia distinta: el token no puede ser aleatorio por instancia.
+const TOKEN = ON_VERCEL ? createHmac('sha256', process.env.GEMINI_API_KEY || 'vocatus-demo').update('sesion-demo').digest('hex') : randomUUID();
+const askLog = [];
 let apiKey = process.env.GEMINI_API_KEY || '';
 let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 const tagPattern = /^P-\d{4}[A-Z]?$/;
@@ -124,9 +127,11 @@ export async function handler(req,res) {
   if(req.method==='POST') {
    if(!verify(req)) return send(res,403,{error:'Recargá la página para renovar la sesión local.'});
    const origin=req.headers.origin;
-   if(origin && !ALLOWED_ORIGINS.has(origin)) return send(res,403,{error:'Origen no permitido.'});
+   const vercelOrigin=ON_VERCEL&&req.headers['x-original-host']&&`https://${req.headers['x-original-host']}`;
+   if(origin && !ALLOWED_ORIGINS.has(origin) && origin!==vercelOrigin) return send(res,403,{error:'Origen no permitido.'});
    const body=await payload(req);
    if(url.pathname==='/api/config') {
+    if(ON_VERCEL) return send(res,403,{error:'En Vercel la clave se configura como variable de entorno GEMINI_API_KEY (Settings → Environment Variables).'});
     if(body.model && !/^gemini-[a-z0-9.\-]+$/.test(body.model)) throw new Error('Nombre de modelo inválido.');
     apiKey=clean(body.apiKey,300); model=body.model||model;
     return send(res,200,{configured:!!apiKey,model});
@@ -141,7 +146,8 @@ export async function handler(req,res) {
     return send(res,201,{file:'00-Proyecto/Mantenimiento/'+file});
    }
    if(url.pathname==='/api/ask') {
-    if(!apiKey) return send(res,409,{error:'Gemini todavía no está configurado. Agregá tu clave API en Configurar Gemini.'});
+    if(!apiKey) return send(res,409,{error:ON_VERCEL?'Falta la variable de entorno GEMINI_API_KEY en Vercel.':'Gemini todavía no está configurado. Agregá tu clave API en Configurar Gemini.'});
+    if(ON_VERCEL){const now=Date.now();while(askLog.length&&now-askLog[0]>3600000)askLog.shift();if(askLog.length>=60)return send(res,429,{error:'Límite de consultas por hora alcanzado. Probá más tarde.'});askLog.push(now);}
     const p=readIntegratedPump(body.tag)||await readPump(body.tag); const question=clean(body.question,4000);
     if(!question) throw new Error('Escribí una pregunta.');
     const integrated=!!readIntegratedPump(body.tag);
