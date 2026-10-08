@@ -2,7 +2,7 @@
   "revision": "2026-10-07",
   "records": [
     {
-      "original": "<RUTA-LOCAL>\\.codex\\attachments\\a61243c1-4d82-4014-930e-50d77e85d94b\\Texto pegado.txt",
+      "original": "C:\\Users\\Isabella GM\\.codex\\attachments\\a61243c1-4d82-4014-930e-50d77e85d94b\\Texto pegado.txt",
       "relative": "Adjuntos-historicos/exportador-guarda-demo.py",
       "category": "Archivo",
       "description": "Versión adjunta con guarda demo y fallo posterior por activos[0]; reemplazada por el script local.",
@@ -11,7 +11,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\.codex\\attachments\\d0aa3c5d-8caa-4818-87f0-5b57d85d45fa\\Texto pegado.txt",
+      "original": "C:\\Users\\Isabella GM\\.codex\\attachments\\d0aa3c5d-8caa-4818-87f0-5b57d85d45fa\\Texto pegado.txt",
       "relative": "Adjuntos-historicos/exportador-inicial.py",
       "category": "Archivo",
       "description": "Versión adjunta inicial: hash no estable y otras limitaciones históricas.",
@@ -20,7 +20,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\consultar_bombas.py",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\consultar_bombas.py",
       "relative": "Scripts-Obsidian/consultar_bombas.py",
       "category": "Scripts-Obsidian",
       "description": "Consulta CLI anterior; no es el backend del visor.",
@@ -29,7 +29,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\crear_notas_bombas.py",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\crear_notas_bombas.py",
       "relative": "Scripts-Obsidian/crear_notas_bombas.py",
       "category": "Scripts-Obsidian",
       "description": "Generador de fichas a partir de CSV; conserva notas existentes.",
@@ -38,7 +38,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\exportar_cmms.py",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\exportar_cmms.py",
       "relative": "Scripts-Obsidian/exportar_cmms.py",
       "category": "Scripts-Obsidian",
       "description": "Exportador independiente; ver limitaciones de integración.",
@@ -47,7 +47,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\extract_tags.py",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\extract_tags.py",
       "relative": "Scripts-Obsidian/extract_tags.py",
       "category": "Scripts-Obsidian",
       "description": "Herramienta de extracción DWG con rutas del entorno Linux original.",
@@ -56,7 +56,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\auditorias\\auditar_exportador.py",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\archivo\\auditorias\\auditar_exportador.py",
       "relative": "Visor/archivo/auditorias/auditar_exportador.py",
       "category": "Archivo",
       "description": "Archivo del visor: archivo/auditorias/auditar_exportador.py",
@@ -65,7 +65,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\parches\\fix-selection.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\archivo\\parches\\fix-selection.mjs",
       "relative": "Visor/archivo/parches/fix-selection.mjs",
       "category": "Archivo",
       "description": "Archivo del visor: archivo/parches/fix-selection.mjs",
@@ -74,7 +74,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\parches\\update-demo.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\archivo\\parches\\update-demo.mjs",
       "relative": "Visor/archivo/parches/update-demo.mjs",
       "category": "Archivo",
       "description": "Archivo del visor: archivo/parches/update-demo.mjs",
@@ -83,7 +83,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\README.md",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\archivo\\README.md",
       "relative": "Visor/archivo/README.md",
       "category": "Archivo",
       "description": "Archivo del visor: archivo/README.md",
@@ -92,7 +92,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\respaldos\\app.js.respaldo",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\archivo\\respaldos\\app.js.respaldo",
       "relative": "Visor/archivo/respaldos/app.js.respaldo",
       "category": "Archivo",
       "description": "Archivo del visor: archivo/respaldos/app.js.respaldo",
@@ -101,7 +101,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\demo-vault\\00-Proyecto\\bombas\\P-9001.md",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\demo-vault\\00-Proyecto\\bombas\\P-9001.md",
       "relative": "Visor/demo-vault/00-Proyecto/bombas/P-9001.md",
       "category": "Datos-demo",
       "description": "Archivo del visor: demo-vault/00-Proyecto/bombas/P-9001.md",
@@ -110,7 +110,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\demo-vault\\00-Proyecto\\bombas\\P-9002.md",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\demo-vault\\00-Proyecto\\bombas\\P-9002.md",
       "relative": "Visor/demo-vault/00-Proyecto/bombas/P-9002.md",
       "category": "Datos-demo",
       "description": "Archivo del visor: demo-vault/00-Proyecto/bombas/P-9002.md",
@@ -119,7 +119,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\demo-vault\\Documentos\\LEER-DEMOSTRACION.md",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\demo-vault\\Documentos\\LEER-DEMOSTRACION.md",
       "relative": "Visor/demo-vault/Documentos/LEER-DEMOSTRACION.md",
       "category": "Datos-demo",
       "description": "Archivo del visor: demo-vault/Documentos/LEER-DEMOSTRACION.md",
@@ -128,7 +128,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\Iniciar datos reales.cmd",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\Iniciar datos reales.cmd",
       "relative": "Visor/Iniciar datos reales.cmd",
       "category": "Activo",
       "description": "Archivo del visor: Iniciar datos reales.cmd",
@@ -137,7 +137,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\Iniciar demostración.cmd",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\Iniciar demostración.cmd",
       "relative": "Visor/Iniciar demostración.cmd",
       "category": "Activo",
       "description": "Archivo del visor: Iniciar demostración.cmd",
@@ -146,7 +146,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\Iniciar visor.cmd",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\Iniciar visor.cmd",
       "relative": "Visor/Iniciar visor.cmd",
       "category": "Activo",
       "description": "Archivo del visor: Iniciar visor.cmd",
@@ -155,7 +155,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\package.json",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\package.json",
       "relative": "Visor/package.json",
       "category": "Activo",
       "description": "Archivo del visor: package.json",
@@ -164,7 +164,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\app.js",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\public\\app.js",
       "relative": "Visor/public/app.js",
       "category": "Activo",
       "description": "Interfaz, escenas Three.js, selección de equipos, panel e interacción.",
@@ -173,7 +173,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\index.html",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\public\\index.html",
       "relative": "Visor/public/index.html",
       "category": "Activo",
       "description": "Estructura de la página, paneles y diálogos.",
@@ -182,7 +182,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\plant-layout.js",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\public\\plant-layout.js",
       "relative": "Visor/public/plant-layout.js",
       "category": "Activo",
       "description": "Distribución geométrica de tanques y bombas sin superposición.",
@@ -191,7 +191,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\realismo.js",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\public\\realismo.js",
       "relative": "Visor/public/realismo.js",
       "category": "Activo",
       "description": "Capa de iluminación, entorno, materiales PBR y sombras de Claude.",
@@ -200,7 +200,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\style.css",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\public\\style.css",
       "relative": "Visor/public/style.css",
       "category": "Activo",
       "description": "Estilos, diseño adaptable e impresión.",
@@ -209,7 +209,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\OrbitControls.js",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\OrbitControls.js",
       "relative": "Visor/public/vendor/OrbitControls.js",
       "category": "Dependencias",
       "description": "Archivo del visor: public/vendor/OrbitControls.js",
@@ -218,7 +218,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\THREE-LICENSE.txt",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\THREE-LICENSE.txt",
       "relative": "Visor/public/vendor/THREE-LICENSE.txt",
       "category": "Dependencias",
       "description": "Archivo del visor: public/vendor/THREE-LICENSE.txt",
@@ -227,7 +227,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\three.module.js",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\three.module.js",
       "relative": "Visor/public/vendor/three.module.js",
       "category": "Dependencias",
       "description": "Archivo del visor: public/vendor/three.module.js",
@@ -236,7 +236,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\README.md",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\README.md",
       "relative": "Visor/README.md",
       "category": "Activo",
       "description": "Archivo del visor: README.md",
@@ -245,7 +245,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\server.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\server.mjs",
       "relative": "Visor/server.mjs",
       "category": "Activo",
       "description": "Servidor HTTP, lectura de bóveda, documentos, informes y Gemini.",
@@ -254,7 +254,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\setup.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\setup.mjs",
       "relative": "Visor/setup.mjs",
       "category": "Herramientas",
       "description": "Descarga de dependencias con versiones fijadas.",
@@ -263,7 +263,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\test-demo.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\test-demo.mjs",
       "relative": "Visor/test-demo.mjs",
       "category": "Pruebas",
       "description": "Prueba de demostración y registro de informes aislados.",
@@ -272,7 +272,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\test-layout.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\test-layout.mjs",
       "relative": "Visor/test-layout.mjs",
       "category": "Pruebas",
       "description": "Prueba de separación geométrica y plataforma.",
@@ -281,7 +281,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\test.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\test.mjs",
       "relative": "Visor/test.mjs",
       "category": "Pruebas",
       "description": "Pruebas del servidor con las fichas reales.",
@@ -290,7 +290,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\tools\\documentar.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\tools\\documentar.mjs",
       "relative": "Visor/tools/documentar.mjs",
       "category": "Herramientas",
       "description": "Archivo del visor: tools/documentar.mjs",
@@ -299,7 +299,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\tools\\verificar-exportador.py",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\tools\\verificar-exportador.py",
       "relative": "Visor/tools/verificar-exportador.py",
       "category": "Herramientas",
       "description": "Archivo del visor: tools/verificar-exportador.py",
@@ -308,7 +308,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\vendor\\js-yaml.mjs",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\vendor\\js-yaml.mjs",
       "relative": "Visor/vendor/js-yaml.mjs",
       "category": "Dependencias",
       "description": "Archivo del visor: vendor/js-yaml.mjs",
@@ -317,7 +317,7 @@
       "captured": "2026-10-07"
     },
     {
-      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\vendor\\YAML-LICENSE.txt",
+      "original": "C:\\Users\\Isabella GM\\vocatus\\auto cad\\visor-bombas\\vendor\\YAML-LICENSE.txt",
       "relative": "Visor/vendor/YAML-LICENSE.txt",
       "category": "Dependencias",
       "description": "Archivo del visor: vendor/YAML-LICENSE.txt",

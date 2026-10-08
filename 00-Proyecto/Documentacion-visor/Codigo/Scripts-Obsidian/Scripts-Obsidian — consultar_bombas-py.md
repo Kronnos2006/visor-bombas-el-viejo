@@ -4,7 +4,7 @@ Consulta CLI anterior; no es el backend del visor.
 
 **Categoría:** Scripts-Obsidian. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/autocad el vieno vovatus/00-Proyecto/scripts/consultar_bombas.py>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/autocad el vieno vovatus/00-Proyecto/scripts/consultar_bombas.py>).
 
 SHA-256: `d5b5cac1b45bd94f2f19f2ee9933ccfc30a19e9b17b8402703567a482d4e0f0c`
 

@@ -4,7 +4,7 @@ Servidor HTTP, lectura de bóveda, documentos, informes y Gemini.
 
 **Categoría:** Activo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/server.mjs>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/server.mjs>).
 
 SHA-256: `7430f777d400eab069dd7b26d11d6869751c4f916a671b1d9c4c9a87a8761923`
 

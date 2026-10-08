@@ -4,7 +4,7 @@ Archivo del visor: Iniciar demostración.cmd
 
 **Categoría:** Activo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/Iniciar demostración.cmd>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/Iniciar demostración.cmd>).
 
 SHA-256: `8cbe7df5ab309d817b326863f1163f9de59dfd82f6a6386b44a1ff593623a076`
 

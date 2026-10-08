@@ -4,7 +4,7 @@ Versión adjunta con guarda demo y fallo posterior por activos[0]; reemplazada p
 
 **Categoría:** Archivo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/.codex/attachments/a61243c1-4d82-4014-930e-50d77e85d94b/Texto pegado.txt>).
+Original: [abrir archivo](<C:/Users/Isabella GM/.codex/attachments/a61243c1-4d82-4014-930e-50d77e85d94b/Texto pegado.txt>).
 
 SHA-256: `8e127329d2cca4ef7fb6927e63566fdffb84ff07e5b5370daac0ead7a94ee3f7`
 

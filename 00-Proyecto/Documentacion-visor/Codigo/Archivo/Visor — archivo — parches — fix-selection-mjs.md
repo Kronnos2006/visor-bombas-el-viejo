@@ -4,7 +4,7 @@ Archivo del visor: archivo/parches/fix-selection.mjs
 
 **Categoría:** Archivo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/archivo/parches/fix-selection.mjs>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/archivo/parches/fix-selection.mjs>).
 
 SHA-256: `955e4330c0862000f26aa05bd0ad197938e2778c50482aa795d5c4657be27ed1`
 

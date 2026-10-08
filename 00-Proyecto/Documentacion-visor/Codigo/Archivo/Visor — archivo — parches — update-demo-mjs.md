@@ -4,7 +4,7 @@ Archivo del visor: archivo/parches/update-demo.mjs
 
 **Categoría:** Archivo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/archivo/parches/update-demo.mjs>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/archivo/parches/update-demo.mjs>).
 
 SHA-256: `38a346dc91c4a3490c592b27863e746db07a9756f6f0c93d037e11896db44ed5`
 

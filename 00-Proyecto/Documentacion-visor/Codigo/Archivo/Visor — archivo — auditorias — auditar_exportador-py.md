@@ -4,7 +4,7 @@ Archivo del visor: archivo/auditorias/auditar_exportador.py
 
 **Categoría:** Archivo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/archivo/auditorias/auditar_exportador.py>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/archivo/auditorias/auditar_exportador.py>).
 
 SHA-256: `6e250f8f1bed8ab83c812eb826a4adb4452c39e3f86f3c1003bb46ed275df893`
 
@@ -18,7 +18,7 @@ import runpy
 import tempfile
 from pathlib import Path
 
-source = Path(r'<RUTA-LOCAL>\.codex\attachments\a61243c1-4d82-4014-930e-50d77e85d94b\Texto pegado.txt')
+source = Path(r'C:\Users\Isabella GM\.codex\attachments\a61243c1-4d82-4014-930e-50d77e85d94b\Texto pegado.txt')
 module = runpy.run_path(str(source))
 scope = module['main'].__globals__
 with tempfile.TemporaryDirectory() as directory:

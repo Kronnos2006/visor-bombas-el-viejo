@@ -4,7 +4,7 @@ Estructura de la página, paneles y diálogos.
 
 **Categoría:** Activo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/public/index.html>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/public/index.html>).
 
 SHA-256: `0b4f01ab6444845c0a464eb1bc75d42b402fc392380035c0d378a57cce692a56`
 

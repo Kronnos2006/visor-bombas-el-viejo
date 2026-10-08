@@ -4,7 +4,7 @@ Pruebas del servidor con las fichas reales.
 
 **Categoría:** Pruebas. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/test.mjs>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/test.mjs>).
 
 SHA-256: `6a530a687d9b662395137737212395392b2cece98f6c1f4754f38ce908dd72dc`
 

@@ -4,7 +4,7 @@ Versión adjunta inicial: hash no estable y otras limitaciones históricas.
 
 **Categoría:** Archivo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/.codex/attachments/d0aa3c5d-8caa-4818-87f0-5b57d85d45fa/Texto pegado.txt>).
+Original: [abrir archivo](<C:/Users/Isabella GM/.codex/attachments/d0aa3c5d-8caa-4818-87f0-5b57d85d45fa/Texto pegado.txt>).
 
 SHA-256: `0420caca0eca9ca672add25ce6e8c7311111da48f8c4ada0e5e2d2a6e590e878`
 
