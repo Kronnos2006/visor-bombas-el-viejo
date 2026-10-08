@@ -63,3 +63,7 @@ Documentación de Gemini: https://ai.google.dev/api/
 ## Documentación en Obsidian
 
 Abrir `00-Proyecto/Documentacion-visor/00-Inicio.md` en la bóveda real. Incluye manual, arquitectura, pruebas, pendientes y código completo propio en notas legibles. `node tools/documentar.mjs` regenera el inventario y la copia documental de la revisión del 2026-10-07; no ejecuta pruebas. Antes de una nueva revisión, actualizar su fecha y conclusiones. La copia documental no es la aplicación activa.
+
+## Publicar en Vercel (versión DEMO, solo lectura)
+
+`api/index.mjs` y `vercel.json` publican el visor en Vercel con los datos DEMO. En Vercel: **Add New → Project**, importar este repositorio y poner **Root Directory = `visor-bombas`**. Las fotos y el visor se sirven desde `public/`; la API de lectura (`/api/bootstrap`, `/api/pump`) corre como función. En Vercel no funcionan Gemini ni «Guardar informe» (carpeta de solo lectura, sin clave persistente). La bóveda real, los planos y las claves no se incluyen.

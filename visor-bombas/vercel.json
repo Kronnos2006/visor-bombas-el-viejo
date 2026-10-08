@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "",
+  "outputDirectory": "public",
+  "rewrites": [{ "source": "/api/:path*", "destination": "/api/index" }],
+  "functions": { "api/index.mjs": { "includeFiles": "demo-vault/**", "maxDuration": 30 } }
+}
