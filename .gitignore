@@ -26,6 +26,8 @@ node_modules/
 !visor-bombas/public/fotos3/**
 !visor-bombas/public/referencias/
 !visor-bombas/public/referencias/*.jpg
+!visor-bombas/public/expediente/
+!visor-bombas/public/expediente/*.jpg
 !visor-bombas/public/sector-verificacion-2.png
 
 # respaldos y temporales
