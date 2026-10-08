@@ -4,7 +4,7 @@ import { aplicarRealismo } from './realismo.js';
 import {photoPumps, plateEvidence, photoURL, photo3URL, exterior, sector} from './sector-fotos.js';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
-import {expediente, enlaces} from './expediente.js';
+import {expediente, enlaces, linksBomba, linkPieza} from './expediente.js';
 import {listReports, addReport, deleteReport} from './reportes.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -237,6 +237,13 @@ function selectPhotoPump(tag){
  if(matchMedia('(max-width:900px)').matches)setTimeout(()=>document.querySelector('.inspector')?.scrollIntoView({behavior:'smooth',block:'start'}),700);
 }
 
+function paintPumpLinks(p){
+ let el=document.getElementById('pump-links');
+ if(!el){el=document.createElement('div');el.id='pump-links';$('#selected-tag').after(el);}
+ if(!p){el.hidden=true;el.innerHTML='';return;}
+ const L=linksBomba(p);el.hidden=false;
+ el.innerHTML=`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.manual.t)}">📘 Manual de la bomba</a><a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos</a>`;
+}
 function reportUI(){return `<section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><label>Reporte (escribilo directo)<textarea name="text" rows="5" maxlength="8000" placeholder="Describí lo observado, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">Podés escribir, adjuntar un PDF (máx. 10 MB) o ambos. Se guarda en este navegador; por ahora no se comparte con otros equipos.</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">Guardar reporte</button></form><div id="rep-list"></div></section>`;}
 async function paintReports(tag){
  const box=$('#rep-list');if(!box)return;
@@ -255,6 +262,7 @@ function initReports(tag){
 function renderPhotoPanel(){
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
  const p=state.pump?.data;
+ paintPumpLinks(p);
  if(!p){$('#panel').innerHTML=`<p class="eyebrow">SECTOR FOTOGRAFIADO · 07 OCT 2026</p><h2>Seleccioná una bomba</h2><p class="notice">El expediente mostrará únicamente la bomba elegida. Los datos de sellos, o-rings e historial están preparados para la demostración y se distinguen de la evidencia real.</p><img src="${photo3URL('142609')}" alt="Vista elevada de los tanques del sector"><p class="muted">Referencia utilizada para orientar y completar los tanques del render.</p>`;return;}
 
  const demo='<span class="demo-chip">DEMO · POR CONFIRMAR</span>';
@@ -267,10 +275,10 @@ function renderPhotoPanel(){
   $('#configure').onclick=()=>{$('#config-form [name=model]').value=state.model;$('#settings').showModal();};document.querySelectorAll('[data-question]').forEach(b=>b.onclick=()=>{$('#question').value=b.dataset.question;$('#question').focus();});$('#ask-form').onsubmit=ask;const answer=state.answers[p.tag];if(answer)showAnswer(answer);return;
  }
  const rings=p.orings.map(r=>`<div class="record"><strong>${esc(r.posicion)}</strong>${fieldRows([['Medida de demo',r.medida],['Material de demo',r.material],['Cantidad',String(r.cantidad)],['Código de demo',r.codigo]])}</div>`).join('');
- const componentCard=state.part!==null?`<section id="component-detail" class="component-focus" tabindex="-1"><p class="eyebrow">PIEZA ${String(state.part+1).padStart(2,'0')} SELECCIONADA</p><h2>${esc(parts[state.part].name)}</h2><p>${esc(parts[state.part].desc)}</p>${fieldRows(componentRows(p,state.part))}<p class="muted">Fuente: ${esc(p.source)}. La geometría es ilustrativa; los datos pendientes no se deducen del dibujo.</p></section>`:'';
+ const linkRows=list=>list.map(l=>`<li><a href="${l.u}" target="_blank" rel="noopener noreferrer">${esc(l.t)} ↗</a>${l.k?` <span class="kind">${esc(l.k)}</span>`:''}${l.nota?`<small>${esc(l.nota)}</small>`:''}</li>`).join('');
+ const componentCard=state.part!==null?`<section id="component-detail" class="component-focus" tabindex="-1"><p class="eyebrow">PIEZA ${String(state.part+1).padStart(2,'0')} SELECCIONADA</p><h2>${esc(parts[state.part].name)}</h2><p>${esc(parts[state.part].desc)}</p>${fieldRows(componentRows(p,state.part))}<div class="block part-docs"><h3>Información del fabricante · ${esc(parts[state.part].name)}</h3><ul class="doc-links">${linkRows(linkPieza(p,state.part))}</ul></div><p class="muted">Fuente: ${esc(p.source)}. La geometría es ilustrativa; los datos pendientes no se deducen del dibujo.</p></section>`:'';
  const exp=expediente[p.tag]||{placas:[],fotos:[],fab:[],rod:[]};
  const figs=(items,vacio)=>items.length?`<div class="exp-grid">${items.map(i=>`<figure><a href="${i.src}" target="_blank" rel="noopener"><img src="${i.src}" alt="${esc(i.t)}" loading="lazy"></a><figcaption>${esc(i.t)}${i.serie?` · serie leída: <b>${esc(i.serie)}</b> (verificar)`:''}<small>${esc(i.ref)}</small></figcaption></figure>`).join('')}</div>`:`<p class="muted">${vacio}</p>`;
- const linkRows=list=>list.map(l=>`<li><a href="${l.u}" target="_blank" rel="noopener noreferrer">${esc(l.t)} ↗</a>${l.k?` <span class="kind">${esc(l.k)}</span>`:''}${l.nota?`<small>${esc(l.nota)}</small>`:''}</li>`).join('');
  const docLinks=[...(exp.fab||[]).flatMap(k=>enlaces[k]||[]),...(exp.rod||[]).map(k=>enlaces.skf[k]).filter(Boolean).map(l=>({...l,k:'rodamiento · CAD'}))];
  const imagenes=`<div class="block exp-block"><h3>Imágenes del equipo</h3><p class="eyebrow">PLACA DE CARACTERÍSTICAS</p>${figs(exp.placas,'Sin foto de placa asociada en el Excel.')}<p class="eyebrow">FOTO DE LA BOMBA</p>${figs(exp.fotos,'Sin foto individual en el Excel; ver referencia del lado.')}${exp.nota?`<p class="notice">${esc(exp.nota)}</p>`:''}<p class="muted">Imágenes tomadas de “Libro1 bomba2.xlsx”, asociadas por la fila donde estaban ancladas. Toque una imagen para verla completa.</p></div>`;
  const documentos=`<div class="block exp-block"><h3>Catálogos, fichas y CAD del fabricante</h3>${docLinks.length?`<ul class="doc-links">${linkRows(docLinks)}</ul>`:'<p class="muted">Sin fabricante identificado: no hay documentación asociada.</p>'}<p class="muted">Enlaces públicos a fabricantes y distribuidores. “CAD” = ficha de producto donde el fabricante lo ofrece; el despiece 3D de esta app no es CAD del fabricante.</p></div>`;

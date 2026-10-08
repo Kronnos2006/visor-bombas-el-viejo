@@ -31,3 +31,7 @@
  #tabs{position:sticky;top:0;z-index:5;background:#121c20}
  .inspector-heading h2{font-size:26px}
 }
+
+/* Enlaces bajo el número de bomba */
+#pump-links{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px}#pump-links[hidden]{display:none}.pl-btn{display:inline-block;padding:6px 10px;border:1px solid #3d5a56;border-radius:6px;background:#173032;color:var(--accent);font-size:12px;text-decoration:none}.pl-btn:hover{background:#1f4244}.part-docs{margin-top:12px}
+.part-docs .doc-links li,.part-docs .doc-links a{font-size:13px;line-height:1.4}

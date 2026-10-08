@@ -58,3 +58,36 @@ export const expediente={
   B41:{placas:[{src:I('B41-placa'),t:'Placa de la bomba',ref:`${fila}, fila 44`}],fotos:[{src:I('B41-bomba'),t:'Foto de la bomba',ref:`${fila}, fila 44`}],fab:['goulds','usmotors'],rod:['6309-2Z','6206-2Z']}
 };
 // Servicios del Excel de inventario: "Equipo / Ubicación" es el tanque al que está conectada la bomba.
+
+// ── Manual, planos y enlace por componente ─────────────────────────────────────────────
+// Manual Malmedi/Hidromac 2196 (112 pág.) en ManualsLib; ?page=N abre la página. Páginas según el índice del manual (verificar).
+const MAN='https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html';
+const pag=n=>`${MAN}?page=${n}`;
+const CAT_H=enlaces.hidromac[0].u;
+const GOULDS={man:'https://www.xylem.com/en-us/brand/goulds-water-technology/',guia:enlaces.goulds[2].u,bro:enlaces.goulds[0].u};
+// índice de pieza (ver `parts` en app.js) → [texto, url, páginas]
+const HID_PIEZA=[
+  ['Carcasa · descripción',pag(8),'pág. 8'],['Juntas y o-rings en armado',pag(51),'pág. 51'],['Ajuste del impulsor',pag(30),'pág. 30–31'],
+  ['Lista de partes y corte',pag(87),'pág. 87–92'],['Mantenimiento de sellos del eje',pag(40),'pág. 40'],['Mantenimiento de sellos del eje',pag(40),'pág. 40–41'],
+  ['Eje y bocina',pag(59),'pág. 59'],['Mantenimiento de rodamientos',pag(38),'pág. 38–39'],['Instalación y alineación del acople',pag(12),'pág. 12'],null];
+const esHid=p=>/HIDROMAC/i.test(p.marca||'')||p.inactive;
+export function linksBomba(p){
+  if(esHid(p))return{
+    manual:{t:'Manual de instalación y mantenimiento Hidromac 2196 (112 pág.)',u:MAN},
+    planos:{t:'Planos: corte, lista de partes y dimensiones (manual pág. 87–99)',u:pag(90)},
+    extra:[{t:'Catálogo Hidromac 2196 (corte y curvas)',u:CAT_H},enlaces.hidromac[2]]};
+  return{
+    manual:{t:'Goulds e-SH · manuales en el sitio del fabricante',u:GOULDS.man},
+    planos:{t:'Goulds e-SH · guía de partes y vistas del kit (PDF)',u:GOULDS.guia},
+    extra:[{t:'Brochure técnico Goulds e-SH',u:GOULDS.bro}]};
+}
+export function linkPieza(p,i){
+  const out=[];
+  if(esHid(p)){const h=HID_PIEZA[i];if(h)out.push({t:`Manual Hidromac 2196 · ${h[0]} (${h[2]})`,u:h[1]});out.push({t:'Catálogo Hidromac · corte y lista de partes',u:CAT_H});}
+  else{out.push({t:'Goulds e-SH · guía de partes del kit (PDF)',u:GOULDS.guia},{t:'Goulds e-SH · brochure técnico',u:GOULDS.bro});}
+  const e=expediente[p.tag]||{};
+  if(i===8&&(e.fab||[]).includes('rexnord'))out.unshift(enlaces.rexnord[0]);
+  if(i===9)out.unshift(...((e.fab||[]).includes('usmotors')?enlaces.usmotors:enlaces.weg));
+  if(i===7&&e.rod)out.unshift(...e.rod.map(k=>enlaces.skf[k]).filter(Boolean));
+  return out;
+}
