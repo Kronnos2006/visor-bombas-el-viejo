@@ -1,0 +1,16 @@
+﻿tag,nombre,descripcion,ubicacion_funcional,clase_iso14224,tipo_iso14224,fabricante,modelo,numero_serie,anio,criticidad,estado,fluido,caudal_m3h,potencia_kw,rpm,codigo_bodega_equipo,referencia_documental,fuente_datos,confianza
+P-1311,Fermentor re-circulation pump I,Fermentor re-circulation pump I,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1303;PID1308,LEGEND del PFD,media
+P-1312,Fermentor re-circulation pump II,Fermentor re-circulation pump II,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1304,LEGEND del PFD,media
+P-1321,Prefermentor recirculation pump,Prefermentor recirculation pump,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1302;PID1308,LEGEND del PFD,media
+P-1324,Molasses transfer pump,Molasses transfer pump,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1301,LEGEND del PFD,media
+P-1331,Beer well transfer pump,Beer well transfer pump,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1308,LEGEND del PFD,media
+P-1341,Antifoam dosing pump,Antifoam dosing pump,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1302;PID1306,LEGEND del PFD,media
+P-1342,Acid pump,Acid pump,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1306,LEGEND del PFD,media
+P-1343,Nutrient pump,Nutrient pump,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1302;PID1306,LEGEND del PFD,media
+P-1351,CIP pump,CIP pump,Fermentación,PU,,,,,,media,operando,,,,,,PFD1301;PID1301;PID1302,LEGEND del PFD,media
+P-1401,Bomba de fondo de columna mash,Mash column bottom pump with motor,Destilación,PU,,,,,,alta,operando,Vinaza / fondo de columna mash,,,,,D-18033-1-PFD1401_R0;D-18033-1-PID1401_R0,LEGEND del PFD D-18033-1-PFD1401_R0,media
+P-1451,Purifier bottom transfer pump,Purifier bottom transfer pump,Destilación,PU,,,,,,media,operando,,,,,,PFD1401;PID1403;PID1404,LEGEND del PFD,media
+P-1461,Rectifier reflux pump,Rectifier reflux pump,Destilación,PU,,,,,,media,operando,,,,,,PFD1401;PID1405;PID1406,LEGEND del PFD,media
+P-1462,Rectifier bottom pump,Rectifier bottom pump,Destilación,PU,,,,,,media,operando,,,,,,PFD1401;PID1403;PID1406;PID1411,LEGEND del PFD,media
+P-1463,FO washing pump,FO washing pump,Destilación,PU,,,,,,media,operando,,,,,,PFD1401;PID1404;PID1407,LEGEND del PFD,media
+P-1490,Steam condensate transfer pump,Steam condensate transfer pump,Destilación,PU,,,,,,media,operando,,,,,,PFD1401;PID1402;PID1409,LEGEND del PFD,media

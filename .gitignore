@@ -1,0 +1,33 @@
+# dependencias
+node_modules/
+
+# documentación de la empresa: planos, fotos, originales
+*.dwg
+*.dxf
+*.nwd
+*.nwc
+*.pdf
+*.heic
+*.HEIC
+*.jpg
+*.JPG
+*.jpeg
+*.png
+*.xlsx
+*.xls
+*.docx
+*.pptx
+*.zip
+
+# respaldos y temporales
+*.respaldo
+*.respaldo[0-9]
+Respaldos/
+Fuentes/
+*.log
+.DS_Store
+Thumbs.db
+
+# configuración local de Obsidian
+.obsidian/
+.trash/

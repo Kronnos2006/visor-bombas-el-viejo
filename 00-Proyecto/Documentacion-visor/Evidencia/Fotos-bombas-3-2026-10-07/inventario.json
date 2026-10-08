@@ -1,0 +1,308 @@
+[
+  {
+    "numero": 1,
+    "archivo": "20261007_141955.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "252530c46e2dfcb125e3088db2abedba7088e471ef5064f4f4e3ce7bdbbc02c0"
+  },
+  {
+    "numero": 2,
+    "archivo": "20261007_141957.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "1932e830bf9fa48b0c7bd0d5f194ffa117b25e3f98b0b856ad4fb6b93609fba6"
+  },
+  {
+    "numero": 3,
+    "archivo": "20261007_141959.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "c1bbeb250f65ace7e42ea14730ebcffd3efaf5e3ce6b8eae56eb353e0f6ea9b3"
+  },
+  {
+    "numero": 4,
+    "archivo": "20261007_142010.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "07ca72cbef57cfacbfe2e1b3271c1e7112388a91366143f2c838459f6f686688"
+  },
+  {
+    "numero": 5,
+    "archivo": "20261007_142038.heic",
+    "dimensiones": [
+      1848,
+      4000
+    ],
+    "sha256": "e21e42f5351aee2069c909ab9d2959d7afd4cbe01904f93af7775e9ff67bbf1c"
+  },
+  {
+    "numero": 6,
+    "archivo": "20261007_142042.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "21fddfc9c613a4e0c7075918de747343bf0ef24c14445ea3817a4cfc812418db"
+  },
+  {
+    "numero": 7,
+    "archivo": "20261007_142052.heic",
+    "dimensiones": [
+      1848,
+      4000
+    ],
+    "sha256": "b26cebb50aea1d479d1ca04e2d09b948761cdb033fd5e33b352438c9cfc41967"
+  },
+  {
+    "numero": 8,
+    "archivo": "20261007_142102.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "23b96f3e88efd7e0cb2bba4d4a4979d24342a9e7aeaa3801c5138de88a535b6d"
+  },
+  {
+    "numero": 9,
+    "archivo": "20261007_142109.heic",
+    "dimensiones": [
+      1848,
+      4000
+    ],
+    "sha256": "8047fc600c79d1dd0a01468e638522968af9e267c06ad45368e68db0044a4fbb"
+  },
+  {
+    "numero": 10,
+    "archivo": "20261007_142114.heic",
+    "dimensiones": [
+      1848,
+      4000
+    ],
+    "sha256": "2a1cce0fd45bd63e5a1257c6c034b2ea97ce4b21fe7c4e17882a4485ce7e9d5f"
+  },
+  {
+    "numero": 11,
+    "archivo": "20261007_142124.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "46b34446c2f7c6b40a4b43f8f7e5b678e3b3f831aba7d28095b86c4be741a499"
+  },
+  {
+    "numero": 12,
+    "archivo": "20261007_142136.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "790899341194e41e66517ed6550973c962ddb6f0048a858ffda1a5efc6b6d67a"
+  },
+  {
+    "numero": 13,
+    "archivo": "20261007_142200.heic",
+    "dimensiones": [
+      1848,
+      4000
+    ],
+    "sha256": "6ee0e19f5a003e5bf2ce130c53c4009091faeb6d8c5608759d3fb560abdad78f"
+  },
+  {
+    "numero": 14,
+    "archivo": "20261007_142210.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "ca875fbc63d414b3beefabdce054f898e8515640890e2a8921c4c4369397944d"
+  },
+  {
+    "numero": 15,
+    "archivo": "20261007_142243.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "9257bf553169116b7ea6d9cb7dea162766184fa6099aa8fdfa512361fbff0bc3"
+  },
+  {
+    "numero": 16,
+    "archivo": "20261007_142304.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "63fb05f59231da67bbbcd88c71aef3e3a5a6211d55befb6f16663d498845265d"
+  },
+  {
+    "numero": 17,
+    "archivo": "20261007_142319.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "81ce34eec0722f07ffe9f626a9c8bf528518e7f4847fc1de65125e99a24fb5f5"
+  },
+  {
+    "numero": 18,
+    "archivo": "20261007_142327.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "79610c8e2b3ebf1cd4a9af0be81f4728fa6fac58221e8433261a25128fbafa23"
+  },
+  {
+    "numero": 19,
+    "archivo": "20261007_142331.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "bb799419fa879b4cb153c65339da34b6ea1ca217239edac45d57a339c6457e49"
+  },
+  {
+    "numero": 20,
+    "archivo": "20261007_142354.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "94c2a778e8904abddcca3bc22c5096437df13bb68c0102a4b91bc1561636cce7"
+  },
+  {
+    "numero": 21,
+    "archivo": "20261007_142400.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "a3c07e0afe4476a6b048ba5101c1805f0785766b96cfcbd9e6ab75249bb86a13"
+  },
+  {
+    "numero": 22,
+    "archivo": "20261007_142412.heic",
+    "dimensiones": [
+      1848,
+      4000
+    ],
+    "sha256": "8fd38fb259b605ad81b23d9e56fb93c48995c29359387552c7ecc78764e65be8"
+  },
+  {
+    "numero": 23,
+    "archivo": "20261007_142444.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "3113d317446d1984585fa2b2f5cae9db25bef6dd5f783df02afb13bd5011212c"
+  },
+  {
+    "numero": 24,
+    "archivo": "20261007_142447.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "5647aa3db259f1f937911e4e47893622b52280033d3f41845526d33c909b3650"
+  },
+  {
+    "numero": 25,
+    "archivo": "20261007_142517.heic",
+    "dimensiones": [
+      4000,
+      3000
+    ],
+    "sha256": "9caa3194092e5eed9cb9c6080b6a7520ee34fc3d4f4328eb2b0a6e052b2aa6a5"
+  },
+  {
+    "numero": 26,
+    "archivo": "20261007_142518.heic",
+    "dimensiones": [
+      4000,
+      3000
+    ],
+    "sha256": "6ce5b13f5bebbced017baced0d3700dbbf9c5e9f7b19c631e39d41842da9c81e"
+  },
+  {
+    "numero": 27,
+    "archivo": "20261007_142521.heic",
+    "dimensiones": [
+      4000,
+      3000
+    ],
+    "sha256": "e0f95900c9016cd441f6b7e4ce3aa38851bcd0d8b3c51df6e1b376f7cabd8ded"
+  },
+  {
+    "numero": 28,
+    "archivo": "20261007_142524.heic",
+    "dimensiones": [
+      4000,
+      3000
+    ],
+    "sha256": "15563512501a2561a9fcfac8e7a6ccd0b3c71223cb55e182121b3af974d4100c"
+  },
+  {
+    "numero": 29,
+    "archivo": "20261007_142609.heic",
+    "dimensiones": [
+      4000,
+      3000
+    ],
+    "sha256": "8ea8ecbed878af9e96989ffb9f3b0fe1dbafd9ebf7f3ea439e323c3b1a9e59a9"
+  },
+  {
+    "numero": 30,
+    "archivo": "20261007_142622.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "839a538c4ed07560073fa55c3fbbc7341a1a328cd371b9abfbcb1802c2ace081"
+  },
+  {
+    "numero": 31,
+    "archivo": "20261007_142624.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "291896c24507d57e609993a828307365076a3ed22ad393691da1ba28fa06b4e8"
+  },
+  {
+    "numero": 32,
+    "archivo": "20261007_142627.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "302f9c5c45dcc8ed4b8d917f7728355f99eb2f09968043901a4a30288fb61354"
+  },
+  {
+    "numero": 33,
+    "archivo": "20261007_142744.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "a09ad49e79dd2552901048c2fe3ee5ec6c13bfca9bf9699a2d1b3ea7e95a135a"
+  },
+  {
+    "numero": 34,
+    "archivo": "20261007_142745.heic",
+    "dimensiones": [
+      4000,
+      1848
+    ],
+    "sha256": "b1091e7b67e517ca302520791e20053b91b5ca88d4bfc5bc34bde87d5f1f38a8"
+  }
+]

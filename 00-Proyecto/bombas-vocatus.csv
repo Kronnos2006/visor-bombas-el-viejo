@@ -1,0 +1,566 @@
+﻿id,fila_excel,area,ubicacion,liquido,marca,marca_estado,catalogo,modelo,tamano,sufijo,caudal_gpm,altura_m,rpm,impulsor_valor,impulsor_unidad,impulsor_max_valor,impulsor_max_unidad,impulsor_valor_original,impulsor_unidad_original,impulsor_estado,tipo_sellado,sello_tipo,sello_eje_pulg,empaque_declarado,empaque_seccion_pulg,rodamiento_delantero,rodamiento_trasero,rodamientos_pertenecen_a,acople,motor_marca,motor_catalogo,motor_modelo,motor_hp,motor_kw,motor_rpm,observaciones_excel,norma_indicada,norma_inferida,norma_estado,confianza_transcripcion,confianza_identificacion,asociacion_placa,placa_serie,texto_original_bomba,texto_original_tamano,texto_original_sello,texto_original_motor,fuente,fuente_fecha
+B1,4,1. DESTILACIÓN PLANTA DUSA,Alimentación Mosto Fermentado DUSA,Mosto,HIDROMAC,,,2196,1.5X3-8 STO,STO,130,33.5,3500,142,mm,205,mm,142,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6308-2RS,6207-2RS,por confirmar,REXNORD ES-4R,WEG,,,7.5,,3515,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 130
+RPM: 3500
+HD [m]: 33.5
+Ø Imp [mm]: 142
+Ø Máx [mm]: 205",1.5X3-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG
+HP: 7.5
+RPM: 3515",Libro1.xlsx · hoja Bombas · fila 4,2026-10-07
+B2,5,1. DESTILACIÓN PLANTA DUSA,Alimentación Mosto Fermentado DUSA,Mosto,HIDROMAC,,,2196,1.5X3-8 STO,STO,130,33.5,3500,142,mm,205,mm,142,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6308-2RS,6207-2RS,por confirmar,REXNORD ES-4R,WEG,,,7.5,,3515,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 130
+RPM: 3500
+HD [m]: 33.5
+Ø Imp [mm]: 142
+Ø Máx [mm]: 205",1.5X3-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG
+HP: 7.5
+RPM: 3515",Libro1.xlsx · hoja Bombas · fila 5,2026-10-07
+B3,6,1. DESTILACIÓN PLANTA DUSA,Columna Aldehído 2,Alcohol,HIDROMAC,,,2196,1X1.5-8 STO,STO,50,15.2,1750,188,mm,205,mm,188,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 50
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 188
+Ø Máx [mm]: 205",1X1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 6,2026-10-07
+B4,7,1. DESTILACIÓN PLANTA DUSA,Columna Rectificadora 2,Alcohol,HIDROMAC,,,2196,1X1.5-8 STO,STO,35,15.2,1750,178,mm,205,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 35
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 178
+Ø Máx [mm]: 205",1X1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 7,2026-10-07
+B5,8,1. DESTILACIÓN PLANTA DUSA,Columna Aldehído 1,Alcohol,HIDROMAC,,,2196,1x1.5-8 STO,STO,40,15.2,1750,178,mm,205,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,2R,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 40
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 178
+Ø Máx [mm]: 205",1x1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 8,2026-10-07
+B6,9,1. DESTILACIÓN PLANTA DUSA,Columna Aldehído 1,Alcohol,HIDROMAC,,,2196,1x1.5-8 STO,STO,40,15.2,1750,178,mm,205,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,2R,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 40
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 178
+Ø Máx [mm]: 205",1x1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 9,2026-10-07
+B7,10,1. DESTILACIÓN PLANTA DUSA,Columna Rectificadora 1,Alcohol,HIDROMAC,,,2196,1x1.5-8 STO,STO,30,15.2,1750,178,mm,205,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 30
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 178
+Ø Máx [mm]: 205",1x1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 10,2026-10-07
+B8,11,1. DESTILACIÓN PLANTA DUSA,Columna Rectificadora 1,Alcohol,HIDROMAC,,,2196,1x1.5-8 STO,STO,30,15.2,1750,178,mm,205,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 30
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 178
+Ø Máx [mm]: 205",1x1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 11,2026-10-07
+B9,12,1. DESTILACIÓN PLANTA DUSA,Columna Rectificadora Batch,Alcohol,HIDROMAC,,,2196,1x1.5-8 STO,STO,35,15.2,1750,178,mm,205,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 35
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 178
+Ø Máx [mm]: 205",1x1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 12,2026-10-07
+B10,13,1. DESTILACIÓN PLANTA DUSA,Columna Rectificadora Batch,Alcohol,HIDROMAC,,,2196,1x1.5-8 STO,STO,35,15.2,1750,178,mm,205,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 35
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 178
+Ø Máx [mm]: 205",1x1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 13,2026-10-07
+B11,14,1. DESTILACIÓN PLANTA DUSA,Columna Vinaza,Mosto - Vinaza,HIDROMAC,,,2196,2X3-8 MTO,MTO,100,13.7,1750,178,mm,215,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6307-2RS,6206-2RS,por confirmar,3R,WEG,,,5,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 100
+RPM: 1750
+HD [m]: 13.7
+Ø Imp [mm]: 178
+Ø Máx [mm]: 215",2X3-8 MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+HP: 5
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 14,2026-10-07
+B12,15,1. DESTILACIÓN PLANTA DUSA,Columna Vinaza,Mosto,HIDROMAC,,,2196,2X3-8 MTO,MTO,100,13.7,1750,178,mm,215,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6307-2RS,6206-2RS,por confirmar,3R,WEG,,,5,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 100
+RPM: 1750
+HD [m]: 13.7
+Ø Imp [mm]: 178
+Ø Máx [mm]: 215",2X3-8 MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+HP: 5
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 15,2026-10-07
+B13,16,1. DESTILACIÓN PLANTA DUSA,Alambique - Código UQ,Alcohol,TITAN,,,4196,1X1.5-8 ST,ST,,13.7,,7.1875,pulg,8,pulg,7.1875,XX,el Excel rotula la unidad como [XX]; se registra en pulgadas por indicacion del responsable del proyecto y por la designacion 1X1.5-8,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,,WEG,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,probable,probable_por_coincidencia,027167,"TITAN 4196
+GPM:
+RPM:
+HD [m]: 13.7
+Ø Imp [XX]: 7.1875
+Ø Máx [XX]: 8",1X1.5-8 ST,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 16,2026-10-07
+B14,17,1. DESTILACIÓN PLANTA DUSA,Alambique - Código UQ,Alcohol,HIDROMAC,,,2196,1X1.5-8 STO,STO,50,15.2,1750,188,mm,205,mm,188,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6206-ZZ,6205-ZZ,por confirmar,,WEG,,,3,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 50
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 188
+Ø Máx [mm]: 205",1X1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG
+HP: 3
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 17,2026-10-07
+B15,18,2. DESTILACIÓN PLANTA PRAJ,Alimentación Mosto Fermentado Hindú,Mosto,MULTISTEEL,,,RSA 25/205,,,30.8,65,3500,195,mm,,,195,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,NU 306 3306,3306,por confirmar,,LINCOLN,,,10,,3500,Doble sello.,,,,alta,pendiente,sin_asociar,,"MULTISTEEL
+RSA 25/205
+GPM: 30.8
+RPM: 3500
+HD [m]: 65
+Ø Imp [mm]: 195",,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","LINCOLN
+HP: 10
+RPM: 3500",Libro1.xlsx · hoja Bombas · fila 18,2026-10-07
+B16,19,2. DESTILACIÓN PLANTA PRAJ,Alimentación Mosto Fermentado Hindú,Mosto,MULTISTEEL,,,RSA 25/205,,,30.8,65,3500,195,mm,,,195,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,NU 306 3306,3306,por confirmar,,LINCOLN,,,10,,3500,Doble sello.,,,,alta,pendiente,sin_asociar,,"MULTISTEEL
+RSA 25/205
+GPM: 30.8
+RPM: 3500
+HD [m]: 65
+Ø Imp [mm]: 195",,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","LINCOLN
+HP: 10
+RPM: 3500",Libro1.xlsx · hoja Bombas · fila 19,2026-10-07
+B17,20,2. DESTILACIÓN PLANTA PRAJ,Columna Rectificadora,Alcohol,DURCO,,,62392,1X1.5-6 ST,ST,11,31.3,3500,,,,,,,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,,,por confirmar,,,,,,,,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"DURCO 62392
+GPM: 11
+RPM: 3500
+HD: 31.3",1X1.5-6 ST,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""",TITAN 4196,Libro1.xlsx · hoja Bombas · fila 20,2026-10-07
+B18,21,2. DESTILACIÓN PLANTA PRAJ,Columna Purificadora,Alcohol,DURCO,,,62392,,,11,31.3,3500,,,,,,,,,,,,,,,por confirmar,,BALDOR,,,5.5,,3520,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"DURCO 62392
+GPM: 11
+RPM: 3500
+HD: 31.3",,,"BALDOR
+X1906M34760
+HP: 5.5
+RPM: 3520",Libro1.xlsx · hoja Bombas · fila 21,2026-10-07
+B19,22,2. DESTILACIÓN PLANTA PRAJ,Columna Mosto,Mosto,DURCO,,,62392,,,11,31.3,3500,,,,,,,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,,,por confirmar,Amortiguador LoveJoy L-100,BALDOR,,,5,,3470,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"DURCO 62392
+GPM: 11
+RPM: 3500
+HD: 31.3",,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","BALDOR
+F1906202004
+HP: 5
+RPM: 3470",Libro1.xlsx · hoja Bombas · fila 22,2026-10-07
+B20,23,2. DESTILACIÓN PLANTA PRAJ,Tanque Condensados,Agua,DURCO,,,62392,,,8.8,40.1,3500,,,,,,,,,,,,,,,por confirmar,Amortiguador LoveJoy L-101,BALDOR,,,5,,3470,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"DURCO 62392
+GPM: 8.8
+RPM: 3500
+HD: 40.1",,,"BALDOR
+F1906201994
+HP: 5
+RPM: 3470",Libro1.xlsx · hoja Bombas · fila 23,2026-10-07
+B21,24,2. DESTILACIÓN PLANTA PRAJ,Tanque Reflujos Rectificadora,Agua / Alcohol,DURCO,,,62391,,,16.2,48.7,3500,,,,,,,,,,,,,,,por confirmar,,BALDOR,,,5.5,,3520,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"DURCO 62391
+GPM: 16.2
+RPM: 3500
+HD: 48.7",,,"BALDOR
+X1906M34759
+HP: 5.5
+RPM: 3520",Libro1.xlsx · hoja Bombas · fila 24,2026-10-07
+B22,25,2. DESTILACIÓN PLANTA PRAJ,Tanque lavados de Aceite,SIN USO,,por confirmar,,,,,,,,,,,,,,,,,,,,,,por confirmar,,,,,,,,,,,,alta,pendiente,sin_asociar,,,,,,Libro1.xlsx · hoja Bombas · fila 25,2026-10-07
+B23,26,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque UQ,Alcohol,HIDROMAC,,,2196,1X1.5-8 LF,LF,8,21.3,1750,198,mm,205,mm,198,mm,,,,,,,6205-2RS,6204-2RS,por confirmar,,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 8
+RPM: 1750
+HD [m]: 21.3
+Ø Imp [mm]: 198
+Ø Máx [mm]: 205",1X1.5-8 LF,,"WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 26,2026-10-07
+B24,27,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque FW,Alcohol,HIDROMAC,,,2196,1X1.5X8 STO,STO,60,12.2,1750,174,mm,205,mm,174,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,ES2-R,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 60
+RPM: 1750
+HD [m]: 12.2
+Ø Imp [mm]: 174
+Ø Máx [mm]: 205",1X1.5X8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 27,2026-10-07
+B25,28,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque FW,Alcohol,HIDROMAC,,,2196,1X1.5X8 STO,STO,60,12.2,1750,174,mm,205,mm,174,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-2RS,6204-2RS,por confirmar,ES2-R,WEG 00218XT3E145T,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 60
+RPM: 1750
+HD [m]: 12.2
+Ø Imp [mm]: 174
+Ø Máx [mm]: 205",1X1.5X8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG 00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 28,2026-10-07
+B26,29,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque Destrucción,Alcohol,HIDROMAC,,,2196,1X1.5-8 STO,STO,3,21,1750,200,mm,205,mm,200,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6205-ZZ,6204-ZZ,por confirmar,,WEG,,,1.1,,1745,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 3
+RPM: 1750
+HD [m]: 21
+Ø Imp [mm]: 200
+Ø Máx [mm]: 205",1X1.5-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG
+ NBR17094-1
+HP: 1.1
+RPM: 1745",Libro1.xlsx · hoja Bombas · fila 29,2026-10-07
+B27,30,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Carga Batch,Alcohol,HIDROMAC,,,2196,3X4X8G MTO,MTO,200,15.2,1750,200,mm,215,mm,200,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6308-2RS,6207-2RS,por confirmar,ES3-R.,WEG,,,7.5,,1765,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 200
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 200
+Ø Máx [mm]: 215",3X4X8G MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+HP: 7.5
+RPM: 1765",Libro1.xlsx · hoja Bombas · fila 30,2026-10-07
+B28,31,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Carga Batch,Alcohol,HIDROMAC,,,2196,3X4X8G MTO,MTO,200,15.2,1750,200,mm,215,mm,200,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6308-2RS,6207-2RS,por confirmar,ES3-R.,WEG,,,7.5,,1765,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 200
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 200
+Ø Máx [mm]: 215",3X4X8G MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+HP: 7.5
+RPM: 1765",Libro1.xlsx · hoja Bombas · fila 31,2026-10-07
+B29,32,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque Millonario,Alcohol,HIDROMAC,,,2196,1.5X3-18 MTO,MTO,200,21.3,1750,290,mm,330,mm,290,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6309-2RS-C3,6209-2RS-C3,por confirmar,ES5-R.,WEG,,,15,,1770,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 200
+RPM: 1750
+HD [m]: 21.3
+Ø Imp [mm]: 290
+Ø Máx [mm]: 330",1.5X3-18 MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+00518XT3E254T
+HP: 15
+RPM: 1770",Libro1.xlsx · hoja Bombas · fila 32,2026-10-07
+B30,33,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque LW1,Alcohol,HIDROMAC,,,2196,1X1.5-8 LF,LF,8,21.3,1750,198,mm,205,mm,198,mm,,,,,,,6205-2RS,6204-2RS,por confirmar,ES2-R.,WEG,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 8
+RPM: 1750
+HD [m]: 21.3
+Ø Imp [mm]: 198
+Ø Máx [mm]: 205",1X1.5-8 LF,,"WEG
+00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 33,2026-10-07
+B31,34,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque LW2,Alcohol,HIDROMAC,,,2196,1X1.5-8 LF,LF,8,21.3,1750,198,mm,205,mm,198,mm,,,,,,,6205-2RS,6204-2RS,por confirmar,ES2-R.,WEG,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 8
+RPM: 1750
+HD [m]: 21.3
+Ø Imp [mm]: 198
+Ø Máx [mm]: 205",1X1.5-8 LF,,"WEG
+00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 34,2026-10-07
+B32,35,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Cabezas & Colas,Alcohol,HIDROMAC,,,2196,1X1.5-8 LF,LF,8,21.3,1750,198,mm,205,mm,198,mm,,,,,,,6205-2RS,6204-2RS,por confirmar,,WEG,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 8
+RPM: 1750
+HD [m]: 21.3
+Ø Imp [mm]: 198
+Ø Máx [mm]: 205",1X1.5-8 LF,,"WEG
+00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 35,2026-10-07
+B33,36,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Cabezas & Colas,Alcohol,HIDROMAC,,,2196,1X1.5-8 LF,LF,8,21.3,1750,198,mm,205,mm,198,mm,,,,,,,6205-2RS,6204-2RS,por confirmar,,WEG,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 8
+RPM: 1750
+HD [m]: 21.3
+Ø Imp [mm]: 198
+Ø Máx [mm]: 205",1X1.5-8 LF,,"WEG
+00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 36,2026-10-07
+B34,37,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Despacho DUSA,Alcohol,HIDROMAC,,,2196,3X4X8G MTO,MTO,200,15.2,1750,200,mm,215,mm,200,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6308-2RS,6207-2RS,por confirmar,,WEG,,,7.5,,1765,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 200
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 200
+Ø Máx [mm]: 215",3X4X8G MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 7.5
+RPM: 1765",Libro1.xlsx · hoja Bombas · fila 37,2026-10-07
+B35,38,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Despacho DUSA,Alcohol,HIDROMAC,,,2196,3X4X8G MTO,MTO,200,15.2,1750,200,mm,215,mm,200,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6308-2RS,6207-2RS,por confirmar,,WEG,,,7.5,,1765,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 200
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 200
+Ø Máx [mm]: 215",3X4X8G MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 7.5
+RPM: 1765",Libro1.xlsx · hoja Bombas · fila 38,2026-10-07
+B36,39,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Despacho Panamá,Alcohol,HIDROMAC,,,2196,3X4X8G MTO,MTO,200,15.2,1750,200,mm,215,mm,200,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6308-2RS,6207-2RS,por confirmar,,WEG,,,7.5,,1765,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 200
+RPM: 1750
+HD [m]: 15.2
+Ø Imp [mm]: 200
+Ø Máx [mm]: 215",3X4X8G MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 7.5
+RPM: 1765",Libro1.xlsx · hoja Bombas · fila 39,2026-10-07
+B37,40,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Alimentación Aldehído,Alcohol,HIDROMAC,,,2196,1X1.5-8 LF,LF,8,15.24,1750,175,mm,205,mm,175,mm,,,,,,,6205-2RS,6204-2RS,por confirmar,,WEG,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 8
+RPM: 1750
+HD [m]: 15.24
+Ø Imp [mm]: 175
+Ø Máx [mm]: 205",1X1.5-8 LF,,"WEG
+00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 40,2026-10-07
+B38,41,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque Producción HO,Alcohol,HIDROMAC,,,2196,1X1.5-8 LF,LF,8,15.24,1750,175,mm,205,mm,175,mm,,,,,,,6205-2RS,6204-2RS,por confirmar,,WEG,,,2,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,ambigua,candidata,,"HIDROMAC 2196
+GPM: 8
+RPM: 1750
+HD [m]: 15.24
+Ø Imp [mm]: 175
+Ø Máx [mm]: 205",1X1.5-8 LF,,"WEG
+00218XT3E145T
+HP: 2
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 41,2026-10-07
+B39,42,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque Producción Diaria Hindú,Alcohol,GOULDS,,15SH06K6,2X2 1/2-6-2P,2X2 1/2-6,,,,,,,,,,,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.1/4,,,6309-2Z-J/C3,6206-2Z-J/C3,por confirmar,,US Motors,XJ7P1BM Mod: FL62,,7.5,,3510,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"GOULDS
+Cat: 15SH06K6
+#Mod: 2X2 1/2-6-2P",2X2 1/2-6,"Tipo 1 (O) - Tipo 21 (G) 1.1/4""","US Motors
+Cat: XJ7P1BM Mod: FL62
+HP: 7.5
+RPM: 3510",Libro1.xlsx · hoja Bombas · fila 42,2026-10-07
+B40,43,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque Blender,Alcohol,GOULDS,,15SH06K6,2X2 1/2-6-2P,2X2 1/2-6,,,,,,,,,,,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.1/4,,,6309-2Z-J/C3,6206-2Z-J/C3,por confirmar,,US Motors,XJ7P1BM Mod: FL62,,7.5,,3510,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"GOULDS
+Cat: 15SH06K6
+#Mod: 2X2 1/2-6-2P",2X2 1/2-6,"Tipo 1 (O) - Tipo 21 (G) 1.1/4""","US Motors
+Cat: XJ7P1BM Mod: FL62
+HP: 7.5
+RPM: 3510",Libro1.xlsx · hoja Bombas · fila 43,2026-10-07
+B41,44,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Tanque Reproceso,Alcohol,GOULDS,,15SH06K6,2X2 1/2-6-2P,2X2 1/2-6,,,,,,,,,,,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.1/4,,,6309-2Z-J/C3,6206-2Z-J/C3,por confirmar,,US Motors,XJ7P1BM Mod: FL62,,7.5,,3510,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"GOULDS
+Cat: 15SH06K6
+#Mod: 2X2 1/2-6-2P",2X2 1/2-6,"Tipo 1 (O) - Tipo 21 (G) 1.1/4""","US Motors
+Cat: XJ7P1BM Mod: FL62
+HP: 7.5
+RPM: 3510",Libro1.xlsx · hoja Bombas · fila 44,2026-10-07
+B42,45,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Rechazo,Alcohol,GOULDS,,15SH06K6,2X2 1/2-6-2P,2X2 1/2-6,,,,,,,,,,,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.1/4,,,6309-2Z-J/C3,6206-2Z-J/C3,por confirmar,,US Motors,XJ7P1BM Mod: FL62,,7.5,,3510,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"GOULDS
+Cat: 15SH06K6
+#Mod: 2X2 1/2-6-2P",2X2 1/2-6,"Tipo 1 (O) - Tipo 21 (G) 1.1/4""","US Motors
+Cat: XJ7P1BM Mod: FL62
+HP: 7.5
+RPM: 3510",Libro1.xlsx · hoja Bombas · fila 45,2026-10-07
+B43,46,3. ALIMENTACIÓN TANQUES DE ALMACÉN & DESPACHO.,Despacho Hindú,Alcohol,GOULDS,,15SH06K6,2X2 1/2-6-2P,2X2 1/2-6,,,,,,,,,,,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.1/4,,,6309-2Z-J/C3,6206-2Z-J/C3,por confirmar,,US Motors,XJ7P1BM Mod: FL62,,7.5,,3510,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"GOULDS
+Cat: 15SH06K6
+#Mod: 2X2 1/2-6-2P",2X2 1/2-6,"Tipo 1 (O) - Tipo 21 (G) 1.1/4""","US Motors
+Cat: XJ7P1BM Mod: FL62
+HP: 7.5
+RPM: 3510",Libro1.xlsx · hoja Bombas · fila 46,2026-10-07
+B44,47,4. FERMENTACIÓN,Agua de dilución,Agua,HIDROMAC AZ,,,3X4X12A SMCDV,3X4X12,,550,48,1750,305,mm,,,305,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.1/2,,,6312-C3,6212-C3,por confirmar,OMEGA E20,WEG,,,40,,1770,,,,,alta,pendiente,sin_asociar,,"HIDROMAC AZ
+3X4X12A SMCDV
+GPM: 550
+RPM: 1750
+HD: 48
+Ø Imp [mm]: 305",3X4X12,"Tipo 1 (O) - Tipo 21 (G) 1.1/2""","WEG
+TE1BF0X0N
+HP: 40
+RPM: 1770",Libro1.xlsx · hoja Bombas · fila 47,2026-10-07
+B45,48,4. FERMENTACIÓN,Agua de dilución,AGUA,HIDROMAC AZ,,,3X4X12A SMCDV,3X4X12,,550,48,1750,305,mm,,,305,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.1/2,,,6312-C3,6212-C3,por confirmar,OMEGA E20,WEG,,,40,,1770,,,,,alta,pendiente,sin_asociar,,"HIDROMAC AZ
+3X4X12A SMCDV
+GPM: 550
+RPM: 1750
+HD: 48
+Ø Imp [mm]: 305",3X4X12,"Tipo 1 (O) - Tipo 21 (G) 1.1/2""","WEG
+TE1BF0X0N
+HP: 40
+RPM: 1770",Libro1.xlsx · hoja Bombas · fila 48,2026-10-07
+B46,49,4. FERMENTACIÓN,Pie de Cubas,Mosto,HIDROMAC,,,2196,1.5X3-8 STO,STO,100,18.3,1750,205,mm,205,mm,205,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6307-2RS,6206-2RS,por confirmar,,WEG,,,3,,1760,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 100
+RPM: 1750
+HD [m]: 18.3
+Ø Imp [mm]: 205
+Ø Máx [mm]: 205",1.5X3-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG
+
+HP: 3
+RPM: 1760",Libro1.xlsx · hoja Bombas · fila 49,2026-10-07
+B47,50,4. FERMENTACIÓN,Pie de Cubas,Mosto,HIDROMAC,,,2196,1.5X3-8 STO,STO,100,18.3,1750,205,mm,205,mm,205,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/8,,,6307-2RS,6206-2RS,por confirmar,,WEG,,,3,,1760,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 100
+RPM: 1750
+HD [m]: 18.3
+Ø Imp [mm]: 205
+Ø Máx [mm]: 205",1.5X3-8 STO,"Tipo 1 (O) - Tipo 21 (G) 1.3/8""","WEG
+
+HP: 3
+RPM: 1760",Libro1.xlsx · hoja Bombas · fila 50,2026-10-07
+B48,51,4. FERMENTACIÓN,Caño,Agua,MULTISTEEL,,,RA65/300,,,220,25,1750,260,mm,,,260,mm,,,,,,,6308-ZZ,6207-ZZ,por confirmar,,WEG,,,7.5,,1765,,,,,alta,pendiente,sin_asociar,,"MULTISTEEL
+RA65/300
+GPM: 220
+RPM: 1750
+HD [m]: 25
+Ø Imp [mm]: 260",,,"WEG
+
+HP: 7.5
+RPM: 1765",Libro1.xlsx · hoja Bombas · fila 51,2026-10-07
+B49,52,4. FERMENTACIÓN,Tanque Esterilizador,Melaza,HIDROMAC,,,2196,2X3-8 MTO,MTO,100,12.1,1750,178,mm,211,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6307-2RS,6206-2RS,por confirmar,3R,WEG,,,3,,1760,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 100
+RPM: 1750
+HD [m]: 12.1
+Ø Imp [mm]: 178
+Ø Máx [mm]: 211",2X3-8 MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 3
+RPM: 1760",Libro1.xlsx · hoja Bombas · fila 52,2026-10-07
+B50,53,4. FERMENTACIÓN,Tanque Esterilizador,Melaza,HIDROMAC,,,2196,2X3-8 MTO,MTO,100,12.1,1750,178,mm,211,mm,178,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6307-2RS,6206-2RS,por confirmar,3R,WEG,,,3,,1760,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 100
+RPM: 1750
+HD [m]: 12.1
+Ø Imp [mm]: 178
+Ø Máx [mm]: 211",2X3-8 MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 3
+RPM: 1760",Libro1.xlsx · hoja Bombas · fila 53,2026-10-07
+B51,54,4. FERMENTACIÓN,Tanque Romana,Melaza,HDROMAC,,,220106-2,3X3,,,,,,,,,,,,empaquetadura,,,"Empaquetadura de cordón nylon 3/8""",3/8,,,por confirmar,OMEGA E20,SEW-EURODRIVE,,,,5.5,1768,,,,,alta,pendiente,sin_asociar,,"HDROMAC 220106-2
+LL-124",3X3,"Empaquetadura de cordón nylon 3/8""","SEW-EURODRIVE
+DRN132S4/FG
+KW:5.5
+RPM: 1768",Libro1.xlsx · hoja Bombas · fila 54,2026-10-07
+B52,55,4. FERMENTACIÓN,Tanque Romana,Melaza,HDROMAC,,,220106-2,3X3,,,,,,,,,,,,empaquetadura,,,"Empaquetadura de cordón nylon 3/8""",3/8,,,por confirmar,OMEGA E20,SEW-EURODRIVE,,,,5.5,1768,,,,,alta,pendiente,sin_asociar,,"HDROMAC 220106-2
+LL-124",3X3,"Empaquetadura de cordón nylon 3/8""","SEW-EURODRIVE
+DRN132S4/FG
+KW:5.5
+RPM: 1768",Libro1.xlsx · hoja Bombas · fila 55,2026-10-07
+B53,56,4. FERMENTACIÓN,Descarga Fermentadores,Mosto,HIDROMAC,,,2196,3X4-7 MTO,MTO,200,12.2,1750,166,mm,205,mm,166,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6307-2RS,6206-2RS,por confirmar,ES2-R,WEG,,,5,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 200
+RPM: 1750
+HD [m]: 12.2
+Ø Imp [mm]: 166
+Ø Máx [mm]: 205",3X4-7 MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 5
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 56,2026-10-07
+B54,57,4. FERMENTACIÓN,Descarga Fermentadores,Mosto,HIDROMAC,,,2196,3X4-7 MTO,MTO,200,12.2,1750,166,mm,205,mm,166,mm,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6307-2RS,6206-2RS,por confirmar,ES2-R,WEG,,,5,,1750,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"HIDROMAC 2196
+GPM: 200
+RPM: 1750
+HD [m]: 12.2
+Ø Imp [mm]: 166
+Ø Máx [mm]: 205",3X4-7 MTO,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 5
+RPM: 1750",Libro1.xlsx · hoja Bombas · fila 57,2026-10-07
+B55,58,4. FERMENTACIÓN,Tanque agua DM #1,Agua,MULTISTEEL,,,RA65/300,,,110,20,1750,220,mm,,,220,mm,,,,,,,6209-ZZ,6209-ZZ,por confirmar,WRAPFLEX 30R.,SIEMENS,,,,,1760,,,,,alta,pendiente,sin_asociar,,"MULTISTEEL
+RA65/300
+GPM: 110
+RPM: 1750
+HD [m]: 20
+Ø Imp [mm]: 220",,,"SIEMENS
+GP100
+RPM: 1760",Libro1.xlsx · hoja Bombas · fila 58,2026-10-07
+B56,59,4. FERMENTACIÓN,Tanque agua DM #2,Agua,MULTISTEEL,,,RA65/300,,,220,25,1750,260,mm,,,260,mm,,,,,,,6209-ZZ,6209-ZZ,por confirmar,WRAPFLEX 30R.,SIEMENS,,,,,1760,,,,,alta,pendiente,sin_asociar,,"MULTISTEEL
+RA65/300
+GPM: 220
+RPM: 1750
+HD [m]: 25
+Ø Imp [mm]: 260",,,"SIEMENS
+GP100
+RPM: 1760",Libro1.xlsx · hoja Bombas · fila 59,2026-10-07
+B57,60,4. FERMENTACIÓN,Tanque PF,Agua con soda,,por confirmar,,15-5(M),,,96,25,3450,,,,,,,,,,,,,6303-ZZ,6306-ZZ,por confirmar,,,,,10,,3550,,,,,alta,pendiente,sin_asociar,,"SB Model: 15-5(M)
+GPM: 96
+RPM: 3450
+HD [m]: 25",,,"Serie: 2200044859
+HP: 10
+RPM: 3550",Libro1.xlsx · hoja Bombas · fila 60,2026-10-07
+B58,61,4. FERMENTACIÓN,Tanque Verde (en desuso),Agua,PACO PUMPS,,,,,,480,105,,11.76,pulg,,,11.76,pulg,,,,,,,6308-ZZ,6207-ZZ,por confirmar,,WEG,,,7.5,,1160,,,,,alta,pendiente,sin_asociar,,"PACO PUMPS
+GPM: 480
+HD: 105
+Ø Imp [pulg]: 11.76",,,"WEG
+TE1BFOXO
+HP: 7.5
+RPM: 1160",Libro1.xlsx · hoja Bombas · fila 61,2026-10-07
+B59,62,4. FERMENTACIÓN,CIP viejo (en desuso),Agua con soda,MULTISTEEL,,,RSA32/2025,,,70,88,3500,210,mm,,,210,mm,,,,,,,6309-ZZ-C3,6209-ZZ-C3,por confirmar,,WEG,,,15,,3540,,,,,alta,pendiente,sin_asociar,,"MULTISTEEL
+RSA32/2025
+GPM: 70
+RPM: 3500
+HD [m]: 88
+Ø Imp [mm]: 210",,,"WEG
+W22
+HP: 15
+RPM: 3540",Libro1.xlsx · hoja Bombas · fila 62,2026-10-07
+B60,63,5. TORRES DE ENFRIAMIENTO,Torre de Enfriamiento #1,Agua,TITAN,,,4196,3X4-13 MT,MT,,,,13,pulg,13,pulg,13,pulg,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6212 Z C3,6212 Z C3,por confirmar,,SIEMENS,,,,,,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"TITAN 4196
+GPM:
+RPM:
+HD:
+Ø Imp [pulg]: 13
+Ø Máx [pilg]: 13",3X4-13 MT,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""",SIEMENS,Libro1.xlsx · hoja Bombas · fila 63,2026-10-07
+B61,64,5. TORRES DE ENFRIAMIENTO,Torre de Enfriamiento #1,Agua,TITAN,,,4196,3X4-13 MT,MT,,,,13,pulg,13,pulg,13,pulg,,sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6212 Z C3,6212 Z C3,por confirmar,,SIEMENS,,,,,,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"TITAN 4196
+GPM:
+RPM:
+HD:
+Ø Imp [pulg]: 13
+Ø Máx [pulg]: 13",3X4-13 MT,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""",SIEMENS,Libro1.xlsx · hoja Bombas · fila 64,2026-10-07
+B62,65,5. TORRES DE ENFRIAMIENTO,Torre de Enfriamiento #1,Agua,TITAN,,,4196,3X4-13 MT,MT,,,,13,mm,13,mm,13,mm,"unidad inconsistente: el Excel dice 13 mm, pero la familia Titan 4196 3X4-13 MT y B60-B61 indican 13 pulgadas. Verificar contra placa o catalogo.",sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6212 Z C3,6212 Z C3,por confirmar,,SIEMENS,,,,,,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"TITAN 4196
+GPM:
+RPM:
+HD:
+Ø Imp [mm]: 13
+Ø Máx [mm]: 13",3X4-13 MT,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""",SIEMENS,Libro1.xlsx · hoja Bombas · fila 65,2026-10-07
+B63,66,5. TORRES DE ENFRIAMIENTO,Torre de Enfriamiento #2,Agua,TITAN,,,4196,3X4-13 MT,MT,,,,13,mm,13,mm,13,mm,"unidad inconsistente: el Excel dice 13 mm, pero la familia Titan 4196 3X4-13 MT y B60-B61 indican 13 pulgadas. Verificar contra placa o catalogo.",sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6312-C3,6212-C3,por confirmar,,WEG,,,40,,1770,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"TITAN 4196
+GPM:
+RPM:
+HD:
+Ø Imp [mm]: 13
+Ø Máx [mm]: 13",3X4-13 MT,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 40
+RPM: 1770",Libro1.xlsx · hoja Bombas · fila 66,2026-10-07
+B64,67,5. TORRES DE ENFRIAMIENTO,Torre de Enfriamiento #2,Agua,TITAN,,,4196,3X4-13 MT,MT,,,,13,mm,13,mm,13,mm,"unidad inconsistente: el Excel dice 13 mm, pero la familia Titan 4196 3X4-13 MT y B60-B61 indican 13 pulgadas. Verificar contra placa o catalogo.",sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6312-C3,6212-C3,por confirmar,,WEG,,,40,,1770,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"TITAN 4196
+GPM:
+RPM:
+HD:
+Ø Imp [mm]: 13
+Ø Máx [mm]: 13",3X4-13 MT,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 40
+RPM: 1770",Libro1.xlsx · hoja Bombas · fila 67,2026-10-07
+B65,68,5. TORRES DE ENFRIAMIENTO,Torre de Enfriamiento #2,Agua,TITAN,,,4196,3X4-13 MT,MT,,,,13,mm,13,mm,13,mm,"unidad inconsistente: el Excel dice 13 mm, pero la familia Titan 4196 3X4-13 MT y B60-B61 indican 13 pulgadas. Verificar contra placa o catalogo.",sello mecanico,Tipo 1 (O) - Tipo 21 (G),1.3/4,,,6312-C3,6212-C3,por confirmar,,WEG,,,40,,1770,,,ANSI/ASME B73.1,inferencia tecnica; confirmar con catalogo,alta,pendiente,sin_asociar,,"TITAN 4196
+GPM:
+RPM:
+HD:
+Ø Imp [mm]: 13
+Ø Máx [mm]: 13",3X4-13 MT,"Tipo 1 (O) - Tipo 21 (G) 1.3/4""","WEG
+
+HP: 40
+RPM: 1770",Libro1.xlsx · hoja Bombas · fila 68,2026-10-07
+B66,69,6. CALDERAS,Caldera #2,Agua con químicos,EBARA,,,AEVMSU5-9F0500T3S,,,,,,3.58,pulg,,,3.58,pulg,,,,,,,6207-ZZ,6206-ZZ,por confirmar,,WEG,,,5,,3485,,,,,alta,pendiente,sin_asociar,,"EBARA
+AEVMSU5-9F0500T3S
+Ø Imp [pulg]: 3.58",,,"WEG
+00536ET3ER184TC-W22
+HP: 5
+RPM: 3485",Libro1.xlsx · hoja Bombas · fila 69,2026-10-07
+B67,70,6. CALDERAS,Caldera #2,Agua con químicos,EBARA,,,AEVMSU5-9F0500T3S,,,,,,3.58,pulg,,,3.58,pulg,,,,,,,6207-ZZ,6206-ZZ,por confirmar,,WEG,,,5,,3485,,,,,alta,pendiente,sin_asociar,,"EBARA
+AEVMSU5-9F0500T3S
+Ø Imp [pulg]: 3.58",,,"WEG
+00536ET3ER184TC-W22
+HP: 5
+RPM: 3485",Libro1.xlsx · hoja Bombas · fila 70,2026-10-07
+B68,71,6. CALDERAS,Caldera #3,Agua con químicos,GRUNDFOS,,,CR15-6K-GJ-A-E-HQQE-NX2,,,90.3,102,3450,4.13,pulg,,,4.13,pulg,,,,,,,7309,6208,por confirmar,,BALDOR,,,15,,3520,,,,,alta,pendiente,sin_asociar,,"GRUNDFOS
+CR15-6K-GJ-A-E-HQQE-NX2
+GPM: 90.3
+RPM: 3450
+HD [m]: 102
+Ø Imp [pulg]: 4.13",,,"BALDOR
+85600H24
+HP: 15
+RPM: 3520",Libro1.xlsx · hoja Bombas · fila 71,2026-10-07
+B69,72,6. CALDERAS,Caldera #3,Agua con químicos,GRUNDFOS,,,CR15-6K-GJ-A-E-HQQE-NX2,,,90.3,102,3450,4.13,pulg,,,4.13,pulg,,,,,,,7309,6208,por confirmar,,BALDOR,,,15,,3520,,,,,alta,pendiente,sin_asociar,,"GRUNDFOS
+CR15-6K-GJ-A-E-HQQE-NX2
+GPM: 90.3
+RPM: 3450
+HD [m]: 102
+Ø Imp [pulg]: 4.13",,,"BALDOR
+85600H24
+HP: 15
+RPM: 3520",Libro1.xlsx · hoja Bombas · fila 72,2026-10-07
+B70,73,6. CALDERAS,Atemperador,Agua,MOVITEC,,,VF 4/8B,,,20,83.6,3460,,,,,,,,,,,,,6205-ZZ,6204-ZZ,por confirmar,,WEG,,,3,,3480,,,,,alta,pendiente,sin_asociar,,"MOVITEC VF 4/8B
+GPM: 20
+RPM: 3460
+HD [m]: 83.6",,,"WEG
+
+HP: 3
+RPM: 3480",Libro1.xlsx · hoja Bombas · fila 73,2026-10-07
+B71,74,6. CALDERAS,Búnker diario #1,Búnker,MARATHON,,,WV M 56T17F5321J,,,,,,,,,,,,,,,,,,,,por confirmar,,,,,,,,,,,,alta,pendiente,sin_asociar,,"MARATHON
+WV M 56T17F5321J",,,,Libro1.xlsx · hoja Bombas · fila 74,2026-10-07
+B72,75,6. CALDERAS,Búnker,Búnker,,por confirmar,,,,,,,,,,,,,,,,,,,,,,por confirmar,,ECHTOP,,,0.75,,1710,,,,,alta,pendiente,sin_asociar,,,,,"ECHTOP
+T 801-4
+HP: 0.75
+RPM: 1710",Libro1.xlsx · hoja Bombas · fila 75,2026-10-07
+B73,76,6. CALDERAS,Búnker diario #2,Búnker,MARATHON,,,WV M 56T17F5321J,,,,,,,,,,,,,,,,,,,,por confirmar,,,,,,,,,,,,alta,pendiente,sin_asociar,,"MARATHON
+WV M 56T17F5321J",,,,Libro1.xlsx · hoja Bombas · fila 76,2026-10-07
+B74,77,7. ZONA FRANCA,Bomba #1,Agua,,por confirmar,,20-6 (M),Bomba vertical,,111,99,3450,,,,,,,,,,,,,,,por confirmar,,,,,,,,ZEBOL,,,,alta,pendiente,sin_asociar,,"SB Model: 20-6 (M)
+GPM: 111
+RPM: 3450
+HD [m]: 99",Bomba vertical,,,Libro1.xlsx · hoja Bombas · fila 77,2026-10-07
+B75,78,7. ZONA FRANCA,Bomba #2,Agua,,por confirmar,,20-6 (M),Bomba vertical,,111,99,3450,,,,,,,,,,,,,,,por confirmar,,,,,,,,ZEBOL,,,,alta,pendiente,sin_asociar,,"SB Model: 20-6 (M)
+GPM: 111
+RPM: 3450
+HD [m]: 99",Bomba vertical,,,Libro1.xlsx · hoja Bombas · fila 78,2026-10-07
+B76,79,7. ZONA FRANCA,Bomba #3,Agua,,por confirmar,,20-6 (M),Bomba vertical,,111,99,3450,,,,,,,,,,,,,,,por confirmar,,,,,,,,ZEBOL,,,,alta,pendiente,sin_asociar,,"SB Model: 20-6 (M)
+GPM: 111
+RPM: 3450
+HD [m]: 99",Bomba vertical,,,Libro1.xlsx · hoja Bombas · fila 79,2026-10-07
+B77,80,7. ZONA FRANCA,Bomba #4,Agua,,por confirmar,,20-6 (M),Bomba vertical,,111,99,3450,,,,,,,,,,,,,,,por confirmar,,,,,,,,ZEBOL,,,,alta,pendiente,sin_asociar,,"SB Model: 20-6 (M)
+GPM: 111
+RPM: 3450
+HD [m]: 99",Bomba vertical,,,Libro1.xlsx · hoja Bombas · fila 80,2026-10-07

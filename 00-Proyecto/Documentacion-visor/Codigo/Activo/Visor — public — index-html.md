@@ -1,0 +1,33 @@
+# Visor/public/index.html
+
+Estructura de la página, paneles y diálogos.
+
+**Categoría:** Activo. **Captura:** 2026-10-07.
+
+Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/public/index.html>).
+
+SHA-256: `0b4f01ab6444845c0a464eb1bc75d42b402fc392380035c0d378a57cce692a56`
+
+Esta es una copia documental. Editar el original para cambiar el programa.
+
+````html
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vocatus · Atlas de mantenimiento</title><link rel="stylesheet" href="/style.css"><script type="importmap">{"imports":{"three":"/vendor/three.module.js"}}</script></head>
+<body>
+<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><div class="header-center">EL VIEJO <span>/</span> EQUIPOS DE PROCESO</div><button id="refresh">↻ Actualizar fichas</button><span class="local">● LOCAL · OBSIDIAN</span></header>
+<div class="layout">
+<aside class="sidebar"><p class="eyebrow">EXPLORADOR DE ACTIVOS</p><h1>Tu planta,<br>pieza por pieza.</h1><label class="search">⌕ <input id="search" placeholder="Buscar bomba o servicio" aria-label="Buscar bomba"></label><select id="area" aria-label="Filtrar por área"><option value="">Todas las áreas</option><option>Destilación</option><option>Fermentación</option></select><div id="pump-list"></div><footer><strong id="count">—</strong> fichas de Obsidian<p>Datos de tu bóveda.<br>Posiciones y geometría ilustrativas.</p></footer></aside>
+<main>
+<div class="scene-top"><div><p class="eyebrow" id="breadcrumb">PLANTA / VISTA GENERAL</p><h2 id="scene-title">Mapa de equipos</h2></div><button id="back" hidden>↖ Volver a planta</button></div>
+<div id="viewport"><div id="scene-error" hidden></div><div class="scene-badge" id="scene-badge">VISTA SUPERIOR · DISTRIBUCIÓN ILUSTRATIVA</div><div id="labels"></div><div id="scene-help">Seleccioná una bomba para acercarte</div><div class="compass">N<br>↑</div></div>
+<div class="controls"><div><span class="eyebrow">EXPLORACIÓN</span><div class="view-buttons"><button id="top" class="active">Vista superior</button><button id="iso">Perspectiva 3D</button></div></div><label class="explosion">DESPIECE <input id="explode" type="range" min="0" max="100" value="0" disabled><output id="percent">0%</output></label><button id="explode-all" disabled>Separar piezas ↗</button></div>
+<section class="parts-section"><div class="section-title"><h3 id="parts-title">De la planta al componente</h3><span id="part-count">Seleccioná un equipo</span></div><div id="parts"><p class="muted">Acercate a una bomba y explorá sus componentes. Las medidas se consultan en la ficha, no se deducen del dibujo.</p></div></section>
+</main>
+<aside class="inspector"><div class="inspector-heading"><p class="eyebrow">EXPEDIENTE DEL EQUIPO</p><h2 id="selected-tag">Seleccioná una bomba</h2><p id="selected-name">Ficha, componentes e historial en un mismo lugar.</p><div id="source-status" class="status">Esperando selección</div></div><nav id="tabs"><button data-tab="ficha" class="active">Ficha</button><button data-tab="historial">Historial</button><button data-tab="ia">IA · Gemini</button></nav><div id="panel"></div></aside>
+</div>
+<dialog id="settings"><form id="config-form"><p class="eyebrow">ASISTENTE DE MANTENIMIENTO</p><h2>Conectar Gemini</h2><p>Al consultar, se envían a Google la ficha y los informes de la bomba seleccionada. Los planos no se envían.</p><label>Clave API<input name="apiKey" type="password" autocomplete="off" placeholder="Ingresá tu clave de Gemini" required></label><label>Modelo<input name="model" value="gemini-3.5-flash" required></label><p class="muted">La clave queda solo en la memoria del servidor hasta cerrarlo. No se guarda en Obsidian ni en el navegador.</p><div class="form-actions"><button type="button" id="close-settings">Cancelar</button><button class="primary">Conectar</button></div><p id="config-error" role="alert"></p></form></dialog>
+<dialog id="report-dialog"><form id="report-form"><p class="eyebrow">REGISTRO DE CAMPO</p><h2>Nuevo informe</h2><label>Fecha<input name="date" type="date" required></label><label>Intervención<input name="title" maxlength="200" placeholder="Ej. inspección de fuga en sellado" required></label><label>Responsable<input name="author" maxlength="200" required></label><label>Qué se hizo<textarea name="details" required maxlength="4000"></textarea></label><label>Síntomas observados<textarea name="symptoms" maxlength="4000"></textarea></label><label>Repuestos utilizados<textarea name="parts" maxlength="4000" placeholder="Medidas y códigos comprobados"></textarea></label><p class="muted">Se creará una nota nueva en 00-Proyecto/Mantenimiento, vinculada a esta bomba.</p><div class="form-actions"><button type="button" id="close-report">Cancelar</button><button class="primary">Guardar en Obsidian</button></div><p id="report-error" role="alert"></p></form></dialog>
+<div id="toast" role="status" hidden></div>
+<script type="module" src="/app.js"></script></body></html>
+
+````

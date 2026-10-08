@@ -1,0 +1,329 @@
+{
+  "revision": "2026-10-07",
+  "records": [
+    {
+      "original": "<RUTA-LOCAL>\\.codex\\attachments\\a61243c1-4d82-4014-930e-50d77e85d94b\\Texto pegado.txt",
+      "relative": "Adjuntos-historicos/exportador-guarda-demo.py",
+      "category": "Archivo",
+      "description": "Versión adjunta con guarda demo y fallo posterior por activos[0]; reemplazada por el script local.",
+      "sha256": "8e127329d2cca4ef7fb6927e63566fdffb84ff07e5b5370daac0ead7a94ee3f7",
+      "bytes": 17382,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\.codex\\attachments\\d0aa3c5d-8caa-4818-87f0-5b57d85d45fa\\Texto pegado.txt",
+      "relative": "Adjuntos-historicos/exportador-inicial.py",
+      "category": "Archivo",
+      "description": "Versión adjunta inicial: hash no estable y otras limitaciones históricas.",
+      "sha256": "0420caca0eca9ca672add25ce6e8c7311111da48f8c4ada0e5e2d2a6e590e878",
+      "bytes": 11489,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\consultar_bombas.py",
+      "relative": "Scripts-Obsidian/consultar_bombas.py",
+      "category": "Scripts-Obsidian",
+      "description": "Consulta CLI anterior; no es el backend del visor.",
+      "sha256": "d5b5cac1b45bd94f2f19f2ee9933ccfc30a19e9b17b8402703567a482d4e0f0c",
+      "bytes": 5450,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\crear_notas_bombas.py",
+      "relative": "Scripts-Obsidian/crear_notas_bombas.py",
+      "category": "Scripts-Obsidian",
+      "description": "Generador de fichas a partir de CSV; conserva notas existentes.",
+      "sha256": "3de86231f16b1a529899e84b97683fdcc878c409a9231581b0f05e7b0c369075",
+      "bytes": 3056,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\exportar_cmms.py",
+      "relative": "Scripts-Obsidian/exportar_cmms.py",
+      "category": "Scripts-Obsidian",
+      "description": "Exportador independiente; ver limitaciones de integración.",
+      "sha256": "1c70c1c3adadcfdf0a382fbdd7b81e64c5b5446f63a8b758d9382648547bc3fc",
+      "bytes": 17678,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\autocad el vieno vovatus\\00-Proyecto\\scripts\\extract_tags.py",
+      "relative": "Scripts-Obsidian/extract_tags.py",
+      "category": "Scripts-Obsidian",
+      "description": "Herramienta de extracción DWG con rutas del entorno Linux original.",
+      "sha256": "54cdee75254c65146abb84334e1ebe4a422216f1be7260ce1aefbbf935f4d8ac",
+      "bytes": 2350,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\auditorias\\auditar_exportador.py",
+      "relative": "Visor/archivo/auditorias/auditar_exportador.py",
+      "category": "Archivo",
+      "description": "Archivo del visor: archivo/auditorias/auditar_exportador.py",
+      "sha256": "6e250f8f1bed8ab83c812eb826a4adb4452c39e3f86f3c1003bb46ed275df893",
+      "bytes": 884,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\parches\\fix-selection.mjs",
+      "relative": "Visor/archivo/parches/fix-selection.mjs",
+      "category": "Archivo",
+      "description": "Archivo del visor: archivo/parches/fix-selection.mjs",
+      "sha256": "955e4330c0862000f26aa05bd0ad197938e2778c50482aa795d5c4657be27ed1",
+      "bytes": 1397,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\parches\\update-demo.mjs",
+      "relative": "Visor/archivo/parches/update-demo.mjs",
+      "category": "Archivo",
+      "description": "Archivo del visor: archivo/parches/update-demo.mjs",
+      "sha256": "38a346dc91c4a3490c592b27863e746db07a9756f6f0c93d037e11896db44ed5",
+      "bytes": 2290,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\README.md",
+      "relative": "Visor/archivo/README.md",
+      "category": "Archivo",
+      "description": "Archivo del visor: archivo/README.md",
+      "sha256": "21ee3c5c33daa5ee33935ea8e50be40f01e077e0db534cef201287adc46823f3",
+      "bytes": 619,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\archivo\\respaldos\\app.js.respaldo",
+      "relative": "Visor/archivo/respaldos/app.js.respaldo",
+      "category": "Archivo",
+      "description": "Archivo del visor: archivo/respaldos/app.js.respaldo",
+      "sha256": "1268b52d4d27a7d93255f454307f6ed06a6ec5ef23b38c2525a7348f6e8b70e2",
+      "bytes": 24367,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\demo-vault\\00-Proyecto\\bombas\\P-9001.md",
+      "relative": "Visor/demo-vault/00-Proyecto/bombas/P-9001.md",
+      "category": "Datos-demo",
+      "description": "Archivo del visor: demo-vault/00-Proyecto/bombas/P-9001.md",
+      "sha256": "3ef3fb4420811814db9d97b2c8d9234c6d2abe5babdb8a4fa0fc9d42675af8bb",
+      "bytes": 1726,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\demo-vault\\00-Proyecto\\bombas\\P-9002.md",
+      "relative": "Visor/demo-vault/00-Proyecto/bombas/P-9002.md",
+      "category": "Datos-demo",
+      "description": "Archivo del visor: demo-vault/00-Proyecto/bombas/P-9002.md",
+      "sha256": "9bffedbfd7f85bace372b3a495f381afce249f24d7f841d2ded5099f76d2d092",
+      "bytes": 1973,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\demo-vault\\Documentos\\LEER-DEMOSTRACION.md",
+      "relative": "Visor/demo-vault/Documentos/LEER-DEMOSTRACION.md",
+      "category": "Datos-demo",
+      "description": "Archivo del visor: demo-vault/Documentos/LEER-DEMOSTRACION.md",
+      "sha256": "6a8178a7fe41669a46a66787d47a534bff01295ad6fe542251cfdcaa6575a66f",
+      "bytes": 725,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\Iniciar datos reales.cmd",
+      "relative": "Visor/Iniciar datos reales.cmd",
+      "category": "Activo",
+      "description": "Archivo del visor: Iniciar datos reales.cmd",
+      "sha256": "c6b9450b35db338b1d619864292fbbd1f8f3009a38bcb36d42853c9c2df9247f",
+      "bytes": 246,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\Iniciar demostración.cmd",
+      "relative": "Visor/Iniciar demostración.cmd",
+      "category": "Activo",
+      "description": "Archivo del visor: Iniciar demostración.cmd",
+      "sha256": "8cbe7df5ab309d817b326863f1163f9de59dfd82f6a6386b44a1ff593623a076",
+      "bytes": 246,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\Iniciar visor.cmd",
+      "relative": "Visor/Iniciar visor.cmd",
+      "category": "Activo",
+      "description": "Archivo del visor: Iniciar visor.cmd",
+      "sha256": "c6b9450b35db338b1d619864292fbbd1f8f3009a38bcb36d42853c9c2df9247f",
+      "bytes": 246,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\package.json",
+      "relative": "Visor/package.json",
+      "category": "Activo",
+      "description": "Archivo del visor: package.json",
+      "sha256": "57762590afa42547c3f332a93f171e675ecb382263a91232fe05c990d2a56a95",
+      "bytes": 131,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\app.js",
+      "relative": "Visor/public/app.js",
+      "category": "Activo",
+      "description": "Interfaz, escenas Three.js, selección de equipos, panel e interacción.",
+      "sha256": "cf705ebbe2d75e71a1787a78f991b3bf1a9d9f80c5cca8beb559f48a96d1a662",
+      "bytes": 26695,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\index.html",
+      "relative": "Visor/public/index.html",
+      "category": "Activo",
+      "description": "Estructura de la página, paneles y diálogos.",
+      "sha256": "0b4f01ab6444845c0a464eb1bc75d42b402fc392380035c0d378a57cce692a56",
+      "bytes": 4721,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\plant-layout.js",
+      "relative": "Visor/public/plant-layout.js",
+      "category": "Activo",
+      "description": "Distribución geométrica de tanques y bombas sin superposición.",
+      "sha256": "d6d5facded2d53c22322f3599d8a0a8abfd289e6b11313a1545381517964886d",
+      "bytes": 856,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\realismo.js",
+      "relative": "Visor/public/realismo.js",
+      "category": "Activo",
+      "description": "Capa de iluminación, entorno, materiales PBR y sombras de Claude.",
+      "sha256": "01b679cb0eb475f90fe6d0a1e2ec186f697cd47a13569bbe958abc860b8253bd",
+      "bytes": 7728,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\style.css",
+      "relative": "Visor/public/style.css",
+      "category": "Activo",
+      "description": "Estilos, diseño adaptable e impresión.",
+      "sha256": "bfe6151738e8cd5cdebb64be5071b1a19c0531b1ae4e8760d83733154b584391",
+      "bytes": 10451,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\OrbitControls.js",
+      "relative": "Visor/public/vendor/OrbitControls.js",
+      "category": "Dependencias",
+      "description": "Archivo del visor: public/vendor/OrbitControls.js",
+      "sha256": "80efaadea4f8a636a65fb0bd08bfef62f3d93a0bb94e2e7500f23176c5c07f4e",
+      "bytes": 32134,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\THREE-LICENSE.txt",
+      "relative": "Visor/public/vendor/THREE-LICENSE.txt",
+      "category": "Dependencias",
+      "description": "Archivo del visor: public/vendor/THREE-LICENSE.txt",
+      "sha256": "4c40a1ef62450b857c3b2aaf294936304cd552d965fbcd9d32d4c5bcf4ba4454",
+      "bytes": 1081,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\public\\vendor\\three.module.js",
+      "relative": "Visor/public/vendor/three.module.js",
+      "category": "Dependencias",
+      "description": "Archivo del visor: public/vendor/three.module.js",
+      "sha256": "ce1fa418de16a19495a9f72495580e3015d7745c296d3ce0485897f902ddedfb",
+      "bytes": 1314681,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\README.md",
+      "relative": "Visor/README.md",
+      "category": "Activo",
+      "description": "Archivo del visor: README.md",
+      "sha256": "3f5000930d430b060f6d508d06c321e7ef11b2a53bbf851be192aa0e6579b9c6",
+      "bytes": 4777,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\server.mjs",
+      "relative": "Visor/server.mjs",
+      "category": "Activo",
+      "description": "Servidor HTTP, lectura de bóveda, documentos, informes y Gemini.",
+      "sha256": "7430f777d400eab069dd7b26d11d6869751c4f916a671b1d9c4c9a87a8761923",
+      "bytes": 10824,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\setup.mjs",
+      "relative": "Visor/setup.mjs",
+      "category": "Herramientas",
+      "description": "Descarga de dependencias con versiones fijadas.",
+      "sha256": "f78e1cfeb5795f0ffb64278c22474a3648b706f4126d6e2965de7a7ccad2f9c4",
+      "bytes": 857,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\test-demo.mjs",
+      "relative": "Visor/test-demo.mjs",
+      "category": "Pruebas",
+      "description": "Prueba de demostración y registro de informes aislados.",
+      "sha256": "956364c6359d5a6ae5b4efc62b6b3992618dee088df837a004816a7a057a2289",
+      "bytes": 1733,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\test-layout.mjs",
+      "relative": "Visor/test-layout.mjs",
+      "category": "Pruebas",
+      "description": "Prueba de separación geométrica y plataforma.",
+      "sha256": "a92716108a4fd0b83d2b614cb40a3d0a5845087e183499c9165e684729b94cb9",
+      "bytes": 1111,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\test.mjs",
+      "relative": "Visor/test.mjs",
+      "category": "Pruebas",
+      "description": "Pruebas del servidor con las fichas reales.",
+      "sha256": "6a530a687d9b662395137737212395392b2cece98f6c1f4754f38ce908dd72dc",
+      "bytes": 2597,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\tools\\documentar.mjs",
+      "relative": "Visor/tools/documentar.mjs",
+      "category": "Herramientas",
+      "description": "Archivo del visor: tools/documentar.mjs",
+      "sha256": "e9fc7e1c20bbb46b7f407ab699d5eed3ae426df050dbc5d04edc0771751b2160",
+      "bytes": 29738,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\tools\\verificar-exportador.py",
+      "relative": "Visor/tools/verificar-exportador.py",
+      "category": "Herramientas",
+      "description": "Archivo del visor: tools/verificar-exportador.py",
+      "sha256": "dcb438d9c3db283d8fe5e3a5eb2687a6e1e47207fc549b4b22a2d1a4815b0bf5",
+      "bytes": 1516,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\vendor\\js-yaml.mjs",
+      "relative": "Visor/vendor/js-yaml.mjs",
+      "category": "Dependencias",
+      "description": "Archivo del visor: vendor/js-yaml.mjs",
+      "sha256": "16f210b939b359b6ec8dde581eb62c157185711dc7b719b33779c43db5c31a91",
+      "bytes": 107533,
+      "captured": "2026-10-07"
+    },
+    {
+      "original": "<RUTA-LOCAL>\\vocatus\\auto cad\\visor-bombas\\vendor\\YAML-LICENSE.txt",
+      "relative": "Visor/vendor/YAML-LICENSE.txt",
+      "category": "Dependencias",
+      "description": "Archivo del visor: vendor/YAML-LICENSE.txt",
+      "sha256": "a07bc24468b9654ce76a547d47a2db282d07733b715db4c73a98bd63961f9550",
+      "bytes": 1084,
+      "captured": "2026-10-07"
+    }
+  ]
+}
