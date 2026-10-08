@@ -10,7 +10,7 @@ const nombres=[...bloque.matchAll(/\{name:'([^']+)'/g)].map(m=>m[1]);
 assert.equal(nombres.length,10,'El despiece debe tener 10 piezas');
 
 // 2. Las piezas obligatorias del desarme posterior.
-for(const esperada of ['Carcasa (voluta)','Impulsor abierto','Tapa de carcasa','Cámara de sello','Sello mecánico de cartucho','Eje','Bancada de rodamientos','Acople espaciador','Motor brida JM'])
+for(const esperada of ['Carcasa (voluta)','Impulsor abierto','Tapa de carcasa','Cámara de sello','Sello mecánico','Eje','Bancada de rodamientos','Acople espaciador','Motor eléctrico'])
  assert.ok(nombres.includes(esperada),`Falta la pieza «${esperada}»`);
 
 // 3. Cada pieza declara su nombre de catálogo en inglés, para cruzar con el fabricante.
@@ -18,7 +18,7 @@ const piezas=[...bloque.matchAll(/pieza:'([^']+)'/g)].map(m=>m[1]);
 assert.equal(piezas.length,10,'Cada pieza debe declarar su nombre de catálogo');
 
 // 4. El sello es el repuesto crítico: debe pedir los campos de compra completos.
-const sello=bloque.slice(bloque.indexOf("name:'Sello mecánico de cartucho'"));
+const sello=bloque.slice(bloque.indexOf("name:'Sello mecánico'"));
 for(const campo of ['sello_modelo','sello_diametro_mm','sello_cara_rotativa','sello_cara_estatica','sello_elastomero','empaque_seccion_mm'])
  assert.ok(sello.includes(campo),`El sello no consulta ${campo}`);
 

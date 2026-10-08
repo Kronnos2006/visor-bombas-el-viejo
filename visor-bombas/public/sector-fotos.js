@@ -1,16 +1,5 @@
-// Coordenadas locales aproximadas de presentación. No son cotas ni georreferencias.
-// Las letras identifican posiciones de trabajo; todavía no equivalen a TAG ni placa.
-export const photoPumps=[
- {tag:'BOMBA-A',nombre:'Frente principal · posición A',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'frente',x:-4,z:5.5,rotation:0,scale:.86,variant:'lf'},
- {tag:'BOMBA-B',nombre:'Frente principal · posición B',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'frente',x:0,z:5.5,rotation:0,scale:1.05,variant:'mto'},
- {tag:'BOMBA-C',nombre:'Frente principal · posición C',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'frente',x:4,z:5.5,rotation:0,scale:.9,variant:'lf'},
- {tag:'BOMBA-D',nombre:'Lado derecho · posición D',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'derecho',x:13.7,z:0,rotation:-Math.PI/2,scale:1.02,variant:'mto'},
- {tag:'BOMBA-E',nombre:'Lado derecho · posición E',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'derecho',x:13.7,z:-4.4,rotation:-Math.PI/2,scale:.84,variant:'lf'},
- {tag:'BOMBA-F',nombre:'Lado izquierdo · posición F',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'lateral',x:-13.7,z:0,rotation:Math.PI/2,scale:.86,variant:'lf'},
- {tag:'BOMBA-G',nombre:'Lado izquierdo · posición G',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'lateral',x:-13.7,z:-4.4,rotation:Math.PI/2,scale:1.04,variant:'mto'},
- {tag:'BOMBA-I',nombre:'Frente posterior · posición I',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'posterior',x:-2.4,z:-10.7,rotation:Math.PI,scale:.9,variant:'titan'},
- {tag:'BOMBA-J',nombre:'Frente posterior · posición J',area:'Sector fotografiado',servicio:'Por confirmar',grupo:'posterior',x:2.4,z:-10.7,rotation:Math.PI,scale:.9,variant:'lf'}
-];
+import {photoPumps} from './equipos-sector.js';
+export {photoPumps} from './equipos-sector.js';
 // Lectura de placa sobre las fotos del 2026-10-07. Dato real, sin asociar
 // todavia a una posicion del mapa ni a un TAG del P&ID.
 export const plateEvidence=[
@@ -31,38 +20,6 @@ export const plateEvidence=[
  {serie:'220105-2', marca:'Hidromac', modelo:'2196', size:'3X4-8G MTO I', foto:'110953', specs:[]},
  {serie:'027167', marca:'Titan', modelo:'4196', size:'1X1.5-8 ST', foto:'080952', specs:[]}
 ];
-
-// Expedientes preparados para la presentación. La placa existe, pero su asociación
-// con la posición, el servicio, el sellado, los o-rings y el historial son DEMO.
-const demoLinks=[
- [0,'142010','Agua de proceso','Sello mecánico simple','Carbono / cerámica','EPDM'],
- [6,'142038','Alcohol diluido','Sello mecánico simple','Carburo de silicio / carbono','FKM (Viton)'],
- [2,'142042','Agua de lavado','Sello mecánico simple','Carbono / cerámica','EPDM'],
- [7,'142102','Alcohol de proceso','Sello mecánico simple','Carburo de silicio / carbono','FKM (Viton)'],
- [3,'142124','Agua de proceso','Sello mecánico simple','Carbono / cerámica','EPDM'],
- [4,'142327','Alcohol diluido','Sello mecánico simple','Carbono / cerámica','FKM (Viton)'],
- [8,'142331','Agua de transferencia','Sello mecánico simple','Carburo de silicio / carbono','EPDM'],
- [9,'142319','Agua de servicio','Sello mecánico simple','Carbono / cerámica','EPDM'],
- [1,'142744','Alcohol diluido','Sello mecánico simple','Carbono / cerámica','FKM (Viton)']
-];
-for(const [index,[plateIndex,photo,service,sealType,faces,elastomer]] of demoLinks.entries()){
- const pump=photoPumps[index],plate=plateEvidence[plateIndex];
- Object.assign(pump,{
-  foto3:photo,marca:plate.marca,modelo:plate.modelo,serie:plate.serie,size:plate.size,
-  servicio:service,association:'DEMO · asociación de placa por confirmar',
-  seal:{tipo:sealType,diametro:index%3===1?'1.500 in':'1.375 in',caras:faces,elastomero:elastomer,codigo:`SEL-DEMO-${String(index+1).padStart(2,'0')}`},
-  orings:[
-   {posicion:'Carcasa / tapa',medida:index%2?'AS568-236':'AS568-235',material:elastomer,cantidad:1,codigo:`OR-DEMO-${index+1}A`},
-   {posicion:'Camisa / impulsor',medida:index%3?'AS568-118':'AS568-120',material:elastomer,cantidad:1,codigo:`OR-DEMO-${index+1}B`},
-   {posicion:'Porta-rodamiento',medida:'AS568-228',material:'NBR',cantidad:1,codigo:`OR-DEMO-${index+1}C`}
-  ],
-  history:[
-   {fecha:'2026-02-12',tipo:'Inspección preventiva',detalle:'Revisión visual de fugas, ruido y temperatura. Sin desviaciones críticas.',responsable:'Mantenimiento (DEMO)'},
-   {fecha:'2026-05-28',tipo:'Ajuste de alineación',detalle:'Comprobación de acople y alineación; ajuste menor documentado para la propuesta.',responsable:'Mecánica (DEMO)'},
-   {fecha:'2026-08-19',tipo:'Revisión de sellado',detalle:`Inspección del ${sealType.toLowerCase()} y elastómero ${elastomer}. Datos ilustrativos; no constituyen repuesto autorizado.`,responsable:'Mantenimiento (DEMO)'}
-  ]
- });
-}
 
 // Placa de motor. Los dos codigos de rodamiento son repuesto comprable hoy.
 export const motorEvidence={foto:'111146', specs:[
@@ -91,16 +48,22 @@ export const estadoLevantamiento={
 
 export const photoURL=id=>`/fotos/20261007_${id}.jpg`;
 export const photo3URL=id=>`/fotos3/20261007_${id}.jpg`;
+// Distribución de tanques aproximada: conserva 15 posiciones del prototipo.
+// Las fotos orientan las alturas; cantidad y cotas exactas pendientes de levantamiento.
 export const tankSpecs=[
- [-8.4,-6.8,1.65,6.7],[-4.2,-6.8,1.7,6.4],[0,-6.8,1.75,6.9],[4.3,-6.8,1.7,6.2],[8.5,-6.8,1.65,5.8],
- [-8.4,-2.5,1.55,4.8],[-4.2,-2.5,1.65,5.1],[0,-2.5,1.7,5.4],[4.3,-2.5,1.7,5.2],[8.5,-2.5,1.6,4.8],
- [-8.4,1.1,1.35,4.0],[-4.2,1.1,1.45,4.2],[0,1.1,1.5,4.4],[4.3,1.1,1.45,4.2],[8.5,1.1,1.35,4.0]
+ [-8.4,-6.8,1.35,3.8],[-4.2,-6.8,1.5,4.1],[0,-6.8,1.65,5.1],[4.3,-6.8,1.7,6.4],[8.5,-6.8,1.65,6.9],
+ [-8.4,-2.5,1.35,3.6],[-4.2,-2.5,1.5,4.0],[0,-2.5,1.7,5.4],[4.3,-2.5,1.7,5.5],[8.5,-2.5,1.7,6.7],
+ [-8.4,.9,1.25,3.4],[-4.2,.9,1.35,3.7],[0,.9,1.45,4.2],[4.3,.9,1.45,4.9],[8.5,.9,1.35,5.9]
 ];
 export function exterior(T,scale=1,variant='lf'){
  const g=new T.Group();
+ if(variant==='inactive'){const slab=new T.Mesh(new T.BoxGeometry(1.1,.12,2.3),new T.MeshStandardMaterial({color:0x727571}));slab.position.y=.08;g.add(slab);g.scale.setScalar(scale);return g;}
  const mat=(c,m=.25)=>new T.MeshStandardMaterial({color:c,metalness:m,roughness:.58});
  const blue=mat(variant==='titan'?0x2a6592:0x2469a8),orange=mat(0xc77a33),steel=mat(0xa6b9b7,.8),red=mat(0x995f52),dark=mat(0x333e44),black=mat(0x20272a);
- const large=variant==='mto',pumpK=large?1.2:1,motorK=large?1.15:1;
+ const large=variant==='mto',pumpK=large?1.2:variant==='sto'?1.06:1,motorK=large?1.15:1;
+ if(variant==='goulds'){
+ box(1.05,.15,2.2,dark,0,.1,0);tube(.42,.42,steel,0,.65,-.75);tube(.2,.35,steel,0,.65,-1.12);tube(.29,.1,steel,0,.65,-1.34);tube(.15,.42,steel,0,.96,-.75,'y');tube(.24,.1,steel,0,1.2,-.75,'y');tube(.39,1.25,dark,0,.65,.22);tube(.42,.12,black,0,.65,.9);box(.48,.22,.42,dark,0,1.08,.25);for(let i=0;i<12;i++){const a=i*Math.PI/6;box(.04,.05,1.04,dark,Math.cos(a)*.4,.65+Math.sin(a)*.4,.22);}g.scale.setScalar(scale);return g;
+ }
  function mesh(geo,m,x,y,z){const o=new T.Mesh(geo,m);o.position.set(x,y,z);g.add(o);return o;}
  function box(w,h,d,m,x,y,z){return mesh(new T.BoxGeometry(w,h,d),m,x,y,z);}
  function tube(r,h,m,x,y,z,axis='z'){const o=mesh(new T.CylinderGeometry(r,r,h,32),m,x,y,z);if(axis==='z')o.rotation.x=Math.PI/2;return o;}
@@ -128,7 +91,7 @@ export function sector(T){
  function box(w,h,d,m,x,y,z){const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);root.add(o);return o;}
  box(32,.15,27,concrete,0,-.2,-1);box(26,.22,4.8,concrete,0,-.02,5.6);
  box(24,1.05,.18,wall,0,.48,2.35);box(24,1.05,.18,wall,0,.48,-9);box(.18,1.05,11.35,wall,-12,.48,-3.32);box(.18,1.05,11.35,wall,12,.48,-3.32);
- // Quince tanques observados en las vistas elevadas; proporciones todavía estimadas.
+ // Quince posiciones del prototipo; proporciones estimadas con las fotos del PDF.
  for(const [x,z,r,h] of tankSpecs){
   const tank=new T.Mesh(new T.CylinderGeometry(r,r,h,48),metal);tank.position.set(x,h/2,z);root.add(tank);
   for(let y=1;y<h;y+=1.4){const band=new T.Mesh(new T.TorusGeometry(r,.018,6,48),metal);band.rotation.x=Math.PI/2;band.position.set(x,y,z);root.add(band);}

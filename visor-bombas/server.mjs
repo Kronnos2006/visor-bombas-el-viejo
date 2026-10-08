@@ -77,9 +77,9 @@ export function readIntegratedPump(tag) {
   data,
   history:data.history.map(item=>`${item.fecha} · ${item.tipo}: ${item.detalle} (${item.responsable})`).join('\n'),
   failures:'Posibles fallas DEMO: fuga de sello, incompatibilidad de elastómero, desalineación, cavitación y temperatura anormal de rodamientos. Todas requieren verificación en campo.',
-  observations:'Expediente integrado del sector fotografiado. La asociación entre posición, TAG y placa está por confirmar.',
+  observations:'Posición aportada por el usuario y el PDF. Serie de placa sin asociar. Historial y o-rings de ejemplo separados de los datos documentales.',
   reports:[],files:[],
-  source:'public/sector-fotos.js · expediente DEMO integrado'
+  source:data.source
  };
 }
 function send(res,status,data) {
