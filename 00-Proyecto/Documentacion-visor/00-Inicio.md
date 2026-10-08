@@ -25,7 +25,7 @@ Estado revisado el **2026-10-07**. Empezar aquí para retomar el proyecto o entr
 
 ## Regla de edición
 
-El código ejecutable está en **<RUTA-LOCAL>/vocatus/auto cad/visor-bombas**. Las notas de Código y las copias de Fuentes son una fotografía documental. Editar una copia documental no cambia el visor.
+El código ejecutable está en **C:/Users/Isabella GM/vocatus/auto cad/visor-bombas**. Las notas de Código y las copias de Fuentes son una fotografía documental. Editar una copia documental no cambia el visor.
 
 Se conserva el material anterior y se indica cuándo es histórico. No se copian credenciales ni configuraciones privadas de Obsidian o Claude.
 - [[13-Hallazgo-ANSI-B73]] — las placas indican norma ANSI B73.1: el despiece deja de ser genérico

@@ -13,11 +13,11 @@ Representar únicamente las bombas del sector delimitado en amarillo en la captu
 
 ## Recepción y conservación
 
-Origen: `<RUTA-LOCAL>/Downloads/fotos de bombas.zip`. Contiene 41 imágenes HEIC, no 41 bombas. Hay fotos repetidas de equipos, placas, motores y vistas generales.
+Origen: `C:/Users/Isabella GM/Downloads/fotos de bombas.zip`. Contiene 41 imágenes HEIC, no 41 bombas. Hay fotos repetidas de equipos, placas, motores y vistas generales.
 
 Se conservaron los 41 archivos originales sin modificar en `Evidencia/Fotos-bombas-2026-10-07/Originales`. Se generaron 41 JPG de consulta (lado máximo 2200 píxeles) y cuatro hojas de contacto. `inventario.json` registra nombre, número, dimensiones originales y SHA-256 de cada original. Las copias JPG sirven para lectura; conservar HEIC para detalle y metadatos.
 
-Herramienta reproducible: `<RUTA-LOCAL>/vocatus/auto cad/revisar_fotos.py`, con Pillow/pillow-heif instalados localmente en `.herramientas-fotos`. No modifica los archivos del ZIP.
+Herramienta reproducible: `C:/Users/Isabella GM/vocatus/auto cad/revisar_fotos.py`, con Pillow/pillow-heif instalados localmente en `.herramientas-fotos`. No modifica los archivos del ZIP.
 
 ## Observaciones visuales para el modelo
 

@@ -82,6 +82,8 @@ sin datos y sin ficha.
 - [[21-Datos-del-modelo]] — la regla: documental / inferido / pendiente
 - [[22-Pedido-al-fabricante]] — lo que falta, agrupado en 29 familias
 - [[23-Auditoria-importacion-Libro1]] — qué se corrigió y el resultado de la validación
+- [[24-Catalogos-y-CAD-verificados]] — fuentes oficiales, coincidencias provisionales y reglas para usar CAD sin confundir una referencia con el equipo real
+- [[25-Revision-bomba2-y-orientacion]] — selección del nuevo Excel, orientación por esquinas y diferencias pendientes entre croquis e inventario
 
 Los datos tabulados están en `bombas-vocatus.csv`, con el texto original de cada
 celda del Excel en cuatro columnas aparte.
