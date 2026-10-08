@@ -7,7 +7,7 @@ estado: documentacion
 
 36 archivos preservados. El código propio aparece completo dentro de notas legibles en Obsidian; las dependencias están disponibles como archivos originales. [Manifiesto de integridad](manifiesto-fuentes.json).
 
-La copia no se actualiza sola. Original activo: <RUTA-LOCAL>/vocatus/auto cad/visor-bombas.
+La copia no se actualiza sola. Original activo: C:/Users/Isabella GM/vocatus/auto cad/visor-bombas.
 
 ## Archivo
 

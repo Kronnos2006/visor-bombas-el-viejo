@@ -20,9 +20,9 @@ Respaldar por separado la aplicación y la bóveda real. El ZIP temprano es hist
 
 ## Edición documental
 
-Código activo: <RUTA-LOCAL>/vocatus/auto cad/visor-bombas
+Código activo: C:/Users/Isabella GM/vocatus/auto cad/visor-bombas
 
-Bóveda real: <RUTA-LOCAL>/vocatus/auto cad/autocad el vieno vovatus
+Bóveda real: C:/Users/Isabella GM/vocatus/auto cad/autocad el vieno vovatus
 
 La copia documental se registra por ruta, categoría, tamaño y SHA-256 en manifiesto-fuentes.json. Los archivos de dependencias se copian con sus licencias; no se vuelcan miles de líneas de librerías de terceros en una nota.
 

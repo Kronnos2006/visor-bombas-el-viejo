@@ -4,7 +4,7 @@ Archivo del visor: tools/verificar-exportador.py
 
 **Categoría:** Herramientas. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/tools/verificar-exportador.py>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/tools/verificar-exportador.py>).
 
 SHA-256: `dcb438d9c3db283d8fe5e3a5eb2687a6e1e47207fc549b4b22a2d1a4815b0bf5`
 

@@ -4,7 +4,7 @@ Exportador independiente; ver limitaciones de integración.
 
 **Categoría:** Scripts-Obsidian. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/autocad el vieno vovatus/00-Proyecto/scripts/exportar_cmms.py>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/autocad el vieno vovatus/00-Proyecto/scripts/exportar_cmms.py>).
 
 SHA-256: `1c70c1c3adadcfdf0a382fbdd7b81e64c5b5446f63a8b758d9382648547bc3fc`
 

@@ -4,7 +4,7 @@ Archivo del visor: tools/documentar.mjs
 
 **Categoría:** Herramientas. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/tools/documentar.mjs>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/tools/documentar.mjs>).
 
 SHA-256: `e9fc7e1c20bbb46b7f407ab699d5eed3ae426df050dbc5d04edc0771751b2160`
 

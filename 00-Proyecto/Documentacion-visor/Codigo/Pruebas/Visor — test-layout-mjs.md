@@ -4,7 +4,7 @@ Prueba de separación geométrica y plataforma.
 
 **Categoría:** Pruebas. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/test-layout.mjs>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/test-layout.mjs>).
 
 SHA-256: `a92716108a4fd0b83d2b614cb40a3d0a5845087e183499c9165e684729b94cb9`
 

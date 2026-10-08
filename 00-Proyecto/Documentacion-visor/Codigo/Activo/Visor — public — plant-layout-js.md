@@ -4,7 +4,7 @@ Distribución geométrica de tanques y bombas sin superposición.
 
 **Categoría:** Activo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/public/plant-layout.js>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/public/plant-layout.js>).
 
 SHA-256: `d6d5facded2d53c22322f3599d8a0a8abfd289e6b11313a1545381517964886d`
 

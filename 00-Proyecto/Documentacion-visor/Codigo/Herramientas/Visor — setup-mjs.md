@@ -4,7 +4,7 @@ Descarga de dependencias con versiones fijadas.
 
 **Categoría:** Herramientas. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/setup.mjs>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/setup.mjs>).
 
 SHA-256: `f78e1cfeb5795f0ffb64278c22474a3648b706f4126d6e2965de7a7ccad2f9c4`
 

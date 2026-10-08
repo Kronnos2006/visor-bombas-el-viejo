@@ -4,7 +4,7 @@ Prueba de demostración y registro de informes aislados.
 
 **Categoría:** Pruebas. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/test-demo.mjs>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/test-demo.mjs>).
 
 SHA-256: `956364c6359d5a6ae5b4efc62b6b3992618dee088df837a004816a7a057a2289`
 

@@ -4,7 +4,7 @@ Archivo del visor: archivo/respaldos/app.js.respaldo
 
 **Categoría:** Archivo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/archivo/respaldos/app.js.respaldo>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/archivo/respaldos/app.js.respaldo>).
 
 SHA-256: `1268b52d4d27a7d93255f454307f6ed06a6ec5ef23b38c2525a7348f6e8b70e2`
 

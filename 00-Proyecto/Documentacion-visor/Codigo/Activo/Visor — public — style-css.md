@@ -4,7 +4,7 @@ Estilos, diseño adaptable e impresión.
 
 **Categoría:** Activo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/public/style.css>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/public/style.css>).
 
 SHA-256: `bfe6151738e8cd5cdebb64be5071b1a19c0531b1ae4e8760d83733154b584391`
 

@@ -4,7 +4,7 @@ Capa de iluminación, entorno, materiales PBR y sombras de Claude.
 
 **Categoría:** Activo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/public/realismo.js>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/public/realismo.js>).
 
 SHA-256: `01b679cb0eb475f90fe6d0a1e2ec186f697cd47a13569bbe958abc860b8253bd`
 

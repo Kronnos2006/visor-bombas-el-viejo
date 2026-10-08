@@ -4,7 +4,7 @@ Archivo del visor: package.json
 
 **Categoría:** Activo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/package.json>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/package.json>).
 
 SHA-256: `57762590afa42547c3f332a93f171e675ecb382263a91232fe05c990d2a56a95`
 

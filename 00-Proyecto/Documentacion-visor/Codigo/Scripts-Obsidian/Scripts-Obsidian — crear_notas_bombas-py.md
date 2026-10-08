@@ -4,7 +4,7 @@ Generador de fichas a partir de CSV; conserva notas existentes.
 
 **Categoría:** Scripts-Obsidian. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/autocad el vieno vovatus/00-Proyecto/scripts/crear_notas_bombas.py>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/autocad el vieno vovatus/00-Proyecto/scripts/crear_notas_bombas.py>).
 
 SHA-256: `3de86231f16b1a529899e84b97683fdcc878c409a9231581b0f05e7b0c369075`
 

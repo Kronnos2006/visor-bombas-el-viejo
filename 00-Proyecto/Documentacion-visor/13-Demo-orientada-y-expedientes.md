@@ -9,7 +9,7 @@ estado: implementado-demo
 
 ## Respaldo anterior
 
-Antes de esta modificación se creó `<RUTA-LOCAL>/vocatus/auto cad/respaldos/visor-bombas-antes-orientacion-2026-10-07.zip`. Contiene el visor completo tal como estaba antes de incorporar el tercer lote de fotos y los expedientes de demostración.
+Antes de esta modificación se creó `C:/Users/Isabella GM/vocatus/auto cad/respaldos/visor-bombas-antes-orientacion-2026-10-07.zip`. Contiene el visor completo tal como estaba antes de incorporar el tercer lote de fotos y los expedientes de demostración.
 
 ## Nueva evidencia
 

@@ -4,7 +4,7 @@ Herramienta de extracción DWG con rutas del entorno Linux original.
 
 **Categoría:** Scripts-Obsidian. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/autocad el vieno vovatus/00-Proyecto/scripts/extract_tags.py>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/autocad el vieno vovatus/00-Proyecto/scripts/extract_tags.py>).
 
 SHA-256: `54cdee75254c65146abb84334e1ebe4a422216f1be7260ce1aefbbf935f4d8ac`
 

@@ -4,7 +4,7 @@ Interfaz, escenas Three.js, selección de equipos, panel e interacción.
 
 **Categoría:** Activo. **Captura:** 2026-10-07.
 
-Original: [abrir archivo](<<RUTA-LOCAL>/vocatus/auto cad/visor-bombas/public/app.js>).
+Original: [abrir archivo](<C:/Users/Isabella GM/vocatus/auto cad/visor-bombas/public/app.js>).
 
 SHA-256: `cf705ebbe2d75e71a1787a78f991b3bf1a9d9f80c5cca8beb559f48a96d1a662`
 
