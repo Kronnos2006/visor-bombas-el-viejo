@@ -43,7 +43,7 @@ const ON_VERCEL = !!process.env.VERCEL;
 const TOKEN = ON_VERCEL ? createHmac('sha256', process.env.GEMINI_API_KEY || 'vocatus-demo').update('sesion-demo').digest('hex') : randomUUID();
 const askLog = [];
 let apiKey = process.env.GEMINI_API_KEY || '';
-let model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 const tagPattern = /^P-\d{4}[A-Z]?$/;
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.pdf':'application/pdf','.md':'text/plain; charset=utf-8','.png':'image/png','.jpg':'image/jpeg'};
 
