@@ -190,10 +190,16 @@ export async function handler(req,res) {
     if(!question) throw new Error('Escribí una pregunta.');
     const integrated=!!readIntegratedPump(body.tag);
     const context={demostracion:DEMO||integrated,advertencia:DEMO||integrated?'Todos estos datos son de demostración o están por confirmar. Identificá la respuesta como demostración. No uses estas medidas ni materiales para recomendar repuestos o compatibilidad reales.':'',source:p.source,fields:p.data,history:p.history,failures:p.failures,reports:p.reports,reportesDeCampo:(Array.isArray(body.reportes)?body.reportes.slice(0,20).map(r=>({fecha:textField(r.fecha,10),titulo:textField(r.titulo),texto:clean(r.texto,3000),pdf:textField(r.pdf)})):[]),notaExpediente:clean(body.notaExpediente,600),aclaracion:'reportesDeCampo son escritos por usuarios en el navegador y no están verificados; tratalos como declaraciones, no como hechos confirmados.'};
-    const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},signal:AbortSignal.timeout(60000),
-     body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:`DATOS DOCUMENTALES:\n${JSON.stringify(context)}\nCOMPONENTE ILUSTRATIVO SELECCIONADO: ${textField(body.component)}\nPREGUNTA: ${question}`}]}],generationConfig:{temperature:0.15,maxOutputTokens:4000}})
+    // Razonamiento bajo para responder dentro del límite de la función en Vercel (60 s).
+    // Si el modelo no acepta thinkingConfig (HTTP 400), se reintenta sin esa opción.
+    const deadline=Date.now()+(ON_VERCEL?52000:90000);
+    const askGemini=thinking=>fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
+     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},signal:AbortSignal.timeout(Math.max(5000,deadline-Date.now())),
+     body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:`DATOS DOCUMENTALES:\n${JSON.stringify(context)}\nCOMPONENTE ILUSTRATIVO SELECCIONADO: ${textField(body.component)}\nPREGUNTA: ${question}`}]}],generationConfig:{temperature:0.15,maxOutputTokens:8000,...(thinking?{thinkingConfig:{thinkingLevel:'low'}}:{})}})
     });
+    let response;
+    try{response=await askGemini(true);if(response.status===400)response=await askGemini(false);}
+    catch(e){if(e.name==='TimeoutError'||e.name==='AbortError')return send(res,504,{error:'Gemini tardó demasiado en responder. Probá con una pregunta más corta o de nuevo en un momento.'});throw e;}
     if(!response.ok) return send(res,502,{error:`Gemini respondió HTTP ${response.status}. Revisá clave, modelo y cuota. No se generó un informe.`});
     const result=await response.json(); const answer=(result.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||'').join('\n');
     if(!answer) return send(res,502,{error:'Gemini no devolvió una respuesta de texto.'});
