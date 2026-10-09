@@ -57,7 +57,8 @@ export const tankSpecs=[
 ];
 export function exterior(T,scale=1,variant='lf'){
  const g=new T.Group();
- if(variant==='inactive'){const slab=new T.Mesh(new T.BoxGeometry(1.1,.12,2.3),new T.MeshStandardMaterial({color:0x727571}));slab.position.y=.08;g.add(slab);g.scale.setScalar(scale);return g;}
+ // SIN USO describe el estado, no la ausencia del equipo. La foto de la fila 25
+ // muestra bomba azul y cubierta roja. Exterior ilustrativo, sin identificar modelo.
  const mat=(c,m=.25)=>new T.MeshStandardMaterial({color:c,metalness:m,roughness:.58});
  const blue=mat(variant==='titan'?0x2a6592:0x2469a8),orange=mat(0xc77a33),steel=mat(0xa6b9b7,.8),red=mat(0x995f52),dark=mat(0x333e44),black=mat(0x20272a);
  const large=variant==='mto',pumpK=large?1.2:variant==='sto'?1.06:1,motorK=large?1.15:1;

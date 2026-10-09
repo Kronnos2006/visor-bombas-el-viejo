@@ -766,19 +766,19 @@ for (const p of photoPumps) {
 }
 export function componentRows(p,index){
  const spec=label=>p.specs.find(([key])=>key===label)?.[1]||'Por confirmar';
- const hid=/HIDROMAC/i.test(p.marca),gou=/GOULDS/i.test(p.marca),pend=v=>!v||/por confirmar/i.test(v);
- const NP=hid?'No publicado en el catálogo Hidromac 2196 (depende del pedido)':gou?'No publicado en el brochure Goulds e-SH (depende del kit)':'Sin dato';
- const sealTipo=pend(p.seal.tipo)?(hid?'Sello convencional tipo resorte (estándar serie 2196, catálogo Hidromac)':gou?'Según kit Goulds e-SH':'Sin dato'):p.seal.tipo;
- const sealDiam=pend(p.seal.diametro)?(/^1X1\.5/.test(p.size||'')?'1-3/8" (grupo STO, igual que B24/B25 del Excel)':NP):p.seal.diametro;
- const sealCaras=pend(p.seal.caras)?NP:p.seal.caras,sealElast=pend(p.seal.elastomero)?NP:p.seal.elastomero;
- const sealCod=pend(p.seal.codigo)?(hid?'Se identifica con el despiece del pedido; solicitar a Hidromac':NP):p.seal.codigo;
+ const pending=value=>!value||/por confirmar/i.test(value);
+ // Un catálogo describe una familia, pero no completa la configuración instalada.
+ // Si la celda del equipo está vacía, debe seguir vacía/POR CONFIRMAR.
+ const documented=value=>pending(value)?'Por confirmar':value;
+ const sealTipo=documented(p.seal.tipo),sealDiam=documented(p.seal.diametro);
+ const sealCaras=documented(p.seal.caras),sealElast=documented(p.seal.elastomero),sealCod=documented(p.seal.codigo);
  return [
  [['Familia',p.marca+' '+p.modelo],['Tamaño',p.size],['Material','Por confirmar']],
  [['Junta de carcasa','Tipo, medida y material por confirmar'],['O-rings','Ver ejemplos DEMO, sin referencia de compra']],
  [['Impulsor registrado',spec('Impulsor')],['Máximo registrado',spec('Impulsor máximo')],['Geometría interna','Referencia ilustrativa; falta corte del fabricante']],
  [['Tapa de carcasa',p.size],['Material y cotas','Por confirmar']],
  [['Cámara de sello','Cotas por confirmar'],['Sellado registrado',sealTipo]],
- [['Tipo (según fabricante)',sealTipo],['Diámetro en el sello',sealDiam],['Caras',sealCaras],['Elastómero del sello',sealElast],['Código',sealCod]],
+ [['Tipo registrado en el Excel',sealTipo],['Diámetro registrado en el sello',sealDiam],['Caras',sealCaras],['Elastómero del sello',sealElast],['Código',sealCod]],
  [['Eje','Cotas y material por confirmar'],['Velocidad de bomba',spec('Velocidad de bomba')]],
  [['Rodamiento delantero de la lista',p.rodamientos.delantero],['Rodamiento trasero de la lista',p.rodamientos.trasero],['Pertenencia',p.rodamientos.conjunto]],
  [['Acople registrado',p.acople],['Compatibilidad','Por confirmar para este conjunto']],
