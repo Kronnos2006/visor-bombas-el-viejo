@@ -8,6 +8,7 @@ import {expediente, enlaces, linksBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {listReports, addReport, deleteReport} from './reportes.js';
 import {renderRechartsHistory} from './vendor/history-chart.js';
+import {demoReadings} from './historial-demo.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
@@ -426,9 +427,11 @@ async function mountHistoryChart(pump){
 
  const basePres=nominalPressure||2.1;
  const baseFlow=nominalFlow||12.5;
- const records=[];
+ if(pData.inactive){mount.innerHTML='<p class="muted">Equipo SIN USO: sin lecturas de presión ni caudal para graficar.</p>';return;}
+ // Serie DEMO de 12 rondas mensuales (ver historial-demo.js); los reportes de campo se suman abajo.
+ const records=demoReadings(pData,basePres,baseFlow);
 
- if(Array.isArray(pData.history)&&pData.history.length){
+ if(!records.length&&Array.isArray(pData.history)&&pData.history.length){
   pData.history.forEach((h,i)=>{
    const factor=1-(i*0.04);
    records.push({
@@ -470,8 +473,8 @@ async function mountHistoryChart(pump){
  renderRechartsHistory(mount,{
   pumpTag:tag,
   records,
-  nominalPressure:basePres,
-  nominalFlow:baseFlow
+  nominalPressure:nominalPressure,
+  nominalFlow:nominalFlow
  });
 }
 
@@ -503,7 +506,7 @@ function renderPhotoPanel(){
  const demo='<span class="demo-chip">DEMO · POR CONFIRMAR</span>';
  const fieldRows=rows=>'<dl class="fields">'+rows.map(([key,value])=>`<div class="field"><dt>${esc(key)}</dt><dd>${esc(value)}</dd></div>`).join('')+'</dl>';
  if(state.tab==='historial'){
-  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Historial de mantenimiento y registros operacionales con telemetría de presión y caudal.</p><div id="chart-mount"></div>${reportUI()}${p.history.map(item=>`<article class="record"><strong>${esc(item.fecha)} · ${esc(item.tipo)}</strong><p>${esc(item.detalle)}</p><small>${esc(item.responsable)}</small></article>`).join('')}<div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag);mountHistoryChart(p);return;
+  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Historial de mantenimiento con presión y caudal. <strong>Las lecturas del gráfico son DEMO</strong>: muestran cómo se vería un año de rondas, no son mediciones de la planta. Los reportes que agregues se grafican con los valores que escribas.</p><div id="chart-mount"></div>${reportUI()}${p.history.map(item=>`<article class="record"><strong>${esc(item.fecha)} · ${esc(item.tipo)}</strong><p>${esc(item.detalle)}</p><small>${esc(item.responsable)}</small></article>`).join('')}<div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag);mountHistoryChart(p);return;
  }
  if(state.tab==='ia'){
   $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Gemini analiza solamente el expediente de esta bomba seleccionada. Distingue los datos aportados de los ejemplos DEMO y de los campos pendientes.</p>${fieldRows([['Fluido registrado',p.servicio],['Sellado',p.seal.tipo],['Elastómero',p.seal.elastomero],['Registros de demo',String(p.history.length)]])}<div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará a Google el expediente de esta bomba, con los ejemplos DEMO identificados.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué sello y o-rings aparecen en este expediente y qué datos faltan confirmar?">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí el historial DEMO de esta bomba, separado por fechas.">Resumir el mantenimiento ↗</button><button data-question="¿Qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;
