@@ -23,7 +23,7 @@ Codespaces se usa para desarrollar y revisar la propuesta. No es el alojamiento 
 
 ## Funciones
 
-Vista superior ilustrativa, acercamiento a la bomba, rotación y despiece de 10 piezas según ANSI/ASME B73.1 (desarme posterior): carcasa, empaque de carcasa, impulsor abierto, tapa de carcasa, cámara de sello, sello de cartucho, eje, bancada de rodamientos, acople espaciador y motor brida JM. La arquitectura es la de la norma, verificada contra las placas leídas; las medidas de cada pieza siguen pendientes del catálogo del fabricante. Fichas YAML con sellos, o-rings, historial e informes. Descarga de documentos vinculados que existan en la bóveda.
+Vista superior ilustrativa, acercamiento a la bomba, rotación y despiece de 10 piezas según ANSI/ASME B73.1 (desarme posterior): carcasa, empaque de carcasa, impulsor abierto, tapa de carcasa, cámara de sello, sello mecánico, eje, bancada de rodamientos, acople espaciador y motor brida JM. Cuando el Excel documenta Tipo 21, el visor lo identifica como sello mecánico por componentes con fuelle elastomérico; no es un cartucho. En las bombas LF cuyo sellado está vacío, el tipo permanece POR CONFIRMAR. La arquitectura es una referencia de la norma y la geometría no está dimensionada; ninguna medida del modelo sirve para comprar. Fichas YAML con sellos, o-rings, historial e informes. Descarga de documentos vinculados que existan en la bóveda.
 
 `public/realismo.js` añade entorno procedural de reflejos, materiales PBR, mapas de rugosidad, luces y sombras, tone mapping ACES Filmic y salida sRGB. Se aplica tras construir la bomba y se refresca al reconstruir la planta. No requiere HDRI ni texturas externas.
 
@@ -53,6 +53,7 @@ Three.js 0.170.0 y js-yaml 4.1.0 están incluidos localmente con sus licencias. 
 - `node --test test.mjs`: YAML, fichas reales, rutas y controles de acceso.
 - `node test-layout.mjs`: separación geométrica de tanques, bombas y pedestales.
 - `node test-sector.mjs`: escena fotográfica, expedientes DEMO, 15 tanques y fotografías vinculadas.
+- `node test-sector-confirmado.mjs`: B22 visible como SIN USO sin fabricante atribuido; sello registrado separado de la referencia del fabricante (la consulta no modifica la ficha).
 - `node test-demo.mjs`: fichas demo, selección inválida, documento vinculado y guardado/lectura de un informe temporal que se elimina al terminar.
 - `node --check server.mjs`, `node --check public/app.js`, `node --check public/realismo.js`: sintaxis.
 
