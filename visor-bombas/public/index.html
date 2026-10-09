@@ -1,18 +1,97 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vocatus · Atlas de mantenimiento</title><link rel="stylesheet" href="/style.css"><script type="importmap">{"imports":{"three":"/vendor/three.module.js"}}</script></head>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas de mantenimiento · Vocatus</title>
+<meta name="description" content="Visor 3D de las bombas del sector de alcohol de la Azucarera El Viejo: ubicación, despiece y expediente de cada equipo.">
+<script>
+ // Los vínculos antiguos /#B22 abren directamente el expediente en el visor.
+ if(/^#B\d+$/i.test(location.hash))location.replace('/visor.html'+location.hash);
+</script>
+<link rel="preload" href="/vendor/fonts/archivo-wdth.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/inicio.css">
+<link rel="preload" as="image" href="/referencias/frente.jpg">
+</head>
 <body>
-<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><div class="header-center">EL VIEJO <span>/</span> EQUIPOS DE PROCESO</div><button id="refresh">↻ Actualizar expedientes</button><span class="local">● SECTOR · EXPEDIENTES INTEGRADOS</span></header>
-<div class="layout">
-<aside class="sidebar"><p class="eyebrow">EXPLORADOR DE ACTIVOS</p><h1>Tu planta,<br>pieza por pieza.</h1><p class="mode-summary">Sector fotografiado · expedientes integrados</p><label class="search">⌕ <input id="search" placeholder="Buscar bomba o servicio" aria-label="Buscar bomba"></label><select id="area" aria-label="Filtrar por área"><option value="">Todas las áreas</option><option>Destilación</option><option>Fermentación</option></select><div id="pump-list"></div><footer><strong id="count">—</strong> equipos en esta vista<p>Fotos, ficha, historial e IA en un mismo lugar.</p></footer></aside>
+<header class="top">
+ <a class="mark" href="/" aria-label="Vocatus, inicio"><span class="mark-v">V</span>Vocatus</a>
+ <a class="top-cta" href="/visor.html">Abrir el visor</a>
+</header>
+
 <main>
-<div class="scene-top"><div><p class="eyebrow" id="breadcrumb">PLANTA / VISTA GENERAL</p><h2 id="scene-title">Mapa de equipos</h2></div><button id="back" hidden>↖ Volver a planta</button></div>
-<div id="viewport"><div id="scene-error" hidden></div><div class="scene-badge" id="scene-badge">VISTA SUPERIOR · DISTRIBUCIÓN ILUSTRATIVA</div><div id="labels"></div><div id="scene-help">Seleccioná una bomba para acercarte</div><div class="compass">N<br>↑</div></div>
-<div class="controls"><div><span class="eyebrow">EXPLORACIÓN</span><div class="view-buttons"><button id="top" class="active">Vista superior</button><button id="iso">Perspectiva 3D</button></div></div><label class="explosion">DESPIECE <input id="explode" type="range" min="0" max="100" value="0" disabled><output id="percent">0%</output></label><button id="explode-all" disabled>Separar piezas ↗</button></div>
-<section class="parts-section"><div class="section-title"><h3 id="parts-title">De la planta al componente</h3><span id="part-count">Seleccioná un equipo</span></div><div id="parts"><p class="muted">Acercate a una bomba y explorá sus componentes. Las medidas se consultan en la ficha, no se deducen del dibujo.</p></div></section>
+ <section class="hero" aria-labelledby="hero-title">
+  <div class="hero-copy">
+   <p class="hero-place">Azucarera El Viejo, Filadelfia</p>
+   <h1 id="hero-title"><span>Las bombas</span> <span>del sector,</span> <span>una por una.</span></h1>
+   <p class="hero-sub">Ubicá cada equipo en el modelo 3D, desarmalo pieza por pieza y consultá su placa, sello, rodamientos y manuales en un mismo lugar.</p>
+   <div class="hero-actions">
+    <a class="btn btn-solid" href="/visor.html">Abrir el visor</a>
+    <a class="btn btn-line" href="#posiciones">Ver las posiciones</a>
+   </div>
+  </div>
+  <figure class="hero-photo">
+   <img src="/referencias/frente.jpg" alt="Lado frontal del sector: tanques de acero inoxidable con las bombas en su base" width="1600" height="739">
+   <figcaption>Lado frontal, B–C: aquí están B22, B30 y B31.</figcaption>
+  </figure>
+ </section>
+
+ <section class="uses" aria-labelledby="uses-title">
+  <h2 id="uses-title" class="section-head">Qué podés hacer</h2>
+  <div class="uses-grid">
+   <article>
+    <h3>Ubicar</h3>
+    <p>El sector fotografiado en 3D: tanques, plataforma y la posición aproximada de cada bomba, ordenada por los cuatro lados de la planta.</p>
+   </article>
+   <article>
+    <h3>Desarmar</h3>
+    <p>El despiece de diez piezas según ANSI/ASME B73.1, de la carcasa al motor. Muestra la arquitectura de la norma, no es un plano de taller.</p>
+   </article>
+   <article>
+    <h3>Consultar</h3>
+    <p>El expediente de cada equipo: foto de la placa, datos del inventario, sello, rodamientos, acople, documentos del fabricante y reportes de campo.</p>
+   </article>
+  </div>
+ </section>
+
+ <section class="positions" id="posiciones" aria-labelledby="pos-title">
+  <div class="positions-head">
+   <h2 id="pos-title" class="section-head">Las posiciones del sector</h2>
+   <p>Datos del inventario <em>Libro1 bomba2.xlsx</em>. Elegí una placa para abrir el expediente de esa bomba.</p>
+  </div>
+  <div id="plates" class="sides"></div>
+ </section>
+
+ <section class="reading" aria-labelledby="reading-title">
+  <h2 id="reading-title" class="section-head">Cómo leer los datos</h2>
+  <div class="reading-grid">
+   <div>
+    <h3>Tiene fuente</h3>
+    <ul>
+     <li>Marca, modelo, tamaño, motor y rodamientos: inventario de la planta.</li>
+     <li>Placas y fotos: imágenes ancladas a la fila de cada bomba en el Excel.</li>
+     <li>Manuales y catálogos: documentos públicos de cada fabricante.</li>
+    </ul>
+   </div>
+   <div class="pending">
+    <h3>Pendiente de confirmar</h3>
+    <ul>
+     <li>Las medidas del modelo 3D: la geometría es ilustrativa.</li>
+     <li>El sello instalado en las bombas LF, que no tienen ese dato en el inventario.</li>
+     <li>Los o-rings y el historial marcados como demostración.</li>
+    </ul>
+   </div>
+  </div>
+  <p class="reading-note">Lo que no tiene fuente aparece como <strong>Por confirmar</strong>. Ningún dato del visor sirve por sí solo para comprar un repuesto.</p>
+ </section>
 </main>
-<aside class="inspector"><div class="inspector-heading"><div class="inspector-header-row"><p class="eyebrow">EXPEDIENTE DEL EQUIPO</p><button type="button" id="expand-inspector" class="expand-btn" title="Ver ficha en pantalla completa" aria-label="Pantalla completa">⛶ Pantalla completa</button></div><h2 id="selected-tag">Seleccioná una bomba</h2><p id="selected-name">Ficha, componentes e historial en un mismo lugar.</p><div id="source-status" class="status">Esperando selección</div></div><nav id="tabs"><button data-tab="ficha" class="active">Ficha</button><button data-tab="historial">Historial</button><button data-tab="ia">IA · Gemini</button></nav><div id="panel"></div></aside>
-</div>
-<dialog id="settings"><form id="config-form"><p class="eyebrow">ASISTENTE DE MANTENIMIENTO</p><h2>Conectar Gemini</h2><p>Al consultar, se envían a Google la ficha y los informes de la bomba seleccionada. Los planos no se envían.</p><label>Clave API<input name="apiKey" type="password" autocomplete="off" placeholder="Ingresá tu clave de Gemini" required></label><label>Modelo<input name="model" value="gemini-3.5-flash" required></label><p class="muted">La clave queda solo en la memoria del servidor hasta cerrarlo. No se guarda en Obsidian ni en el navegador.</p><div class="form-actions"><button type="button" id="close-settings">Cancelar</button><button class="primary">Conectar</button></div><p id="config-error" role="alert"></p></form></dialog>
-<dialog id="report-dialog"><form id="report-form"><p class="eyebrow">REGISTRO DE CAMPO</p><h2>Nuevo informe</h2><label>Fecha<input name="date" type="date" required></label><label>Intervención<input name="title" maxlength="200" placeholder="Ej. inspección de fuga en sellado" required></label><label>Responsable<input name="author" maxlength="200" required></label><label>Qué se hizo<textarea name="details" required maxlength="4000"></textarea></label><label>Síntomas observados<textarea name="symptoms" maxlength="4000"></textarea></label><label>Repuestos utilizados<textarea name="parts" maxlength="4000" placeholder="Medidas y códigos comprobados"></textarea></label><p class="muted">Se creará una nota nueva en 00-Proyecto/Mantenimiento, vinculada a esta bomba.</p><div class="form-actions"><button type="button" id="close-report">Cancelar</button><button class="primary">Guardar en Obsidian</button></div><p id="report-error" role="alert"></p></form></dialog>
-<div id="toast" role="status" hidden></div>
-<script type="module" src="/app.js"></script></body></html>
+
+<footer class="foot">
+ <p>Vocatus, Azucarera El Viejo. Sector de alcohol, Filadelfia, Guanacaste.</p>
+ <a href="/visor.html">Abrir el visor</a>
+</footer>
+
+<script type="module" src="/inicio.js"></script>
+</body>
+</html>
