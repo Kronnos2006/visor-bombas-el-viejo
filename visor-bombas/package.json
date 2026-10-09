@@ -1,1 +1,12 @@
-{"name":"vocatus-visor-bombas","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test test.mjs"}}
+{
+  "name": "vocatus-visor-bombas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test.mjs"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  }
+}
