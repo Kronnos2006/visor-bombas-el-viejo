@@ -1,0 +1,8 @@
+{
+  "name": "Vocatus · Atlas de mantenimiento",
+  "description": "Buscador y visor 3D de bombas con información de sellado, componentes e historial técnico.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -39,3 +39,109 @@
 .part-docs .doc-links li,.part-docs .doc-links a{font-size:13px;line-height:1.4}
 .manufacturer-reference{margin-top:14px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:#172327}.manufacturer-reference p:not(.eyebrow):not(.muted){font-size:11px;line-height:1.5;color:#c7d5d2}
 .manufacturer-reference .doc-links li,.manufacturer-reference .doc-links a{font-size:13px;line-height:1.4}
+.pdf-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;background:#1b3834;border:1px solid #3d6e61;color:#c0f5d2;font-weight:600}
+.pdf-btn:hover{background:#234a44;border-color:var(--accent);color:var(--accent)}
+button.pdf-btn.primary{background:#255047;border-color:var(--accent);color:#dcfce7}
+
+/* Pantalla completa para el expediente/ficha */
+.inspector-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.inspector-header-row .eyebrow{margin:0}
+.expand-btn{font-size:10.5px;padding:5px 10px;background:#18282c;border:1px solid #3c5258;color:#b4cecb;border-radius:6px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.expand-btn:hover{background:#243c42;border-color:var(--accent);color:var(--accent)}
+
+.inspector.is-fullscreen{
+ position:fixed!important;
+ inset:0!important;
+ z-index:999!important;
+ width:100vw!important;
+ height:100vh!important;
+ max-height:none!important;
+ background:#0d1519!important;
+ overflow-y:auto!important;
+ display:flex!important;
+ flex-direction:column!important;
+ border:0!important;
+ animation:fadeIn 0.15s ease-out;
+}
+@keyframes fadeIn{from{opacity:0.6}to{opacity:1}}
+.inspector.is-fullscreen .inspector-heading,
+.inspector.is-fullscreen #tabs,
+.inspector.is-fullscreen #panel{
+ max-width:1160px;
+ width:100%;
+ margin-left:auto;
+ margin-right:auto;
+}
+.inspector.is-fullscreen .inspector-heading{
+ padding:22px 28px 16px;
+ border-bottom:1px solid var(--line);
+ background:#101a1f;
+}
+.inspector.is-fullscreen #tabs{
+ padding:0 28px;
+ position:sticky;
+ top:0;
+ z-index:10;
+ background:#101a1f;
+ border-bottom:1px solid var(--line);
+}
+.inspector.is-fullscreen #panel{
+ padding:24px 28px 60px;
+ overflow:visible;
+ flex:none;
+}
+.inspector.is-fullscreen .exp-grid{
+ grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+}
+.inspector.is-fullscreen .field{
+ grid-template-columns:220px 1fr;
+}
+.inspector.is-fullscreen .expand-btn{
+ background:#2b3a32;
+ border-color:var(--accent);
+ color:var(--accent);
+ font-weight:600;
+}
+
+/* Resaltado del pin/etiqueta 3D al seleccionar componente */
+.label.part-label.selected-marker{
+ background:var(--accent)!important;
+ color:#0f171b!important;
+ font-weight:800!important;
+ border-color:#ffffff!important;
+ transform:translate(-50%,-50%) scale(1.35)!important;
+ box-shadow:0 0 16px #c6ed86ee!important;
+ z-index:15!important;
+}
+
+/* Bloques interactivos de la ficha que corresponden a piezas del despiece */
+.interactive-part-block{
+ cursor:pointer;
+ transition:border-color .15s,background .15s;
+ border-radius:6px;
+ padding:10px 12px;
+ margin-top:14px;
+ border:1px solid #283a3f;
+ background:#121f24;
+}
+.interactive-part-block:hover{
+ border-color:var(--accent);
+ background:#182b30;
+}
+.interactive-part-block h3{
+ color:#d5edb1;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+}
+.interactive-part-block .part-badge{
+ font-size:9px;
+ padding:2px 6px;
+ border-radius:4px;
+ background:#203c34;
+ color:var(--accent);
+ border:1px solid #3d6e5d;
+ font-weight:normal;
+}
+
+

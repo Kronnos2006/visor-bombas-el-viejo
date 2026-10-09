@@ -1,0 +1,19 @@
+{
+  "name": "vocatus-visor-bombas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node visor-bombas/server.mjs",
+    "start": "node visor-bombas/server.mjs",
+    "build": "esbuild src/recharts-history-view.jsx --bundle --format=esm --minify --target=es2022 --define:process.env.NODE_ENV='\"production\"' --outfile=visor-bombas/public/vendor/history-chart.js",
+    "test": "node --test visor-bombas/test.mjs visor-bombas/test-layout.mjs visor-bombas/test-sector.mjs visor-bombas/test-despiece.mjs visor-bombas/test-demo.mjs"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "recharts": "^3.10.1"
+  }
+}

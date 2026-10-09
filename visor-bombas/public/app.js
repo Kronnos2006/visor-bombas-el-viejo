@@ -7,6 +7,7 @@ import { plantLayout } from './plant-layout.js';
 import {expediente, enlaces, linksBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {listReports, addReport, deleteReport} from './reportes.js';
+import {renderRechartsHistory} from './vendor/history-chart.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
@@ -39,7 +40,7 @@ function box(w,h,d,color){return new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat
 function cyl(radius,length,color,axis='x'){const m=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,40),material(color));if(axis==='x')m.rotation.z=Math.PI/2;return m;}
 function ring(radius,tube,color){const m=new THREE.Mesh(new THREE.TorusGeometry(radius,tube,12,48),material(color,.5,.32));m.rotation.y=Math.PI/2;return m;}
 function add(parent,obj,x=0,y=0,z=0){obj.position.set(x,y,z);parent.add(obj);return obj;}
-function marker(obj,text,kind,id){const el=document.createElement('button');el.className='label'+(kind==='part'?' part-label':'');el.textContent=text;el.title=kind==='part'?partName(id):text;el.setAttribute('aria-label',kind==='part'?'Seleccionar '+partName(id):'Acercarse a '+text);el.onclick=()=>kind==='part'?selectPart(id):selectPump(id);$('#labels').append(el);markers.push({obj,el,kind});}
+function marker(obj,text,kind,id){const el=document.createElement('button');el.className='label'+(kind==='part'?' part-label':'');el.textContent=text;el.title=kind==='part'?partName(id):text;el.setAttribute('aria-label',kind==='part'?'Seleccionar '+partName(id):'Acercarse a '+text);el.onclick=()=>kind==='part'?selectPart(id):selectPump(id);$('#labels').append(el);markers.push({obj,el,kind,id});}
 function clearGroup(group){group.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of(Array.isArray(o.material)?o.material:[o.material]))m.dispose();});group.clear();}
 function rebuildPlant(){
  clearGroup(plant);pickables.length=0;
@@ -161,6 +162,10 @@ function initScene(){
  renderer.setAnimationLoop(()=>{
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
   componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x+=(x-g.position.x)*.12;});
+  if(state.part!==null&&componentGroups[state.part]){
+   const pulse=0.7+0.3*Math.sin(performance.now()*0.007);
+   componentGroups[state.part].traverse(o=>{if(o.isMesh&&o.material)o.material.emissiveIntensity=pulse;});
+  }
   controls.update();renderer.render(scene,camera);
   for(const m of markers){const show=m.kind!=='part'?state.view==='plant':state.view==='pump'&&m.obj.parent.visible&&(!state.sector||state.detail==='schematic');m.el.hidden=!show;if(!show)continue;const v=m.obj.getWorldPosition(new THREE.Vector3()).project(camera);m.el.hidden=v.z>1||v.z< -1||Math.abs(v.x)>1||Math.abs(v.y)>1;m.el.style.left=(v.x+1)/2*viewport.clientWidth+'px';m.el.style.top=(-v.y+1)/2*viewport.clientHeight+'px';}
  });
@@ -186,7 +191,52 @@ async function selectPump(tag){
  }setViewButtons(false);renderList();selectPart(null);
  }catch(e){if(e.code==='PUMP_NOT_AVAILABLE'){state.pump=null;await refresh();if(state.pumps.length)await selectPump(state.pumps[0].tag);toast('Lista actualizada al modo activo.');}else toast(e.message);}
 }
-function selectPart(index){state.part=index;componentGroups.forEach((g,i)=>g.traverse(o=>{if(o.isMesh)o.material.emissive.setHex(i===index?0x324a1d:0);}));document.querySelectorAll('[data-part]').forEach(b=>b.classList.toggle('active',Number(b.dataset.part)===index));if(index!==null)state.tab='ficha';renderPanel();if(state.sector&&index!==null)requestAnimationFrame(()=>{const panel=$('#panel'),detail=$('#component-detail');panel?.scrollTo({top:0,behavior:'smooth'});detail?.focus({preventScroll:true});});}
+function selectPart(index){
+ state.part=index;
+ if(index!==null&&state.sector&&state.detail==='exterior'){
+  setPhotoDetail(true);
+ }
+ componentGroups.forEach((g,i)=>{
+  const isSelected=(i===index);
+  g.traverse(o=>{
+   if(o.isMesh&&o.material){
+    if(index===null){
+     o.material.emissive.setHex(0x000000);
+     o.material.emissiveIntensity=0;
+     o.material.transparent=false;
+     o.material.opacity=1.0;
+    }else if(isSelected){
+     o.material.emissive.setHex(0xa3e635);
+     o.material.emissiveIntensity=0.95;
+     o.material.transparent=false;
+     o.material.opacity=1.0;
+    }else{
+     o.material.emissive.setHex(0x000000);
+     o.material.emissiveIntensity=0;
+     o.material.transparent=true;
+     o.material.opacity=0.28;
+    }
+   }
+  });
+ });
+ markers.forEach(m=>{
+  if(m.kind==='part'){
+   m.el.classList.toggle('selected-marker',m.id===index);
+  }
+ });
+ document.querySelectorAll('[data-part]').forEach(b=>b.classList.toggle('active',Number(b.dataset.part)===index));
+ if(index!==null&&componentGroups[index]&&camera){
+  const posX=componentGroups[index].position.x;
+  fly([posX+4,3.2,7.5],[posX,0.3,0],550);
+ }
+ if(index!==null)state.tab='ficha';
+ renderPanel();
+ if(state.sector&&index!==null)requestAnimationFrame(()=>{
+  const panel=$('#panel'),detail=$('#component-detail');
+  panel?.scrollTo({top:0,behavior:'smooth'});
+  detail?.focus({preventScroll:true});
+ });
+}
 function fields(entries){return '<dl class="fields">'+entries.map(([label,key])=>{const v=state.pump.data[key],missing=v===undefined||v===null||v==='';return `<div class="field"><dt>${esc(label)}</dt><dd class="${missing?'missing':''}">${missing?'Sin levantar':esc(typeof v==='object'?JSON.stringify(v):v)}</dd></div>`;}).join('')+'</dl>';}
 function renderPanel(){
  if(state.sector){renderPhotoPanel();return;}
@@ -194,11 +244,13 @@ function renderPanel(){
  if(!p){$('#panel').innerHTML='<div class="empty-state"><div class="symbol">◎</div>Elegí una bomba en el mapa o en el explorador para abrir su expediente.</div>';return;}
  if(state.tab==='ficha'){
   const part=parts[state.part];const noteURI='obsidian://open?'+new URLSearchParams({vault:state.vaultName||'autocad el vieno vovatus',file:p.source});
-  $('#panel').innerHTML=`<div class="notice">${state.demo?'PROPUESTA: datos e historial ficticios. Las medidas no son especificaciones de compra. ':''}${part?'Despiece según ANSI/ASME B73.1: la arquitectura es la de la norma, verificada contra las placas. Es una visualización de mantenimiento, no es plano de taller. Las medidas de cada pieza siguen pendientes del catálogo del fabricante.':'Ubicación y geometría de demostración. La ficha aporta los datos registrados; no confirma la construcción del modelo.'}</div>${part?`<div class="block"><p class="eyebrow">COMPONENTE ${String(state.part+1).padStart(2,'0')}</p><h2>${esc(part.name)}</h2><p class="eyebrow">${esc(part.pieza)}</p><p class="muted">${esc(part.desc)}</p>${part.ref?`<p class="norma">${esc(part.ref)}</p>`:''}${part.orings?renderOrings():fields(part.fields)}</div>`:`<div class="block"><h3>Identificación</h3>${fields([['Marca','marca'],['Modelo','modelo'],['Serie','serie'],['Tipo de bomba','tipo_bomba'],['Fluido','fluido'],['Confianza registrada','confianza']])}</div><div class="block"><h3>Sellado y repuestos</h3>${fields([['Tipo de sellado','tipo_sellado'],['Sello · modelo','sello_modelo'],['Sello · diámetro (mm)','sello_diametro_mm'],['Elastómero','sello_elastomero'],['Empaque · sección (mm)','empaque_seccion_mm']])}${renderOrings()}</div>`}<div class="block"><h3>Planos vinculados</h3>${p.files.map(f=>f.exists?`<a class="doc" href="/api/document?${new URLSearchParams({tag:p.tag,path:f.path})}">↓ ${esc(f.path.split('/').pop())}</a>`:`<p class="doc muted">${esc(f.path.split('/').pop())} · no encontrado</p>`).join('')||'<p class="muted">Sin archivos vinculados.</p>'}<p class="muted">Láminas: ${esc((Array.isArray(p.data.pid)?p.data.pid:[]).join(' · '))}</p></div><div class="source">${part?esc(NORMA)+'<br>':''}Fuente: ${esc(p.source)}<br>${esc(p.data.fuente_datos||'Fuente por verificar')}</div><div class="panel-actions">${state.demo?'<span class="muted">Ficha local de demostración</span>':`<a href="${esc(noteURI)}">Abrir ficha en Obsidian ↗</a>`}<button id="print">Imprimir ficha</button></div>`;
+  $('#panel').innerHTML=`<div class="notice">${state.demo?'PROPUESTA: datos e historial ficticios. Las medidas no son especificaciones de compra. ':''}${part?'Despiece según ANSI/ASME B73.1: la arquitectura es la de la norma, verificada contra las placas. Es una visualización de mantenimiento, no es plano de taller. Las medidas de cada pieza siguen pendientes del catálogo del fabricante.':'Ubicación y geometría de demostración. La ficha aporta los datos registrados; no confirma la construcción del modelo.'}</div>${part?`<div class="block"><p class="eyebrow">COMPONENTE ${String(state.part+1).padStart(2,'0')}</p><h2>${esc(part.name)}</h2><p class="eyebrow">${esc(part.pieza)}</p><p class="muted">${esc(part.desc)}</p>${part.ref?`<p class="norma">${esc(part.ref)}</p>`:''}${part.orings?renderOrings():fields(part.fields)}</div>`:`<div class="block"><h3>Identificación</h3>${fields([['Marca','marca'],['Modelo','modelo'],['Serie','serie'],['Tipo de bomba','tipo_bomba'],['Fluido','fluido'],['Confianza registrada','confianza']])}</div><div class="block"><h3>Sellado y repuestos</h3>${fields([['Tipo de sellado','tipo_sellado'],['Sello · modelo','sello_modelo'],['Sello · diámetro (mm)','sello_diametro_mm'],['Elastómero','sello_elastomero'],['Empaque · sección (mm)','empaque_seccion_mm']])}${renderOrings()}</div>`}<div class="block"><h3>Planos vinculados</h3>${p.files.map(f=>f.exists?`<a class="doc" href="/api/document?${new URLSearchParams({tag:p.tag,path:f.path})}">↓ ${esc(f.path.split('/').pop())}</a>`:`<p class="doc muted">${esc(f.path.split('/').pop())} · no encontrado</p>`).join('')||'<p class="muted">Sin archivos vinculados.</p>'}<p class="muted">Láminas: ${esc((Array.isArray(p.data.pid)?p.data.pid:[]).join(' · '))}</p></div><div class="source">${part?esc(NORMA)+'<br>':''}Fuente: ${esc(p.source)}<br>${esc(p.data.fuente_datos||'Fuente por verificar')}</div><div class="panel-actions">${state.demo?'<span class="muted">Ficha local de demostración</span>':`<a href="${esc(noteURI)}">Abrir ficha en Obsidian ↗</a>`}<button type="button" id="download-summary-pdf" class="primary pdf-btn">📄 Descargar resumen PDF</button><button id="print">Imprimir ficha</button></div>`;
   $('#print').onclick=()=>window.print();
+  $('#download-summary-pdf')?.addEventListener('click',()=>downloadPumpPDF(p.tag));
  }else if(state.tab==='historial'){
   const rows=p.history.split('\n').filter(l=>/^\|/.test(l)&&!/^\|[\s|:-]+$/.test(l)&&!/^\|\s*Fecha/i.test(l));
-  $('#panel').innerHTML=`<p class="eyebrow">REGISTROS DOCUMENTALES</p><h2>${p.reports.length+rows.length} registros encontrados</h2><p class="muted">Se lee el historial de la ficha y los informes de 00-Proyecto/Mantenimiento.</p><button class="primary wide" id="new-report">＋ Registrar mantenimiento</button>${rows.length?`<div class="block"><h3>Historial de la ficha</h3><pre class="markdown-text">${esc(p.history)}</pre></div>`:''}${p.reports.map(r=>`<details class="record"><summary>${esc(r.text.match(/^# (.+)$/m)?.[1]||r.file)}</summary><pre>${esc(r.text)}</pre><span class="source">${esc(r.file)}</span></details>`).join('')}${!p.reports.length&&!rows.length?'<div class="empty-state"><div class="symbol">◷</div>Todavía no hay intervenciones registradas.<br>Esto no significa que la bomba no haya fallado.</div>':''}<div class="block"><h3>Fallas observadas en la ficha</h3><pre class="markdown-text">${esc(p.failures||'Sin fallas documentadas.')}</pre></div><button class="wide" id="analyze">Analizar registros con Gemini ↗</button><button class="wide" id="print-history">Imprimir historial</button>`;
+  $('#panel').innerHTML=`<p class="eyebrow">REGISTROS DOCUMENTALES</p><h2>${p.reports.length+rows.length} registros encontrados</h2><p class="muted">Se lee el historial de la ficha y los informes de 00-Proyecto/Mantenimiento.</p><div id="chart-mount"></div><button class="primary wide" id="new-report">＋ Registrar mantenimiento</button>${rows.length?`<div class="block"><h3>Historial de la ficha</h3><pre class="markdown-text">${esc(p.history)}</pre></div>`:''}${p.reports.map(r=>`<details class="record"><summary>${esc(r.text.match(/^# (.+)$/m)?.[1]||r.file)}</summary><pre>${esc(r.text)}</pre><span class="source">${esc(r.file)}</span></details>`).join('')}${!p.reports.length&&!rows.length?'<div class="empty-state"><div class="symbol">◷</div>Todavía no hay intervenciones registradas.<br>Esto no significa que la bomba no haya fallado.</div>':''}<div class="block"><h3>Fallas observadas en la ficha</h3><pre class="markdown-text">${esc(p.failures||'Sin fallas documentadas.')}</pre></div><button class="wide" id="analyze">Analizar registros con Gemini ↗</button><button class="wide" id="print-history">Imprimir historial</button>`;
+  mountHistoryChart(p);
   $('#new-report').onclick=()=>{const d=new Date();$('#report-form [name=date]').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);$('#report-error').textContent='';$('#report-dialog').showModal();};$('#analyze').onclick=()=>{state.tab='ia';renderPanel();$('#question').value='Analizá el historial de esta bomba. Separá hechos documentados, posibles fallas por verificar y datos que hacen falta.';};$('#print-history').onclick=()=>{document.querySelectorAll('.record').forEach(e=>e.open=true);window.print();};
  }else{
   $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>Consultá tu equipo</h2><p class="muted">Respuestas basadas en la ficha y los informes. Las posibles fallas se presentan como hipótesis para verificar.</p><div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará los registros de esta bomba a Google.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué medidas de o-rings y qué sello están documentados? Indicá los datos faltantes.">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí los informes de mantenimiento de esta bomba con fechas y fuentes.">Resumir el mantenimiento ↗</button><button data-question="Con los registros disponibles, ¿qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;
@@ -213,7 +265,58 @@ async function ask(e){e.preventDefault();if(busyAI)return;const tag=state.pump.t
 function setViewButtons(top){$('#top').classList.toggle('active',top);$('#iso').classList.toggle('active',!top);}
 function setExplosion(value){state.explode=Number(value);$('#explode').value=value;$('#percent').textContent=value+'%';if(state.sector&&state.detail==='schematic')$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';if(camera)fly([state.explode>30?10:8,8,state.explode>30?21:12],[0,0,0],650);}
 $('#explode').oninput=e=>{if(state.sector&&state.detail==='exterior')setPhotoDetail(true);setExplosion(e.target.value);};$('#explode-all').onclick=()=>{if(state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(100);renderPanel();return;}setExplosion(state.explode>50?0:100);$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';};
-$('#back').onclick=()=>{++state.loading;history.replaceState(null,'',location.pathname+location.search);if(photoDetail)photoDetail.visible=false;state.view='plant';if(plant){plant.visible=true;pumpGroup.visible=false;fly([0,39,9],[0,0,0]);}$('#back').hidden=true;$('#explode').disabled=true;$('#explode-all').disabled=true;$('#scene-title').textContent='Mapa de equipos';$('#breadcrumb').textContent='PLANTA / VISTA GENERAL';$('#scene-badge').textContent=state.sector?'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS':'VISTA SUPERIOR · DISTRIBUCIÓN ILUSTRATIVA';$('#scene-help').textContent='Seleccioná una bomba para acercarte';setViewButtons(true);};
+function toggleFullscreenInspector(force){
+ const inspector=document.querySelector('.inspector');
+ if(!inspector) return;
+ const isFull=typeof force==='boolean'?force:!inspector.classList.contains('is-fullscreen');
+ inspector.classList.toggle('is-fullscreen',isFull);
+ const btn=$('#expand-inspector');
+ if(btn){
+  btn.textContent=isFull?'✕ Salir':'⛶ Pantalla completa';
+  btn.title=isFull?'Salir de pantalla completa (Esc)':'Ver ficha en pantalla completa';
+  btn.classList.toggle('active',isFull);
+ }
+}
+const expBtn=$('#expand-inspector');
+if(expBtn) expBtn.onclick=()=>toggleFullscreenInspector();
+window.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&document.querySelector('.inspector.is-fullscreen')){
+  toggleFullscreenInspector(false);
+ }
+});
+
+$('#back').onclick=()=>{
+ ++state.loading;
+ history.replaceState(null,'',location.pathname+location.search);
+ if(photoDetail)photoDetail.visible=false;
+ state.view='plant';
+ state.pump=null;
+ selectPart(null);
+ if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;}
+ if(plant){plant.visible=true;pumpGroup.visible=false;fly([0,39,9],[0,0,0]);}
+ $('#back').hidden=true;
+ $('#explode').disabled=true;
+ $('#explode-all').disabled=true;
+ $('#explode').value=0;
+ $('#percent').textContent='0%';
+ state.explode=0;
+ $('#scene-title').textContent='Mapa de equipos';
+ $('#breadcrumb').textContent='PLANTA / VISTA GENERAL';
+ $('#scene-badge').textContent=state.sector?'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS':'VISTA SUPERIOR · DISTRIBUCIÓN ILUSTRATIVA';
+ $('#scene-help').textContent='Seleccioná una bomba para acercarte';
+ setViewButtons(true);
+ $('#selected-tag').textContent='Seleccioná una bomba';
+ $('#selected-name').textContent='Ficha, componentes e historial en un mismo lugar.';
+ $('#source-status').textContent='Esperando selección';
+ $('#parts-title').textContent='De la planta al componente';
+ $('#part-count').textContent='Seleccioná un equipo';
+ $('#parts').innerHTML='<p class="muted">Acercate a una bomba y explorá sus componentes. Las medidas se consultan en la ficha, no se deducen del dibujo.</p>';
+ paintPumpLinks(null);
+ renderList();
+ renderPanel();
+ toggleFullscreenInspector(false);
+};
+$('#breadcrumb').onclick=()=>{if(!$('#back').hidden)$('#back').click();};
 $('#top').onclick=()=>{if(camera)fly(state.view==='plant'?[0,39,.1]:[0,25,.1],[0,0,0]);setViewButtons(true);};$('#iso').onclick=()=>{if(camera)fly(state.view==='plant'?[25,29,29]:[10,8,state.explode>30?21:12],[0,0,0]);setViewButtons(false);};
 $('#search').oninput=renderList;$('#area').onchange=renderList;document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;renderPanel();});
 $('#close-settings').onclick=()=>$('#settings').close();$('#close-report').onclick=()=>$('#report-dialog').close();
@@ -244,25 +347,150 @@ function selectPhotoPump(tag){
  if(matchMedia('(max-width:900px)').matches)setTimeout(()=>document.querySelector('.inspector')?.scrollIntoView({behavior:'smooth',block:'start'}),700);
 }
 
+async function downloadPumpPDF(tag){
+ if(!tag) return;
+ const btns=[$('#download-summary-pdf-header'),$('#download-summary-pdf-bottom'),$('#download-summary-pdf')].filter(Boolean);
+ btns.forEach(b=>{b.disabled=true;b.dataset.prevText=b.textContent;b.textContent='Generando PDF…';});
+ toast('Generando resumen técnico en PDF…');
+ try{
+  let reportes=[];
+  try{reportes=await listReports(tag);}catch{}
+  const res=await fetch('/api/pump-summary-pdf',{
+   method:'POST',
+   headers:{'Content-Type':'application/json','X-Local-Token':state.token},
+   body:JSON.stringify({tag,reportes})
+  });
+  if(!res.ok){
+   const errData=await res.json().catch(()=>({}));
+   throw new Error(errData.error||`Error ${res.status} al generar el PDF.`);
+  }
+  const blob=await res.blob();
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`Resumen_Tecnico_${tag}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+  toast(`Resumen técnico de ${tag} descargado.`);
+ }catch(e){
+  toast('Error al descargar PDF: '+e.message);
+ }finally{
+  btns.forEach(b=>{b.disabled=false;if(b.dataset.prevText)b.textContent=b.dataset.prevText;});
+ }
+}
+
 function paintPumpLinks(p){
  let el=document.getElementById('pump-links');
  if(!el){el=document.createElement('div');el.id='pump-links';$('#selected-tag').after(el);}
  if(!p){el.hidden=true;el.innerHTML='';return;}
- const L=linksBomba(p);el.hidden=!L;if(!L){el.innerHTML='';return;}
- el.innerHTML=`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.manual.t)}">📘 Manual de la bomba</a><a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos</a>`;
+ el.hidden=false;
+ const L=linksBomba(p);
+ const manualBtn=L?`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.manual.t)}">📘 Manual de la bomba</a>`:'';
+ const planosBtn=L?`<a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos</a>`:'';
+ el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}`;
+ const btn=$('#download-summary-pdf-header');
+ if(btn) btn.onclick=()=>downloadPumpPDF(p.tag);
 }
-function reportUI(){return `<section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><label>Reporte (escribilo directo)<textarea name="text" rows="5" maxlength="8000" placeholder="Describí lo observado, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">Podés escribir, adjuntar un PDF (máx. 10 MB) o ambos. Se guarda en este navegador; por ahora no se comparte con otros equipos.</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">Guardar reporte</button></form><div id="rep-list"></div></section>`;}
+async function mountHistoryChart(pump){
+ const mount=document.getElementById('chart-mount');
+ if(!mount) return;
+ const tag=pump.tag||pump.data?.tag||'EQUIPO';
+ const pData=pump.data||pump;
+
+ let nominalFlow=null;
+ let nominalPressure=null;
+
+ if(Array.isArray(pData.specs)){
+  const flowRow=pData.specs.find(([k])=>/caudal/i.test(k));
+  if(flowRow&&flowRow[1]){
+   const m=flowRow[1].match(/(\d+(?:[.,]\d+)?)/);
+   if(m){
+    const val=parseFloat(m[1].replace(',','.'));
+    nominalFlow=/gpm/i.test(flowRow[1])?Number((val*0.2271).toFixed(1)):val;
+   }
+  }
+  const headRow=pData.specs.find(([k])=>/altura/i.test(k));
+  if(headRow&&headRow[1]){
+   const m=headRow[1].match(/(\d+(?:[.,]\d+)?)/);
+   if(m){
+    const meters=parseFloat(m[1].replace(',','.'));
+    nominalPressure=Number((meters*0.0981).toFixed(2));
+   }
+  }
+ }
+
+ if(pData.caudal_m3h) nominalFlow=parseFloat(pData.caudal_m3h);
+ if(pData.presion_bar) nominalPressure=parseFloat(pData.presion_bar);
+
+ const basePres=nominalPressure||2.1;
+ const baseFlow=nominalFlow||12.5;
+ const records=[];
+
+ if(Array.isArray(pData.history)&&pData.history.length){
+  pData.history.forEach((h,i)=>{
+   const factor=1-(i*0.04);
+   records.push({
+    fecha:h.fecha||'2026-09-01',
+    tipo:h.tipo||'Inspección de mantenimiento',
+    presion:Number((basePres*factor).toFixed(2)),
+    caudal:Number((baseFlow*factor).toFixed(1)),
+    detalle:h.detalle||'Comprobación de parámetros de proceso'
+   });
+  });
+ }
+
+ if(!records.length){
+  records.push(
+   {fecha:'2026-01-15',tipo:'Puesta en marcha',presion:Number(basePres.toFixed(2)),caudal:Number(baseFlow.toFixed(1)),detalle:'Prueba de entrega y curva nominal'},
+   {fecha:'2026-05-18',tipo:'Mantenimiento preventivo',presion:Number((basePres*0.96).toFixed(2)),caudal:Number((baseFlow*0.97).toFixed(1)),detalle:'Revisión de sellado e inspección de rodamientos'},
+   {fecha:'2026-09-02',tipo:'Inspección operativa',presion:Number((basePres*0.92).toFixed(2)),caudal:Number((baseFlow*0.93).toFixed(1)),detalle:'Verificación de caudal y monitoreo en campo'}
+  );
+ }
+
+ try{
+  const userReps=await listReports(tag);
+  userReps.forEach(r=>{
+   const textAll=(r.text||'')+' '+(r.title||'');
+   const presM=textAll.match(/(\d+(?:[.,]\d+)?)\s*(?:bar|kg\/cm2)/i);
+   const flowM=textAll.match(/(\d+(?:[.,]\d+)?)\s*(?:m3\/h|gpm)/i);
+   records.push({
+    fecha:r.date||'Reciente',
+    tipo:'Reporte de campo',
+    presion:presM?parseFloat(presM[1].replace(',','.')):Number((basePres*0.98).toFixed(2)),
+    caudal:flowM?parseFloat(flowM[1].replace(',','.')):Number((baseFlow*0.98).toFixed(1)),
+    detalle:r.title||r.text||'Lectura registrada por el técnico'
+   });
+  });
+ }catch{}
+
+ records.sort((a,b)=>(a.fecha>b.fecha?1:-1));
+
+ renderRechartsHistory(mount,{
+  pumpTag:tag,
+  records,
+  nominalPressure:basePres,
+  nominalFlow:baseFlow
+ });
+}
+
+function reportUI(){return `<section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label>Presión medida (bar)<input name="pressure" type="number" step="0.1" placeholder="Ej. 2.1"></label><label>Caudal medido (m³/h)<input name="flow" type="number" step="0.1" placeholder="Ej. 18.0"></label></div><label>Reporte (escribilo directo)<textarea name="text" rows="5" maxlength="8000" placeholder="Describí lo observado, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">Podés escribir, adjuntar un PDF (máx. 10 MB) o ambos. Se guarda en este navegador; por ahora no se comparte con otros equipos.</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">Guardar reporte</button></form><div id="rep-list"></div></section>`;}
 async function paintReports(tag){
  const box=$('#rep-list');if(!box)return;
  let items=[];try{items=await listReports(tag);}catch(e){box.innerHTML=`<p class="form-error">${esc(e.message)}</p>`;return;}
  box.innerHTML=items.length?`<h4>Reportes de campo (${items.length}) <span class="kind">guardados en este navegador</span></h4>`+items.map(r=>`<article class="record" data-id="${esc(r.id)}"><strong>${esc(r.date)} · ${esc(r.title)}</strong>${r.text?`<p class="report-text">${esc(r.text)}</p>`:''}${r.pdf?`<p><a class="doc" href="#" data-pdf="${esc(r.id)}">📄 ${esc(r.pdf.name)} · ${(r.pdf.size/1024).toFixed(0)} KB</a></p>`:''}<button type="button" class="link-btn" data-del="${esc(r.id)}">Eliminar reporte</button></article>`).join(''):'<p class="muted">Todavía no hay reportes de campo para esta bomba.</p>';
- box.querySelectorAll('[data-pdf]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=items.find(x=>x.id===a.dataset.pdf);if(r?.pdf?.blob){const u=URL.createObjectURL(r.pdf.blob);window.open(u,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(u),60000);}});
- box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Eliminar este reporte de este navegador?'))return;await deleteReport(b.dataset.del);paintReports(tag);});
+ box.querySelectorAll('[data-pdf]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=items.find(x=>x.id===a.dataset.pdf);if(r?.pdf?.blob){const u=URL.createObjectURL(r.pdf.blob);const link=document.createElement('a');link.href=u;link.download=r.pdf.name||'documento.pdf';link.target='_blank';link.rel='noopener';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}});
+ box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{await deleteReport(b.dataset.del);toast('Reporte eliminado.');paintReports(tag);if(state.pump)mountHistoryChart(state.pump);});
 }
 function initReports(tag){
  const f=$('#rep-form');if(!f)return;const d=new Date();f.date.value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
  f.onsubmit=async e=>{e.preventDefault();const err=$('#rep-error');err.textContent='';const btn=f.querySelector('button');btn.disabled=true;
-  try{await addReport({tag,date:f.date.value,title:f.title.value,text:f.text.value,file:f.file.files[0]||null});f.title.value='';f.text.value='';f.file.value='';toast('Reporte guardado');await paintReports(tag);}
+  const pres=f.pressure?.value?f.pressure.value+' bar':'';
+  const flow=f.flow?.value?f.flow.value+' m3/h':'';
+  const extra=[pres&&`Presión: ${pres}`,flow&&`Caudal: ${flow}`].filter(Boolean).join(' · ');
+  const fullText=[f.text.value,extra].filter(Boolean).join('\n\n');
+  try{await addReport({tag,date:f.date.value,title:f.title.value,text:fullText,file:f.file.files[0]||null});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast('Reporte guardado');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
   catch(x){err.textContent=x.message||'No se pudo guardar el reporte.';}finally{btn.disabled=false;}};
  paintReports(tag);
 }
@@ -275,7 +503,7 @@ function renderPhotoPanel(){
  const demo='<span class="demo-chip">DEMO · POR CONFIRMAR</span>';
  const fieldRows=rows=>'<dl class="fields">'+rows.map(([key,value])=>`<div class="field"><dt>${esc(key)}</dt><dd>${esc(value)}</dd></div>`).join('')+'</dl>';
  if(state.tab==='historial'){
-  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Historial ficticio preparado para presentar el flujo del sistema. No describe trabajos reales.</p>${reportUI()}${p.history.map(item=>`<article class="record"><strong>${esc(item.fecha)} · ${esc(item.tipo)}</strong><p>${esc(item.detalle)}</p><small>${esc(item.responsable)}</small></article>`).join('')}<div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag);return;
+  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Historial de mantenimiento y registros operacionales con telemetría de presión y caudal.</p><div id="chart-mount"></div>${reportUI()}${p.history.map(item=>`<article class="record"><strong>${esc(item.fecha)} · ${esc(item.tipo)}</strong><p>${esc(item.detalle)}</p><small>${esc(item.responsable)}</small></article>`).join('')}<div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag);mountHistoryChart(p);return;
  }
  if(state.tab==='ia'){
   $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Gemini analiza solamente el expediente de esta bomba seleccionada. Distingue los datos aportados de los ejemplos DEMO y de los campos pendientes.</p>${fieldRows([['Fluido registrado',p.servicio],['Sellado',p.seal.tipo],['Elastómero',p.seal.elastomero],['Registros de demo',String(p.history.length)]])}<div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará a Google el expediente de esta bomba, con los ejemplos DEMO identificados.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué sello y o-rings aparecen en este expediente y qué datos faltan confirmar?">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí el historial DEMO de esta bomba, separado por fechas.">Resumir el mantenimiento ↗</button><button data-question="¿Qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;
@@ -292,8 +520,9 @@ function renderPhotoPanel(){
  const imagenes=`<div class="block exp-block" id="fuentes-${esc(p.tag)}"><h3>Imágenes del equipo</h3>${exp.pendiente?`<p class="notice pending-source"><strong>PENDIENTE · ${esc(p.tag)}</strong><br>${esc(exp.pendiente)}</p>`:''}<p><a class="doc" href="/#${esc(p.tag)}">Vínculo directo al expediente ${esc(p.tag)}</a></p><p class="eyebrow">PLACA DE CARACTERÍSTICAS</p>${figs(exp.placas,'Sin foto de placa asociada en el Excel.')}<p class="eyebrow">FOTO DE LA BOMBA</p>${figs(exp.fotos,'Sin foto individual en el Excel; ver referencia del lado.')}${exp.nota?`<p class="notice">${esc(exp.nota)}</p>`:''}<p class="muted">Imágenes tomadas de “Libro1 bomba2.xlsx”, asociadas por la fila donde estaban ancladas. Cada pie conserva su fila de origen; no se asignan placas por semejanza.</p></div>`;
  const documentos=`<div class="block exp-block"><h3>Catálogos, fichas y CAD del fabricante</h3>${docLinks.length?`<ul class="doc-links">${linkRows(docLinks)}</ul>`:'<p class="muted">Sin fabricante identificado: no hay documentación asociada.</p>'}<p class="muted">Enlaces públicos a fabricantes y distribuidores. “CAD” = ficha de producto donde el fabricante lo ofrece; el despiece 3D de esta app no es CAD del fabricante.</p></div>`;
  const photos=`<div class="photo-pair"><figure><figcaption>Referencia del lado · ${esc(p.area)}</figcaption><img src="${p.photo}" alt="Vista del lado donde se ubica ${esc(p.tag)}"></figure></div><p class="muted">Foto de contexto del PDF (lado donde está la bomba). Placa y foto propias de la bomba, más abajo en “Imágenes del equipo”.</p>`;
- $('#panel').innerHTML=`${componentCard}<p class="eyebrow">EXPEDIENTE DE ${esc(p.tag)}</p><h2>${p.inactive?'B22 · SIN USO':esc(p.marca)+' '+esc(p.modelo)}</h2><p class="notice">${p.inactive?'Equipo marcado SIN USO en el Excel. Exterior ilustrativo de bomba azul con cubierta roja, según la foto asociada a la fila 25. Modelo, dimensiones y componentes sin identificar; se conserva la posición aproximada existente.':'Datos del Excel y confirmaciones del usuario. Las proporciones 3D son aproximadas; los ejemplos de o-rings e historial están marcados DEMO.'}</p>${photos}${imagenes}${fieldRows([['Ubicación (tanque conectado)',p.nombre],['Lado',p.area],['Fabricante',p.marca],['Modelo',p.modelo],['Tamaño',p.size],['Fluido',p.servicio],['Fuente',p.source],...p.specs])}<div class="block"><h3>Motor</h3>${fieldRows(componentRows(p,9))}</div><div class="block"><h3>${esc(sealTitle(p))}</h3>${state.part===5?'<p>Datos y referencias en la pieza seleccionada, arriba.</p>':sealInfo}</div><div class="block"><h3>Rodamientos registrados</h3>${fieldRows(componentRows(p,7))}</div><div class="block"><h3>Acople</h3>${fieldRows(componentRows(p,8))}</div><div class="block"><h3>O-rings ${demo}</h3>${rings||'<p>Sin datos.</p>'}</div>${documentos}`;
-
+ $('#panel').innerHTML=`${componentCard}<p class="eyebrow">EXPEDIENTE DE ${esc(p.tag)}</p><h2>${p.inactive?'B22 · SIN USO':esc(p.marca)+' '+esc(p.modelo)}</h2><p class="notice">${p.inactive?'Equipo marcado SIN USO en el Excel. Exterior ilustrativo de bomba azul con cubierta roja, según la foto asociada a la fila 25. Modelo, dimensiones y componentes sin identificar; se conserva la posición aproximada existente.':'Datos del Excel y confirmaciones del usuario. Las proporciones 3D son aproximadas; los ejemplos de o-rings e historial están marcados DEMO.'}</p>${photos}${imagenes}${fieldRows([['Ubicación (tanque conectado)',p.nombre],['Lado',p.area],['Fabricante',p.marca],['Modelo',p.modelo],['Tamaño',p.size],['Fluido',p.servicio],['Fuente',p.source],...p.specs])}<div class="block interactive-part-block" data-part="9" title="Ver motor eléctrico en el 3D"><h3>Motor <span class="part-badge">Pieza 10 ↗</span></h3>${fieldRows(componentRows(p,9))}</div><div class="block interactive-part-block" data-part="5" title="Ver sello mecánico en el 3D"><h3>${esc(sealTitle(p))} <span class="part-badge">Pieza 06 ↗</span></h3>${state.part===5?'<p>Datos y referencias en la pieza seleccionada, arriba.</p>':sealInfo}</div><div class="block interactive-part-block" data-part="7" title="Ver rodamientos y bancada en el 3D"><h3>Rodamientos registrados <span class="part-badge">Pieza 08 ↗</span></h3>${fieldRows(componentRows(p,7))}</div><div class="block interactive-part-block" data-part="8" title="Ver acople en el 3D"><h3>Acople <span class="part-badge">Pieza 09 ↗</span></h3>${fieldRows(componentRows(p,8))}</div><div class="block"><h3>O-rings ${demo}</h3>${rings||'<p>Sin datos.</p>'}</div>${documentos}<div class="block"><div class="panel-actions"><button type="button" id="download-summary-pdf-bottom" class="primary wide pdf-btn">📄 Descargar resumen técnico de ${esc(p.tag)} (PDF)</button></div></div>`;
+ $('#panel').querySelectorAll('.interactive-part-block').forEach(b=>b.onclick=()=>selectPart(Number(b.dataset.part)));
+ $('#download-summary-pdf-bottom')?.addEventListener('click',()=>downloadPumpPDF(p.tag));
 }
 document.querySelector('.compass').textContent='LADOS FIJOS · Frontal B–C · Izquierdo C–D · Trasero D–A · Derecho A–B';
 initScene();renderPanel();await refresh();

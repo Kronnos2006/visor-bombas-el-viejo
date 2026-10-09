@@ -2,7 +2,10 @@
 // prometa medidas que todavía no están levantadas.
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
-const src=readFileSync('./public/app.js','utf8');
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const DIR=path.dirname(fileURLToPath(import.meta.url));
+const src=readFileSync(path.join(DIR,'public/app.js'),'utf8');
 
 // 1. La lista de piezas existe y tiene las diez posiciones del conjunto.
 const bloque=src.slice(src.indexOf('const parts=['),src.indexOf('];',src.indexOf('const parts=[')));
@@ -23,8 +26,8 @@ for(const campo of ['sello_modelo','sello_diametro_mm','sello_cara_rotativa','se
  assert.ok(sello.includes(campo),`El sello no consulta ${campo}`);
 
 // 5. Ninguna pieza puede inventar una clave que la ficha no tenga.
-const plantillaLocal='../autocad el vieno vovatus/00-Proyecto/bombas/_plantilla-bomba.md';
-const plantillaRepo='../00-Proyecto/bombas/_plantilla-bomba.md';
+const plantillaLocal=path.join(DIR,'../autocad el vieno vovatus/00-Proyecto/bombas/_plantilla-bomba.md');
+const plantillaRepo=path.join(DIR,'../00-Proyecto/bombas/_plantilla-bomba.md');
 const plantilla=readFileSync(existsSync(plantillaLocal)?plantillaLocal:plantillaRepo,'utf8');
 const claves=new Set([...plantilla.matchAll(/^([a-z_0-9]+):/gm)].map(m=>m[1]));
 for(const [,clave] of bloque.matchAll(/\['[^']*','([a-z_0-9]+)'\]/g))

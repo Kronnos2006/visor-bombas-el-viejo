@@ -5,28 +5,45 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID, timingSafeEqual, createHmac } from 'node:crypto';
 import { load, JSON_SCHEMA } from './vendor/js-yaml.mjs';
 import { photoPumps } from './public/sector-fotos.js';
+import { generatePumpPDF } from './pdf-generator.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const CLOUD_DEV = process.env.CODESPACES === 'true' || process.env.VOCATUS_CLOUD_DEV === '1';
+const CLOUD_DEV = process.env.CODESPACES === 'true' || process.env.VOCATUS_CLOUD_DEV === '1' || process.env.NODE_ENV !== 'production';
 export const DEMO = process.env.VOCATUS_DEMO === '1';
 export const VAULT = DEMO
  ? path.join(ROOT,'demo-vault')
- : path.resolve(process.env.OBSIDIAN_VAULT || (CLOUD_DEV ? path.join(ROOT,'..') : path.join(ROOT,'../autocad el vieno vovatus')));
+ : path.resolve(process.env.OBSIDIAN_VAULT || path.join(ROOT,'..'));
 const NOTES = path.join(VAULT,'00-Proyecto/bombas');
 const LOGS = path.join(VAULT,'00-Proyecto/Mantenimiento');
 const PUBLIC = path.join(ROOT,'public');
-const PORT = Number(process.env.PORT || 8766);
+const PORT = Number(process.env.PORT || 3000);
 const FORWARDED_HOST = process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
  ? `${process.env.CODESPACE_NAME}-${PORT}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
  : '';
-const ALLOWED_HOSTS = new Set([`127.0.0.1:${PORT}`,`localhost:${PORT}`,FORWARDED_HOST].filter(Boolean));
-const ALLOWED_ORIGINS = new Set([`http://127.0.0.1:${PORT}`,`http://localhost:${PORT}`,FORWARDED_HOST && `https://${FORWARDED_HOST}`].filter(Boolean));
+const ALLOWED_HOSTS = new Set([`127.0.0.1:${PORT}`,`localhost:${PORT}`,'127.0.0.1:8766','localhost:8766','127.0.0.1:3000','localhost:3000',FORWARDED_HOST].filter(Boolean));
+export function isAllowedHost(host) {
+ if (!host) return false;
+ if (ALLOWED_HOSTS.has(host)) return true;
+ if (/^(127\.0\.0\.1|localhost)(:\d+)?$/.test(host)) return true;
+ if (/^[a-z0-9\-]+(\.[a-z0-9\-]+)*\.run\.app(:\d+)?$/i.test(host)) return true;
+ if (/^[a-z0-9\-]+(\.[a-z0-9\-]+)*\.googleusercontent\.com(:\d+)?$/i.test(host)) return true;
+ return false;
+}
+const ALLOWED_ORIGINS = new Set([`http://127.0.0.1:${PORT}`,`http://localhost:${PORT}`,'http://127.0.0.1:8766','http://localhost:8766','http://127.0.0.1:3000','http://localhost:3000',FORWARDED_HOST && `https://${FORWARDED_HOST}`].filter(Boolean));
+export function isAllowedOrigin(origin) {
+ if (!origin) return true;
+ if (ALLOWED_ORIGINS.has(origin)) return true;
+ if (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)) return true;
+ if (/^https:\/\/[a-z0-9\-]+(\.[a-z0-9\-]+)*\.run\.app(:\d+)?$/i.test(origin)) return true;
+ if (/^https:\/\/[a-z0-9\-]+(\.[a-z0-9\-]+)*\.googleusercontent\.com(:\d+)?$/i.test(origin)) return true;
+ return false;
+}
 const ON_VERCEL = !!process.env.VERCEL;
 // En Vercel cada petición puede caer en una instancia distinta: el token no puede ser aleatorio por instancia.
 const TOKEN = ON_VERCEL ? createHmac('sha256', process.env.GEMINI_API_KEY || 'vocatus-demo').update('sesion-demo').digest('hex') : randomUUID();
 const askLog = [];
 let apiKey = process.env.GEMINI_API_KEY || '';
-let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+let model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const tagPattern = /^P-\d{4}[A-Z]?$/;
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.pdf':'application/pdf','.md':'text/plain; charset=utf-8','.png':'image/png','.jpg':'image/jpeg'};
 
@@ -108,7 +125,7 @@ Terminá con las fuentes utilizadas. Si no hay historial, decilo explícitamente
 
 export async function handler(req,res) {
  try {
-  if (!ALLOWED_HOSTS.has(req.headers.host)) return send(res,403,{error:'Host no permitido.'});
+  if (!isAllowedHost(req.headers.host)) return send(res,403,{error:'Host no permitido.'});
   const url=new URL(req.url,`http://127.0.0.1:${PORT}`);
   if(req.method==='GET' && url.pathname==='/api/bootstrap') {
    const pumps=[],errors=[];
@@ -124,11 +141,32 @@ export async function handler(req,res) {
    const content=await readFile(safeVaultFile(rel));
    res.writeHead(200,{'Content-Type':mime[path.extname(rel).toLowerCase()]||'application/octet-stream','Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(path.basename(rel))}`}); return res.end(content);
   }
+  if(url.pathname==='/api/pump-summary-pdf') {
+   let tag=url.searchParams.get('tag')||'';
+   let reportes=[];
+   if(req.method==='POST') {
+    if(!verify(req)) return send(res,403,{error:'Recargá la página para renovar la sesión local.'});
+    const body=await payload(req);
+    tag=body.tag||tag;
+    reportes=Array.isArray(body.reportes)?body.reportes:[];
+   }
+   if(!tag) return send(res,400,{error:'Falta el TAG del equipo.'});
+   const p=readIntegratedPump(tag)||await readPump(tag);
+   if(!p) return send(res,404,{error:`No se encontró la ficha técnica para ${tag}.`});
+   const pdfBytes=await generatePumpPDF(p,{reportes});
+   res.writeHead(200,{
+    'Content-Type':'application/pdf',
+    'Content-Disposition':`attachment; filename="Resumen_Tecnico_${encodeURIComponent(tag)}.pdf"`,
+    'Content-Length':pdfBytes.length,
+    'Cache-Control':'no-store'
+   });
+   return res.end(Buffer.from(pdfBytes));
+  }
   if(req.method==='POST') {
    if(!verify(req)) return send(res,403,{error:'Recargá la página para renovar la sesión local.'});
    const origin=req.headers.origin;
    const vercelOrigin=ON_VERCEL&&req.headers['x-original-host']&&`https://${req.headers['x-original-host']}`;
-   if(origin && !ALLOWED_ORIGINS.has(origin) && origin!==vercelOrigin) return send(res,403,{error:'Origen no permitido.'});
+   if(origin && !isAllowedOrigin(origin) && origin!==vercelOrigin) return send(res,403,{error:'Origen no permitido.'});
    const body=await payload(req);
    if(url.pathname==='/api/config') {
     if(ON_VERCEL) return send(res,403,{error:'En Vercel la clave se configura como variable de entorno GEMINI_API_KEY (Settings → Environment Variables).'});
@@ -171,6 +209,6 @@ export async function handler(req,res) {
  } catch(e) { send(res,e.code==='PUMP_NOT_AVAILABLE'?409:e.code==='ENOENT'?404:400,{code:e.code,error:e.message==='fetch failed'?'No se pudo conectar con Gemini. Revisá la conexión a internet.':e.message}); }
 }
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
- const bind=CLOUD_DEV?'0.0.0.0':'127.0.0.1';
- http.createServer(handler).listen(PORT,bind,()=>console.log(`Visor: ${FORWARDED_HOST?`https://${FORWARDED_HOST}`:`http://127.0.0.1:${PORT}`}\nBóveda: ${VAULT}\nGemini: ${apiKey?'configurado':'pendiente de clave'}`));
+ const bind='0.0.0.0';
+ http.createServer(handler).listen(PORT,bind,()=>console.log(`Visor: http://0.0.0.0:${PORT}\nBóveda: ${VAULT}\nGemini: ${apiKey?'configurado':'pendiente de clave'}`));
 }
