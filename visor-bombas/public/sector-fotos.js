@@ -86,7 +86,7 @@ export function exterior(T,scale=1,variant='lf'){
  for(const x of [-.54,.54])for(const z of [.26,1.28])box(.045,.7,.045,dark,x,.38,z);
  g.scale.setScalar(scale);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});return g;
 }
-export function sector(T){
+export function sector(T,pumps=photoPumps){
  const root=new T.Group();const material=c=>new T.MeshStandardMaterial({color:c,roughness:.8,metalness:.15});
  const concrete=material(0xb3afa0),wall=material(0xe0ded4),metal=material(0x98a5a7),blue=material(0x364e62);
  function box(w,h,d,m,x,y,z){const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);root.add(o);return o;}
@@ -100,8 +100,8 @@ export function sector(T){
   const hatch=new T.Mesh(new T.CylinderGeometry(.28,.28,.08,28),metal);hatch.position.set(x+r*.35,h+.33,z+r*.08);root.add(hatch);
   const vent=new T.Mesh(new T.CylinderGeometry(.055,.055,.36,14),blue);vent.position.set(x-r*.28,h+.46,z-r*.08);root.add(vent);
  }
- for(const p of photoPumps){
-  const side=p.grupo==='lateral'||p.grupo==='derecho';
+ for(const p of pumps){
+  const side=Math.abs(Math.sin(p.rotation||0))>.5; // plinto orientado como la bomba (sirve también si se movió)
   box(side?3.1:1.7,.16,side?1.7:3.1,concrete,p.x,.17,p.z);
  }
  root.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});return root;

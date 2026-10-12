@@ -9,7 +9,7 @@ import { load, dump, JSON_SCHEMA } from './vendor/js-yaml.mjs';
 const MAX_PHOTO = 6 * 1024 * 1024, MAX_PHOTOS = 8, MAX_ORINGS = 12;
 const PENDING = /^(|por confirmar|sin levantar|pendiente.*|<pendiente.*)$/i;
 export const filled = v => v != null && !PENDING.test(String(v).trim());
-const one = (v, max = 200) => String(v ?? '').replace(/[\r\n]+/g, ' ').slice(0, max).trim();
+export const one = (v, max = 200) => String(v ?? '').replace(/[\r\n]+/g, ' ').slice(0, max).trim();
 
 // Campo del formulario → clave en la ficha, según el tipo de ficha.
 // P-xxxx: 00-Proyecto/bombas (plantilla de las 15 bombas del PFD).
@@ -37,7 +37,7 @@ export const FIELDS = [
 export const kindOf = tag => tag.startsWith('B') ? 'B' : 'P';
 export const fileOf = tag => `00-Proyecto/${kindOf(tag) === 'B' ? 'equipos' : 'bombas'}/${tag}.md`;
 
-function splitNote(text) {
+export function splitNote(text) {
  const m = text.replace(/^﻿/, '').match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
  if (!m) throw new Error('La ficha no contiene frontmatter YAML válido.');
  const data = load(m[1], {schema: JSON_SCHEMA});
@@ -46,7 +46,7 @@ function splitNote(text) {
 }
 const scalar = (value, number) => number && /^\d+(\.\d+)?$/.test(value) ? value : JSON.stringify(value);
 // Reemplaza la línea "clave: ..." conservando comentarios, orden y grupos de la ficha.
-function setKey(front, key, rendered) {
+export function setKey(front, key, rendered) {
  const lines = front.split('\n');
  const start = lines.findIndex(l => l.startsWith(key + ':'));
  if (start < 0) return front.replace(/\n*$/, '') + '\n' + rendered;
@@ -55,7 +55,7 @@ function setKey(front, key, rendered) {
  lines.splice(start, end - start, rendered);
  return lines.join('\n');
 }
-const list = (key, items) => items.length ? dump({[key]: items}, {lineWidth: -1, schema: JSON_SCHEMA}).trimEnd() : `${key}: []`;
+export const list = (key, items) => items.length ? dump({[key]: items}, {lineWidth: -1, schema: JSON_SCHEMA}).trimEnd() : `${key}: []`;
 
 // Qué falta en cada ficha. null = no aplica (ej. empaque en una bomba con sello mecánico).
 export function progressOf(tag, data) {

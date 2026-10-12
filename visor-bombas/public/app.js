@@ -52,8 +52,9 @@ function rebuildPlant(){
  clearGroup(plant);pickables.length=0;
  for(let i=markers.length-1;i>=0;i--)if(markers[i].kind!=='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}
  if(state.sector){
-  plant.add(sector(THREE));
-  for(const p of photoPumps){const g=exterior(THREE,p.scale,p.variant);g.position.set(p.x,.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;plant.add(g);g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);}
+  const placed=state.pumps.length?state.pumps:photoPumps; // posiciones de la ficha si la bomba se movió
+  plant.add(sector(THREE,placed));
+  for(const p of placed){const g=exterior(THREE,p.scale,p.variant);g.position.set(p.x,.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;plant.add(g);g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);}
   for(const corner of sectorCorners){const anchor=new THREE.Object3D();anchor.position.set(corner.x,1.1,corner.z);plant.add(anchor);const el=document.createElement('span');el.className='label corner-label';el.textContent=corner.name;$('#labels').append(el);markers.push({obj:anchor,el,kind:'corner'});}
   document.querySelector('.sidebar footer p').textContent='11 bombas con datos + B22 sin uso. Lados según el PDF.';
   if(render3D)render3D.refrescar();return;
@@ -156,6 +157,7 @@ function selectPart(index,subcomponent=null){
   fly([posX+(index===2?-4:4),3.2,7.5],[posX,0.3,0],550);
  }
  if(index!==null)state.tab='ficha';
+ renderRail();
  renderPanel();
  if(state.sector&&index!==null)requestAnimationFrame(()=>{
   const panel=$('#panel'),detail=$('#component-detail');
@@ -238,6 +240,7 @@ $('#back').onclick=()=>{
  $('#part-count').textContent='Seleccioná un equipo';
  $('#parts').innerHTML='<p class="muted">Acercate a una bomba y explorá sus componentes. Las medidas se consultan en la ficha, no se deducen del dibujo.</p>';
  paintPumpLinks(null);
+ renderRail();
  renderList();
  renderPanel();
  toggleFullscreenInspector(false);
@@ -262,7 +265,7 @@ function setPhotoDetail(schematic){
  $('#parts-title').textContent=schematic?`Despiece de ${identity}`:'Conjunto exterior';$('#part-count').textContent=schematic?(state.pump?.data?.variant==='goulds'?'8':'10')+' componentes de referencia · ficha individual':'Carcasa · guarda · motor · cubierta';
  const componentButtons=schematic?parts.map((part,index)=>state.pump?.data?.variant==='goulds'&&(index===7||index===8)?'':`<button class="part-button" data-part="${index}"><span>${String(index+1).padStart(2,'0')}</span>${esc(partName(index))}</button>`).join(''):'';
  $('#parts').innerHTML='<button id="switch-detail">'+(schematic?'← Volver al exterior de esta bomba':'Ver vista explosionada de esta bomba ↗')+'</button>'+componentButtons;
- $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));if(camera)fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);syncAnatomyTools();
+ $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));if(camera)fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);syncAnatomyTools();renderRail();
 }
 function syncAnatomyTools(){
  const available=!!anatomy&&!!state.pump&&!state.pump.data.inactive&&state.view==='pump';
@@ -350,7 +353,7 @@ function paintPumpLinks(p){
  const L=linksBomba(p);
  const manualBtn=L?`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.manual.t)}">📘 Manual de la bomba</a>`:'';
  const planosBtn=L?`<a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos</a>`:'';
- el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}`;
+ el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}<a class="pl-btn" href="/equipo.html?tag=${encodeURIComponent(p.tag)}" title="Cambiar de lugar o reemplazar esta bomba">⇄ Mover o cambiar</a>`;
  const btn=$('#download-summary-pdf-header');
  if(btn) btn.onclick=()=>downloadPumpPDF(p.tag);
 }
@@ -472,3 +475,45 @@ document.querySelector('.compass').textContent='LADOS FIJOS · Frontal B–C · 
 initScene();renderPanel();await refresh();
 function selectFromHash(){const tag=location.hash.slice(1).toUpperCase();if(photoPumps.some(p=>p.tag===tag))selectPhotoPump(tag);}
 window.addEventListener('hashchange',selectFromHash);selectFromHash();
+
+// Riel de piezas: siempre visible junto al 3D cuando hay una bomba abierta.
+function railParts(){
+ if(state.view!=='pump'||!state.pump||state.pump.data?.inactive)return [];
+ return parts.map((part,index)=>({index,name:partName(index)})).filter(({index})=>!(state.pump?.data?.variant==='goulds'&&(index===7||index===8)));
+}
+function renderRail(){
+ const rail=$('#parts-rail');if(!rail)return;
+ const items=railParts();rail.hidden=!items.length;if(!items.length)return;
+ const exterior=state.sector&&state.detail==='exterior';
+ rail.classList.toggle('collapsed',!!state.railCollapsed);
+ rail.innerHTML=`<button type="button" class="rail-head" aria-expanded="${!state.railCollapsed}"><span>🔧 Piezas de la bomba</span><b>${state.railCollapsed?'▸':'▾'}</b></button><div class="rail-body">${exterior?'<p class="rail-hint">Tocá una pieza para abrir la bomba y verla por dentro.</p>':''}${items.map(({index,name})=>`<button type="button" class="rail-item ${state.part===index?'active':''}" data-rail="${index}"><span>${String(index+1).padStart(2,'0')}</span>${esc(name)}</button>`).join('')}${!exterior&&state.part!==null?'<button type="button" class="rail-item rail-clear" data-rail-clear>✕ Ver la bomba completa</button>':''}</div>`;
+ rail.querySelector('.rail-head').onclick=()=>{state.railCollapsed=!state.railCollapsed;renderRail();};
+ rail.querySelectorAll('[data-rail]').forEach(b=>{
+  const index=Number(b.dataset.rail);
+  b.onclick=()=>{selectPart(index);if(state.detail==='schematic')fitAnatomy();};
+  b.onmouseenter=()=>markers.forEach(m=>m.kind==='part'&&m.el.classList.toggle('hover-marker',m.id===index));
+  b.onmouseleave=()=>markers.forEach(m=>m.el.classList.remove('hover-marker'));
+ });
+ rail.querySelector('[data-rail-clear]')?.addEventListener('click',()=>{selectPart(null);fitAnatomy();});
+ rail.querySelector('.rail-item.active')?.scrollIntoView({block:'nearest'});
+}
+// Nombre de la pieza al pasar el mouse por el modelo 3D.
+(function partHover(){
+ const tip=$('#part-tip');if(!renderer||!tip)return;
+ let frame=0;
+ renderer.domElement.addEventListener('pointermove',e=>{
+  if(frame)return;frame=requestAnimationFrame(()=>{frame=0;
+   const active=state.view==='pump'&&(!state.sector||state.detail==='schematic');
+   if(!active||e.pointerType==='touch'){tip.hidden=true;renderer.domElement.style.cursor='';return;}
+   const r=renderer.domElement.getBoundingClientRect();
+   raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
+   const hit=raycaster.intersectObjects(componentGroups,true).find(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return anatomy?anatomy.visibleHit(h):true;});
+   const part=hit?.object.userData.part;
+   if(part===undefined){tip.hidden=true;renderer.domElement.style.cursor='';return;}
+   tip.textContent=`${String(part+1).padStart(2,'0')} · ${hit.object.userData.subcomponent||partName(part)}`;
+   tip.style.left=(e.clientX-r.left+14)+'px';tip.style.top=(e.clientY-r.top+14)+'px';tip.hidden=false;renderer.domElement.style.cursor='pointer';
+  });
+ });
+ renderer.domElement.addEventListener('pointerleave',()=>{tip.hidden=true;});
+})();
+

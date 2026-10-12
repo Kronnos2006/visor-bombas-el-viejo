@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mover o cambiar bomba · Vocatus</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/campo.css"></head>
+<body>
+<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><nav class="campo-nav"><a href="/">Visor 3D</a><a href="/levantamiento.html">Levantamiento</a><a href="/avance.html">Avance</a><a href="/solicitud.html">Solicitud a bodega</a><a href="/equipo.html" aria-current="page">Mover o cambiar</a></nav></header>
+<main class="campo">
+<p class="eyebrow">CAMBIOS EN PLANTA</p>
+<h1>Mover o cambiar una bomba</h1>
+<p class="lead">Elegí la bomba y qué pasó con ella. El cambio queda escrito en su ficha con fecha y responsable.</p>
+<div id="mode"></div>
+<section class="card">
+ <h2>1 · ¿Qué bomba?</h2>
+ <div class="pump-pick" id="pick"></div>
+</section>
+<section class="card" id="step2" hidden>
+ <h2>2 · ¿Qué pasó?</h2>
+ <div class="choice">
+  <button type="button" data-action="move"><b>📍 Cambió de lugar</b><span>La misma bomba ahora está en otra posición, o cambió de lugar con otra.</span></button>
+  <button type="button" data-action="replace"><b>🔁 La cambiaron por otra bomba</b><span>En esta posición se instaló una bomba distinta. La anterior queda en el historial.</span></button>
+ </div>
+</section>
+<section class="card" id="move" hidden>
+ <h2>3 · Nueva posición</h2>
+ <p class="muted">Arrastrá la bomba resaltada en el mapa. Para que cambie de lugar con otra, tocá esa otra bomba.</p>
+ <div class="map-wrap"><svg id="map" viewBox="-17.4 -14.5 34.8 27" role="img" aria-label="Mapa del sector"></svg></div>
+ <div class="row map-tools"><button type="button" id="rot-left">⟲ Girar</button><button type="button" id="rot-right">⟳ Girar</button><button type="button" id="undo">↺ Volver a donde estaba</button><span class="muted" id="coords"></span></div>
+ <div id="swap-box"></div>
+</section>
+<section class="card" id="replace" hidden>
+ <h2>3 · Datos de la bomba nueva</h2>
+ <div class="swap-cards"><div class="pump-card old"><small>SALE</small><b id="old-name">—</b><span id="old-serie"></span></div><div class="arrow">→</div><div class="pump-card new"><small>ENTRA</small><b id="new-name">Bomba nueva</b><span>Llená los datos abajo</span></div></div>
+ <div class="grid" id="new-fields"></div>
+ <label class="check"><input type="checkbox" id="clear-seal" checked> La bomba nueva trae otro sello: borrar sello y o-rings de la ficha para levantarlos de nuevo</label>
+</section>
+<section class="card" id="who" hidden>
+ <h2>4 · ¿Quién y cuándo?</h2>
+ <div class="grid">
+  <label>Fecha<input type="date" id="date" required></label>
+  <label>Responsable<input id="author" maxlength="120" required placeholder="Quién hizo el cambio"></label>
+  <label style="grid-column:1/-1">Motivo<input id="reason" maxlength="300" placeholder="Ej. bomba dañada, reubicación por mantenimiento del tanque…"></label>
+ </div>
+ <div id="result" role="status"></div>
+ <div class="sticky-actions"><button class="primary" id="save">Guardar cambio</button><a class="button-link" id="cancel" href="/">Cancelar</a></div>
+</section>
+</main>
+<script type="module" src="/equipo.js"></script>
+</body></html>

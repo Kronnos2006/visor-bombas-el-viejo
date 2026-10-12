@@ -14,10 +14,14 @@ export function vaultConfiguration(root, env = process.env) {
 
 // La ficha manda sobre los datos técnicos. El sector aporta solamente la geometría y las fotos.
 export function equipmentData(base, note) {
+ const number = key => note[key] === '' || note[key] == null || !Number.isFinite(Number(note[key])) ? null : Number(note[key]);
+ // Posición cambiada desde «Mover o cambiar bomba»: la ficha manda sobre la posición del prototipo.
+ const moved = number('posicion_x') !== null && number('posicion_z') !== null;
+ const place = {...(moved ? {x: number('posicion_x'), z: number('posicion_z')} : {}), ...(number('rotacion_grados') !== null ? {rotation: number('rotacion_grados') * Math.PI / 180} : {})};
  const value = key => String(note[key] ?? '').trim() || 'Por confirmar';
  const units = (key, unit) => note[key] === '' || note[key] == null ? 'Por confirmar' : `${note[key]} ${unit}`;
  return {
-  ...base, tag: note.id || base.tag, nombre: value('ubicacion'), servicio: value('liquido'),
+  ...base, ...place, movido: moved, tag: note.id || base.tag, nombre: value('ubicacion'), servicio: value('liquido'),
   marca: value('marca'), modelo: value('modelo'), size: value('tamano'), serie: String(note.placa_serie || ''),
   source: `00-Proyecto/equipos/${base.tag}.md`, documentarySource: note.fuente || '',
   association: note.placa_nota || 'Asociación de placa por confirmar',

@@ -10,6 +10,7 @@ import { vaultConfiguration, equipmentData } from './vault.mjs';
 import { maintenanceStore } from './maintenance.mjs';
 import { surveyStore, FIELDS, fileOf } from './survey.mjs';
 import { generatePartsRequestPDF } from './parts-request.mjs';
+import { equipmentStore, REPLACE_FIELDS } from './equipment.mjs';
 import { passwordOk } from './password.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +20,7 @@ export const DEMO = configuration.demo;
 export const VAULT = configuration.vault;
 const maintenance = maintenanceStore(VAULT, DEMO);
 const survey = surveyStore(VAULT);
+const equipment = equipmentStore(VAULT, photoPumps);
 const NOTES = path.join(VAULT,'00-Proyecto/bombas');
 const PUBLIC = path.join(ROOT,'public');
 const PORT = Number(process.env.PORT || 8766);
@@ -160,7 +162,7 @@ export async function handler(req,res) {
   }
   if(req.method==='GET' && url.pathname==='/api/progress') {
    const {rows,errors}=await survey.progress(new Set(photoPumps.map(p=>p.tag)));
-   return send(res,200,{rows,errors,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS});
+   return send(res,200,{rows,errors,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS,replaceFields:REPLACE_FIELDS});
   }
   if(req.method==='GET' && url.pathname==='/api/reports') {
    const p=await readPump(url.searchParams.get('tag')||'');
@@ -223,6 +225,15 @@ export async function handler(req,res) {
     if(!tagPattern.test(tag)) throw new Error('TAG inválido.');
     try{await readFile(path.join(VAULT,fileOf(tag)));}catch(e){if(e.code==='ENOENT'){const missing=new Error(`No existe la ficha ${fileOf(tag)} en ${DEMO?'la demostración':'la bóveda actual'}.`);missing.code='PUMP_NOT_AVAILABLE';throw missing;}throw e;}
     return send(res,201,await survey.save(tag,body));
+   }
+   if(url.pathname==='/api/equipment') {
+    if(!configuration.writable) return send(res,403,{code:'NOT_WRITABLE',error:'Mover o reemplazar bombas solo funciona en el visor de la computadora, conectado a Obsidian.'});
+    const tag=String(body.tag||''), other=String(body.other||'');
+    if(!tagPattern.test(tag)||(body.action==='swap'&&!tagPattern.test(other))) throw new Error('TAG inválido.');
+    if(body.action==='move') return send(res,200,await equipment.move(tag,body));
+    if(body.action==='swap') return send(res,200,await equipment.swap(tag,other,body));
+    if(body.action==='replace') return send(res,200,await equipment.replace(tag,body));
+    throw new Error('Acción desconocida.');
    }
    if(url.pathname==='/api/parts-request') {
     const pdf=await generatePartsRequestPDF({...body,demo:DEMO});

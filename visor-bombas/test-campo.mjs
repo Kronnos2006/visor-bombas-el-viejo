@@ -78,3 +78,33 @@ test('la contraseña de Vercel solo se exige si está configurada', () => {
  assert.equal(passwordOk(basic('clave'), 'clave'), true); assert.equal(passwordOk(basic('cla:ve'), 'cla:ve'), true);
  assert.equal(passwordOk('Basic %%%', 'clave'), false);
 });
+
+test('mover, intercambiar y reemplazar una bomba quedan en la ficha', async () => {
+ const {data: {token}} = await request('/api/progress');
+ const b32 = path.join(vault, '00-Proyecto/equipos/B32.md'), b33 = path.join(vault, '00-Proyecto/equipos/B33.md');
+ await writeFile(b32, '---\ntipo: equipo\nid: B32\nubicacion: "Tanque"\nmarca: "WEG"\nmodelo: "X1"\nplaca_serie: "S-1"\ntamano: "1X1.5-8"\nmotor_marca: "WEG"\nmotor_hp: "5"\ntipo_sellado: "sello mecanico"\nsello_tipo: "Tipo 21"\nsello_eje_pulg: "1.3/8"\norings:\n  - medida: 45 x 3 mm\n---\n# B32\n');
+ const body = extra => ({method: 'POST', token, body: {date: '2026-10-12', author: 'Kensy', reason: 'prueba', ...extra}});
+ assert.equal((await request('/api/equipment', {...body({action: 'move', tag: 'B32', x: 3, z: 1}), token: ''})).status, 403, 'sin token');
+ assert.equal((await request('/api/equipment', body({action: 'move', tag: 'B32', x: 40, z: 1}))).status, 400, 'fuera del sector');
+ const moved = await request('/api/equipment', body({action: 'move', tag: 'B32', x: 3.25, z: -1.5, rotation: 90}));
+ assert.equal(moved.status, 200, JSON.stringify(moved.data));
+ let pump = (await request('/api/pump?tag=B32')).data.data;
+ assert.equal(pump.x, 3.25); assert.equal(pump.z, -1.5); assert.equal(Math.round(pump.rotation * 180 / Math.PI), 90); assert.equal(pump.movido, true);
+ assert.match(await readFile(b32, 'utf8'), /## Cambios de ubicación y reemplazos\n- 2026-10-12 · Kensy: movida de \(x 13.8, z 0.4, 90°\) a \(x 3.25, z -1.5, 90°\)\. Motivo: prueba/);
+ const swap = await request('/api/equipment', body({action: 'swap', tag: 'B32', other: 'B33'}));
+ assert.equal(swap.status, 200, JSON.stringify(swap.data));
+ const a = (await request('/api/pump?tag=B32')).data.data, b = (await request('/api/pump?tag=B33')).data.data;
+ assert.equal(a.x, 13.8); assert.equal(a.z, -3.5); assert.equal(b.x, 3.25); assert.equal(b.z, -1.5);
+ assert.equal((await request('/api/equipment', body({action: 'replace', tag: 'B32', fields: {marca: 'Goulds'}}))).status, 400, 'falta el modelo');
+ const rep = await request('/api/equipment', body({action: 'replace', tag: 'B32', fields: {marca: 'Goulds', modelo: '3196', serie: 'G-77', motor_hp: '7.5'}}));
+ assert.equal(rep.status, 200, JSON.stringify(rep.data));
+ const text = await readFile(b32, 'utf8');
+ assert.match(text, /^marca: "Goulds"$/m); assert.match(text, /^placa_serie: "G-77"$/m); assert.match(text, /^tamano: ""$/m, 'el tamaño de la bomba vieja no se mezcla');
+ assert.match(text, /^motor_hp: 7.5$/m); assert.match(text, /^sello_tipo: ""$/m); assert.match(text, /^orings: \[\]$/m);
+ assert.match(text, /\| 2026-10-12 \| WEG \| X1 \| S-1 \| 1X1.5-8 \| prueba \| Kensy \|/);
+ assert.match(text, /reemplazada WEG X1 por Goulds 3196/);
+ pump = (await request('/api/pump?tag=B32')).data.data; assert.equal(pump.marca, 'Goulds'); assert.equal(pump.x, 13.8, 'reemplazar no mueve la bomba');
+ const rep2 = await request('/api/equipment', body({action: 'replace', tag: 'B32', fields: {marca: 'KSB', modelo: 'Etanorm'}, clearSeal: false}));
+ assert.equal(rep2.status, 200);
+ assert.match(await readFile(b32, 'utf8'), /\| Retirada .*\n\|---.*\n\| 2026-10-12 \| Goulds \| 3196 \| G-77 \|.*\n\| 2026-10-12 \| WEG \| X1 \|/, 'la más reciente arriba');
+});
