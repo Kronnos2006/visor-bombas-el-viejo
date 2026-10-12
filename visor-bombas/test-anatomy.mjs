@@ -35,7 +35,7 @@ test('reinicio restaura materiales y posiciones; el encuadre sigue el despiece v
  const {view,groups}=fixture();const original=view.bounds().getSize(new THREE.Vector3()).x;
  groups[2].position.x+=8;assert.ok(view.bounds().getSize(new THREE.Vector3()).x>original);
  view.set({transparent:true,cutaway:true,selected:1,isolate:true});view.reset();
- assert.deepEqual(view.state,{transparent:false,cutaway:false,selected:null,isolate:false});
+ assert.deepEqual(view.state,{transparent:false,cutaway:false,selected:null,isolate:false,subcomponent:null});
  for(const [index,group] of groups.entries()){
   assert.equal(group.position.x,index*2);const material=group.children[0].material;
   assert.equal(material.opacity,.85);assert.equal(material.transparent,true);assert.equal(material.depthWrite,true);assert.equal(material.clippingPlanes,null);assert.equal(material.emissive.getHex(),0);

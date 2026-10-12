@@ -2,7 +2,7 @@
 // Usa el Three.js del visor y mantiene los identificadores de sus diez componentes.
 export function createAnatomyView({THREE, root, renderer}) {
  let groups=[], entries=[], context=[];
- const state={cutaway:false,transparent:false,isolate:false,selected:null};
+ const state={cutaway:false,transparent:false,isolate:false,selected:null,subcomponent:null};
  const localPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0),0),new THREE.Plane(new THREE.Vector3(0,0,-1),0)];
  renderer.localClippingEnabled=true;
  function register(nextGroups) {
@@ -13,11 +13,11 @@ export function createAnatomyView({THREE, root, renderer}) {
    group.traverse(object=>{
     if(!object.isMesh)return;
     const materials=Array.isArray(object.material)?object.material:[object.material];
-    for(const material of materials)entries.push({object,material,index:group.userData.index,original:{opacity:material.opacity,transparent:material.transparent,depthWrite:material.depthWrite,side:material.side,clippingPlanes:material.clippingPlanes,clipIntersection:material.clipIntersection,emissive:material.emissive?.clone(),emissiveIntensity:material.emissiveIntensity}});
+    for(const material of materials)entries.push({object,material,index:group.userData.index,original:{visible:object.visible,opacity:material.opacity,transparent:material.transparent,depthWrite:material.depthWrite,side:material.side,clippingPlanes:material.clippingPlanes,clipIntersection:material.clipIntersection,emissive:material.emissive?.clone(),emissiveIntensity:material.emissiveIntensity}});
    });
   }
   context=root.children.filter(child=>!groups.includes(child)).map(object=>({object,visible:object.visible}));
-  Object.assign(state,{cutaway:false,transparent:false,isolate:false,selected:null});
+  Object.assign(state,{cutaway:false,transparent:false,isolate:false,selected:null,subcomponent:null});
   apply();
  }
  function apply() {
@@ -26,27 +26,29 @@ export function createAnatomyView({THREE, root, renderer}) {
   for(const group of groups)group.visible=group.userData.anatomyAvailable&&(!state.isolate||state.selected===group.userData.index);
   for(const item of context)item.object.visible=item.visible&&!state.isolate;
   for(const {object,material,index,original} of entries) {
+   object.visible=original.visible&&!(state.cutaway&&object.userData.removableQuarter)&&!(state.isolate&&state.subcomponent&&object.userData.subcomponent!==state.subcomponent);
    material.opacity=original.opacity; material.transparent=original.transparent;material.depthWrite=original.depthWrite;
    material.side=original.side;material.clippingPlanes=original.clippingPlanes;material.clipIntersection=original.clipIntersection;
    if(original.emissive)material.emissive.copy(original.emissive);
    material.emissiveIntensity=original.emissiveIntensity;
-   const selected=state.selected===index, cover=object.userData.anatomyCover===true;
+   const selected=state.selected===index&&(!state.subcomponent||state.subcomponent===object.userData.subcomponent), cover=object.userData.anatomyCover===true;
    if(state.transparent&&cover||state.selected!==null&&!selected&&!state.isolate) {
     material.opacity=cover&&state.transparent?0.2:0.32;material.transparent=true;material.depthWrite=false;
    }
-   if(state.cutaway&&cover) {material.clippingPlanes=planes;material.clipIntersection=true;material.side=THREE.DoubleSide;}
+   if(state.cutaway&&cover&&!object.userData.quarterShell) {material.clippingPlanes=planes;material.clipIntersection=true;material.side=THREE.DoubleSide;}
    if(selected&&material.emissive) {material.emissive.setHex(0xa3e635);material.emissiveIntensity=0.25;}
    material.needsUpdate=true;
   }
  }
  function set(changes) {
   if('selected' in changes&&changes.selected!==null&&!groups.some(g=>g.userData.index===changes.selected&&g.userData.anatomyAvailable))return false;
+  if(changes.subcomponent&&!entries.some(entry=>entry.index===(changes.selected??state.selected)&&entry.object.userData.subcomponent===changes.subcomponent))return false;
   Object.assign(state,changes);
-  if(state.selected===null)state.isolate=false;
+  if(state.selected===null){state.isolate=false;state.subcomponent=null;}
   apply();return true;
  }
  function reset() {
-  Object.assign(state,{cutaway:false,transparent:false,isolate:false,selected:null});
+  Object.assign(state,{cutaway:false,transparent:false,isolate:false,selected:null,subcomponent:null});
   for(const group of groups)group.position.x=group.userData.base;
   apply();
  }
@@ -60,7 +62,8 @@ export function createAnatomyView({THREE, root, renderer}) {
  function bounds() {
   const box=new THREE.Box3();
   root.updateMatrixWorld(true);
-  for(const group of groups.filter(g=>g.visible))box.union(new THREE.Box3().setFromObject(group));
+  const visibleGroups=new Set(groups.filter(g=>g.visible).map(g=>g.userData.index));
+  for(const {object,index} of entries)if(object.visible&&visibleGroups.has(index))box.union(new THREE.Box3().setFromObject(object));
   return box;
  }
  return {register,set,reset,visibleHit,bounds,get state(){return {...state};}};

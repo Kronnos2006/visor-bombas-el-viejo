@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import * as THREE from './public/vendor/three.module.js';
+import {buildPumpModel} from './public/pump-model.js';
 const DIR=path.dirname(fileURLToPath(import.meta.url));
 const src=readFileSync(path.join(DIR,'public/app.js'),'utf8');
 
@@ -34,10 +36,13 @@ for(const [,clave] of bloque.matchAll(/\['[^']*','([a-z_0-9]+)'\]/g))
  assert.ok(claves.has(clave),`La pieza consulta «${clave}», que no existe en la ficha`);
 
 // 6. La geometría usa las mismas diez posiciones que la lista.
-assert.ok(/const bases=\[([^\]]+)\]/.test(src),'Falta el arreglo de posiciones');
-const bases=RegExp.$1.split(',').map(Number);
-assert.equal(bases.length,10,'Debe haber una posición por pieza');
-for(let i=1;i<bases.length;i++)assert.ok(bases[i]>bases[i-1],'Las posiciones deben ir en orden del lado húmedo al motor');
+const model=buildPumpModel(THREE,'lf');
+assert.equal(model.components.length,10,'Debe haber un conjunto por pieza');
+assert.deepEqual(model.components.map(group=>group.userData.index),[0,1,2,3,4,5,6,7,8,9]);
+for(const group of model.components)assert.ok(Number.isFinite(group.userData.base),'Las posiciones de reposo deben ser finitas');
+// Un conjunto real contiene piezas anidadas: el impulsor debe quedar dentro de la carcasa.
+const impeller=new THREE.Box3().setFromObject(model.components[2]);
+assert.ok(impeller.min.x>=-2.7&&impeller.max.x<=-1.7,'El impulsor debe estar dentro de la cavidad axial de la voluta');
 
 // 7. El visor no debe declarar que esto es el plano del fabricante.
 assert.ok(/no es plano de taller/.test(src),'Falta la advertencia de que no es plano de taller');

@@ -29,7 +29,9 @@ Codespaces se usa para desarrollar y revisar la propuesta. No es el alojamiento 
 
 Al seleccionar un equipo activo aparece la barra **Anatomía de la bomba**. Ofrece conjunto, corte visual de un cuarto de las cubiertas, transparencia, aislamiento de una pieza seleccionada, centrado y reinicio. Las etiquetas se separan para evitar solapamientos y mantienen líneas hacia sus anclajes. La selección en el modelo o en la lista consulta la misma ficha del componente.
 
-El corte afecta solo las cubiertas; no elimina el impulsor, el eje ni el sello. Es una visualización ilustrativa por clipping, sin superficies de corte cerradas, y no un CAD dimensionado del fabricante. Las piezas no representadas para la familia Goulds continúan ocultas. Los controles no se habilitan para B22 sin uso ni cuando WebGL no está disponible. Se respeta la preferencia de movimiento reducido.
+**Retirar 1/4 / Reponer 1/4** oculta y vuelve a mostrar sectores de las cubiertas huecas, con paredes interiores y caras de corte cerradas. Conserva el impulsor, el eje y el sello dentro del conjunto. El modelo incluye álabes, camisa, resorte, caras del sello, rodamientos con bolas, rotor, estator, bobinas y ventilador. La ficha permite seleccionar y aislar cada componente representado. Goulds usa montaje compacto, sin soporte ni acople externos; LF y MTO conservan esos conjuntos. B22 sin uso y la ausencia de WebGL deshabilitan estos controles. Se respeta el movimiento reducido.
+
+La geometría tiene proporciones ilustrativas, sin cotas ni tolerancias del equipo instalado. La referencia de componentes de Goulds es la [guía de partes e-SH de Xylem](https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/parts/reshsmgr.pdf); no demuestra qué repuesto está instalado ni sustituye un CAD del fabricante.
 
 Integración inspirada en el flujo 3D de **Anatomy**, de Ryan, y en la adaptación en español facilitada por el usuario. Se mantiene la biblioteca Three.js ya incluida en el visor. Licencia original: `public/licenses/anatomy-MIT.txt`. Verificar con `node --test test-anatomy.mjs` o con `npm test` desde la raíz.
 

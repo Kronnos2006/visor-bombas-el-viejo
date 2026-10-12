@@ -158,6 +158,10 @@ button.pdf-btn.primary{background:#255047;border-color:var(--accent);color:#dcfc
 .anatomy-tools p{margin:11px 0 0}
 .part-leader{position:absolute;border-left:1px solid #a4c983;pointer-events:none;opacity:.65;z-index:1}
 .part-leader[hidden]{display:none}
+.subcomponent-list{display:grid;gap:5px;margin:10px 0}
+.subcomponent-list button{text-align:left;padding:8px 10px;border:1px solid #365049;border-radius:5px;background:#142521;color:#d6e3de;font-size:11px;cursor:pointer}
+.subcomponent-list button[aria-pressed=true]{border-color:var(--accent);color:var(--accent);background:#284131}
+.subcomponent-list button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(max-width:600px){.anatomy-tools{margin:0 12px 14px;padding:12px}.anatomy-actions{display:grid;grid-template-columns:1fr 1fr}.anatomy-actions button{font-size:10px}}
 
 

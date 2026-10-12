@@ -11,6 +11,7 @@ import {reportMeasurements} from './measurements.js';
 import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
+import {buildPumpModel} from './pump-model.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
@@ -86,68 +87,10 @@ function rebuildPlant(){
  if(render3D)render3D.refrescar();
 }
 function buildPump(variant='lf'){
- const steel=0xa6b9b7,green=0x608d7e,dark=0x42595c,orange=0xe7a269,mach=0xc6d2cd;
- const bases=[-2.95,-2.25,-2.05,-1.75,-1.3,-.9,-.05,.85,1.8,2.85];
- for(let i=0;i<10;i++){
-  const g=new THREE.Group();g.userData.index=i;g.userData.base=bases[i];g.position.x=bases[i];pumpGroup.add(g);componentGroups.push(g);
-  if(i===0){
-   add(g,cyl(1.08,.6,green)).userData.anatomyCover=true;add(g,cyl(1.14,.1,green),.3).userData.anatomyCover=true;
-   add(g,cyl(.44,.72,green),-.58);add(g,cyl(.7,.1,steel),-.98);
-   for(let k=0;k<8;k++)add(g,cyl(.05,.15,steel),-.98,Math.cos(k*Math.PI/4)*.56,Math.sin(k*Math.PI/4)*.56);
-   add(g,cyl(.33,.92,green,'y'),0,.94,0);add(g,cyl(.54,.1,steel,'y'),0,1.45,0);
-   for(let k=0;k<8;k++)add(g,cyl(.048,.15,steel,'y'),Math.cos(k*Math.PI/4)*.42,1.45,Math.sin(k*Math.PI/4)*.42);
-   add(g,box(.34,.9,.32,dark),0,-.62,.78);add(g,box(.34,.9,.32,dark),0,-.62,-.78);
-   add(g,box(.85,.2,2.05,dark),0,-1.08,0);
-  }
-  if(i===1)add(g,ring(1.1,.042,orange));
-  if(i===2){
-   add(g,cyl(.88,.1,mach),.13);add(g,cyl(.25,.4,mach),-.02);
-   for(let k=0;k<6;k++){const a=k*Math.PI/3,v=box(.3,.55,.082,mach);v.position.set(-.12,Math.cos(a)*.45,Math.sin(a)*.45);v.rotation.x=a;v.rotation.y=.33;g.add(v);}
-  }
-  if(i===3){
-   add(g,cyl(1.12,.15,green)).userData.anatomyCover=true;add(g,cyl(.6,.3,green),.2).userData.anatomyCover=true;
-   for(let k=0;k<10;k++)add(g,cyl(.048,.29,steel),.02,Math.cos(k*Math.PI/5)*.96,Math.sin(k*Math.PI/5)*.96);
-  }
-  if(i===4){
-   add(g,cyl(.54,.46,green)).userData.anatomyCover=true;add(g,cyl(.59,.09,steel),.26);
-   add(g,cyl(.08,.3,dark,'y'),0,.6,0);add(g,cyl(.13,.07,dark,'y'),0,.76,0);
-   for(let k=0;k<4;k++)add(g,cyl(.042,.2,steel),.26,Math.cos(k*Math.PI/2)*.45,Math.sin(k*Math.PI/2)*.45);
-  }
-  if(i===5){
-   add(g,cyl(.19,.64,mach));
-   add(g,cyl(.3,.09,0x9fb0ae),-.17);add(g,cyl(.3,.09,0x6c7d82),-.06);
-   add(g,ring(.2,.034,orange),-.27);add(g,ring(.32,.034,orange),.21);
-   for(let k=0;k<8;k++)add(g,cyl(.026,.2,steel),.07,Math.cos(k*Math.PI/4)*.235,Math.sin(k*Math.PI/4)*.235);
-   add(g,cyl(.41,.1,steel),.27);
-   for(let k=0;k<4;k++)add(g,cyl(.036,.26,steel),.3,Math.cos(k*Math.PI/2+.8)*.34,Math.sin(k*Math.PI/2+.8)*.34);
-  }
-  if(i===6){
-   add(g,cyl(.11,1.45,mach),-.52);add(g,cyl(.142,.88,mach),.36);add(g,cyl(.172,.11,mach),.86);
-  }
-  if(i===7){
-   add(g,cyl(.45,1.22,green)).userData.anatomyCover=true;add(g,cyl(.51,.11,green),-.6);
-   add(g,ring(.29,.072,steel),-.4);add(g,ring(.29,.072,steel),.4);add(g,ring(.29,.072,steel),.55);
-   add(g,cyl(.29,.11,dark),.67);
-   add(g,cyl(.09,.15,0xcfd8c9,'y'),0,.5,.34);
-   add(g,box(.92,.72,.98,dark),0,-.7,0);add(g,box(1.12,.14,1.2,dark),0,-1.08,0);
-  }
-  if(i===8){
-   add(g,cyl(.29,.17,mach),-.33);add(g,cyl(.21,.48,steel));add(g,cyl(.29,.17,mach),.33);
-   add(g,ring(.25,.048,orange),-.19);add(g,ring(.25,.048,orange),.19);
-  }
-  if(i===9){
-   add(g,cyl(.6,1.4,green)).userData.anatomyCover=true;
-   for(let k=0;k<14;k++){const fin=box(1.22,.11,.082,0x83a596);fin.position.set(0,Math.cos(k*Math.PI/7)*.62,Math.sin(k*Math.PI/7)*.62);fin.rotation.x=k*Math.PI/7;g.add(fin);}
-   add(g,cyl(.64,.11,dark),-.78);add(g,cyl(.48,.16,dark),.8);
-   add(g,box(.55,.3,.5,dark),0,.72,0);add(g,box(1.3,.18,1.3,dark),0,-.76,0);
-  }
-  if(variant==='mto')g.scale.setScalar(1.1);
-  if(variant==='goulds'){if(i===7||i===8)g.visible=false;if(i===9)g.scale.set(1.1,1.12,1.12);}
-  g.traverse(o=>{if(o.isMesh)o.userData.part=i;});
-  const anchor=new THREE.Object3D();anchor.position.set(0,i===0?1.85:(i===7?1:1.2),0);g.add(anchor);marker(anchor,String(i+1).padStart(2,'0'),'part',i);
- }
- const axis=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-11,0,0),new THREE.Vector3(11,0,0)]),new THREE.LineDashedMaterial({color:0x678b7a,dashSize:.13,gapSize:.15,transparent:true,opacity:.45}));axis.computeLineDistances();pumpGroup.add(axis);
- const base=add(pumpGroup,box(7.6,.16,2.4,0x263d3b),0,-1.32,0);base.userData.isBase=true;
+ const model=buildPumpModel(THREE,variant);
+ while(model.root.children.length)pumpGroup.add(model.root.children[0]);
+ componentGroups.push(...model.components);
+ for(const group of componentGroups){const index=group.userData.index;const anchor=new THREE.Object3D();anchor.position.set(0,index===0?1.75:1.12,0);group.add(anchor);marker(anchor,String(index+1).padStart(2,'0'),'part',index);}
  render3D?.refrescar();anatomy?.register(componentGroups);
 }
 function fly(pos,target,duration=1100){cameraFlight={start:performance.now(),duration:reducedMotion.matches?1:duration,from:camera.position.clone(),to:new THREE.Vector3(...pos),fromTarget:controls.target.clone(),toTarget:new THREE.Vector3(...target)};}
@@ -164,7 +107,7 @@ function initScene(){
   if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
   const r=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
   const hits=raycaster.intersectObjects(state.view==='plant'?pickables:(state.sector&&state.detail==='exterior'?[]:componentGroups),true);
-  const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant')selectPump(o.userData.tag);else if(o.userData.part!==undefined)selectPart(o.userData.part);}
+  const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant')selectPump(o.userData.tag);else if(o.userData.part!==undefined)selectPart(o.userData.part,o.userData.subcomponent||null);}
  });
  renderer.setAnimationLoop(()=>{
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
@@ -196,11 +139,11 @@ async function selectPump(tag){
  }setViewButtons(false);renderList();selectPart(null);
  }catch(e){if(e.code==='PUMP_NOT_AVAILABLE'){state.pump=null;await refresh();if(state.pumps.length)await selectPump(state.pumps[0].tag);toast('Lista actualizada al modo activo.');}else toast(e.message);}
 }
-function selectPart(index){
+function selectPart(index,subcomponent=null){
  if(index!==null&&state.sector&&state.detail==='exterior'){
   setPhotoDetail(true);
  }
- if(anatomy&&!anatomy.set({selected:index})){toast('Esa pieza no está representada para esta familia.');return;}
+ if(anatomy&&!anatomy.set({selected:index,subcomponent})){toast('Esa pieza no está representada para esta familia.');return;}
  state.part=index;syncAnatomyTools();
  markers.forEach(m=>{
   if(m.kind==='part'){
@@ -244,7 +187,7 @@ function renderPanel(){
 function renderOrings(){const rings=state.pump.data.orings;return Array.isArray(rings)&&rings.length?'<div class="block"><h3>O-rings registrados</h3>'+rings.map(o=>`<div class="record"><strong>${esc(o.posicion||'Posición no registrada')}</strong><p class="muted">Medida: ${esc(o.medida||'Sin levantar')}<br>Material: ${esc(o.material||'Sin levantar')}<br>Cantidad: ${esc(o.cantidad??'Sin levantar')}<br>Código: ${esc(o.codigo||'Sin levantar')}</p></div>`).join('')+'</div>':'<p class="notice">No hay medidas de o-rings registradas.</p>';}
 function showAnswer(item){const target=$('#ai-output');if(target)target.innerHTML=`<p class="answer-caption">PREGUNTA: ${esc(item.question)}</p><div class="ai-answer">${esc(item.answer)}</div><p class="source">${esc(item.source)}</p>`;}
 async function ask(e){e.preventDefault();if(busyAI)return;const tag=state.pump.tag,question=$('#question').value;busyAI=true;const btn=$('#ask-form button');btn.disabled=true;btn.textContent='Consultando…';try{let reportes=[];try{let left=22000;reportes=(await listReports(tag)).map(r=>{const t=(r.text||'').slice(0,Math.min(3000,left));left-=t.length;return{fecha:r.date,titulo:r.title,texto:t,pdf:r.pdf?r.pdf.name+' (PDF adjunto: su contenido no se envía a Gemini)':''};});}catch{}
- const response=await api('/api/ask',{tag,question,component:parts[state.part]?.name||'',reportes,notaExpediente:(expediente[tag]||{}).nota||''});state.answers[tag]={...response,question};if(state.pump?.tag===tag&&state.tab==='ia')showAnswer(state.answers[tag]);}catch(error){if(state.pump?.tag===tag&&$('#ai-output'))$('#ai-output').innerHTML=`<p class="error">${esc(error.message)}</p>`;else toast(error.message);}finally{busyAI=false;if($('#ask-form button')){$('#ask-form button').disabled=false;$('#ask-form button').textContent='Consultar Gemini →';}}}
+ const response=await api('/api/ask',{tag,question,component:anatomy?.state.subcomponent||parts[state.part]?.name||'',reportes,notaExpediente:(expediente[tag]||{}).nota||''});state.answers[tag]={...response,question};if(state.pump?.tag===tag&&state.tab==='ia')showAnswer(state.answers[tag]);}catch(error){if(state.pump?.tag===tag&&$('#ai-output'))$('#ai-output').innerHTML=`<p class="error">${esc(error.message)}</p>`;else toast(error.message);}finally{busyAI=false;if($('#ask-form button')){$('#ask-form button').disabled=false;$('#ask-form button').textContent='Consultar Gemini →';}}}
 function setViewButtons(top){$('#top').classList.toggle('active',top);$('#iso').classList.toggle('active',!top);}
 function setExplosion(value){state.explode=Number(value);$('#explode').value=value;$('#percent').textContent=value+'%';if(state.sector&&state.detail==='schematic')$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';if(camera)fly([state.explode>30?10:8,8,state.explode>30?21:12],[0,0,0],650);}
 $('#explode').oninput=e=>{if(state.sector&&state.detail==='exterior')setPhotoDetail(true);setExplosion(e.target.value);};$('#explode-all').onclick=()=>{if(state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(100);renderPanel();return;}setExplosion(state.explode>50?0:100);$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';};
@@ -309,7 +252,8 @@ async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=sta
 $('#refresh').onclick=async()=>{await refresh();toast('Expedientes actualizados.');};
 function setPhotoDetail(schematic){
  state.detail=schematic?'schematic':'exterior';state.part=null;state.explode=0;$('#explode').value=0;$('#percent').textContent='0%';
- if(schematic)anatomy?.set({selected:null,isolate:false});else anatomy?.reset();
+ if(schematic)anatomy?.set({selected:null,subcomponent:null,isolate:false});else anatomy?.reset();
+ if(controls)controls.minDistance=schematic?1:4;
  $('#scene-title').textContent=state.pump.tag+(schematic?' · Anatomía':' · Exterior');
  if(plant)plant.visible=false;if(pumpGroup)pumpGroup.visible=schematic;if(photoDetail)photoDetail.visible=!schematic;
  $('#explode').disabled=!schematic;$('#explode-all').disabled=false;$('#explode-all').textContent=schematic?(state.explode>50?'Juntar piezas':'Separar piezas ↗'):'Ver vista explosionada ↗';
@@ -318,15 +262,16 @@ function setPhotoDetail(schematic){
  $('#parts-title').textContent=schematic?`Despiece de ${identity}`:'Conjunto exterior';$('#part-count').textContent=schematic?(state.pump?.data?.variant==='goulds'?'8':'10')+' componentes de referencia · ficha individual':'Carcasa · guarda · motor · cubierta';
  const componentButtons=schematic?parts.map((part,index)=>state.pump?.data?.variant==='goulds'&&(index===7||index===8)?'':`<button class="part-button" data-part="${index}"><span>${String(index+1).padStart(2,'0')}</span>${esc(partName(index))}</button>`).join(''):'';
  $('#parts').innerHTML='<button id="switch-detail">'+(schematic?'← Volver al exterior de esta bomba':'Ver vista explosionada de esta bomba ↗')+'</button>'+componentButtons;
- $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));if(camera)fly(schematic?[8,7,12]:[5,4,7],[0,schematic?0:1,0]);syncAnatomyTools();
+ $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));if(camera)fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);syncAnatomyTools();
 }
 function syncAnatomyTools(){
  const available=!!anatomy&&!!state.pump&&!state.pump.data.inactive&&state.view==='pump';
  $('#anatomy-tools').hidden=!available;
  const mode=anatomy?.state||{};
  for(const [id,key] of [['anatomy-cut','cutaway'],['anatomy-transparent','transparent'],['anatomy-isolate','isolate']])$('#'+id).setAttribute('aria-pressed',String(!!mode[key]));
+ $('#anatomy-cut').textContent=mode.cutaway?'Reponer 1/4':'Retirar 1/4';
  $('#anatomy-isolate').disabled=state.part===null||!available;
- $('#anatomy-status').textContent=state.detail==='exterior'?'Abrí el conjunto, el corte o la transparencia para explorar el interior ilustrativo.':state.part!==null?`Pieza ${String(state.part+1).padStart(2,'0')} · ${partName(state.part)}${mode.isolate?' · aislada':''}. Su información está en la ficha.`:mode.cutaway?'Corte visual de un cuarto de las cubiertas. No muestra superficies de corte cerradas ni medidas reales.':'Elegí una pieza en el modelo o en la lista para consultar su ficha.';
+ $('#anatomy-status').textContent=state.detail==='exterior'?'Abrí el conjunto o retirale 1/4 a la carcasa para ver el interior.':state.part!==null?`Pieza ${String(state.part+1).padStart(2,'0')} · ${mode.subcomponent||partName(state.part)}${mode.isolate?' · aislada':''}. Su información está en la ficha.`:mode.cutaway?'Se retiró 1/4 de las cubiertas: podés ver el impulsor, eje, sello y el interior del motor. Pulsá Reponer 1/4 para cerrar.':'Conjunto armado. Retirá 1/4 o separá las piezas para ver su interior.';
 }
 function ensureAnatomy(){
  if(!state.pump||state.pump.data.inactive||!anatomy)return false;
@@ -338,10 +283,10 @@ function fitAnatomy(){
  const bounds=anatomy.bounds();if(bounds.isEmpty())return;
  const sphere=bounds.getBoundingSphere(new THREE.Sphere());
  const distance=Math.min(controls.maxDistance,sphere.radius/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))/Math.min(1,camera.aspect)*1.15);
- const center=sphere.center,position=center.clone().add(new THREE.Vector3(state.part===2?-8:8,6,12).normalize().multiplyScalar(distance));
+ const center=sphere.center,position=center.clone().add(new THREE.Vector3(state.part===9?8:-8,6,12).normalize().multiplyScalar(distance));
  fly(position.toArray(),center.toArray(),500);
 }
-$('#anatomy-cut').onclick=()=>{if(!ensureAnatomy())return;anatomy.set({cutaway:!anatomy.state.cutaway});syncAnatomyTools();};
+$('#anatomy-cut').onclick=()=>{if(!ensureAnatomy())return;anatomy.set({cutaway:!anatomy.state.cutaway});syncAnatomyTools();fitAnatomy();};
 $('#anatomy-transparent').onclick=()=>{if(!ensureAnatomy())return;anatomy.set({transparent:!anatomy.state.transparent});syncAnatomyTools();};
 $('#anatomy-isolate').onclick=()=>{if(!ensureAnatomy()||state.part===null)return;anatomy.set({isolate:!anatomy.state.isolate});syncAnatomyTools();fitAnatomy();};
 $('#anatomy-fit').onclick=()=>{if(ensureAnatomy())fitAnatomy();};
@@ -488,6 +433,10 @@ function initReports(tag){
   catch(x){err.textContent=x.message||'No se pudo guardar el reporte.';}finally{btn.disabled=false;}};
  paintReports(tag);
 }
+function representedSubparts(index){
+ const names=componentGroups[index]?.userData.subcomponents||[];
+ return names.length?'<div class="block"><h3>Componentes representados en 3D</h3><div class="subcomponent-list">'+names.map(name=>'<button type="button" data-subcomponent="'+esc(name)+'" aria-pressed="'+String(anatomy?.state.subcomponent===name)+'">'+esc(name)+'</button>').join('')+'</div><p class="muted">Elegí un componente para resaltarlo y aislarlo. Detalle visual de referencia; verificar el despiece del equipo instalado.</p></div>':'';
+}
 function renderPhotoPanel(){
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
  const p=state.pump?.data;
@@ -507,7 +456,7 @@ function renderPhotoPanel(){
  const linkRows=list=>list.map(l=>`<li><a href="${l.u}" target="_blank" rel="noopener noreferrer">${esc(l.t)} ↗</a>${l.k?` <span class="kind">${esc(l.k)}</span>`:''}${l.nota?`<small>${esc(l.nota)}</small>`:''}</li>`).join('');
  const seal=sealRecord(p),ref=sealReference(p);
  const sealInfo=`<h3>Datos registrados de ${esc(p.tag)}</h3>${seal.rows.length?fieldRows(seal.rows):'<p>La fuente de este equipo no identifica su sellado.</p>'}${seal.pending.length?`<p class="notice"><strong>POR CONFIRMAR</strong> · ${esc(seal.pending.join(' · '))}. Se completa con la identificación del sello o el registro de mantenimiento de esta bomba.</p>`:''}${ref?`<div class="block manufacturer-reference"><p class="eyebrow">REFERENCIA DEL FABRICANTE · NO ES IDENTIFICACIÓN DEL EQUIPO</p><h3>${esc(ref.title)}</h3><p>${esc(ref.scope)}</p>${fieldRows(ref.rows)}<ul class="doc-links">${linkRows(ref.links)}</ul><p class="muted">Los materiales son opciones de catálogo. La combinación instalada y su compatibilidad con el servicio requieren confirmación.</p></div>`:''}`;
- const componentCard=state.part!==null?`<section id="component-detail" class="component-focus" tabindex="-1"><p class="eyebrow">PIEZA ${String(state.part+1).padStart(2,'0')} SELECCIONADA</p><h2>${esc(partName(state.part,p))}</h2><p>${esc(parts[state.part].desc)}</p>${state.part===5?sealInfo:fieldRows(componentRows(p,state.part))}<div class="block part-docs"><h3>${state.part===5?'Documentación de la bomba':'Información del fabricante · '+esc(partName(state.part,p))}</h3><ul class="doc-links">${linkRows(linkPieza(p,state.part).filter(l=>state.part!==5||!ref?.links.some(r=>r.u===l.u)))}</ul></div><p class="muted">Fuente: ${esc(p.source)}. La geometría es ilustrativa; los datos pendientes no se deducen del dibujo.</p></section>`:'';
+ const componentCard=state.part!==null?`<section id="component-detail" class="component-focus" tabindex="-1"><p class="eyebrow">PIEZA ${String(state.part+1).padStart(2,'0')} SELECCIONADA</p><h2>${esc(anatomy?.state.subcomponent||partName(state.part,p))}</h2><p>${esc(parts[state.part].desc)}</p>${state.part===5?sealInfo:fieldRows(componentRows(p,state.part))}${representedSubparts(state.part)}<div class="block part-docs"><h3>${state.part===5?'Documentación de la bomba':'Información del fabricante · '+esc(partName(state.part,p))}</h3><ul class="doc-links">${linkRows(linkPieza(p,state.part).filter(l=>state.part!==5||!ref?.links.some(r=>r.u===l.u)))}</ul></div><p class="muted">Fuente: ${esc(p.source)}. La geometría es ilustrativa; los datos pendientes no se deducen del dibujo.</p></section>`:'';
  const exp=expediente[p.tag]||{placas:[],fotos:[],fab:[],rod:[]};
  const figs=(items,vacio)=>items.length?`<div class="exp-grid">${items.map(i=>`<figure><a href="${i.src}" target="_blank" rel="noopener"><img src="${i.src}" alt="${esc(i.t)}" loading="lazy"></a><figcaption>${esc(i.t)}${i.serie?` · serie leída: <b>${esc(i.serie)}</b> (verificar)`:''}<small>${esc(i.ref)}</small></figcaption></figure>`).join('')}</div>`:`<p class="muted">${vacio}</p>`;
  const docLinks=[...(exp.fab||[]).flatMap(k=>k==='weg'&&p.motor?.catalogo!=='00218XT3E145T'?[enlaces.weg[0]]:enlaces[k]||[]),...(exp.rod||[]).map(k=>enlaces.skf[k]).filter(Boolean).map(l=>({...l,k:'rodamiento · CAD'}))];
@@ -516,6 +465,7 @@ function renderPhotoPanel(){
  const photos=`<div class="photo-pair"><figure><figcaption>Referencia del lado · ${esc(p.area)}</figcaption><img src="${p.photo}" alt="Vista del lado donde se ubica ${esc(p.tag)}"></figure></div><p class="muted">Foto de contexto del PDF (lado donde está la bomba). Placa y foto propias de la bomba, más abajo en “Imágenes del equipo”.</p>`;
  $('#panel').innerHTML=`${componentCard}<p class="eyebrow">EXPEDIENTE DE ${esc(p.tag)}</p><h2>${p.inactive?'B22 · SIN USO':esc(p.marca)+' '+esc(p.modelo)}</h2><p class="notice">${p.inactive?'Equipo marcado SIN USO en el Excel. Exterior ilustrativo de bomba azul con cubierta roja, según la foto asociada a la fila 25. Modelo, dimensiones y componentes sin identificar; se conserva la posición aproximada existente.':'Datos del Excel y confirmaciones del usuario. Las proporciones 3D son aproximadas; los ejemplos de o-rings e historial están marcados DEMO.'}</p>${photos}${imagenes}${fieldRows([['Ubicación (tanque conectado)',p.nombre],['Lado',p.area],['Fabricante',p.marca],['Modelo',p.modelo],['Tamaño',p.size],['Fluido',p.servicio],['Fuente',p.source],...p.specs])}<div class="block interactive-part-block" data-part="9" title="Ver motor eléctrico en el 3D"><h3>Motor <span class="part-badge">Pieza 10 ↗</span></h3>${fieldRows(componentRows(p,9))}</div><div class="block interactive-part-block" data-part="5" title="Ver sello mecánico en el 3D"><h3>${esc(sealTitle(p))} <span class="part-badge">Pieza 06 ↗</span></h3>${state.part===5?'<p>Datos y referencias en la pieza seleccionada, arriba.</p>':sealInfo}</div><div class="block interactive-part-block" data-part="7" title="Ver rodamientos y bancada en el 3D"><h3>Rodamientos registrados <span class="part-badge">Pieza 08 ↗</span></h3>${fieldRows(componentRows(p,7))}</div><div class="block interactive-part-block" data-part="8" title="Ver acople en el 3D"><h3>Acople <span class="part-badge">Pieza 09 ↗</span></h3>${fieldRows(componentRows(p,8))}</div><div class="block"><h3>O-rings ${demo}</h3>${rings||'<p>Sin datos.</p>'}</div>${documentos}<div class="block"><div class="panel-actions"><button type="button" id="download-summary-pdf-bottom" class="primary wide pdf-btn">📄 Descargar resumen técnico de ${esc(p.tag)} (PDF)</button></div></div>`;
  $('#panel').querySelectorAll('.interactive-part-block').forEach(b=>b.onclick=()=>selectPart(Number(b.dataset.part)));
+ $('#panel').querySelectorAll('[data-subcomponent]').forEach(b=>b.onclick=()=>{selectPart(state.part,b.dataset.subcomponent);fitAnatomy();});
  $('#download-summary-pdf-bottom')?.addEventListener('click',()=>downloadPumpPDF(p.tag));
 }
 document.querySelector('.compass').textContent='LADOS FIJOS · Frontal B–C · Izquierdo C–D · Trasero D–A · Derecho A–B';
