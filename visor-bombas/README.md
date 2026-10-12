@@ -25,6 +25,15 @@ Codespaces se usa para desarrollar y revisar la propuesta. No es el alojamiento 
 
 ## Funciones
 
+### Trabajo de campo
+
+Desde la cabecera del visor:
+
+- **Levantamiento** (`/levantamiento.html`): formulario para celular. Se elige el TAG (P-xxxx o Bxx) y se completan placa, sello, empaque, o-rings, código de bodega, fotos y observaciones. Al guardar se actualiza la ficha de Obsidian: solo se escriben los campos con valor (un campo vacío nunca borra un dato), los o-rings y fotos se agregan a los existentes, se registran `verificado_por` y `fecha_verificacion`, y se añade una línea en «## Levantamiento de campo». Las fotos se reducen en el teléfono y se guardan en `00-Proyecto/fotos-campo/<TAG>/` (no se suben a GitHub). En un Bxx, la serie de placa marca `asociacion_placa: confirmada_en_campo`.
+- **Sin conexión o desde Vercel**: el formulario descarga un **paquete `.json`** con los datos y las fotos. En la computadora, la misma página tiene «Cargar paquetes del teléfono» para escribirlos en Obsidian. Si un guardado falla, el paquete se descarga solo para no perder el trabajo.
+- **Avance** (`/avance.html`): qué le falta a cada ficha (placa, sello, empaque, o-rings, fotos, código de bodega, verificado), con filtros por grupo y estado e impresión. El empaque figura como «no aplica» en bombas con sello mecánico.
+- **Solicitud a bodega** (`/solicitud.html`): se elige la bomba, se agregan los repuestos documentados en su ficha (sello, empaque, o-rings y, en Bxx, rodamientos y acople) o líneas a mano, y se descarga un PDF con firmas de solicita/autoriza/entrega. Las líneas sin código quedan resaltadas para que bodega confirme el número de parte. La lista se conserva en el navegador hasta vaciarla.
+
 ### Anatomía de la bomba
 
 Al seleccionar un equipo activo aparece la barra **Anatomía de la bomba**. Ofrece conjunto, corte visual de un cuarto de las cubiertas, transparencia, aislamiento de una pieza seleccionada, centrado y reinicio. Las etiquetas se separan para evitar solapamientos y mantienen líneas hacia sus anclajes. La selección en el modelo o en la lista consulta la misma ficha del componente.
@@ -54,6 +63,7 @@ Cada consulta lee y envía a Google el expediente DEMO integrado de la bomba sel
 - `OBSIDIAN_VAULT`: ruta de la bóveda real con `00-Proyecto/bombas` y `00-Proyecto/equipos`.
 - `GEMINI_API_KEY`, `GEMINI_MODEL`: configuración opcional de Gemini.
 - `PORT`: 8766 por defecto.
+- `VISOR_PASSWORD` (solo Vercel): si existe, todo el sitio pide contraseña (`middleware.js` para páginas y fotos, `server.mjs` para la API). El usuario del cuadro puede ser cualquiera. Sin la variable el sitio queda abierto.
 - `VOCATUS_CLOUD_DEV=1`: habilita el host temporal de Codespaces, escucha en la interfaz del contenedor y fuerza datos DEMO.
 
 ## Dependencias
@@ -62,7 +72,7 @@ Three.js 0.170.0 y js-yaml 4.1.0 están incluidos localmente con sus licencias. 
 
 ## Verificación
 
-- `node --test test.mjs`: YAML, fichas reales, rutas y controles de acceso.
+- `npm test` (`node --test test.mjs test-campo.mjs`): YAML, fichas reales, rutas, controles de acceso, levantamiento de campo en bóveda temporal, avance, PDF de solicitud y contraseña.
 - `node test-layout.mjs`: separación geométrica de tanques, bombas y pedestales.
 - `node test-sector.mjs`: escena fotográfica, expedientes DEMO, 15 tanques y fotografías vinculadas.
 - `node test-sector-confirmado.mjs`: B22 visible como SIN USO sin fabricante atribuido; sello registrado separado de la referencia del fabricante (la consulta no modifica la ficha).
@@ -84,3 +94,5 @@ Abrir `00-Proyecto/Documentacion-visor/00-Inicio.md` en la bóveda real. Incluye
 ## Publicar en Vercel (versión DEMO, solo lectura)
 
 `api/index.mjs` y `vercel.json` publican el visor en Vercel con los datos DEMO. En Vercel: **Add New → Project**, importar este repositorio y poner **Root Directory = `visor-bombas`**. Las fotos y el visor se sirven desde `public/`; la API de lectura (`/api/bootstrap`, `/api/pump`) corre como función. En Vercel no funcionan Gemini ni «Guardar informe» (carpeta de solo lectura, sin clave persistente). La bóveda real, los planos y las claves no se incluyen.
+
+**Contraseña:** antes de cargar cualquier dato real, en Vercel ir a **Settings → Environment Variables**, crear `VISOR_PASSWORD` con una clave y volver a desplegar. El navegador la pide una vez por sesión. En Vercel el levantamiento no escribe en Obsidian: descarga el paquete `.json` para cargarlo después en la computadora.

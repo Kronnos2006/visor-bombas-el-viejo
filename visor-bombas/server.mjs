@@ -8,6 +8,9 @@ import { photoPumps } from './public/sector-fotos.js';
 import { generatePumpPDF } from './pdf-generator.mjs';
 import { vaultConfiguration, equipmentData } from './vault.mjs';
 import { maintenanceStore } from './maintenance.mjs';
+import { surveyStore, FIELDS, fileOf } from './survey.mjs';
+import { generatePartsRequestPDF } from './parts-request.mjs';
+import { passwordOk } from './password.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const configuration = vaultConfiguration(ROOT);
@@ -15,6 +18,7 @@ const CLOUD_DEV = configuration.cloud;
 export const DEMO = configuration.demo;
 export const VAULT = configuration.vault;
 const maintenance = maintenanceStore(VAULT, DEMO);
+const survey = surveyStore(VAULT);
 const NOTES = path.join(VAULT,'00-Proyecto/bombas');
 const PUBLIC = path.join(ROOT,'public');
 const PORT = Number(process.env.PORT || 8766);
@@ -118,7 +122,8 @@ function send(res,status,data) {
 }
 async function payload(req) {
  let size=0; const chunks=[];
- const limit = req.url?.split('?')[0] === '/api/maintenance' ? 15 * 1024 * 1024 : 40000;
+ const route = req.url?.split('?')[0];
+ const limit = route === '/api/maintenance' ? 15 * 1024 * 1024 : route === '/api/survey' ? 70 * 1024 * 1024 : 40000;
  for await(const chunk of req) { size+=chunk.length; if(size>limit) throw new Error('Solicitud demasiado grande.'); chunks.push(chunk); }
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
@@ -138,6 +143,8 @@ Terminá con las fuentes utilizadas. Si no hay historial, decilo explícitamente
 export async function handler(req,res) {
  try {
   if (!isAllowedHost(req.headers.host)) return send(res,403,{error:'Host no permitido.'});
+  // En Vercel, con VISOR_PASSWORD definida, la API también exige la contraseña (las páginas las protege middleware.js).
+  if (ON_VERCEL && !passwordOk(req.headers.authorization, process.env.VISOR_PASSWORD)) { res.writeHead(401,{'WWW-Authenticate':'Basic realm="Visor Vocatus", charset="UTF-8"','Content-Type':'application/json; charset=utf-8'}); return res.end(JSON.stringify({error:'Acceso restringido.'})); }
   const url=new URL(req.url,`http://127.0.0.1:${PORT}`);
   if(req.method==='GET' && url.pathname==='/api/bootstrap') {
    const pumps=[],errors=[];
@@ -150,6 +157,10 @@ export async function handler(req,res) {
     catch (e) { errors.push({file:`equipos/${base.tag}.md`, error:e.message}); }
    }
    return send(res,200,{pumps,sectorPumps,errors,token:TOKEN,geminiConfigured:!!apiKey,model,demo:DEMO,vaultName:path.basename(VAULT),maintenanceWritable:configuration.writable});
+  }
+  if(req.method==='GET' && url.pathname==='/api/progress') {
+   const {rows,errors}=await survey.progress(new Set(photoPumps.map(p=>p.tag)));
+   return send(res,200,{rows,errors,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS});
   }
   if(req.method==='GET' && url.pathname==='/api/reports') {
    const p=await readPump(url.searchParams.get('tag')||'');
@@ -205,6 +216,18 @@ export async function handler(req,res) {
     if(body.model && !/^gemini-[a-z0-9.\-]+$/.test(body.model)) throw new Error('Nombre de modelo inválido.');
     apiKey=clean(body.apiKey,300); model=body.model||model;
     return send(res,200,{configured:!!apiKey,model});
+   }
+   if(url.pathname==='/api/survey') {
+    if(!configuration.writable) return send(res,403,{code:'NOT_WRITABLE',error:'Este alojamiento no guarda en Obsidian. Descargá el paquete y cargalo desde el visor en la computadora.'});
+    const tag=String(body.tag||'');
+    if(!tagPattern.test(tag)) throw new Error('TAG inválido.');
+    try{await readFile(path.join(VAULT,fileOf(tag)));}catch(e){if(e.code==='ENOENT'){const missing=new Error(`No existe la ficha ${fileOf(tag)} en ${DEMO?'la demostración':'la bóveda actual'}.`);missing.code='PUMP_NOT_AVAILABLE';throw missing;}throw e;}
+    return send(res,201,await survey.save(tag,body));
+   }
+   if(url.pathname==='/api/parts-request') {
+    const pdf=await generatePartsRequestPDF({...body,demo:DEMO});
+    res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename="Solicitud_bodega_${new Date().toISOString().slice(0,10)}.pdf"`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+    return res.end(Buffer.from(pdf));
    }
    if(url.pathname==='/api/maintenance') {
     const p=await readPump(body.tag);

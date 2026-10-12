@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vocatus · Atlas de mantenimiento</title><link rel="stylesheet" href="/style.css"><script type="importmap">{"imports":{"three":"/vendor/three.module.js"}}</script></head>
 <body>
-<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><div class="header-center">EL VIEJO <span>/</span> EQUIPOS DE PROCESO</div><button id="refresh">↻ Actualizar expedientes</button><span class="local">● SECTOR · EXPEDIENTES INTEGRADOS</span></header>
+<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><div class="header-center">EL VIEJO <span>/</span> EQUIPOS DE PROCESO</div><nav class="main-nav" aria-label="Trabajo de campo"><a href="/levantamiento.html">Levantamiento</a><a href="/avance.html">Avance</a><a href="/solicitud.html">Solicitud a bodega</a></nav><button id="refresh">↻ Actualizar expedientes</button><span class="local">● SECTOR · EXPEDIENTES INTEGRADOS</span></header>
 <div class="layout">
 <aside class="sidebar"><p class="eyebrow">EXPLORADOR DE ACTIVOS</p><h1>Tu planta,<br>pieza por pieza.</h1><p class="mode-summary">Sector fotografiado · expedientes integrados</p><label class="search">⌕ <input id="search" placeholder="Buscar bomba o servicio" aria-label="Buscar bomba"></label><select id="area" aria-label="Filtrar por área"><option value="">Todas las áreas</option><option>Destilación</option><option>Fermentación</option></select><div id="pump-list"></div><footer><strong id="count">—</strong> equipos en esta vista<p>Fotos, ficha, historial e IA en un mismo lugar.</p></footer></aside>
 <main>

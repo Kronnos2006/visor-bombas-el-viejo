@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Solicitud a bodega · Vocatus</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/campo.css"></head>
+<body>
+<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><nav class="campo-nav"><a href="/">Visor 3D</a><a href="/levantamiento.html">Levantamiento</a><a href="/avance.html">Avance</a><a href="/solicitud.html" aria-current="page">Solicitud a bodega</a></nav></header>
+<main class="campo">
+<p class="eyebrow">REPUESTOS</p>
+<h1>Solicitud a bodega</h1>
+<p class="lead">Elegí la bomba, marcá los repuestos de su ficha y descargá la solicitud en PDF para firmar y llevar a bodega.</p>
+<div id="mode"></div>
+<section class="card">
+ <h2>1 · Repuestos de la ficha</h2>
+ <label>Bomba<select id="pump"><option value="">Elegí una bomba…</option></select></label>
+ <div id="suggest"></div>
+ <details style="margin-top:12px"><summary class="muted" style="cursor:pointer">Agregar otro repuesto a mano</summary>
+  <form id="manual" class="grid" style="margin-top:10px"><label>Pieza<input name="pieza" required maxlength="80" placeholder="Ej. rodamiento"></label><label>Detalle / medida<input name="detalle" maxlength="160"></label><label>Código<input name="codigo" maxlength="60"></label><label>Cantidad<input name="cantidad" inputmode="numeric" value="1"></label><button class="primary">Agregar</button></form>
+ </details>
+</section>
+<section class="card">
+ <h2>2 · Solicitud <span class="muted" id="cart-count"></span></h2>
+ <div id="cart"><p class="muted">Todavía no agregaste repuestos.</p></div>
+</section>
+<section class="card">
+ <h2>3 · Datos de la solicitud</h2>
+ <form id="request" class="grid">
+  <label>Solicita<input name="solicitante" required maxlength="80"></label>
+  <label>Fecha<input name="fecha" type="date" required></label>
+  <label>Área<input name="area" maxlength="80" placeholder="Ej. Destilación"></label>
+  <label>Orden de trabajo<input name="orden" maxlength="40"></label>
+  <label style="grid-column:1/-1">Motivo<textarea name="motivo" maxlength="300" placeholder="Ej. fuga en el sello, mantenimiento preventivo…"></textarea></label>
+ </form>
+ <div id="result" role="status"></div>
+ <div class="sticky-actions"><button class="primary" id="pdf">Descargar solicitud PDF</button><button type="button" id="clear">Vaciar solicitud</button></div>
+</section>
+</main>
+<script type="module" src="/solicitud.js"></script>
+</body></html>

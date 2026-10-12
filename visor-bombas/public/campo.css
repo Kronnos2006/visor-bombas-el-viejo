@@ -1,0 +1,62 @@
+/* Páginas de trabajo de campo: levantamiento, avance y solicitud a bodega. Pensadas primero para celular. */
+.campo{max-width:980px;margin:0 auto;padding:18px 16px 80px}
+.campo-nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.campo-nav a{font-size:11px;padding:7px 10px;border:1px solid #35444b;border-radius:6px;text-decoration:none;color:#c9d9dc;background:#18242a}
+.campo-nav a[aria-current=page]{border-color:var(--accent);color:var(--accent);background:#22311f}
+.campo h1{font-size:28px;margin:6px 0 6px}
+.campo .lead{color:var(--muted);font-size:13px;margin:0 0 16px}
+.card{border:1px solid var(--line);border-radius:10px;background:#121c20;padding:16px;margin:12px 0}
+.card h2{font-size:17px;margin:0 0 4px}
+.card>p.muted{margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.campo label{display:grid;gap:5px;font-size:12px;color:#a9bcc1}
+.campo label small{color:var(--muted);font-size:10.5px}
+.campo input,.campo select,.campo textarea{width:100%;font-size:16px;padding:11px 10px;margin:0;background:#0d1418;color:#e1eded;border:1px solid #384a50;border-radius:7px}
+.campo select{font-size:15px}
+.campo input::placeholder,.campo textarea::placeholder{color:#5f7378}
+.campo button{font-size:14px;padding:11px 14px;border-radius:7px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sticky-actions{position:sticky;bottom:0;background:linear-gradient(transparent,#0d1418 30%);padding:18px 0 10px;display:flex;gap:8px;flex-wrap:wrap}
+.sticky-actions button{flex:1 1 160px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid #3a4b50;color:#9fb1b6;white-space:nowrap}
+.chip.ok{border-color:#56704a;background:#22311f;color:#c6ed86}
+.chip.no{border-color:#7a5a2e;background:#33281b;color:#f5c27f}
+.chip.na{opacity:.45}
+.bar{height:6px;border-radius:4px;background:#22303a;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.oring{display:grid;grid-template-columns:1.2fr 1fr 1fr .6fr 1fr auto;gap:6px;align-items:end;margin:8px 0}
+.oring button{padding:10px}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:10px}
+.photos figure{margin:0;position:relative}
+.photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px;border:1px solid var(--line)}
+.photos button{position:absolute;top:4px;right:4px;padding:2px 8px;font-size:12px;background:#000a}
+.current{font-size:10.5px;color:#7f9b8c}
+.msg{padding:12px;border-radius:8px;font-size:13px;margin:12px 0}
+.msg.ok{background:#22311f;border:1px solid #56704a;color:#d6f2b8}
+.msg.err{background:#3a2420;border:1px solid #8a4b3c;color:#ffc2b3}
+.msg.warn{background:#33281b;border:1px solid #7a5a2e;color:#f5d39f}
+.table{width:100%;border-collapse:collapse;font-size:12px}
+.table th{text-align:left;font-weight:500;color:var(--muted);font-size:10.5px;letter-spacing:.6px;border-bottom:1px solid var(--line);padding:8px 6px}
+.table td{border-bottom:1px solid #1e2b30;padding:10px 6px;vertical-align:top}
+.table td strong{font-size:14px}
+.stat{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.stat div{border:1px solid var(--line);border-radius:8px;padding:10px;background:#121c20}
+.stat b{display:block;font-size:22px;color:#eef5f3;font-weight:600}
+.stat span{font-size:11px;color:var(--muted)}
+.suggest{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid #1e2b30;padding:10px 0}
+.suggest p{margin:0;font-size:12px;line-height:1.4}
+.suggest small{color:var(--muted)}
+.cart-line{display:grid;grid-template-columns:1fr 70px auto;gap:8px;align-items:center;border-bottom:1px solid #1e2b30;padding:8px 0}
+.cart-line p{margin:0;font-size:12px;line-height:1.4}
+@media(max-width:640px){
+ header .header-center,header .local{display:none}
+ .campo-nav{width:100%;margin:0}
+ header{height:auto;flex-wrap:wrap;padding:10px 14px;gap:8px}
+ .oring{grid-template-columns:1fr 1fr}
+ .oring button{grid-column:1/-1}
+ .table thead{display:none}
+ .table tr{display:block;border-bottom:1px solid var(--line);padding:8px 0}
+ .table td{display:block;border:0;padding:4px 0}
+}
+@media print{.campo-nav,.sticky-actions,.no-print{display:none!important}body,.card{background:#fff;color:#111}.card{border-color:#bbb}.chip.ok{color:#264d10;background:#eaf6dc}.chip.no{color:#7a4a05;background:#fbeed8}}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Levantamiento de campo · Vocatus</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/campo.css"></head>
+<body>
+<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><nav class="campo-nav"><a href="/">Visor 3D</a><a href="/levantamiento.html" aria-current="page">Levantamiento</a><a href="/avance.html">Avance</a><a href="/solicitud.html">Solicitud a bodega</a></nav></header>
+<main class="campo">
+<p class="eyebrow">TRABAJO DE CAMPO</p>
+<h1>Levantamiento de bomba</h1>
+<p class="lead">Lo que leás en la placa y en bodega queda escrito en la ficha de Obsidian. Los campos vacíos no borran lo que ya está registrado.</p>
+<div id="mode"></div>
+<form id="form" autocomplete="off">
+<section class="card">
+ <div class="grid">
+  <label>Equipo (TAG)<input id="tag" name="tag" list="tags" required placeholder="Ej. B1 o P-1311" pattern="(P-\d{4}[A-Z]?|B[1-9]\d{0,3})" autocapitalize="characters"><datalist id="tags"></datalist></label>
+  <label>Fecha<input type="date" name="date" required></label>
+  <label>Responsable<input name="author" required maxlength="120" placeholder="Quién levantó el dato"></label>
+ </div>
+ <div id="status" class="chips" style="margin-top:12px"></div>
+</section>
+<section class="card" data-group="placa"><h2>Placa de la bomba</h2><p class="muted">Copiá tal cual lo que dice la placa. Si una letra no se lee, dejala en blanco y anotalo en observaciones.</p><div class="grid"></div></section>
+<section class="card" data-group="sello"><h2>Sello mecánico</h2><p class="muted">Del sello instalado o de la caja de bodega.</p><div class="grid"></div></section>
+<section class="card" data-group="empaque"><h2>Empaque / empaquetadura</h2><div class="grid"></div></section>
+<section class="card"><h2>O-rings</h2><p class="muted">Una línea por o-ring. Medida como diámetro interior × sección.</p><div id="orings"></div><button type="button" id="add-oring">＋ Agregar o-ring</button></section>
+<section class="card" data-group="bodega"><h2>Bodega</h2><div class="grid"></div></section>
+<section class="card"><h2>Fotos</h2><p class="muted">Placa, sello, caja del repuesto. Se reducen en el teléfono antes de enviarse.</p><label class="no-print">Tomar o elegir fotos<input type="file" id="photo-input" accept="image/*" capture="environment" multiple></label><div class="photos" id="photos"></div></section>
+<section class="card"><h2>Observaciones</h2><textarea name="observations" maxlength="3000" placeholder="Ej. placa parcialmente borrada, sello con goteo, la caja de bodega dice…"></textarea></section>
+<div id="result" role="status"></div>
+<div class="sticky-actions"><button class="primary" id="save">Guardar en la ficha</button><button type="button" id="export">Descargar paquete</button></div>
+</form>
+<section class="card no-print"><h2>Cargar paquetes del teléfono</h2><p class="muted">Si levantaste sin conexión, pasá los archivos <code>.json</code> a la computadora y cargalos aquí para escribirlos en Obsidian.</p><input type="file" id="import" accept="application/json,.json" multiple><div id="import-result"></div></section>
+</main>
+<script type="module" src="/levantamiento.js"></script>
+</body></html>
