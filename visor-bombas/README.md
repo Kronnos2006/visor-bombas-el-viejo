@@ -25,6 +25,14 @@ Codespaces se usa para desarrollar y revisar la propuesta. No es el alojamiento 
 
 ## Funciones
 
+### Anatomía de la bomba
+
+Al seleccionar un equipo activo aparece la barra **Anatomía de la bomba**. Ofrece conjunto, corte visual de un cuarto de las cubiertas, transparencia, aislamiento de una pieza seleccionada, centrado y reinicio. Las etiquetas se separan para evitar solapamientos y mantienen líneas hacia sus anclajes. La selección en el modelo o en la lista consulta la misma ficha del componente.
+
+El corte afecta solo las cubiertas; no elimina el impulsor, el eje ni el sello. Es una visualización ilustrativa por clipping, sin superficies de corte cerradas, y no un CAD dimensionado del fabricante. Las piezas no representadas para la familia Goulds continúan ocultas. Los controles no se habilitan para B22 sin uso ni cuando WebGL no está disponible. Se respeta la preferencia de movimiento reducido.
+
+Integración inspirada en el flujo 3D de **Anatomy**, de Ryan, y en la adaptación en español facilitada por el usuario. Se mantiene la biblioteca Three.js ya incluida en el visor. Licencia original: `public/licenses/anatomy-MIT.txt`. Verificar con `node --test test-anatomy.mjs` o con `npm test` desde la raíz.
+
 Vista superior ilustrativa, acercamiento a la bomba, rotación y despiece de 10 piezas según ANSI/ASME B73.1 (desarme posterior): carcasa, empaque de carcasa, impulsor abierto, tapa de carcasa, cámara de sello, sello mecánico, eje, bancada de rodamientos, acople espaciador y motor brida JM. Cuando el Excel documenta Tipo 21, el visor lo identifica como sello mecánico por componentes con fuelle elastomérico; no es un cartucho. En las bombas LF cuyo sellado está vacío, el tipo permanece POR CONFIRMAR. La arquitectura es una referencia de la norma y la geometría no está dimensionada; ninguna medida del modelo sirve para comprar. Fichas YAML con sellos, o-rings, historial e informes. Descarga de documentos vinculados que existan en la bóveda.
 
 `public/realismo.js` añade entorno procedural de reflejos, materiales PBR, mapas de rugosidad, luces y sombras, tone mapping ACES Filmic y salida sRGB. Se aplica tras construir la bomba y se refresca al reconstruir la planta. No requiere HDRI ni texturas externas.

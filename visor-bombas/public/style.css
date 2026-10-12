@@ -144,4 +144,20 @@ button.pdf-btn.primary{background:#255047;border-color:var(--accent);color:#dcfc
  font-weight:normal;
 }
 
+/* Exploración Anatomy: comparte modelo, selección y fichas con el visor. */
+.anatomy-tools{margin:0 20px 18px;padding:15px;border:1px solid #35564b;border-radius:10px;background:linear-gradient(130deg,#172c27,#142126)}
+.anatomy-tools[hidden]{display:none}
+.anatomy-heading{display:flex;flex-wrap:wrap;gap:6px 15px;align-items:baseline;margin-bottom:12px}
+.anatomy-heading strong{font-size:14px;color:var(--accent)}
+.anatomy-heading span,.anatomy-tools p{font-size:10px;line-height:1.5;color:var(--muted)}
+.anatomy-actions{display:flex;flex-wrap:wrap;gap:7px}
+.anatomy-actions button{padding:9px 11px;border:1px solid #3c5652;border-radius:6px;background:#12201f;color:#dce8e1;font-size:11px;cursor:pointer;min-height:36px}
+.anatomy-actions button:hover:not(:disabled),.anatomy-actions button[aria-pressed=true]{background:#294332;border-color:var(--accent);color:var(--accent)}
+.anatomy-actions button:disabled{opacity:.4;cursor:default}
+.anatomy-actions button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.anatomy-tools p{margin:11px 0 0}
+.part-leader{position:absolute;border-left:1px solid #a4c983;pointer-events:none;opacity:.65;z-index:1}
+.part-leader[hidden]{display:none}
+@media(max-width:600px){.anatomy-tools{margin:0 12px 14px;padding:12px}.anatomy-actions{display:grid;grid-template-columns:1fr 1fr}.anatomy-actions button{font-size:10px}}
+
 
