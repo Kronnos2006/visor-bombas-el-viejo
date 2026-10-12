@@ -37,9 +37,11 @@ import os
 import re
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-BASE = os.path.dirname(AQUI)
+BASE = os.path.join(os.path.abspath(os.environ['OBSIDIAN_VAULT']), '00-Proyecto') if os.environ.get('OBSIDIAN_VAULT') else os.path.dirname(AQUI)
 NOTAS = os.path.join(BASE, "bombas")
-INFORMES = os.path.join(BASE, "informes-mantenimiento")   # opcional
+EQUIPOS = os.path.join(BASE, "equipos")
+INFORMES = os.path.join(BASE, "Mantenimiento")
+INFORMES_LEGACY = os.path.join(BASE, "informes-mantenimiento")
 SALIDA = os.path.join(BASE, "export")
 
 # ISO 14224 — solo la clase de equipo, que para una bomba no admite duda.
@@ -119,6 +121,11 @@ def parsear_yaml(bloque):
 
 def limpiar(v):
     v = v.strip()
+    if v.startswith('"') and v.endswith('"'):
+        try:
+            return json.loads(v)
+        except (ValueError, TypeError):
+            pass
     v = re.sub(r"\s+#.*$", "", v)
     return v.strip().strip('"').strip("'").strip()
 
@@ -262,22 +269,27 @@ def historial_externo():
     La carpeta es opcional: si no existe, se ignora.
     """
     out = []
-    if not os.path.isdir(INFORMES):
-        return out
-    for ruta in sorted(glob.glob(os.path.join(INFORMES, "*.md"))):
+    rutas = sorted(set(glob.glob(os.path.join(INFORMES, "*.md")) + glob.glob(os.path.join(INFORMES_LEGACY, "*.md"))))
+    for ruta in rutas:
         d, cuerpo = leer_nota(ruta)
-        tag = txt(d, "tag")
+        if txt(d, "demostracion").lower() in ("true", "si", "sí", "1"):
+            avisos.append("Informe DEMO, excluido: " + os.path.basename(ruta))
+            continue
+        tag = txt(d, "tag") or txt(d, "bomba")
         if not tag:
             avisos.append("Informe sin tag, se omite: " + os.path.basename(ruta))
             continue
-        desc = txt(d, "descripcion") or " ".join(cuerpo.split())[:300]
+        intervencion = re.search(r"^## Intervención\s*\n(.*?)(?=^## |\Z)", cuerpo, re.M | re.S)
+        responsable = re.search(r"^Responsable:\s*(.+)$", cuerpo, re.M)
+        repuestos = re.search(r"^## Repuestos utilizados\s*\n(.*?)(?=^## |\Z)", cuerpo, re.M | re.S)
+        desc = txt(d, "descripcion") or (intervencion.group(1).strip() if intervencion else " ".join(cuerpo.split())[:300])
         out.append({
             "tag_activo": tag,
             "fecha": txt(d, "fecha"),
             "tipo": txt(d, "tipo"),
             "descripcion": desc,
-            "repuesto_usado": txt(d, "repuesto_usado"),
-            "responsable": txt(d, "responsable"),
+            "repuesto_usado": txt(d, "repuesto_usado") or (repuestos.group(1).strip() if repuestos else ""),
+            "responsable": txt(d, "responsable") or (responsable.group(1).strip() if responsable else ""),
             "horas_parada": txt(d, "horas_parada"),
             "fuente": os.path.basename(ruta),
         })
@@ -286,7 +298,7 @@ def historial_externo():
 
 # -------------------------------------------------------------------- main
 def main():
-    rutas = [r for r in sorted(glob.glob(os.path.join(NOTAS, "*.md")))
+    rutas = [r for r in sorted(glob.glob(os.path.join(NOTAS, "*.md")) + glob.glob(os.path.join(EQUIPOS, "B*.md")))
              if not os.path.basename(r).startswith("_")]
     if not rutas:
         raise SystemExit("No encontré fichas en " + NOTAS)
@@ -298,6 +310,13 @@ def main():
 
     for ruta in rutas:
         d, cuerpo = leer_nota(ruta)
+        if txt(d, "id") and not txt(d, "tag"):
+            d = dict(d)
+            d['tag'] = txt(d, 'id')
+            # Mapeo explícito de campos documentales; no se completan medidas ausentes.
+            for destino, origen in [('nombre', 'ubicacion'), ('servicio', 'liquido'), ('fluido', 'liquido'), ('serie', 'placa_serie'), ('fuente_datos', 'fuente'), ('confianza', 'confianza_transcripcion'), ('sello_modelo', 'sello_tipo')]:
+                if not txt(d, destino):
+                    d[destino] = txt(d, origen)
         tag = txt(d, "tag")
         if not tag or tag == "P-XXXX":
             continue
@@ -380,7 +399,12 @@ def main():
 
         completo.append({"activo": activo, "repuestos": items})
 
-    ordenes.extend(historial_externo())
+    tags_exportados = {a['tag'] for a in activos}
+    for informe in historial_externo():
+        if informe['tag_activo'] in tags_exportados:
+            ordenes.append(informe)
+        else:
+            avisos.append("Informe sin activo exportable, se omite: " + informe['fuente'])
     ordenes.sort(key=lambda o: (o.get("fecha") or "", o["tag_activo"]))
     for i, o in enumerate(ordenes, 1):
         o["id"] = "OT-%04d" % i

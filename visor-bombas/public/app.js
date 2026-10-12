@@ -6,7 +6,8 @@ import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
 import {expediente, enlaces, linksBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
-import {listReports, addReport, deleteReport} from './reportes.js';
+import {listReports, addReport, deleteReport, configureReports, reportsInObsidian, importReports} from './reportes.js';
+import {reportMeasurements} from './measurements.js';
 import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
 
@@ -323,7 +324,7 @@ $('#search').oninput=renderList;$('#area').onchange=renderList;document.querySel
 $('#close-settings').onclick=()=>$('#settings').close();$('#close-report').onclick=()=>$('#report-dialog').close();
 $('#config-form').onsubmit=async e=>{e.preventDefault();const form=e.target;try{const r=await api('/api/config',Object.fromEntries(new FormData(form)));state.configured=r.configured;state.model=r.model;form.elements.apiKey.value='';$('#settings').close();renderPanel();toast('Clave guardada solo durante esta sesión.');}catch(e){$('#config-error').textContent=e.message;}};
 $('#report-form').onsubmit=async e=>{e.preventDefault();const tag=state.pump.tag,form=e.target,button=form.querySelector('button.primary');button.disabled=true;try{await api('/api/maintenance',{...Object.fromEntries(new FormData(form)),tag});$('#report-dialog').close();form.reset();if(state.pump?.tag===tag)state.pump=await api('/api/pump?tag='+encodeURIComponent(tag));renderPanel();toast(state.demo?'Informe de prueba guardado en la carpeta de demostración.':'Informe guardado en Obsidian.');}catch(e){$('#report-error').textContent=e.message;}finally{button.disabled=false;}};
-async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?photoPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;const area=$('#area').value;$('#area').innerHTML='<option value="">Todas las áreas</option>'+[...new Set(state.pumps.map(p=>p.area).filter(Boolean))].map(a=>`<option>${esc(a)}</option>`).join('');$('#area').value=state.pumps.some(p=>p.area===area)?area:'';document.querySelector('.local').textContent='● SECTOR · EXPEDIENTES INTEGRADOS';document.querySelector('.sidebar footer p').textContent='11 bombas con datos + B22 sin uso. Excel y orientación integrados.';$('#report-dialog .muted').textContent='Los registros de la propuesta deben conservar la identificación DEMO.';$('#scene-badge').textContent='SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plant)rebuildPlant();if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
+async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?r.sectorPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;configureReports({writable:r.maintenanceWritable,token:r.token});if(state.pump&&state.sector){const current=state.pumps.find(p=>p.tag===state.pump.tag);if(current)state.pump={...state.pump,data:current};}const area=$('#area').value;$('#area').innerHTML='<option value="">Todas las áreas</option>'+[...new Set(state.pumps.map(p=>p.area).filter(Boolean))].map(a=>`<option>${esc(a)}</option>`).join('');$('#area').value=state.pumps.some(p=>p.area===area)?area:'';document.querySelector('.local').textContent=r.maintenanceWritable?'● OBSIDIAN · '+r.vaultName:'● DEMO · REPORTES EN ESTE NAVEGADOR';document.querySelector('.sidebar footer p').textContent='11 bombas con datos + B22 sin uso. Excel y orientación integrados.';$('#report-dialog .muted').textContent=r.maintenanceWritable?'Se guardará en la bóveda '+r.vaultName+'.':'Este alojamiento no guarda informes en Obsidian.';$('#scene-badge').textContent='SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plant)rebuildPlant();if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
 $('#refresh').onclick=async()=>{await refresh();toast('Expedientes actualizados.');};
 function setPhotoDetail(schematic){
  state.detail=schematic?'schematic':'exterior';state.part=null;state.explode=0;$('#explode').value=0;$('#percent').textContent='0%';
@@ -337,9 +338,10 @@ function setPhotoDetail(schematic){
  $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));if(camera)fly(schematic?[8,7,12]:[5,4,7],[0,schematic?0:1,0]);
 }
 function selectPhotoPump(tag){
- const p=photoPumps.find(p=>p.tag===tag);if(!p)return;const ticket=++state.loading;
+ const p=state.pumps.find(p=>p.tag===tag);if(!p)return;const ticket=++state.loading;
  history.replaceState(null,'','#'+p.tag);
  state.pump={tag,data:p,photo:true};state.tab='ficha';state.part=null;
+ api('/api/pump?tag='+encodeURIComponent(tag)).then(current=>{if(ticket!==state.loading)return;state.pump={...current,photo:true};renderPanel();}).catch(error=>{if(ticket===state.loading)toast(error.message);});
  $('#selected-tag').textContent=tag;$('#selected-name').textContent=`${p.marca} ${p.modelo} · ${p.nombre}`;$('#source-status').textContent=p.inactive?'SIN USO · SIN DATOS TÉCNICOS':'DATOS APORTADOS · GEOMETRÍA APROXIMADA';
  $('#scene-title').textContent=tag+' · Exterior';$('#breadcrumb').textContent='SECTOR FOTOGRAFIADO / '+tag;$('#back').hidden=false;
  $('#scene-help').textContent='Arrastrá para girar · Rueda para acercarte';
@@ -412,14 +414,7 @@ async function mountHistoryChart(pump){
     nominalFlow=/gpm/i.test(flowRow[1])?Number((val*0.2271).toFixed(1)):val;
    }
   }
-  const headRow=pData.specs.find(([k])=>/altura/i.test(k));
-  if(headRow&&headRow[1]){
-   const m=headRow[1].match(/(\d+(?:[.,]\d+)?)/);
-   if(m){
-    const meters=parseFloat(m[1].replace(',','.'));
-    nominalPressure=Number((meters*0.0981).toFixed(2));
-   }
-  }
+
  }
 
  if(pData.caudal_m3h) nominalFlow=parseFloat(pData.caudal_m3h);
@@ -429,47 +424,28 @@ async function mountHistoryChart(pump){
  const baseFlow=nominalFlow||12.5;
  if(pData.inactive){mount.innerHTML='<p class="muted">Equipo SIN USO: sin lecturas de presión ni caudal para graficar.</p>';return;}
  // Serie DEMO de 12 rondas mensuales (ver historial-demo.js); los reportes de campo se suman abajo.
- const records=demoReadings(pData,basePres,baseFlow);
+ const records=state.demo?demoReadings(pData,basePres,baseFlow):[];
 
- if(!records.length&&Array.isArray(pData.history)&&pData.history.length){
-  pData.history.forEach((h,i)=>{
-   const factor=1-(i*0.04);
-   records.push({
-    fecha:h.fecha||'2026-09-01',
-    tipo:h.tipo||'Inspección de mantenimiento',
-    presion:Number((basePres*factor).toFixed(2)),
-    caudal:Number((baseFlow*factor).toFixed(1)),
-    detalle:h.detalle||'Comprobación de parámetros de proceso'
-   });
-  });
- }
-
- if(!records.length){
-  records.push(
-   {fecha:'2026-01-15',tipo:'Puesta en marcha',presion:Number(basePres.toFixed(2)),caudal:Number(baseFlow.toFixed(1)),detalle:'Prueba de entrega y curva nominal'},
-   {fecha:'2026-05-18',tipo:'Mantenimiento preventivo',presion:Number((basePres*0.96).toFixed(2)),caudal:Number((baseFlow*0.97).toFixed(1)),detalle:'Revisión de sellado e inspección de rodamientos'},
-   {fecha:'2026-09-02',tipo:'Inspección operativa',presion:Number((basePres*0.92).toFixed(2)),caudal:Number((baseFlow*0.93).toFixed(1)),detalle:'Verificación de caudal y monitoreo en campo'}
-  );
- }
 
  try{
   const userReps=await listReports(tag);
   userReps.forEach(r=>{
    const textAll=(r.text||'')+' '+(r.title||'');
-   const presM=textAll.match(/(\d+(?:[.,]\d+)?)\s*(?:bar|kg\/cm2)/i);
-   const flowM=textAll.match(/(\d+(?:[.,]\d+)?)\s*(?:m3\/h|gpm)/i);
+   const measured=reportMeasurements(textAll);
+   if(measured.pressure===null&&measured.flow===null)return;
    records.push({
     fecha:r.date||'Reciente',
-    tipo:'Reporte de campo',
-    presion:presM?parseFloat(presM[1].replace(',','.')):Number((basePres*0.98).toFixed(2)),
-    caudal:flowM?parseFloat(flowM[1].replace(',','.')):Number((baseFlow*0.98).toFixed(1)),
+    tipo:r.demonstration?'Reporte DEMO':'Reporte de campo',
+    presion:measured.pressure,
+    caudal:measured.flow,
     detalle:r.title||r.text||'Lectura registrada por el técnico'
    });
   });
- }catch{}
+ }catch(error){if(mount.isConnected)mount.innerHTML='<p class="form-error">'+esc(error.message)+'</p>';return;}
 
  records.sort((a,b)=>(a.fecha>b.fecha?1:-1));
 
+ if(!mount.isConnected||state.pump?.tag!==tag)return;
  renderRechartsHistory(mount,{
   pumpTag:tag,
   records,
@@ -478,13 +454,15 @@ async function mountHistoryChart(pump){
  });
 }
 
-function reportUI(){return `<section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label>Presión medida (bar)<input name="pressure" type="number" step="0.1" placeholder="Ej. 2.1"></label><label>Caudal medido (m³/h)<input name="flow" type="number" step="0.1" placeholder="Ej. 18.0"></label></div><label>Reporte (escribilo directo)<textarea name="text" rows="5" maxlength="8000" placeholder="Describí lo observado, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">Podés escribir, adjuntar un PDF (máx. 10 MB) o ambos. Se guarda en este navegador; por ahora no se comparte con otros equipos.</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">Guardar reporte</button></form><div id="rep-list"></div></section>`;}
+function reportUI(){return `<section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Responsable<input name="author" maxlength="200" ${reportsInObsidian()?'required':''}></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label>Presión medida (bar)<input name="pressure" type="number" step="0.1" placeholder="Ej. 2.1"></label><label>Caudal medido (m³/h)<input name="flow" type="number" step="0.1" placeholder="Ej. 18.0"></label></div><label>Reporte<textarea name="text" rows="5" maxlength="7500" placeholder="Observaciones, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">${reportsInObsidian()?'Se guarda en Obsidian, en '+esc(state.vaultName)+'. El PDF queda adjunto al informe.':'Se guarda en este navegador. Los reportes no se comparten entre equipos.'}${state.demo?' Registro marcado DEMO.':''}</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">${reportsInObsidian()?'Guardar en Obsidian':'Guardar en este navegador'}</button></form><div id="rep-list"></div></section>`;}
 async function paintReports(tag){
  const box=$('#rep-list');if(!box)return;
  let items=[];try{items=await listReports(tag);}catch(e){box.innerHTML=`<p class="form-error">${esc(e.message)}</p>`;return;}
- box.innerHTML=items.length?`<h4>Reportes de campo (${items.length}) <span class="kind">guardados en este navegador</span></h4>`+items.map(r=>`<article class="record" data-id="${esc(r.id)}"><strong>${esc(r.date)} · ${esc(r.title)}</strong>${r.text?`<p class="report-text">${esc(r.text)}</p>`:''}${r.pdf?`<p><a class="doc" href="#" data-pdf="${esc(r.id)}">📄 ${esc(r.pdf.name)} · ${(r.pdf.size/1024).toFixed(0)} KB</a></p>`:''}<button type="button" class="link-btn" data-del="${esc(r.id)}">Eliminar reporte</button></article>`).join(''):'<p class="muted">Todavía no hay reportes de campo para esta bomba.</p>';
- box.querySelectorAll('[data-pdf]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=items.find(x=>x.id===a.dataset.pdf);if(r?.pdf?.blob){const u=URL.createObjectURL(r.pdf.blob);const link=document.createElement('a');link.href=u;link.download=r.pdf.name||'documento.pdf';link.target='_blank';link.rel='noopener';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}});
- box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{await deleteReport(b.dataset.del);toast('Reporte eliminado.');paintReports(tag);if(state.pump)mountHistoryChart(state.pump);});
+ if(!box.isConnected||state.pump?.tag!==tag)return;
+ box.innerHTML=(reportsInObsidian()&&items.some(r=>r.source==='browser')?'<button class="wide" id="import-reports">Importar reportes del navegador a Obsidian</button>':'')+(items.length?`<h4>Reportes de campo (${items.length})</h4>`+items.map(r=>`<article class="record" data-id="${esc(r.id)}"><strong>${esc(r.date)} · ${esc(r.title)}</strong><small>${r.source==='obsidian'?'Obsidian':'Solo en este navegador'}${r.demonstration?' · DEMO':''}${r.author?' · '+esc(r.author):''}</small>${r.text?`<p class="report-text">${esc(r.text)}</p>`:''}${r.pdf?`<p><a class="doc" href="#" data-pdf="${esc(r.id)}">📄 ${esc(r.pdf.name)} · ${(r.pdf.size/1024).toFixed(0)} KB</a></p>`:''}<button type="button" class="link-btn" data-del="${esc(r.id)}">Eliminar reporte</button></article>`).join(''):'<p class="muted">Todavía no hay reportes de campo para esta bomba.</p>');
+ const importButton=box.querySelector('#import-reports');if(importButton)importButton.onclick=async()=>{importButton.disabled=true;try{const count=await importReports(tag);toast(count+' reportes importados a Obsidian.');await paintReports(tag);}catch(e){toast(e.message);importButton.disabled=false;}};
+ box.querySelectorAll('[data-pdf]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=items.find(x=>x.id===a.dataset.pdf);if(r?.pdf?.url){const link=document.createElement('a');link.href=r.pdf.url;link.download=r.pdf.name;link.click();return;}if(r?.pdf?.blob){const u=URL.createObjectURL(r.pdf.blob);const link=document.createElement('a');link.href=u;link.download=r.pdf.name||'documento.pdf';link.target='_blank';link.rel='noopener';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}});
+ box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{try{const record=items.find(r=>r.id===b.dataset.del);await deleteReport(record);toast(record.source==='obsidian'?'Informe enviado a la papelera de Obsidian.':'Reporte eliminado del navegador.');await paintReports(tag);if(state.pump?.tag===tag)mountHistoryChart(state.pump);}catch(e){toast(e.message);}});
 }
 function initReports(tag){
  const f=$('#rep-form');if(!f)return;const d=new Date();f.date.value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -493,7 +471,7 @@ function initReports(tag){
   const flow=f.flow?.value?f.flow.value+' m3/h':'';
   const extra=[pres&&`Presión: ${pres}`,flow&&`Caudal: ${flow}`].filter(Boolean).join(' · ');
   const fullText=[f.text.value,extra].filter(Boolean).join('\n\n');
-  try{await addReport({tag,date:f.date.value,title:f.title.value,text:fullText,file:f.file.files[0]||null});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast('Reporte guardado');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
+  try{await addReport({tag,date:f.date.value,title:f.title.value,author:f.author.value,text:fullText,file:f.file.files[0]||null});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast(reportsInObsidian()?'Informe guardado en Obsidian.':'Reporte guardado en este navegador.');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
   catch(x){err.textContent=x.message||'No se pudo guardar el reporte.';}finally{btn.disabled=false;}};
  paintReports(tag);
 }
@@ -503,16 +481,16 @@ function renderPhotoPanel(){
  paintPumpLinks(p);
  if(!p){$('#panel').innerHTML=`<p class="eyebrow">SECTOR FOTOGRAFIADO · 07 OCT 2026</p><h2>Seleccioná una bomba</h2><p class="notice">El expediente mostrará únicamente la bomba elegida. Los datos de sellos, o-rings e historial están preparados para la demostración y se distinguen de la evidencia real.</p><img src="${photo3URL('142609')}" alt="Vista elevada de los tanques del sector"><p class="muted">Referencia utilizada para orientar y completar los tanques del render.</p>`;return;}
 
- const demo='<span class="demo-chip">DEMO · POR CONFIRMAR</span>';
+ const demo=state.demo?'<span class="demo-chip">DEMO · POR CONFIRMAR</span>':'<span class="demo-chip">DATOS DOCUMENTALES / POR CONFIRMAR</span>';
  const fieldRows=rows=>'<dl class="fields">'+rows.map(([key,value])=>`<div class="field"><dt>${esc(key)}</dt><dd>${esc(value)}</dd></div>`).join('')+'</dl>';
  if(state.tab==='historial'){
-  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Historial de mantenimiento con presión y caudal. <strong>Las lecturas del gráfico son DEMO</strong>: muestran cómo se vería un año de rondas, no son mediciones de la planta. Los reportes que agregues se grafican con los valores que escribas.</p><div id="chart-mount"></div>${reportUI()}${p.history.map(item=>`<article class="record"><strong>${esc(item.fecha)} · ${esc(item.tipo)}</strong><p>${esc(item.detalle)}</p><small>${esc(item.responsable)}</small></article>`).join('')}<div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag);mountHistoryChart(p);return;
+  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">${state.demo?'<strong>Lecturas DEMO</strong>: ejemplos, no mediciones de la planta.':'Historial de campo guardado en Obsidian. Los campos sin medición permanecen vacíos.'} Los reportes se grafican únicamente con los valores registrados.</p><div id="chart-mount"></div>${reportUI()}${p.history.map(item=>`<article class="record"><strong>${esc(item.fecha)} · ${esc(item.tipo)}</strong><p>${esc(item.detalle)}</p><small>${esc(item.responsable)}</small></article>`).join('')}<div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag);mountHistoryChart(p);return;
  }
  if(state.tab==='ia'){
   $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Gemini analiza solamente el expediente de esta bomba seleccionada. Distingue los datos aportados de los ejemplos DEMO y de los campos pendientes.</p>${fieldRows([['Fluido registrado',p.servicio],['Sellado',p.seal.tipo],['Elastómero',p.seal.elastomero],['Registros de demo',String(p.history.length)]])}<div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará a Google el expediente de esta bomba, con los ejemplos DEMO identificados.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué sello y o-rings aparecen en este expediente y qué datos faltan confirmar?">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí el historial DEMO de esta bomba, separado por fechas.">Resumir el mantenimiento ↗</button><button data-question="¿Qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;
   $('#configure').onclick=()=>{$('#config-form [name=model]').value=state.model;$('#settings').showModal();};document.querySelectorAll('[data-question]').forEach(b=>b.onclick=()=>{$('#question').value=b.dataset.question;$('#question').focus();});$('#ask-form').onsubmit=ask;const answer=state.answers[p.tag];if(answer)showAnswer(answer);return;
  }
- const rings=p.orings.map(r=>`<div class="record"><strong>${esc(r.posicion)}</strong>${fieldRows([['Medida de demo',r.medida],['Material de demo',r.material],['Cantidad',String(r.cantidad)],['Código de demo',r.codigo]])}</div>`).join('');
+ const rings=p.orings.map(r=>`<div class="record"><strong>${esc(r.posicion)}</strong>${fieldRows([[state.demo?'Medida de demo':'Medida registrada',r.medida],[state.demo?'Material de demo':'Material registrado',r.material],['Cantidad',String(r.cantidad)],[state.demo?'Código de demo':'Código registrado',r.codigo]])}</div>`).join('');
  const linkRows=list=>list.map(l=>`<li><a href="${l.u}" target="_blank" rel="noopener noreferrer">${esc(l.t)} ↗</a>${l.k?` <span class="kind">${esc(l.k)}</span>`:''}${l.nota?`<small>${esc(l.nota)}</small>`:''}</li>`).join('');
  const seal=sealRecord(p),ref=sealReference(p);
  const sealInfo=`<h3>Datos registrados de ${esc(p.tag)}</h3>${seal.rows.length?fieldRows(seal.rows):'<p>La fuente de este equipo no identifica su sellado.</p>'}${seal.pending.length?`<p class="notice"><strong>POR CONFIRMAR</strong> · ${esc(seal.pending.join(' · '))}. Se completa con la identificación del sello o el registro de mantenimiento de esta bomba.</p>`:''}${ref?`<div class="block manufacturer-reference"><p class="eyebrow">REFERENCIA DEL FABRICANTE · NO ES IDENTIFICACIÓN DEL EQUIPO</p><h3>${esc(ref.title)}</h3><p>${esc(ref.scope)}</p>${fieldRows(ref.rows)}<ul class="doc-links">${linkRows(ref.links)}</ul><p class="muted">Los materiales son opciones de catálogo. La combinación instalada y su compatibilidad con el servicio requieren confirmación.</p></div>`:''}`;

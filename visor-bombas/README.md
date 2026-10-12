@@ -4,7 +4,7 @@ Visor local unificado del sector fotografiado. Se abre en http://127.0.0.1:8766 
 
 ## Abrir
 
-Para presentar la propuesta actual, usar `Iniciar visor.cmd`. El selector antiguo «Fichas de Obsidian / Sector fotografiado» fue retirado: ya no se muestran P-9001 y P-9002 como una planta aparte. Los nueve expedientes temporales BOMBA-A a BOMBA-J, salvo la letra H retirada del levantamiento, concentran fotografías, datos, historial, componentes e IA.
+Para trabajar con Obsidian, usar `Iniciar visor.cmd`. El lanzador detecta la bóveda **Vacatos** de esta instalación. `OBSIDIAN_VAULT` permite seleccionar otra ruta. El sector tiene 12 posiciones Bxx, incluyendo B22 sin uso; los datos técnicos se leen de las fichas `00-Proyecto/equipos/Bxx.md`, mientras el código del sector aporta fotos y geometría ilustrativa.
 
 Se necesita Node.js. El lanzador busca primero el runtime disponible en esta PC y después `node` en PATH. Las medidas, asociaciones, códigos e historiales preparados para la propuesta siguen rotulados DEMO / POR CONFIRMAR.
 
@@ -16,9 +16,11 @@ Codespaces se usa para desarrollar y revisar la propuesta. No es el alojamiento 
 
 ## Expedientes integrados
 
-- La barra lateral muestra únicamente las nueve posiciones del sector fotografiado.
+- La barra lateral muestra las doce posiciones del sector fotografiado disponibles en la bóveda.
 - Cada selección abre su foto exterior, foto de placa asociada para la demo, ficha, historial, despiece e IA.
-- Obsidian continúa como almacenamiento y documentación del proyecto; ya no aparece como una vista de trabajo separada.
+- En local, los informes y sus PDF se guardan en `00-Proyecto/Mantenimiento` de la misma bóveda. Al eliminar, pasan a la papelera de Obsidian. Los reportes antiguos del navegador pueden importarse desde Historial; se conservan hasta completar el guardado.
+- En Vercel los reportes se guardan solo en ese navegador. El servidor informa que no tiene escritura persistente.
+- En modo real el gráfico utiliza solo mediciones registradas. Campos sin presión o caudal quedan vacíos; los informes sin mediciones permanecen en la lista y no añaden puntos al gráfico.
 - P-9001 y P-9002 permanecen solamente como datos internos de prueba automática y no aparecen en la interfaz.
 
 ## Funciones
@@ -38,8 +40,8 @@ Cada consulta lee y envía a Google el expediente DEMO integrado de la bomba sel
 ## Configuración
 
 - `VOCATUS_DEMO=1`: usa exclusivamente `demo-vault`, incluso si existe `OBSIDIAN_VAULT`.
-- `VOCATUS_DEMO=0` o ausente: usa `OBSIDIAN_VAULT` o la bóveda real por defecto.
-- `OBSIDIAN_VAULT`: ruta de la bóveda real con `00-Proyecto/bombas`.
+- `VOCATUS_DEMO=0` o ausente en local: usa `OBSIDIAN_VAULT`, la bóveda `Vacatos` junto al visor si existe, o la base `00-Proyecto` del checkout.
+- `OBSIDIAN_VAULT`: ruta de la bóveda real con `00-Proyecto/bombas` y `00-Proyecto/equipos`.
 - `GEMINI_API_KEY`, `GEMINI_MODEL`: configuración opcional de Gemini.
 - `PORT`: 8766 por defecto.
 - `VOCATUS_CLOUD_DEV=1`: habilita el host temporal de Codespaces, escucha en la interfaz del contenedor y fuerza datos DEMO.
@@ -55,6 +57,10 @@ Three.js 0.170.0 y js-yaml 4.1.0 están incluidos localmente con sus licencias. 
 - `node test-sector.mjs`: escena fotográfica, expedientes DEMO, 15 tanques y fotografías vinculadas.
 - `node test-sector-confirmado.mjs`: B22 visible como SIN USO sin fabricante atribuido; sello registrado separado de la referencia del fabricante (la consulta no modifica la ficha).
 - `node test-demo.mjs`: fichas demo, selección inválida, documento vinculado y guardado/lectura de un informe temporal que se elimina al terminar.
+- `node --test test-integration.mjs test-config.mjs test-reportes.mjs`: Bxx, cambios en Obsidian, guardado y recarga de informes/PDF, papelera, importación idempotente, fechas, modos de nube y mediciones ausentes.
+- Desde la raíz del repositorio: `python -B 00-Proyecto/scripts/test_exportar_cmms.py` comprueba formatos nuevo y antiguo, activos Bxx, exclusión DEMO y referencias válidas.
+
+El exportador lee `Mantenimiento` y también la carpeta histórica `informes-mantenimiento`. Acepta `tag` o el antiguo campo `bomba`, recupera el responsable antiguo del cuerpo y excluye informes DEMO. `OBSIDIAN_VAULT` selecciona la misma bóveda que el visor.
 - `node --check server.mjs`, `node --check public/app.js`, `node --check public/realismo.js`: sintaxis.
 
 Los parches ya aplicados, la auditoría antigua y el respaldo de app.js están en `archivo/`. No se ejecutan para instalar o iniciar el visor.

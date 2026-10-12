@@ -45,6 +45,13 @@ Thumbs.db
 !.env.example
 .wrangler/
 visor-bombas/demo-vault/00-Proyecto/Mantenimiento/*.md
+visor-bombas/demo-vault/00-Proyecto/Mantenimiento/Adjuntos/
+visor-bombas/demo-vault/.trash/
+00-Proyecto/Mantenimiento/
+00-Proyecto/export/
+__pycache__/
+.test-vault-*/
+.test-cmms-*/
 
 # configuración local de Obsidian
 .obsidian/

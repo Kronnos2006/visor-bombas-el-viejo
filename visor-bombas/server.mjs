@@ -1,22 +1,23 @@
 import http from 'node:http';
-import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, timingSafeEqual, createHmac } from 'node:crypto';
 import { load, JSON_SCHEMA } from './vendor/js-yaml.mjs';
 import { photoPumps } from './public/sector-fotos.js';
 import { generatePumpPDF } from './pdf-generator.mjs';
+import { vaultConfiguration, equipmentData } from './vault.mjs';
+import { maintenanceStore } from './maintenance.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const CLOUD_DEV = process.env.CODESPACES === 'true' || process.env.VOCATUS_CLOUD_DEV === '1' || process.env.NODE_ENV !== 'production';
-export const DEMO = process.env.VOCATUS_DEMO === '1';
-export const VAULT = DEMO
- ? path.join(ROOT,'demo-vault')
- : path.resolve(process.env.OBSIDIAN_VAULT || path.join(ROOT,'..'));
+const configuration = vaultConfiguration(ROOT);
+const CLOUD_DEV = configuration.cloud;
+export const DEMO = configuration.demo;
+export const VAULT = configuration.vault;
+const maintenance = maintenanceStore(VAULT, DEMO);
 const NOTES = path.join(VAULT,'00-Proyecto/bombas');
-const LOGS = path.join(VAULT,'00-Proyecto/Mantenimiento');
 const PUBLIC = path.join(ROOT,'public');
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 8766);
 const FORWARDED_HOST = process.env.CODESPACE_NAME && process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
  ? `${process.env.CODESPACE_NAME}-${PORT}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
  : '';
@@ -44,7 +45,7 @@ const TOKEN = ON_VERCEL ? createHmac('sha256', process.env.GEMINI_API_KEY || 'vo
 const askLog = [];
 let apiKey = process.env.GEMINI_API_KEY || '';
 let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
-const tagPattern = /^P-\d{4}[A-Z]?$/;
+const tagPattern = /^(?:P-\d{4}[A-Z]?|B[1-9]\d{0,3})$/;
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.pdf':'application/pdf','.md':'text/plain; charset=utf-8','.png':'image/png','.jpg':'image/jpeg'};
 
 export function parseNote(text) {
@@ -71,17 +72,27 @@ export function safeVaultFile(relative) {
 }
 export async function readPump(tag) {
  if (!tagPattern.test(tag)) throw new Error('TAG inválido.');
+ if (tag.startsWith('B')) {
+  const base = photoPumps.find(p => p.tag === tag);
+  if (!base) throw new Error('Equipo fuera del sector registrado.');
+  const source = `00-Proyecto/equipos/${tag}.md`;
+  let note;
+  try { note = parseNote(await readFile(path.join(VAULT, source), 'utf8')); }
+  catch (e) {
+   if (e.code !== 'ENOENT') throw e;
+   if (DEMO) return {...readIntegratedPump(tag), demo: true, reports: await maintenance.list(tag)};
+   const missing = new Error(`Falta la ficha ${source} en la bóveda ${path.basename(VAULT)}.`);
+   missing.code = 'PUMP_NOT_AVAILABLE'; throw missing;
+  }
+  if (note.data.id !== tag) throw new Error('El identificador de la ficha no coincide con el equipo.');
+  return {tag, data: equipmentData(base, note.data), photo: true, demo: DEMO, history: section(note.body, 'Historial de intervenciones'), observations: section(note.body, 'Observaciones'), reports: await maintenance.list(tag), files: [], source};
+ }
  let note;
  try { note=await readFile(path.join(NOTES,tag+'.md'),'utf8'); }
  catch(e) { if(e.code==='ENOENT'){const missing=new Error(`La bomba ${tag} no está disponible en ${DEMO?'la demostración':'la bóveda actual'}. Actualizá la lista de equipos.`);missing.code='PUMP_NOT_AVAILABLE';throw missing;}throw e; }
  const {data,body} = parseNote(note);
  const history = section(body,'Historial de intervenciones');
- const reports = [];
- try {
-  for (const file of (await readdir(LOGS)).filter(f=>f.startsWith(tag+'_') && f.endsWith('.md')).sort().reverse()) {
-   reports.push({file:'00-Proyecto/Mantenimiento/'+file, text:await readFile(path.join(LOGS,file),'utf8')});
-  }
- } catch(e) { if(e.code!=='ENOENT') throw e; }
+ const reports = await maintenance.list(tag);
  const files=[];
  for (const rel of Array.isArray(data.planos)?data.planos:[]) {
   let exists=false; try { const {stat}=await import('node:fs/promises'); exists=(await stat(safeVaultFile(rel))).isFile(); } catch {}
@@ -107,7 +118,8 @@ function send(res,status,data) {
 }
 async function payload(req) {
  let size=0; const chunks=[];
- for await(const chunk of req) { size+=chunk.length; if(size>40000) throw new Error('Solicitud demasiado grande.'); chunks.push(chunk); }
+ const limit = req.url?.split('?')[0] === '/api/maintenance' ? 15 * 1024 * 1024 : 40000;
+ for await(const chunk of req) { size+=chunk.length; if(size>limit) throw new Error('Solicitud demasiado grande.'); chunks.push(chunk); }
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 function verify(req) {
@@ -132,7 +144,22 @@ export async function handler(req,res) {
    for(const name of (await readdir(NOTES)).filter(n=>/^P-\d{4}[A-Z]?\.md$/.test(n)).sort()) {
     try { const p=await readPump(name.slice(0,-3)); pumps.push({tag:p.tag,...p.data}); } catch(e) {errors.push({file:name,error:e.message});}
    }
-   return send(res,200,{pumps,errors,token:TOKEN,geminiConfigured:!!apiKey,model,demo:DEMO,vaultName:path.basename(VAULT)});
+   const sectorPumps = [];
+   for (const base of photoPumps) {
+    try { const p = await readPump(base.tag); sectorPumps.push(p.data); }
+    catch (e) { errors.push({file:`equipos/${base.tag}.md`, error:e.message}); }
+   }
+   return send(res,200,{pumps,sectorPumps,errors,token:TOKEN,geminiConfigured:!!apiKey,model,demo:DEMO,vaultName:path.basename(VAULT),maintenanceWritable:configuration.writable});
+  }
+  if(req.method==='GET' && url.pathname==='/api/reports') {
+   const p=await readPump(url.searchParams.get('tag')||'');
+   return send(res,200,{reports:p.reports.map(r=>r.record)});
+  }
+  if(req.method==='GET' && url.pathname==='/api/report-document') {
+   const tag=url.searchParams.get('tag')||''; await readPump(tag);
+   const document=await maintenance.attachment(tag,url.searchParams.get('id')||'');
+   res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(document.name)}`,'X-Content-Type-Options':'nosniff'});
+   return res.end(document.bytes);
   }
   if(req.method==='GET' && url.pathname==='/api/pump') return send(res,200,await readPump(url.searchParams.get('tag')||''));
   if(req.method==='GET' && url.pathname==='/api/document') {
@@ -151,7 +178,7 @@ export async function handler(req,res) {
     reportes=Array.isArray(body.reportes)?body.reportes:[];
    }
    if(!tag) return send(res,400,{error:'Falta el TAG del equipo.'});
-   const p=readIntegratedPump(tag)||await readPump(tag);
+   const p=await readPump(tag);
    if(!p) return send(res,404,{error:`No se encontró la ficha técnica para ${tag}.`});
    const pdfBytes=await generatePumpPDF(p,{reportes});
    res.writeHead(200,{
@@ -162,12 +189,17 @@ export async function handler(req,res) {
    });
    return res.end(Buffer.from(pdfBytes));
   }
-  if(req.method==='POST') {
+  if(req.method==='POST' || req.method==='DELETE' && url.pathname==='/api/maintenance') {
    if(!verify(req)) return send(res,403,{error:'Recargá la página para renovar la sesión local.'});
    const origin=req.headers.origin;
    const vercelOrigin=ON_VERCEL&&req.headers['x-original-host']&&`https://${req.headers['x-original-host']}`;
    if(origin && !isAllowedOrigin(origin) && origin!==vercelOrigin) return send(res,403,{error:'Origen no permitido.'});
    const body=await payload(req);
+   if(url.pathname==='/api/maintenance' && !configuration.writable) return send(res,403,{error:'Este alojamiento no tiene almacenamiento persistente. Los reportes se conservan en el navegador.'});
+   if(req.method==='DELETE') {
+    const p=await readPump(body.tag); await maintenance.remove(p.tag,body.id);
+    return send(res,200,{removed:true});
+   }
    if(url.pathname==='/api/config') {
     if(ON_VERCEL) return send(res,403,{error:'En Vercel la clave se configura como variable de entorno GEMINI_API_KEY (Settings → Environment Variables).'});
     if(body.model && !/^gemini-[a-z0-9.\-]+$/.test(body.model)) throw new Error('Nombre de modelo inválido.');
@@ -176,20 +208,16 @@ export async function handler(req,res) {
    }
    if(url.pathname==='/api/maintenance') {
     const p=await readPump(body.tag);
-    const date=textField(body.date,10), title=textField(body.title), author=textField(body.author);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!title||!author||!clean(body.details)) throw new Error('Completá fecha, intervención, responsable y detalle.');
-    const file=`${p.tag}_${date}_${randomUUID().slice(0,8)}.md`;
-    const doc=`---\ntipo: informe_mantenimiento\nbomba: ${p.tag}\nfecha: ${date}\ndemostracion: ${DEMO}\n---\n\n# ${p.tag} — ${title}\n\n${DEMO?'DEMOSTRACIÓN: registro de prueba, no corresponde a un equipo real.\n\n':''}Responsable: ${author}\n\n## Intervención\n${clean(body.details)}\n\n## Repuestos utilizados\n${clean(body.parts)||'No registrados.'}\n\n## Síntomas observados\n${clean(body.symptoms)||'No registrados.'}\n\nFicha: [[${p.tag}]]\n`;
-    await mkdir(LOGS,{recursive:true}); await writeFile(path.join(LOGS,file),doc,{flag:'wx'});
-    return send(res,201,{file:'00-Proyecto/Mantenimiento/'+file});
+    const report=await maintenance.save(p.tag,body);
+    return send(res,201,{file:report.file,report});
    }
    if(url.pathname==='/api/ask') {
     if(!apiKey) return send(res,409,{error:ON_VERCEL?'Falta la variable de entorno GEMINI_API_KEY en Vercel.':'Gemini todavía no está configurado. Agregá tu clave API en Configurar Gemini.'});
     if(ON_VERCEL){const now=Date.now();while(askLog.length&&now-askLog[0]>3600000)askLog.shift();if(askLog.length>=60)return send(res,429,{error:'Límite de consultas por hora alcanzado. Probá más tarde.'});askLog.push(now);}
-    const p=readIntegratedPump(body.tag)||await readPump(body.tag); const question=clean(body.question,4000);
+    const p=await readPump(body.tag); const question=clean(body.question,4000);
     if(!question) throw new Error('Escribí una pregunta.');
     const integrated=!!readIntegratedPump(body.tag);
-    const context={demostracion:DEMO||integrated,advertencia:DEMO||integrated?'Todos estos datos son de demostración o están por confirmar. Identificá la respuesta como demostración. No uses estas medidas ni materiales para recomendar repuestos o compatibilidad reales.':'',source:p.source,fields:p.data,history:p.history,failures:p.failures,reports:p.reports,reportesDeCampo:(Array.isArray(body.reportes)?body.reportes.slice(0,20).map(r=>({fecha:textField(r.fecha,10),titulo:textField(r.titulo),texto:clean(r.texto,3000),pdf:textField(r.pdf)})):[]),notaExpediente:clean(body.notaExpediente,600),aclaracion:'reportesDeCampo son escritos por usuarios en el navegador y no están verificados; tratalos como declaraciones, no como hechos confirmados.'};
+    const context={demostracion:DEMO,advertencia:DEMO?'Todos estos datos son de demostración o están por confirmar. Identificá la respuesta como demostración. No uses estas medidas ni materiales para recomendar repuestos o compatibilidad reales.':'',source:p.source,fields:p.data,history:p.history,failures:p.failures,reports:p.reports,reportesDeCampo:(Array.isArray(body.reportes)?body.reportes.slice(0,20).map(r=>({fecha:textField(r.fecha,10),titulo:textField(r.titulo),texto:clean(r.texto,3000),pdf:textField(r.pdf)})):[]),notaExpediente:clean(body.notaExpediente,600),aclaracion:'reportesDeCampo son escritos por usuarios en el navegador y no están verificados; tratalos como declaraciones, no como hechos confirmados.'};
     // Razonamiento bajo para responder dentro del límite de la función en Vercel (60 s).
     // Si el modelo no acepta thinkingConfig (HTTP 400), se reintenta sin esa opción.
     const deadline=Date.now()+(ON_VERCEL?52000:90000);
@@ -215,6 +243,6 @@ export async function handler(req,res) {
  } catch(e) { send(res,e.code==='PUMP_NOT_AVAILABLE'?409:e.code==='ENOENT'?404:400,{code:e.code,error:e.message==='fetch failed'?'No se pudo conectar con Gemini. Revisá la conexión a internet.':e.message}); }
 }
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
- const bind='0.0.0.0';
- http.createServer(handler).listen(PORT,bind,()=>console.log(`Visor: http://0.0.0.0:${PORT}\nBóveda: ${VAULT}\nGemini: ${apiKey?'configurado':'pendiente de clave'}`));
+ const bind=CLOUD_DEV || process.env.PORT ? '0.0.0.0' : '127.0.0.1';
+ http.createServer(handler).listen(PORT,bind,()=>console.log(`Visor: http://${bind}:${PORT}\nBóveda: ${VAULT}\nGemini: ${apiKey?'configurado':'pendiente de clave'}`));
 }

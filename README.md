@@ -19,10 +19,20 @@ ningún lado consultable.
 
 | Carpeta | Qué contiene |
 |---|---|
-| `visor-bombas/` | El visor: servidor local en Node sin dependencias, página en Three.js, pruebas |
+| `visor-bombas/` | El visor: servidor Node, PDF con pdf-lib, página en Three.js, pruebas |
 | `00-Proyecto/` | La base de conocimiento en Obsidian: 77 fichas de equipo, notas de proyecto, scripts |
 
 ### El visor
+
+El visor local lee las fichas Bxx y guarda sus informes y PDF en la misma bóveda de Obsidian. Los lanzadores `Iniciar visor.cmd` e `Iniciar datos reales.cmd` detectan `Vacatos` junto a la instalación. `OBSIDIAN_VAULT` tiene prioridad para seleccionar una bóveda explícitamente. Sin una bóveda local junto al visor, se usa la base `00-Proyecto` del checkout.
+
+Los informes se guardan en `00-Proyecto/Mantenimiento`; sus PDF quedan en `Adjuntos`. El historial muestra solo las mediciones registradas: un campo vacío no genera una lectura de ejemplo. Los reportes antiguos del navegador se pueden importar desde Historial cuando se abre el visor local. El responsable de una importación sin autor se identifica como no registrado.
+
+En Vercel se mantienen los reportes en el navegador y se bloquea la escritura del sistema de archivos. Codespaces y `VOCATUS_CLOUD_DEV=1` fuerzan datos DEMO; los informes de demostración no se exportan como mantenimiento real.
+
+Desde la raíz del repositorio, ejecutar `npm test` y `python -B 00-Proyecto/scripts/test_exportar_cmms.py` para comprobar persistencia, PDF, datos, acceso y exportación. Para exportar una bóveda externa, establecer `OBSIDIAN_VAULT` antes de ejecutar `python 00-Proyecto/scripts/exportar_cmms.py`.
+
+El extractor acepta `--source`, `--output` y `--converter` para usar LibreDWG en Windows o Linux. `python 00-Proyecto/scripts/extract_tags.py --help` muestra las opciones; requiere `ezdxf` y el conversor `dwg2dxf` instalado.
 
 Servidor local (`server.mjs`) que lee las fichas de Obsidian y las sirve a una
 página de Three.js. Corre en `127.0.0.1`, sin internet salvo la consulta
