@@ -54,7 +54,7 @@ export function buildTorre(T){
  }
  const tramos=(y0,y1)=>{const p=[y0,...COTAS.filter(c=>c>y0+.05&&c<y1-.05),y1];return p.slice(0,-1).map((a,i)=>[a,p[i+1]]);};
  // Cilindro vertical partido en cada piso, para que cada piso se pueda aislar sin restos de otros.
- function cyl(x,y0,y1,z,r,m,seg=36){for(const [a,b] of tramos(y0,y1)){const o=new T.Mesh(new T.CylinderGeometry(r,r,b-a,seg),m);o.position.set(x,(a+b)/2,z);add(o,seccionDe(a));}}
+ function cyl(x,y0,y1,z,r,m,seg=36,nombre=''){for(const [a,b] of tramos(y0,y1)){const o=new T.Mesh(new T.CylinderGeometry(r,r,b-a,seg),m);o.position.set(x,(a+b)/2,z);add(o,seccionDe(a));if(nombre)o.userData.nombre=nombre;}}
  function columna(x,z,y0,y1,ex=false){for(const [a,b] of tramos(y0,y1))box(x-.16,x+.16,a,b,z-.16,z+.16,ex?M.steelOld:M.steel,seccionDe(a),ex);}
  function baranda(x0,x1,z0,z1,y,ex=false,lados='nsew'){
   const s=seccionDe(y),h=1.05;
@@ -131,17 +131,18 @@ export function buildTorre(T){
  for(let i=0;i<pisos.length-1;i++){const ida=i%2===0;escalera(13.1,14.9,ida?17.4:21.4,ida?21.4:17.4,pisos[i],pisos[i+1]);}
  escalera(.5,1.7,21.4,17.6,.3,3.3,false);
  // ── Equipos de proceso (círculos de las plantas y siluetas de las elevaciones).
- // Tres columnas de destilación (C–D, ejes 3–4) hasta cúpula sobre el Nivel 5.
- for(const x of [7.9,9.5,11.2]){cyl(x,.3,23.6,12.9,.55,M.vessel);const d=new T.Mesh(new T.SphereGeometry(.55,24,12,0,Math.PI*2,0,Math.PI/2),M.vessel);d.position.set(x,23.6,12.9);add(d,'n5');}
+ // Columnas de destilación. Nombres del «Diagrama de Planta Destilación Dusa» (NWC del usuario);
+ // la asignación de cada círculo de la planta a una columna es aproximada. Faldón azul como en las fotos.
+ for(const [x,n] of [[7.9,'Columna Rectificadora 1 (HO)'],[9.5,'Columna Rectificadora Batch'],[11.2,'Columna Vinaza']]){cyl(x,.3,23.6,12.9,.55,M.vessel,36,n);cyl(x,.3,3.3,12.9,.62,M.steel,36,n);const d=new T.Mesh(new T.SphereGeometry(.55,24,12,0,Math.PI*2,0,Math.PI/2),M.vessel);d.position.set(x,23.6,12.9);add(d,'n5').userData.nombre=n;}
  // Tres recipientes esbeltos entre ejes 1–2 (círculos de los niveles 2, 3 y 4) con cono sobre el Nivel 4.
- for(const x of [1.1,2.2,3.2]){cyl(x,3.3,18.4,12.9,.38,M.vessel);const c=new T.Mesh(new T.ConeGeometry(.38,.9,24),M.vessel);c.position.set(x,18.85,12.9);add(c,'n4');}
+ for(const [x,n] of [[1.1,'Columna Aldehídos 1'],[2.2,'Columna Aldehídos 2 (Fusel)'],[3.2,'Columna Rectificadora 2']]){cyl(x,.3,18.4,12.9,.38,M.vessel,24,n);cyl(x,.3,3.3,12.9,.45,M.steel,24,n);const c=new T.Mesh(new T.ConeGeometry(.38,.9,24),M.vessel);c.position.set(x,18.85,12.9);add(c,'n4').userData.nombre=n;}
  // Recipiente grande B–C × 3–4 y tanque dodecagonal A–B × 4 (Nivel 1, atraviesan el 2.1).
- cyl(9.7,.3,6.9,7.8,2,M.vessel,48);{const c=new T.Mesh(new T.ConeGeometry(2,.8,48),M.vessel);c.position.set(9.7,7.3,7.8);add(c,'n22');}
- cyl(12.9,.3,6.5,2.1,1.4,M.vessel,12);
+ cyl(9.7,.3,6.9,7.8,2,M.vessel,48,'Recipiente B–C · por identificar');{const c=new T.Mesh(new T.ConeGeometry(2,.8,48),M.vessel);c.position.set(9.7,7.3,7.8);add(c,'n22');}
+ cyl(12.9,.3,6.5,2.1,1.4,M.vessel,12,'Tanque dodecagonal A–B · por identificar');
  // Dos tanques sobre el Nivel 2.1, lado A (fotos: recipientes naranja bajo el cuarto revestido).
- for(const x of [7,9.4])cyl(x,5.35,7.55,2.2,.7,M.tank);
+ for(const x of [7,9.4])cyl(x,5.35,7.55,2.2,.7,M.tank,24,'Recipiente del Nivel 2.1 · por identificar');
  // Cinco recipientes horizontales sobre el Nivel 5 (A10).
- for(const x of [.95,3.7,6.7,9,11.6]){const v=new T.Mesh(new T.CylinderGeometry(.45,.45,2.1,28),M.vessel);v.rotation.x=Math.PI/2;v.position.set(x,21.1,14.1);add(v,'n5');
+ for(const x of [.95,3.7,6.7,9,11.6]){const v=new T.Mesh(new T.CylinderGeometry(.45,.45,2.1,28),M.vessel);v.rotation.x=Math.PI/2;v.position.set(x,21.1,14.1);add(v,'n5').userData.nombre='Condensador (diagrama Dusa) · por confirmar';
   for(const dz of [-.7,.7])box(x-.35,x+.35,20.35,20.75,14.1+dz-.08,14.1+dz+.08,M.steel,'n5');}
  // Tolvas cónicas sobre el Nivel 4 (elevación frontal A13).
  for(const x of [9.5,11,12.2]){const c=new T.Mesh(new T.CylinderGeometry(.15,.55,.7,24),M.vessel);c.position.set(x,15.7,15.8);add(c,'n4');}

@@ -68,8 +68,8 @@ function rebuildPlant(){
   tq.add(sector(THREE,placed.filter(p=>areaOf(p)==='tanques')));
   torre=buildTorre(THREE);tr.add(torre.root);
   for(const k in pumpObjects)delete pumpObjects[k];
-  for(const p of placed){const parent=areaGroups[areaOf(p)]||tq;const g=exterior(THREE,p.scale,p.variant);g.position.set(p.x,p.y??.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;g.userData.section='n1';parent.add(g);pumpObjects[p.tag]=g;g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);markers.at(-1).area=areaOf(p);}
-  for(const s of torreSinTag){const g=exterior(THREE,.6,'lf');g.position.set(s.x,.3,s.z);tr.add(g);const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);etiqueta(a,'Sin TAG','corner-label pending-label','torre',s.nota);}
+  for(const p of placed){const parent=areaGroups[areaOf(p)]||tq;const g=exterior(THREE,p.scale,p.variant);g.position.set(p.x,p.y??.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;g.userData.section='n1';parent.add(g);pumpObjects[p.tag]=g;if(areaOf(p)==='torre'){const hit=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.4,3.3),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(0,1,.1);hit.userData.hitProxy=true;g.add(hit);}g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);markers.at(-1).area=areaOf(p);}
+  for(const s of torreSinTag){const g=exterior(THREE,.72,'lf');g.position.set(s.x,.3,s.z);tr.add(g);const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);etiqueta(a,'Sin TAG','corner-label pending-label','torre',s.nota);}
   for(const corner of sectorCorners){const anchor=new THREE.Object3D();anchor.position.set(corner.x,1.1,corner.z);tq.add(anchor);etiqueta(anchor,corner.name,'corner-label','tanques');}
   for(const [k,x] of Object.entries(EJES_X)){const a=new THREE.Object3D();a.position.set(x,.4,-2.6);tr.add(a);etiqueta(a,k,'axis-label','torre');}
   for(const [k,z] of Object.entries(EJES_Z)){const a=new THREE.Object3D();a.position.set(-3,.4,z);tr.add(a);etiqueta(a,k,'axis-label','torre');}
@@ -696,7 +696,10 @@ function resaltarBomba(tag){
    raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
    const hit=raycaster.intersectObjects(pickables,false).find(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return true;});
    const tag=hit?.object.userData.tag||null;resaltarBomba(tag);
-   if(!tag){tip.hidden=true;renderer.domElement.style.cursor='';return;}
+   if(!tag){
+    const eq=state.area==='torre'&&torre?raycaster.intersectObjects(torre.objetos.filter(o=>o.visible&&o.userData.nombre),false)[0]:null;
+    if(eq){tip.textContent=eq.object.userData.nombre;tip.style.left=(e.clientX-r.left+14)+'px';tip.style.top=(e.clientY-r.top+14)+'px';tip.hidden=false;renderer.domElement.style.cursor='';return;}
+    tip.hidden=true;renderer.domElement.style.cursor='';return;}
    const p=state.pumps.find(x=>x.tag===tag);tip.textContent=`${tag} · ${p?.nombre||''}`;tip.style.left=(e.clientX-r.left+14)+'px';tip.style.top=(e.clientY-r.top+14)+'px';tip.hidden=false;renderer.domElement.style.cursor='pointer';
   });
  });
