@@ -14,11 +14,13 @@ const vault = path.resolve(process.argv[2] || path.join(here, '..', '..'));
 // el orden y la fila de cada bomba en el croquis anotado; la separación es de presentación.
 const ROW = 10.9, MID = 15.0, BACK = 20.6;
 const fotos = {fila: '/referencias/torre/b3-b6.jpg', batch: '/referencias/torre/b7-b12.jpg', praj: '/referencias/torre/b17-b19.jpg', fondo: '/referencias/torre/b20-b21.jpg', b2: '/referencias/torre/b2.jpg'};
-const fila = ['B2','B3','B4','B5','B6','B7','B8','B10','B11','B12'];
-const notaFila = {B2: 'Croquis: primera posición de la fila del eje C', B10: 'Nota del croquis: «las bombas a la derecha no están en el plano»', B11: 'Nota del croquis: «las bombas a la derecha no están en el plano»', B12: 'Nota del croquis: «las bombas a la derecha no están en el plano»'};
+const fila = ['B2','B3','B4','B5','B6','B7','B8','B9','B10','B11','B12'];
+// B9: confirmada por el usuario el 13-oct: está en la torre pero sin uso.
+const SIN_USO = new Set(['B9']);
+const notaFila = {B2: 'Croquis: primera posición de la fila del eje C', B10: 'Nota del croquis: «las bombas a la derecha no están en el plano»', B11: 'Nota del croquis: «las bombas a la derecha no están en el plano»', B9: 'Confirmado por el usuario (13-oct): está en la fila del eje C, sin uso', B12: 'Nota del croquis: «las bombas a la derecha no están en el plano»'};
 // [tag, x, z, foto, nota de ubicación]
 const placa = [
- ...fila.map((tag, i) => [tag, 1.2 + i * 1.55, ROW, tag === 'B2' ? fotos.b2 : i <= 4 ? fotos.fila : fotos.batch, notaFila[tag] || 'Croquis: fila del eje C']),
+ ...fila.map((tag, i) => [tag, +(0.9 + i * 1.42).toFixed(2), ROW, tag === 'B2' ? fotos.b2 : i <= 4 ? fotos.fila : fotos.batch, notaFila[tag] || 'Croquis: fila del eje C']),
  ['B17', 6.2, MID, fotos.praj, 'Croquis: símbolo central izquierdo entre ejes C y D'],
  ['B18', 9.2, MID, fotos.praj, 'Croquis: símbolo central entre ejes C y D'],
  ['B19', 12.2, MID, fotos.praj, 'Croquis: símbolo central derecho entre ejes C y D'],
@@ -30,10 +32,10 @@ const out = [];
 for (const [tag, x, z, photo, ubicacionCroquis] of placa) {
  const note = parseNote(await readFile(path.join(vault, '00-Proyecto/equipos', tag + '.md'), 'utf8')).data;
  const base = {tag, areaId: 'torre', zona: 'Torre de destilación', area: 'Torre · Nivel 1', grupo: 'torre', x, z, y: .3, rotation: 0, scale: .72,
-  variant: variant(note.tamano || ''), inactive: false, photo, ubicacionCroquis, posicion: 'aproximada según croquis'};
+  variant: variant(note.tamano || ''), inactive: false, photo, ubicacionCroquis, posicion: 'aproximada según croquis', enUso: !SIN_USO.has(tag)};
  const data = equipmentData(base, note);
  delete data.documental;
- out.push({...data, area: base.area, zona: base.zona, areaPlanta: note.area || '', orings: [], history: []});
+ out.push({...data, enUso: base.enUso, area: base.area, zona: base.zona, areaPlanta: note.area || '', orings: [], history: []});
 }
 // Tercera cubierta del fondo (foto pág. 16): «se supone… para agregar». Sin TAG: no abre expediente.
 const sinTag = [{x: 12.2, z: BACK, nota: 'Posición marcada con X en el croquis y tercera cubierta de la foto de la página 16; sin TAG asignado.'}];

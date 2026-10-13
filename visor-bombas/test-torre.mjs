@@ -9,9 +9,11 @@ import {simParams,createPumpModel} from './public/pump-sim.js';
 import {readPump,handler} from './server.mjs';
 import {Readable} from 'node:stream';
 
-test('la torre tiene las 15 bombas anotadas en el croquis, sin repetir TAG del sector',()=>{
- assert.deepEqual(torrePumps.map(p=>p.tag),['B2','B3','B4','B5','B6','B7','B8','B10','B11','B12','B17','B18','B19','B20','B21']);
- assert.equal(plantPumps.length,photoPumps.length+15);
+test('la torre tiene las 16 bombas (B9 sin uso) anotadas en el croquis, sin repetir TAG del sector',()=>{
+ assert.deepEqual(torrePumps.map(p=>p.tag),['B2','B3','B4','B5','B6','B7','B8','B9','B10','B11','B12','B17','B18','B19','B20','B21']);
+ assert.equal(plantPumps.length,photoPumps.length+16);
+ assert.equal(torrePumps.find(p=>p.tag==='B9').enUso,false);
+ assert.ok(torrePumps.filter(p=>p.tag!=='B9').every(p=>p.enUso));
  assert.equal(new Set(plantPumps.map(p=>p.tag)).size,plantPumps.length);
  for(const p of torrePumps){
   assert.equal(p.areaId,'torre');assert.equal(p.source,`00-Proyecto/equipos/${p.tag}.md`);
@@ -46,7 +48,7 @@ test('el servidor entrega y lee las bombas de la torre',async()=>{
  const p=await readPump('B11');assert.equal(p.data.areaId,'torre');assert.equal(p.data.servicio,'Mosto - Vinaza');
  const req=Readable.from([]);req.url='/api/bootstrap';req.method='GET';req.headers={host:'127.0.0.1:8766'};
  const res={writeHead(st){this.status=st;},end(raw){this.raw=raw;}};await handler(req,res);
- const boot=JSON.parse(res.raw);assert.equal(boot.sectorPumps.length,27);assert.equal(boot.sectorPumps.filter(p=>p.areaId==='torre').length,15);
+ const boot=JSON.parse(res.raw);assert.equal(boot.sectorPumps.length,28);assert.equal(boot.sectorPumps.filter(p=>p.areaId==='torre').length,16);
 });
 test('fotos del expediente: guarda, sustituye y conserva la anterior en el historial',async()=>{
  const {mkdtemp}=await import('node:fs/promises');const os=await import('node:os');const path=await import('node:path');
