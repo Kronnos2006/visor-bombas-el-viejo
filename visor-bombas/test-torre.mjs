@@ -24,15 +24,14 @@ test('datos de las fichas: B11 Vinaza 2X3-8 MTO, B17 Durco, B20 agua',()=>{
  const t=tag=>torrePumps.find(p=>p.tag===tag);
  assert.equal(t('B11').size,'2X3-8 MTO');assert.equal(t('B11').variant,'mto');assert.equal(t('B17').marca,'DURCO');assert.equal(t('B20').servicio,'Agua');
 });
-test('el modelo se aísla por secciones y la Planta 1 es la única con bombas',()=>{
+test('el modelo se aísla por piso y solo el Nivel 1 tiene bombas',()=>{
  const {objetos}=buildTorre(THREE);
  for(const s of SECCIONES)assert.ok(objetos.some(o=>o.userData.section===s.id),`objetos en ${s.id}`);
- assert.equal(seccionDe(.3),'p1');assert.equal(seccionDe(5.3),'p2');assert.equal(seccionDe(20.3),'p4');assert.equal(seccionDe(35.3),'p5');
- aplicarSeccion(objetos,'p3');
- assert.ok(objetos.filter(o=>o.userData.section==='p3').every(o=>o.material.opacity===1));
- assert.ok(objetos.filter(o=>o.userData.section==='p1').every(o=>o.material.opacity<.2));
+ assert.equal(seccionDe(.3),'n1');assert.equal(seccionDe(5.3),'n21');assert.equal(seccionDe(20.3),'n5');assert.equal(seccionDe(35.3),'techo');
+ aplicarSeccion(objetos,'n4');
+ assert.ok(objetos.every(o=>o.visible===(o.userData.section==='n4')),'solo el piso elegido queda visible');
  aplicarSeccion(objetos,null);assert.ok(objetos.every(o=>o.visible));
- assert.ok(torrePumps.every(p=>seccionDe(p.y)==='p1'));
+ assert.ok(torrePumps.every(p=>seccionDe(p.y)==='n1'));
 });
 test('áreas sobre el plano de sitio: torre en el área 2, junto al sector de tanques',()=>{
  const torre=AREAS.find(a=>a.id==='torre'),tanques=AREAS.find(a=>a.id==='tanques');
