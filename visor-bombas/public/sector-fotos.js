@@ -1,5 +1,8 @@
 import {photoPumps} from './equipos-sector.js';
 export {photoPumps} from './equipos-sector.js';
+import {torrePumps} from './equipos-torre.js';
+// Todas las bombas con posición en el visor: sector de tanques + torre de destilación.
+export const plantPumps=[...photoPumps,...torrePumps];
 // Lectura de placa sobre las fotos del 2026-10-07. Dato real, sin asociar
 // todavia a una posicion del mapa ni a un TAG del P&ID.
 export const plateEvidence=[

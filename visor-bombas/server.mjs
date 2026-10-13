@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, timingSafeEqual, createHmac } from 'node:crypto';
 import { load, JSON_SCHEMA } from './vendor/js-yaml.mjs';
-import { photoPumps } from './public/sector-fotos.js';
+import { photoPumps, plantPumps } from './public/sector-fotos.js';
 import { generatePumpPDF } from './pdf-generator.mjs';
 import { vaultConfiguration, equipmentData } from './vault.mjs';
 import { maintenanceStore } from './maintenance.mjs';
@@ -79,7 +79,7 @@ export function safeVaultFile(relative) {
 export async function readPump(tag) {
  if (!tagPattern.test(tag)) throw new Error('TAG inválido.');
  if (tag.startsWith('B')) {
-  const base = photoPumps.find(p => p.tag === tag);
+  const base = plantPumps.find(p => p.tag === tag);
   if (!base) throw new Error('Equipo fuera del sector registrado.');
   const source = `00-Proyecto/equipos/${tag}.md`;
   let note;
@@ -107,7 +107,7 @@ export async function readPump(tag) {
  return {tag,data,description:section(body,'Qué hace'), history, failures:section(body,'Modos de falla observados'), observations:section(body,'Observaciones'), reports, files, source:`00-Proyecto/bombas/${tag}.md`};
 }
 export function readIntegratedPump(tag) {
- const data=photoPumps.find(p=>p.tag===tag);
+ const data=plantPumps.find(p=>p.tag===tag);
  if(!data) return null;
  return {
   tag,
@@ -154,14 +154,14 @@ export async function handler(req,res) {
     try { const p=await readPump(name.slice(0,-3)); pumps.push({tag:p.tag,...p.data}); } catch(e) {errors.push({file:name,error:e.message});}
    }
    const sectorPumps = [];
-   for (const base of photoPumps) {
+   for (const base of plantPumps) {
     try { const p = await readPump(base.tag); sectorPumps.push(p.data); }
     catch (e) { errors.push({file:`equipos/${base.tag}.md`, error:e.message}); }
    }
    return send(res,200,{pumps,sectorPumps,errors,token:TOKEN,geminiConfigured:!!apiKey,model,demo:DEMO,vaultName:path.basename(VAULT),maintenanceWritable:configuration.writable});
   }
   if(req.method==='GET' && url.pathname==='/api/progress') {
-   const {rows,errors}=await survey.progress(new Set(photoPumps.map(p=>p.tag)));
+   const {rows,errors}=await survey.progress(new Set(plantPumps.map(p=>p.tag)));
    return send(res,200,{rows,errors,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS,replaceFields:REPLACE_FIELDS});
   }
   if(req.method==='GET' && url.pathname==='/api/reports') {

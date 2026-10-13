@@ -1,0 +1,51 @@
+// Genera public/equipos-torre.js a partir de las fichas 00-Proyecto/equipos/Bxx.md.
+// Posiciones: croquis anotado del usuario (PDF «Torre», lámina A07, Nivel 1) y fotos de las
+// páginas 16–17. Coordenadas locales de la torre en metros: x desde el eje 1 hacia el 5,
+// z desde el eje A hacia el E. Uso: node tools/generar-torre.mjs [carpeta-boveda]
+import {readFile, writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {parseNote} from '../server.mjs';
+import {equipmentData} from '../vault.mjs';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const vault = path.resolve(process.argv[2] || path.join(here, '..', '..'));
+const ROW = 11.04, MID = 14.4, BACK = 21.6;
+const fotos = {fila: '/referencias/torre/b3-b6.jpg', batch: '/referencias/torre/b7-b12.jpg', praj: '/referencias/torre/b17-b19.jpg', fondo: '/referencias/torre/b20-b21.jpg', b2: '/referencias/torre/b2.jpg'};
+// [tag, x, z, foto, nota de ubicación]
+const placa = [
+ ['B2', 6.57, ROW, fotos.b2, 'Croquis: primera posición de la fila del eje C'],
+ ['B3', 7.86, ROW, fotos.fila, 'Croquis: fila del eje C (llave B3–B6)'],
+ ['B4', 8.65, ROW, fotos.fila, 'Croquis: fila del eje C (llave B3–B6)'],
+ ['B5', 9.45, ROW, fotos.fila, 'Croquis: fila del eje C (llave B3–B6)'],
+ ['B6', 10.30, ROW, fotos.fila, 'Croquis: fila del eje C (llave B3–B6)'],
+ ['B7', 11.12, ROW, fotos.batch, 'Croquis: flecha B7 sobre la fila del eje C'],
+ ['B8', 11.94, ROW, fotos.batch, 'Croquis: flecha B8 sobre la fila del eje C'],
+ ['B10', 12.90, ROW, fotos.batch, 'Nota del croquis: «las bombas a la derecha no están en el plano»'],
+ ['B11', 13.75, ROW, fotos.batch, 'Nota del croquis: «las bombas a la derecha no están en el plano»'],
+ ['B12', 14.60, ROW, fotos.batch, 'Nota del croquis: «las bombas a la derecha no están en el plano»'],
+ ['B17', 7.90, MID, fotos.praj, 'Croquis: símbolo central izquierdo entre ejes C y D'],
+ ['B18', 9.40, MID, fotos.praj, 'Croquis: símbolo central entre ejes C y D'],
+ ['B19', 11.20, MID, fotos.praj, 'Croquis: símbolo central derecho entre ejes C y D'],
+ ['B20', 7.56, BACK, fotos.fondo, 'Croquis: eje E, junto a la columna 2–3'],
+ ['B21', 9.67, BACK, fotos.fondo, 'Croquis: eje E, centro']
+];
+const variant = size => /MTO/i.test(size) ? 'mto' : /STO|ST\b/i.test(size) ? 'sto' : 'lf';
+const out = [];
+for (const [tag, x, z, photo, ubicacionCroquis] of placa) {
+ const note = parseNote(await readFile(path.join(vault, '00-Proyecto/equipos', tag + '.md'), 'utf8')).data;
+ const base = {tag, areaId: 'torre', zona: 'Torre de destilación', area: 'Torre · Nivel 1', grupo: 'torre', x, z, y: .3, rotation: 0, scale: .6,
+  variant: variant(note.tamano || ''), inactive: false, photo, ubicacionCroquis, posicion: 'aproximada según croquis'};
+ const data = equipmentData(base, note);
+ delete data.documental;
+ out.push({...data, area: base.area, zona: base.zona, areaPlanta: note.area || '', orings: [], history: []});
+}
+// Tercera cubierta del fondo (foto pág. 16): «se supone… para agregar». Sin TAG: no abre expediente.
+const sinTag = [{x: 12.1, z: BACK, nota: 'Posición marcada con X en el croquis y tercera cubierta de la foto de la página 16; sin TAG asignado.'}];
+const source = `// GENERADO por tools/generar-torre.mjs desde 00-Proyecto/equipos/Bxx.md. No editar a mano.
+// Torre de destilación · Nivel 1. Posiciones aproximadas según el croquis anotado (lámina A07).
+export const torrePumps = ${JSON.stringify(out, null, 1)};
+export const torreSinTag = ${JSON.stringify(sinTag)};
+`;
+await writeFile(path.join(here, '..', 'public', 'equipos-torre.js'), source);
+console.log(`equipos-torre.js: ${out.length} bombas (${out.map(p => p.tag).join(', ')})`);
