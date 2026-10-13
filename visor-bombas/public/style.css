@@ -202,3 +202,4 @@ button.pdf-btn.primary{background:#255047;border-color:var(--accent);color:#dcfc
 #pump-resumen dd.rs-pend{color:#6f8582;font-style:italic}
 #pump-resumen .rs-link{cursor:pointer}#pump-resumen .rs-link:hover{background:#223027}
 #pump-resumen .rs-off{font-size:9px;padding:1px 5px;border:1px solid #c9a227;color:#e2c14d;border-radius:8px;margin-left:4px}
+#pump-resumen .rs-src{margin:6px 0 0;font-size:9.5px;color:#6f8582}

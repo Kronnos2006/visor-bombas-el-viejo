@@ -69,6 +69,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "REXNORD ES-4R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -142,6 +143,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -215,6 +217,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -288,6 +291,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "2R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -361,6 +365,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "2R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -434,6 +439,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -507,6 +513,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -580,6 +587,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -653,6 +661,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -726,6 +735,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "3R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -799,6 +809,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "3R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -872,6 +883,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -945,6 +957,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -1018,6 +1031,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Amortiguador LoveJoy L-100",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -1091,6 +1105,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Amortiguador LoveJoy L-101",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -1164,6 +1179,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,

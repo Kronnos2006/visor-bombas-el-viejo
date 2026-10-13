@@ -29,7 +29,7 @@ export function equipmentData(base, note) {
   motor: {marca: value('motor_marca'), catalogo: value('motor_catalogo'), potencia: note.motor_hp ? units('motor_hp', 'HP') : units('motor_kw', 'kW'), rpm: units('motor_rpm', 'rpm')},
   seal: {tipo: note.sello_tipo || note.tipo_sellado || 'Por confirmar', diametro: units('sello_eje_pulg', 'pulg'), caras: [note.sello_cara_rotativa, note.sello_cara_estatica].filter(Boolean).join(' / ') || 'Por confirmar', elastomero: value('sello_elastomero'), codigo: value('sello_codigo')},
   rodamientos: {delantero: value('rodamiento_delantero'), trasero: value('rodamiento_trasero'), conjunto: value('rodamientos_pertenecen_a')},
-  acople: value('acople'), orings: Array.isArray(note.orings) ? note.orings : [], history: [],
+  acople: value('acople'), observaciones: String(note.observaciones_excel || '').trim(), orings: Array.isArray(note.orings) ? note.orings : [], history: [],
   documental: note, demonstracion: false
  };
 }
