@@ -36,8 +36,8 @@ test('el modelo se aísla por piso y solo el Nivel 1 tiene bombas',()=>{
 test('áreas sobre el plano de sitio: torre en el área 2, junto al sector de tanques',()=>{
  const torre=AREAS.find(a=>a.id==='torre'),tanques=AREAS.find(a=>a.id==='tanques');
  const [x2,z2]=pxAMundo(150,310);
- assert.ok(Math.hypot(torre.pos[0]-x2,torre.pos[1]-z2)<15);
- assert.ok(Math.hypot(torre.pos[0]-tanques.pos[0],torre.pos[1]-tanques.pos[1])<40);
+ assert.ok(Math.hypot(torre.pos[0]-x2,torre.pos[1]-z2)<25);
+ const d=Math.hypot(torre.pos[0]-tanques.pos[0],torre.pos[1]-tanques.pos[1]);assert.ok(d>35&&d<60,"áreas separadas pero cercanas: "+d);
 });
 test('el simulador funciona con las bombas de la torre',()=>{
  for(const p of torrePumps){const P=simParams(p);assert.ok(P,p.tag);const M=createPumpModel(P);let s=M.initialState(),i={...M.defaults(),running:true};for(let k=0;k<3000;k++)s=M.step(s,i,.1);assert.ok(Number.isFinite(M.derive(s,i).q));}
@@ -47,4 +47,18 @@ test('el servidor entrega y lee las bombas de la torre',async()=>{
  const req=Readable.from([]);req.url='/api/bootstrap';req.method='GET';req.headers={host:'127.0.0.1:8766'};
  const res={writeHead(st){this.status=st;},end(raw){this.raw=raw;}};await handler(req,res);
  const boot=JSON.parse(res.raw);assert.equal(boot.sectorPumps.length,27);assert.equal(boot.sectorPumps.filter(p=>p.areaId==='torre').length,15);
+});
+test('fotos del expediente: guarda, sustituye y conserva la anterior en el historial',async()=>{
+ const {mkdtemp}=await import('node:fs/promises');const os=await import('node:os');const path=await import('node:path');
+ const {pumpPhotoStore}=await import('./pump-photos.mjs');
+ const dir=await mkdtemp(path.join(os.tmpdir(),'vocatus-fotos-'));const store=pumpPhotoStore(dir);
+ const jpg=Buffer.from([0xFF,0xD8,0xFF,0xE0,1,2,3]).toString('base64');
+ await store.save('B11','placa1',jpg);await store.save('B11','placa1',jpg);
+ const list=await store.list('B11');assert.ok(list.placa1.url.includes('slot=placa1'));assert.equal(await store.historial('B11'),1);
+ await assert.rejects(store.save('B11','otra',jpg));await assert.rejects(store.save('../x','placa1',jpg));
+ await assert.rejects(store.save('B11','bomba',Buffer.from('hola').toString('base64')));
+});
+test('el expediente de la torre trae las fotos del Excel Libro1.bombas_3',async()=>{
+ const {expediente}=await import('./public/expediente.js');
+ for(const t of ['B3','B5','B11','B17','B21'])assert.ok(expediente[t].fotos.length&&expediente[t].placas.length,t);
 });

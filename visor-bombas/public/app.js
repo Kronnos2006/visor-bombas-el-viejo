@@ -5,6 +5,7 @@ import {photoPumps, plantPumps, plateEvidence, photoURL, photo3URL, exterior, se
 import {torreSinTag} from './equipos-torre.js';
 import {buildTorre, aplicarSeccion, SECCIONES, VISTAS, EJES_X, EJES_Z, CENTRO} from './torre-model.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
+import {fotosActualizadas, guardarFoto, originales, htmlFotos} from './fotos-bomba.js';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
 import {expediente, enlaces, linksBomba, linkPieza} from './expediente.js';
@@ -72,7 +73,7 @@ function rebuildPlant(){
   for(const corner of sectorCorners){const anchor=new THREE.Object3D();anchor.position.set(corner.x,1.1,corner.z);tq.add(anchor);etiqueta(anchor,corner.name,'corner-label','tanques');}
   for(const [k,x] of Object.entries(EJES_X)){const a=new THREE.Object3D();a.position.set(x,.4,-2.6);tr.add(a);etiqueta(a,k,'axis-label','torre');}
   for(const [k,z] of Object.entries(EJES_Z)){const a=new THREE.Object3D();a.position.set(-3,.4,z);tr.add(a);etiqueta(a,k,'axis-label','torre');}
-  for(const area of AREAS.filter(a=>a.id!=='planta')){const g=areaGroups[area.id],a=new THREE.Object3D();a.position.set(...(area.id==='torre'?[CENTRO.x,38,CENTRO.z]:[0,9,-3]));g.add(a);
+  for(const area of AREAS.filter(a=>a.id!=='planta')){const g=areaGroups[area.id],a=new THREE.Object3D();a.position.set(...(area.id==='torre'?[CENTRO.x,30,CENTRO.z]:[0,9,-3]));g.add(a);
    const el=document.createElement('button');el.className='label area-label '+area.estado;el.innerHTML=`${esc(area.nombre)}<small>${area.estado==='nueva'?'NUEVA ÁREA':'YA MODELADA'}</small>`;el.onclick=()=>setArea(area.id);$('#labels').append(el);markers.push({obj:a,el,kind:'area',area:'planta'});}
   for(const p of PENDIENTES){const [x,z]=pxAMundo(p.px,p.py),a=new THREE.Object3D();a.position.set(x,1,z);plant.add(a);etiqueta(a,`Área ${p.n} · por modelar`,'pending-area','planta');}
   document.querySelector('.sidebar footer p').textContent=`${placed.filter(p=>areaOf(p)==='tanques').length} en el sector de tanques · ${placed.filter(p=>areaOf(p)==='torre').length} en la torre de destilación.`;
@@ -270,7 +271,7 @@ $('#search').oninput=renderList;$('#area').onchange=()=>setArea($('#area').value
 $('#close-settings').onclick=()=>$('#settings').close();$('#close-report').onclick=()=>$('#report-dialog').close();
 $('#config-form').onsubmit=async e=>{e.preventDefault();const form=e.target;try{const r=await api('/api/config',Object.fromEntries(new FormData(form)));state.configured=r.configured;state.model=r.model;form.elements.apiKey.value='';$('#settings').close();renderPanel();toast('Clave guardada solo durante esta sesión.');}catch(e){$('#config-error').textContent=e.message;}};
 $('#report-form').onsubmit=async e=>{e.preventDefault();const tag=state.pump.tag,form=e.target,button=form.querySelector('button.primary');button.disabled=true;try{await api('/api/maintenance',{...Object.fromEntries(new FormData(form)),tag});$('#report-dialog').close();form.reset();if(state.pump?.tag===tag)state.pump=await api('/api/pump?tag='+encodeURIComponent(tag));renderPanel();toast(state.demo?'Informe de prueba guardado en la carpeta de demostración.':'Informe guardado en Obsidian.');}catch(e){$('#report-error').textContent=e.message;}finally{button.disabled=false;}};
-async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?r.sectorPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;configureReports({writable:r.maintenanceWritable,token:r.token});if(state.pump&&state.sector){const current=state.pumps.find(p=>p.tag===state.pump.tag);if(current)state.pump={...state.pump,data:current};}fillFilters();document.querySelector('.local').textContent=r.maintenanceWritable?'● OBSIDIAN · '+r.vaultName:'● DEMO · REPORTES EN ESTE NAVEGADOR';$('#report-dialog .muted').textContent=r.maintenanceWritable?'Se guardará en la bóveda '+r.vaultName+'.':'Este alojamiento no guarda informes en Obsidian.';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plant)rebuildPlant();if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
+async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?r.sectorPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;state.writable=r.maintenanceWritable;configureReports({writable:r.maintenanceWritable,token:r.token});if(state.pump&&state.sector){const current=state.pumps.find(p=>p.tag===state.pump.tag);if(current)state.pump={...state.pump,data:current};}fillFilters();document.querySelector('.local').textContent=r.maintenanceWritable?'● OBSIDIAN · '+r.vaultName:'● DEMO · REPORTES EN ESTE NAVEGADOR';$('#report-dialog .muted').textContent=r.maintenanceWritable?'Se guardará en la bóveda '+r.vaultName+'.':'Este alojamiento no guarda informes en Obsidian.';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plant)rebuildPlant();if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
 $('#refresh').onclick=async()=>{await refresh();toast('Expedientes actualizados.');};
 function setPhotoDetail(schematic){
  state.detail=schematic?'schematic':'exterior';state.part=null;state.explode=0;$('#explode').value=0;$('#percent').textContent='0%';
@@ -490,6 +491,7 @@ function renderPhotoPanel(){
  $('#panel').querySelectorAll('.interactive-part-block').forEach(b=>b.onclick=()=>selectPart(Number(b.dataset.part)));
  $('#panel').querySelectorAll('[data-subcomponent]').forEach(b=>b.onclick=()=>{selectPart(state.part,b.dataset.subcomponent);fitAnatomy();});
  $('#download-summary-pdf-bottom')?.addEventListener('click',()=>downloadPumpPDF(p.tag));
+ montarFotos(p,exp);
 }
 document.querySelector('.compass').textContent='LADOS FIJOS · Frontal B–C · Izquierdo C–D · Trasero D–A · Derecho A–B';
 initScene();renderPanel();await refresh();
@@ -699,3 +701,21 @@ function resaltarBomba(tag){
   });
  });
 })();
+
+// Sección «Actualizar fotos» dentro del expediente de cada bomba.
+async function montarFotos(p,exp){
+ const anchor=document.getElementById('fuentes-'+p.tag);if(!anchor||p.inactive&&!exp)return;
+ const tag=p.tag,orig=originales(p,exp),pintar=async()=>{
+  const act=await fotosActualizadas(tag,{writable:!!state.writable});
+  if(state.pump?.tag!==tag||!document.getElementById('fuentes-'+tag))return;
+  document.getElementById('fotos-actualizar')?.remove();
+  document.getElementById('fuentes-'+tag).insertAdjacentHTML('afterend',htmlFotos(p,orig,act,{writable:!!state.writable}));
+  if(act.posicion){const ref=document.querySelector('#panel .photo-pair img');if(ref)ref.src=act.posicion.url;}
+  document.querySelectorAll('#fotos-actualizar input[data-slot]').forEach(input=>input.onchange=async()=>{
+   const file=input.files?.[0];if(!file)return;const label=input.closest('label');label.classList.add('saving');
+   try{await guardarFoto(tag,input.dataset.slot,file,{writable:!!state.writable,token:state.token});toast('Foto actualizada en el expediente de '+tag+'.');await pintar();}
+   catch(e){const err=document.getElementById('fotos-error');if(err)err.textContent=e.message;label.classList.remove('saving');}
+  });
+ };
+ await pintar();
+}

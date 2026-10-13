@@ -3,16 +3,20 @@
 // Posiciones relativas aproximadas: sirven para orientarse, no son coordenadas topográficas.
 export const PLANO={url:'/referencias/torre/plano-sitio.jpg',ancho:781,alto:537,pxm:6.2};
 const GIRO=.497; // rad: ejes de la torre y del sector respecto del plano
+// Separación visual entre áreas (pedido del usuario): la torre se corre hacia su lado A y el
+// sector hacia el lado contrario. Distancias de presentación, no de levantamiento.
+const SEP_TORRE=12,SEP_TANQUES=5;
+const correr=([x,z],d)=>[x+d*Math.sin(GIRO),z+d*Math.cos(GIRO)];
 export const pxAMundo=(px,py)=>[(px-PLANO.ancho/2)/PLANO.pxm,(py-PLANO.alto/2)/PLANO.pxm];
 
 export const AREAS=[
  {id:'planta',nombre:'Planta general',corto:'Toda la planta',estado:'general'},
  {id:'tanques',nombre:'Sector de tanques',corto:'Sector de tanques',estado:'modelada',
   // centro del sector (0, −0,5 locales) sobre el centro de la losa de tanques del plano
-  pos:(()=>{const [x,z]=pxAMundo(263.3,422.9);return [x+.5*Math.sin(GIRO),z+.5*Math.cos(GIRO)];})(),giro:GIRO,
+  pos:correr(pxAMundo(263.3,422.9),.5+SEP_TANQUES),giro:GIRO,
   camara:{pos:[0,39,9],obj:[0,0,-1]}},
  {id:'torre',nombre:'Torre de destilación',corto:'Torre de destilación',estado:'nueva',
-  pos:pxAMundo(128.3,276.9),giro:GIRO,camara:{pos:[-30,32,-26],obj:[7.7,10,11]}}
+  pos:correr(pxAMundo(128.3,276.9),-SEP_TORRE),giro:GIRO,camara:{pos:[-30,32,-26],obj:[7.7,10,11]}}
 ];
 // Edificios numerados del plano de sitio que aún no se modelan.
 export const PENDIENTES=[
