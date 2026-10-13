@@ -82,3 +82,4 @@
 .campo label.check{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px;color:#d4e3e1}.campo label.check input{width:20px;height:20px;flex:0 0 20px;margin-top:1px}
 .button-link{display:inline-flex;align-items:center;justify-content:center;flex:1 1 120px;padding:11px 14px;border:1px solid #35444b;border-radius:7px;text-decoration:none;color:#c9d9dc}
 @media(max-width:640px){.choice{grid-template-columns:1fr}.swap-cards{grid-template-columns:1fr}.swap-cards .arrow{transform:rotate(90deg);justify-self:center}}
+#map .axis{stroke:#3d5558;stroke-width:.06;stroke-dasharray:.4 .25}

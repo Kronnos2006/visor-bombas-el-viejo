@@ -365,7 +365,24 @@ async function downloadPumpPDF(tag){
  }
 }
 
+// Resumen rápido en la cabecera del expediente: datos de operación y componentes críticos.
+function paintPumpSummary(p){
+ let el=document.getElementById('pump-resumen');
+ if(!el){el=document.createElement('div');el.id='pump-resumen';$('#source-status').after(el);}
+ if(!p){el.hidden=true;el.innerHTML='';return;}
+ const ok=v=>v!=null&&String(v).trim()!==''&&!/^(por confirmar|sin dato)/i.test(String(v).trim());
+ const spec=k=>(p.specs||[]).find(([n])=>n===k)?.[1];
+ const fila=(k,v,part)=>`<div class="rs-row${part!=null?' rs-link':''}"${part!=null?` data-part="${part}" title="Ver ${esc(k.toLowerCase())} en el 3D"`:''}><dt>${esc(k)}</dt><dd${ok(v)?'':' class="rs-pend"'}>${ok(v)?esc(v):'Por confirmar'}</dd></div>`;
+ const m=p.motor||{},se=p.seal||{},ro=p.rodamientos||{};
+ const motor=[m.marca,m.potencia,m.rpm].filter(ok).join(' · ');
+ const sello=[se.tipo,ok(se.diametro)?'eje '+se.diametro:''].filter(ok).join(' · ');
+ const orings=(p.orings||[]).length?`${p.orings.length} registrados`:'';
+ el.hidden=false;
+ el.innerHTML=`<div class="rs-card"><h4>Resumen de la bomba${p.enUso===false||p.inactive?' <span class="rs-off">SIN USO</span>':''}</h4><dl>${fila('Servicio',p.servicio)}${fila('Ubicación',p.nombre)}${fila('Tamaño',p.size)}${fila('Caudal',spec('Caudal'))}${fila('Altura',spec('Altura'))}${fila('Velocidad',spec('Velocidad de bomba'))}${fila('Impulsor',spec('Impulsor'))}${fila('Motor',motor,9)}</dl></div><div class="rs-card"><h4>Componentes críticos</h4><dl>${fila('Sello mecánico',sello,5)}${fila('Caras del sello',se.caras,5)}${fila('Elastómero',se.elastomero,5)}${fila('Rodamiento delantero',ro.delantero,7)}${fila('Rodamiento trasero',ro.trasero,7)}${fila('Acople',p.acople,8)}${fila('O-rings',orings)}</dl></div>`;
+ el.querySelectorAll('[data-part]').forEach(r=>r.onclick=()=>{if(typeof selectPart==='function')selectPart(Number(r.dataset.part));});
+}
 function paintPumpLinks(p){
+ paintPumpSummary(p);
  let el=document.getElementById('pump-links');
  if(!el){el=document.createElement('div');el.id='pump-links';$('#selected-tag').after(el);}
  if(!p){el.hidden=true;el.innerHTML='';return;}
@@ -373,7 +390,7 @@ function paintPumpLinks(p){
  const L=linksBomba(p);
  const manualBtn=L?`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.manual.t)}">📘 Manual de la bomba</a>`:'';
  const planosBtn=L?`<a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos</a>`:'';
- el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}${p.areaId==='torre'?'':`<a class="pl-btn" href="/equipo.html?tag=${encodeURIComponent(p.tag)}" title="Cambiar de lugar o reemplazar esta bomba">⇄ Mover o cambiar</a>`}`;
+ el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}<a class="pl-btn" href="/equipo.html?tag=${encodeURIComponent(p.tag)}" title="Cambiar de lugar o reemplazar esta bomba">⇄ Mover o cambiar</a>`;
  const btn=$('#download-summary-pdf-header');
  if(btn) btn.onclick=()=>downloadPumpPDF(p.tag);
 }

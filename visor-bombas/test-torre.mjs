@@ -64,3 +64,17 @@ test('el expediente de la torre trae las fotos del Excel Libro1.bombas_3',async(
  const {expediente}=await import('./public/expediente.js');
  for(const t of ['B3','B5','B11','B17','B21'])assert.ok(expediente[t].fotos.length&&expediente[t].placas.length,t);
 });
+
+test('mover/intercambiar bombas de la torre en una bóveda de prueba',async()=>{
+ const {mkdtemp,mkdir,copyFile,readFile:rf}=await import('node:fs/promises');
+ const os=await import('node:os');const path=await import('node:path');
+ const {equipmentStore}=await import('./equipment.mjs');
+ const dir=await mkdtemp(path.join(os.tmpdir(),'boveda-prueba-'));await mkdir(path.join(dir,'00-Proyecto/equipos'),{recursive:true});
+ for(const t of ['B4','B5','B30'])await copyFile(new URL(`../00-Proyecto/equipos/${t}.md`,import.meta.url),path.join(dir,'00-Proyecto/equipos',t+'.md'));
+ const eq=equipmentStore(dir,plantPumps),who={date:'2026-10-13',author:'Prueba'};
+ await eq.move('B4',{...who,x:4,z:18,rotation:90});
+ assert.match(await rf(path.join(dir,'00-Proyecto/equipos/B4.md'),'utf8'),/posicion_z: 18/);
+ await assert.rejects(eq.move('B4',{...who,x:4,z:30}),/fuera de la torre/);
+ await eq.swap('B4','B5',who);
+ await assert.rejects(eq.swap('B4','B30',who),/misma área/);
+});

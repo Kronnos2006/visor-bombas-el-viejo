@@ -4,6 +4,10 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const store = {get(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}};
 const known = v => v != null && String(v).trim() !== '' && !/^(por confirmar|sin dato)/i.test(String(v).trim());
 const deg = r => Math.round(((r * 180 / Math.PI) % 360 + 360) % 360);
+// Cada área tiene su mapa: sector de tanques o torre de destilación (ejes 1–5 × A–E, Nivel 1).
+const AREA = p => p?.areaId === 'torre' ? 'torre' : 'tanques';
+const LIM = {tanques: {x0: -15.5, x1: 15.5, z0: -14, z1: 12, vb: '-17.4 -14.5 34.8 27', w: 1.4, h: 2.8}, torre: {x0: -1, x1: 16.5, z0: -1, z1: 23, vb: '-4 -3.2 23 28.4', w: 1, h: 2}};
+const TX = {1: 0, 2: 5.5, 3: 6.76, 4: 12.7, 5: 15.4}, TZ = {A: 0, B: 5.93, C: 11.9, D: 16.9, E: 21.9};
 let pumps = [], token = '', writable = false, replaceFields = [], tag = '', action = '', target = null, swapWith = '';
 
 function pick(t) {
@@ -28,14 +32,16 @@ function choose(a) {
 }
 // Mapa del sector visto desde arriba: mismo sistema de coordenadas que el visor 3D.
 function drawMap() {
- const svg = $('#map');
+ const svg = $('#map'), me0 = pumps.find(p => p.tag === tag), area = AREA(me0), L = LIM[area];
+ svg.setAttribute('viewBox', L.vb); svg.setAttribute('aria-label', area === 'torre' ? 'Mapa de la torre de destilación, Nivel 1' : 'Mapa del sector');
  const tanks = tankSpecs.map(([x, z, r]) => `<circle cx="${x}" cy="${z}" r="${r}" class="tank"/>`).join('');
- const shape = (p, x, z, rot, cls) => `<g class="${cls}" data-tag="${p.tag}" transform="translate(${x} ${z}) rotate(${-rot})"><rect x="-.7" y="-1.4" width="1.4" height="2.8" rx=".25"/><text y=".35" transform="rotate(${rot})">${p.tag}</text></g>`;
- const others = pumps.filter(p => p.tag !== tag && p.tag !== swapWith).map(p => shape(p, p.x, p.z, deg(p.rotation), 'pump other')).join('');
+ const shape = (p, x, z, rot, cls) => `<g class="${cls}" data-tag="${p.tag}" transform="translate(${x} ${z}) rotate(${-rot})"><rect x="${-L.w / 2}" y="${-L.h / 2}" width="${L.w}" height="${L.h}" rx=".25"/><text y=".35" transform="rotate(${rot})">${p.tag}</text></g>`;
+ const others = pumps.filter(p => p.tag !== tag && p.tag !== swapWith && AREA(p) === area).map(p => shape(p, p.x, p.z, deg(p.rotation), 'pump other')).join('');
  const partner = pumps.find(p => p.tag === swapWith);
  const me = pumps.find(p => p.tag === tag);
  const swapped = partner ? shape(partner, me.x, me.z, deg(me.rotation), 'pump partner') : '';
- svg.innerHTML = `<rect x="-16" y="-14.5" width="32" height="27" class="slab"/><rect x="-12" y="-9" width="24" height="11.35" class="wall"/>${tanks}<text x="0" y="11.6" class="side">FRONTAL</text><text x="0" y="-12.9" class="side">TRASERO</text><text x="-16.6" y="-3.3" class="side" transform="rotate(-90 -16.6 -3.3)">IZQUIERDO</text><text x="16.6" y="-3.3" class="side" transform="rotate(90 16.6 -3.3)">DERECHO</text>${others}${swapped}<line x1="${me.x}" y1="${me.z}" x2="${target.x}" y2="${target.z}" class="trail"/><circle cx="${me.x}" cy="${me.z}" r=".35" class="origin"/>${shape(me, target.x, target.z, target.rotation, 'pump mine')}`;
+ const fondo = area === 'torre' ? `<rect x="-1" y="-1" width="17.5" height="24" class="slab"/>${Object.entries(TX).map(([n, x]) => `<line x1="${x}" y1="-1" x2="${x}" y2="23" class="axis"/><text x="${x}" y="-1.8" class="side">${n}</text>`).join('')}${Object.entries(TZ).map(([n, z]) => `<line x1="-1" y1="${z}" x2="16.5" y2="${z}" class="axis"/><text x="-2.4" y="${z + .35}" class="side">${n}</text>`).join('')}<text x="7.7" y="24.6" class="side">TORRE · NIVEL 1</text>` : null;
+ svg.innerHTML = fondo ? `${fondo}${others}${swapped}<line x1="${me.x}" y1="${me.z}" x2="${target.x}" y2="${target.z}" class="trail"/><circle cx="${me.x}" cy="${me.z}" r=".35" class="origin"/>${shape(me, target.x, target.z, target.rotation, 'pump mine')}` : `<rect x="-16" y="-14.5" width="32" height="27" class="slab"/><rect x="-12" y="-9" width="24" height="11.35" class="wall"/>${tanks}<text x="0" y="11.6" class="side">FRONTAL</text><text x="0" y="-12.9" class="side">TRASERO</text><text x="-16.6" y="-3.3" class="side" transform="rotate(-90 -16.6 -3.3)">IZQUIERDO</text><text x="16.6" y="-3.3" class="side" transform="rotate(90 16.6 -3.3)">DERECHO</text>${others}${swapped}<line x1="${me.x}" y1="${me.z}" x2="${target.x}" y2="${target.z}" class="trail"/><circle cx="${me.x}" cy="${me.z}" r=".35" class="origin"/>${shape(me, target.x, target.z, target.rotation, 'pump mine')}`;
  $('#coords').textContent = swapWith ? `Cambia de lugar con ${swapWith}` : `x ${target.x.toFixed(2)} · z ${target.z.toFixed(2)} · ${target.rotation}°`;
  $('#swap-box').innerHTML = swapWith ? `<div class="msg ok">${esc(tag)} y ${esc(swapWith)} intercambian lugares. <button type="button" id="no-swap">Deshacer</button></div>` : '';
  $('#no-swap')?.addEventListener('click', () => { swapWith = ''; target = {x: me.x, z: me.z, rotation: deg(me.rotation)}; drawMap(); });
@@ -44,7 +50,7 @@ function drawMap() {
  mine.onpointerdown = e => {
   e.preventDefault(); mine.setPointerCapture(e.pointerId); swapWith = '';
   const move = ev => { const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-   target.x = Math.max(-15.5, Math.min(15.5, Math.round(p.x * 4) / 4)); target.z = Math.max(-14, Math.min(12, Math.round(p.y * 4) / 4));
+   target.x = Math.max(L.x0, Math.min(L.x1, Math.round(p.x * 4) / 4)); target.z = Math.max(L.z0, Math.min(L.z1, Math.round(p.y * 4) / 4));
    mine.setAttribute('transform', `translate(${target.x} ${target.z}) rotate(${-target.rotation})`); svg.querySelector('.trail').setAttribute('x2', target.x); svg.querySelector('.trail').setAttribute('y2', target.z);
    $('#coords').textContent = `x ${target.x.toFixed(2)} · z ${target.z.toFixed(2)} · ${target.rotation}°`; };
   const up = () => { mine.removeEventListener('pointermove', move); drawMap(); };
@@ -82,7 +88,7 @@ $('#save').onclick = async () => {
 async function load() {
  const [b, p] = await Promise.all([fetch('/api/bootstrap').then(r => r.json()), fetch('/api/progress').then(r => r.json())]);
  pumps = b.sectorPumps || []; token = b.token; writable = !!b.maintenanceWritable; replaceFields = p.replaceFields || [];
- $('#pick').innerHTML = pumps.map(p => `<button type="button" data-tag="${esc(p.tag)}"><b>${esc(p.tag)}</b><span>${esc(p.nombre || '')}</span>${p.movido ? '<i>movida</i>' : ''}</button>`).join('');
+ $('#pick').innerHTML = pumps.map(p => `<button type="button" data-tag="${esc(p.tag)}"><b>${esc(p.tag)}</b><span>${AREA(p) === 'torre' ? 'Torre · ' : ''}${esc(p.nombre || '')}</span>${p.movido ? '<i>movida</i>' : ''}</button>`).join('');
  $('#pick').querySelectorAll('button').forEach(b => b.onclick = () => pick(b.dataset.tag));
  $('#mode').innerHTML = writable ? '' : '<div class="msg warn">Estás en la versión en la nube: podés ver el mapa, pero para guardar abrí el visor en la computadora.</div>';
 }
