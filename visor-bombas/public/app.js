@@ -12,6 +12,8 @@ import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js';
+import {createPumpModel,simParams} from './pump-sim.js';
+import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
@@ -39,6 +41,7 @@ const viewport=$('#viewport');
 let renderer,scene,camera,controls,plant,pumpGroup,photoDetail;
 const pickables=[],markers=[],componentGroups=[];let cameraFlight=null,render3D=null;
 let anatomy=null;
+let simRig=null;const sims={};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const raycaster=new THREE.Raycaster();
 function material(color,metalness=.35,roughness=.45){return new THREE.MeshStandardMaterial({color,metalness,roughness});}
@@ -90,7 +93,7 @@ function rebuildPlant(){
 function buildPump(variant='lf'){
  const model=buildPumpModel(THREE,variant);
  while(model.root.children.length)pumpGroup.add(model.root.children[0]);
- componentGroups.push(...model.components);
+ componentGroups.push(...model.components);simRig=createSimRig(THREE,model.components);
  for(const group of componentGroups){const index=group.userData.index;const anchor=new THREE.Object3D();anchor.position.set(0,index===0?1.75:1.12,0);group.add(anchor);marker(anchor,String(index+1).padStart(2,'0'),'part',index);}
  render3D?.refrescar();anatomy?.register(componentGroups);
 }
@@ -301,7 +304,7 @@ $('#anatomy-assembled').onclick=resetAnatomy;
 function selectPhotoPump(tag){
  const p=state.pumps.find(p=>p.tag===tag);if(!p)return;const ticket=++state.loading;
  history.replaceState(null,'','#'+p.tag);
- state.pump={tag,data:p,photo:true};state.tab='ficha';state.part=null;
+ state.pump={tag,data:p,photo:true};state.tab=state.tab==='sim'?'sim':'ficha';state.part=null;
  api('/api/pump?tag='+encodeURIComponent(tag)).then(current=>{if(ticket!==state.loading)return;state.pump={...current,photo:true};renderPanel();}).catch(error=>{if(ticket===state.loading)toast(error.message);});
  $('#selected-tag').textContent=tag;$('#selected-name').textContent=`${p.marca} ${p.modelo} · ${p.nombre}`;$('#source-status').textContent=p.inactive?'SIN USO · SIN DATOS TÉCNICOS':'DATOS APORTADOS · GEOMETRÍA APROXIMADA';
  $('#scene-title').textContent=tag+' · Exterior';$('#breadcrumb').textContent='SECTOR FOTOGRAFIADO / '+tag;$('#back').hidden=false;
@@ -455,6 +458,7 @@ function renderPhotoPanel(){
   $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Gemini analiza solamente el expediente de esta bomba seleccionada. Distingue los datos aportados de los ejemplos DEMO y de los campos pendientes.</p>${fieldRows([['Fluido registrado',p.servicio],['Sellado',p.seal.tipo],['Elastómero',p.seal.elastomero],['Registros de demo',String(p.history.length)]])}<div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará a Google el expediente de esta bomba, con los ejemplos DEMO identificados.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué sello y o-rings aparecen en este expediente y qué datos faltan confirmar?">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí el historial DEMO de esta bomba, separado por fechas.">Resumir el mantenimiento ↗</button><button data-question="¿Qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;
   $('#configure').onclick=()=>{$('#config-form [name=model]').value=state.model;$('#settings').showModal();};document.querySelectorAll('[data-question]').forEach(b=>b.onclick=()=>{$('#question').value=b.dataset.question;$('#question').focus();});$('#ask-form').onsubmit=ask;const answer=state.answers[p.tag];if(answer)showAnswer(answer);return;
  }
+ if(state.tab==='sim'){renderSimPanel(p);return;}
  const rings=p.orings.map(r=>`<div class="record"><strong>${esc(r.posicion)}</strong>${fieldRows([[state.demo?'Medida de demo':'Medida registrada',r.medida],[state.demo?'Material de demo':'Material registrado',r.material],['Cantidad',String(r.cantidad)],[state.demo?'Código de demo':'Código registrado',r.codigo]])}</div>`).join('');
  const linkRows=list=>list.map(l=>`<li><a href="${l.u}" target="_blank" rel="noopener noreferrer">${esc(l.t)} ↗</a>${l.k?` <span class="kind">${esc(l.k)}</span>`:''}${l.nota?`<small>${esc(l.nota)}</small>`:''}</li>`).join('');
  const seal=sealRecord(p),ref=sealReference(p);
@@ -517,3 +521,49 @@ function renderRail(){
  renderer.domElement.addEventListener('pointerleave',()=>{tip.hidden=true;});
 })();
 
+
+// Simulador de operación por bomba (guía HIDROMAC 2196 ajustada a cada placa).
+function getSim(p){
+ if(!p||p.inactive)return null;
+ if(!sims[p.tag]){const params=simParams(p);if(!params)return null;const model=createPumpModel(params);sims[p.tag]={model,inputs:model.defaults(),state:model.initialState(),paused:false,speed:1,showFlow:true,log:[],lastLog:-1};}
+ return sims[p.tag];
+}
+function showInside(){
+ if(!ensureAnatomy())return;
+ if(!anatomy.state.cutaway)anatomy.set({cutaway:true});
+ if(state.explode>0)setExplosion(0);
+ syncAnatomyTools();fitAnatomy();
+}
+function renderSimPanel(p){
+ const panel=$('#panel');
+ if(p.inactive){panel.innerHTML=`<p class="eyebrow">SIMULADOR · ${esc(p.tag)}</p><h2>${esc(p.tag)} · SIN USO</h2><p class="notice">Equipo marcado SIN USO y sin datos de placa (marca, caudal, altura, motor). No se simula para no inventar su comportamiento. Al levantar la placa en campo se habilita con sus propios datos.</p>`;return;}
+ const sim=getSim(p);if(!sim){panel.innerHTML='<p class="notice">Faltan datos de placa para simular esta bomba.</p>';return;}
+ panel.innerHTML=simPanelHTML(p,sim);
+ const q=id=>panel.querySelector('#sim-'+id),refresh=()=>{const d=sim.model.derive(sim.state,sim.inputs);updateSimPanel(panel,sim,d);drawSimChart(q('chart'),sim,d);};
+ q('run').onclick=()=>{sim.inputs.running=!sim.inputs.running;q('run').textContent=sim.inputs.running?'■ Parar bomba':'▶ Arrancar bomba';if(sim.inputs.running&&state.detail==='exterior')showInside();refresh();};
+ q('pause').onclick=()=>{sim.paused=!sim.paused;q('pause').textContent=sim.paused?'Continuar':'Pausar';refresh();};
+ q('speed').onclick=()=>{sim.speed=sim.speed===1?.25:sim.speed===.25?4:1;q('speed').textContent='Tiempo ×'+String(sim.speed).replace('.',',');};
+ q('reset').onclick=()=>{sim.inputs=sim.model.defaults();sim.state=sim.model.initialState();sim.paused=false;sim.speed=1;sim.log=[];sim.lastLog=-1;renderSimPanel(p);toast('Simulador de '+p.tag+' restablecido.');};
+ const ranges={freq:v=>sim.inputs.frequency=v,valve:v=>sim.inputs.valve=v/100,suction:v=>sim.inputs.suction=v,temp:v=>sim.inputs.temperature=v,oil:v=>sim.inputs.oil=v/100};
+ for(const [id,set] of Object.entries(ranges))if(q(id))q(id).oninput=e=>{set(Number(e.target.value));refresh();};
+ q('fluid').onchange=e=>{sim.inputs.fluid=e.target.value;refresh();};
+ for(const id of ['power','primed','cooling','flow']){const b=q(id);if(!b)continue;b.onclick=()=>{if(id==='flow')sim.showFlow=!sim.showFlow;else sim.inputs[id]=!sim.inputs[id];b.setAttribute('aria-pressed',String(id==='flow'?sim.showFlow:sim.inputs[id]));refresh();};}
+ q('inside').onclick=showInside;
+ q('save').onclick=()=>{const d=sim.model.derive(sim.state,sim.inputs),blob=new Blob([JSON.stringify({bomba:p.tag,generado:new Date().toISOString(),aviso:'Modelo reducido con curva sintética ajustada a la placa. No son mediciones.',parametros:sim.model.params,entradas:sim.inputs,actual:d,lecturas:sim.log},null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`simulacion_${p.tag}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),20000);};
+ refresh();
+}
+(function simLoop(){
+ let last=performance.now(),ui=0,chart=0;
+ function tick(now){
+  const dt=Math.min(.25,(now-last)/1000);last=now;
+  for(const sim of Object.values(sims)){
+   if(sim.paused)continue;let left=dt*sim.speed;while(left>1e-6){const h=Math.min(.1,left);sim.state=sim.model.step(sim.state,sim.inputs,h);left-=h;}
+   const second=Math.floor(sim.state.time);if(second!==sim.lastLog&&(sim.inputs.running||sim.state.rpm>1)){sim.lastLog=second;const d=sim.model.derive(sim.state,sim.inputs);sim.log.push({t:second,rpm:Math.round(d.rpm),caudal_m3h:+(d.q*3600).toFixed(3),altura_m:+d.H.toFixed(2),potencia_kW:+(d.electric/1000).toFixed(3),corriente_A:+d.current.toFixed(2),npsha_m:+d.npsha.toFixed(2),fase:d.phase});if(sim.log.length>900)sim.log.shift();}
+  }
+  const cur=state.view==='pump'&&state.pump?sims[state.pump.tag]:null,d=cur?cur.model.derive(cur.state,cur.inputs):null;
+  simRig?.update(cur,d,cur&&!cur.paused?dt*cur.speed:0,{reduced:reducedMotion.matches,showFlow:cur?.showFlow,exploded:state.explode>0});
+  if(cur&&state.tab==='sim'){const panel=$('#panel');if(now-ui>150){ui=now;updateSimPanel(panel,cur,d);}if(now-chart>300){chart=now;drawSimChart(panel.querySelector('#sim-chart'),cur,d);}}
+  requestAnimationFrame(tick);
+ }
+ requestAnimationFrame(tick);
+})();
