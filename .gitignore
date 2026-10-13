@@ -58,3 +58,4 @@ __pycache__/
 # configuración local de Obsidian
 .obsidian/
 .trash/
+*.fbx

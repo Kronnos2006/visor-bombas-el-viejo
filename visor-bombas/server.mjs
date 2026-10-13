@@ -54,7 +54,7 @@ const askLog = [];
 let apiKey = process.env.GEMINI_API_KEY || '';
 let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 const tagPattern = /^(?:P-\d{4}[A-Z]?|B[1-9]\d{0,3})$/;
-const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.pdf':'application/pdf','.md':'text/plain; charset=utf-8','.png':'image/png','.jpg':'image/jpeg'};
+const mime = {'.glb':'model/gltf-binary','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.pdf':'application/pdf','.md':'text/plain; charset=utf-8','.png':'image/png','.jpg':'image/jpeg'};
 
 export function parseNote(text) {
  const m = text.replace(/^\uFEFF/,'').match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);

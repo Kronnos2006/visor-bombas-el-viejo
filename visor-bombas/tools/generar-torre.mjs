@@ -12,7 +12,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const vault = path.resolve(process.argv[2] || path.join(here, '..', '..'));
 // Distribución ampliada (pedido del usuario: bombas menos pegadas y fáciles de tocar). Se respeta
 // el orden y la fila de cada bomba en el croquis anotado; la separación es de presentación.
-const ROW = 10.9, MID = 15.0, BACK = 20.6;
+// Filas ajustadas al modelo DUSA 3D (FBX): la fila C queda delante de las columnas y pilares del eje C.
+const ROW = 10.3, MID = 15.0, BACK = 20.3;
 const fotos = {fila: '/referencias/torre/b3-b6.jpg', batch: '/referencias/torre/b7-b12.jpg', praj: '/referencias/torre/b17-b19.jpg', fondo: '/referencias/torre/b20-b21.jpg', b2: '/referencias/torre/b2.jpg'};
 const fila = ['B2','B3','B4','B5','B6','B7','B8','B9','B10','B11','B12'];
 // B9: confirmada por el usuario el 13-oct: está en la torre pero sin uso.
