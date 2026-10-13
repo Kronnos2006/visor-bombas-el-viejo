@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test test.mjs test-campo.mjs test-simulador.mjs"
+    "test": "node --test test.mjs test-campo.mjs test-simulador.mjs test-torre.mjs"
   },
   "dependencies": {
     "pdf-lib": "^1.17.1"

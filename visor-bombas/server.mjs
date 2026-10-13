@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, timingSafeEqual, createHmac } from 'node:crypto';
 import { load, JSON_SCHEMA } from './vendor/js-yaml.mjs';
-import { photoPumps } from './public/sector-fotos.js';
+import { photoPumps, plantPumps } from './public/sector-fotos.js';
 import { generatePumpPDF } from './pdf-generator.mjs';
 import { vaultConfiguration, equipmentData } from './vault.mjs';
 import { maintenanceStore } from './maintenance.mjs';
@@ -12,6 +12,7 @@ import { surveyStore, FIELDS, fileOf } from './survey.mjs';
 import { generatePartsRequestPDF } from './parts-request.mjs';
 import { equipmentStore, REPLACE_FIELDS } from './equipment.mjs';
 import { passwordOk } from './password.mjs';
+import { pumpPhotoStore } from './pump-photos.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const configuration = vaultConfiguration(ROOT);
@@ -21,6 +22,7 @@ export const VAULT = configuration.vault;
 const maintenance = maintenanceStore(VAULT, DEMO);
 const survey = surveyStore(VAULT);
 const equipment = equipmentStore(VAULT, photoPumps);
+const pumpPhotos = pumpPhotoStore(VAULT);
 const NOTES = path.join(VAULT,'00-Proyecto/bombas');
 const PUBLIC = path.join(ROOT,'public');
 const PORT = Number(process.env.PORT || 8766);
@@ -79,7 +81,7 @@ export function safeVaultFile(relative) {
 export async function readPump(tag) {
  if (!tagPattern.test(tag)) throw new Error('TAG inválido.');
  if (tag.startsWith('B')) {
-  const base = photoPumps.find(p => p.tag === tag);
+  const base = plantPumps.find(p => p.tag === tag);
   if (!base) throw new Error('Equipo fuera del sector registrado.');
   const source = `00-Proyecto/equipos/${tag}.md`;
   let note;
@@ -107,7 +109,7 @@ export async function readPump(tag) {
  return {tag,data,description:section(body,'Qué hace'), history, failures:section(body,'Modos de falla observados'), observations:section(body,'Observaciones'), reports, files, source:`00-Proyecto/bombas/${tag}.md`};
 }
 export function readIntegratedPump(tag) {
- const data=photoPumps.find(p=>p.tag===tag);
+ const data=plantPumps.find(p=>p.tag===tag);
  if(!data) return null;
  return {
   tag,
@@ -125,7 +127,7 @@ function send(res,status,data) {
 async function payload(req) {
  let size=0; const chunks=[];
  const route = req.url?.split('?')[0];
- const limit = route === '/api/maintenance' ? 15 * 1024 * 1024 : route === '/api/survey' ? 70 * 1024 * 1024 : 40000;
+ const limit = route === '/api/maintenance' ? 15 * 1024 * 1024 : route === '/api/survey' ? 70 * 1024 * 1024 : route === '/api/pump-photo' ? 12 * 1024 * 1024 : 40000;
  for await(const chunk of req) { size+=chunk.length; if(size>limit) throw new Error('Solicitud demasiado grande.'); chunks.push(chunk); }
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
@@ -154,14 +156,14 @@ export async function handler(req,res) {
     try { const p=await readPump(name.slice(0,-3)); pumps.push({tag:p.tag,...p.data}); } catch(e) {errors.push({file:name,error:e.message});}
    }
    const sectorPumps = [];
-   for (const base of photoPumps) {
+   for (const base of plantPumps) {
     try { const p = await readPump(base.tag); sectorPumps.push(p.data); }
     catch (e) { errors.push({file:`equipos/${base.tag}.md`, error:e.message}); }
    }
    return send(res,200,{pumps,sectorPumps,errors,token:TOKEN,geminiConfigured:!!apiKey,model,demo:DEMO,vaultName:path.basename(VAULT),maintenanceWritable:configuration.writable});
   }
   if(req.method==='GET' && url.pathname==='/api/progress') {
-   const {rows,errors}=await survey.progress(new Set(photoPumps.map(p=>p.tag)));
+   const {rows,errors}=await survey.progress(new Set(plantPumps.map(p=>p.tag)));
    return send(res,200,{rows,errors,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS,replaceFields:REPLACE_FIELDS});
   }
   if(req.method==='GET' && url.pathname==='/api/reports') {
@@ -175,6 +177,12 @@ export async function handler(req,res) {
    return res.end(document.bytes);
   }
   if(req.method==='GET' && url.pathname==='/api/pump') return send(res,200,await readPump(url.searchParams.get('tag')||''));
+  if(req.method==='GET' && url.pathname==='/api/pump-photos') { const tag=url.searchParams.get('tag')||''; await readPump(tag); return send(res,200,{fotos:configuration.writable?await pumpPhotos.list(tag):{},writable:configuration.writable}); }
+  if(req.method==='GET' && url.pathname==='/api/pump-photo') {
+   const tag=url.searchParams.get('tag')||''; await readPump(tag);
+   const photo=await pumpPhotos.read(tag,url.searchParams.get('slot')||'');
+   res.writeHead(200,{'Content-Type':photo.ext==='png'?'image/png':'image/jpeg','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});return res.end(photo.bytes);
+  }
   if(req.method==='GET' && url.pathname==='/api/document') {
    const p=await readPump(url.searchParams.get('tag')||''); const rel=url.searchParams.get('path');
    if(!p.files.some(f=>f.path===rel && f.exists)) return send(res,404,{error:'Documento no disponible en la ficha.'});
@@ -225,6 +233,11 @@ export async function handler(req,res) {
     if(!tagPattern.test(tag)) throw new Error('TAG inválido.');
     try{await readFile(path.join(VAULT,fileOf(tag)));}catch(e){if(e.code==='ENOENT'){const missing=new Error(`No existe la ficha ${fileOf(tag)} en ${DEMO?'la demostración':'la bóveda actual'}.`);missing.code='PUMP_NOT_AVAILABLE';throw missing;}throw e;}
     return send(res,201,await survey.save(tag,body));
+   }
+   if(url.pathname==='/api/pump-photo') {
+    if(!configuration.writable) return send(res,403,{code:'NOT_WRITABLE',error:'Este alojamiento no guarda fotos en Obsidian; quedan solo en este navegador.'});
+    const p=await readPump(String(body.tag||''));
+    return send(res,201,{slot:body.slot,foto:await pumpPhotos.save(p.tag,String(body.slot||''),body.base64)});
    }
    if(url.pathname==='/api/equipment') {
     if(!configuration.writable) return send(res,403,{code:'NOT_WRITABLE',error:'Mover o reemplazar bombas solo funciona en el visor de la computadora, conectado a Obsidian.'});

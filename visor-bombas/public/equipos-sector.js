@@ -760,6 +760,7 @@ export const photoPumps = [
 
 export const sectorCorners=[{name:'A · trasero / derecho',x:12,z:-9},{name:'B · frontal / derecho',x:12,z:2.35},{name:'C · frontal / izquierdo',x:-12,z:2.35},{name:'D · trasero / izquierdo',x:-12,z:-9}];
 for (const p of photoPumps) {
+ p.areaId='tanques';p.zona='Sector de tanques';
  if(p.inactive) continue;
  p.orings=[{posicion:'Carcasa / tapa',medida:'Ejemplo DEMO · sin medida real',material:'Por confirmar',cantidad:1,codigo:'DEMO · sin código de repuesto'}];
  p.history=[{fecha:'2026-10-08',tipo:'Inspección de ejemplo · DEMO',detalle:'Registro ficticio para mostrar la consulta de fugas, vibración y estado del sellado. No representa una intervención real.',responsable:'Técnico de demostración'}];

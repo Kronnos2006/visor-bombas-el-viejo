@@ -37,9 +37,24 @@ export const enlaces={
 };
 
 const I=n=>`/expediente/${n}.jpg`;
-const fila='Libro1 bomba2.xlsx · hoja Bombas';
+const fila='Libro1 bomba2.xlsx · hoja Bombas',fila3='Libro1.bombas_3.xlsx · hoja Bombas';
 // placas: placa(s) de la bomba · fotos: fotografías del equipo. "ref" = nota de asociación.
 export const expediente={
+
+  // Torre de destilación · imágenes de «Libro1.bombas_3.xlsx» (13-oct-2026), asociadas por la fila del ancla.
+  B3:{placas:[{src:I('B3-placa'),t:'Placa de la bomba',ref:`${fila3}, fila 6`},{src:I('B3-placa2'),t:'Placa del motor',ref:`${fila3}, fila 6`}],fotos:[{src:I('B3-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 6`}],fab:['hidromac','weg'],rod:['6205-2RS','6204-2RS']},
+  B4:{placas:[{src:I('B4-placa2'),t:'Placa del motor',ref:`${fila3}, fila 7`}],fotos:[{src:I('B4-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 7`}],fab:['hidromac','weg'],rod:['6205-2RS','6204-2RS']},
+  B5:{placas:[{src:I('B5-placa'),t:'Placa de la bomba',ref:`${fila3}, fila 8`},{src:I('B5-placa2'),t:'Placa del motor',ref:`${fila3}, fila 8`}],fotos:[{src:I('B5-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 8`}],fab:['hidromac','weg'],rod:['6205-2RS','6204-2RS']},
+  B6:{placas:[{src:I('B6-placa'),t:'Placa de la bomba',ref:`${fila3}, fila 9`},{src:I('B6-placa2'),t:'Placa del motor',ref:`${fila3}, fila 9`}],fotos:[{src:I('B6-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 9`}],fab:['hidromac','weg'],rod:['6205-2RS','6204-2RS']},
+  B7:{placas:[{src:I('B7-placa'),t:'Placa de la bomba',ref:`${fila3}, fila 10`},{src:I('B7-placa2'),t:'Placa del motor',ref:`${fila3}, fila 10`}],fotos:[{src:I('B7-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 10`}],fab:['hidromac','weg'],rod:['6205-2RS','6204-2RS']},
+  B8:{placas:[{src:I('B8-placa'),t:'Placa de la bomba',ref:`${fila3}, fila 11`},{src:I('B8-placa2'),t:'Placa del motor',ref:`${fila3}, fila 11`}],fotos:[{src:I('B8-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 11`}],fab:['hidromac','weg'],rod:['6205-2RS','6204-2RS']},
+  B11:{placas:[{src:I('B11-placa'),t:'Placa de la bomba',ref:`${fila3}, fila 14`}],fotos:[{src:I('B11-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 14`}],fab:['hidromac','weg'],rod:['6307-2RS','6206-2RS']},
+  B12:{placas:[{src:I('B12-placa'),t:'Placa de la bomba',ref:`${fila3}, fila 15`}],fotos:[{src:I('B12-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 15`}],fab:['hidromac','weg'],rod:['6307-2RS','6206-2RS']},
+  B17:{placas:[{src:I('B17-placa'),t:'Placa Titan (1 de 2)',ref:`${fila3}, fila 20`},{src:I('B17-placa2'),t:'Placa Titan (2 de 2)',ref:`${fila3}, fila 20`}],fotos:[{src:I('B17-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 20`}],fab:[],rod:[]},
+  B18:{placas:[{src:I('B18-placa'),t:'Placa Titan (1 de 2)',ref:`${fila3}, fila 21`},{src:I('B18-placa2'),t:'Placa Titan (2 de 2)',ref:`${fila3}, fila 21`}],fotos:[{src:I('B18-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 21`}],fab:[],rod:[]},
+  B19:{placas:[{src:I('B19-placa2'),t:'Placa del motor',ref:`${fila3}, fila 22`}],fotos:[{src:I('B19-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 22`}],fab:[],rod:[]},
+  B20:{placas:[{src:I('B20-placa'),t:'Placa Titan (1 de 2)',ref:`${fila3}, fila 23`},{src:I('B20-placa2'),t:'Placa Titan (2 de 2)',ref:`${fila3}, fila 23`}],fotos:[{src:I('B20-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 23`}],fab:[],rod:[]},
+  B21:{placas:[{src:I('B21-placa'),t:'Placa Titan (1 de 2)',ref:`${fila3}, fila 24`},{src:I('B21-placa2'),t:'Placa Titan (2 de 2)',ref:`${fila3}, fila 24`}],fotos:[{src:I('B21-bomba'),t:'Foto de la bomba',ref:`${fila3}, fila 24`}],fab:[],rod:[]},
   B22:{placas:[{src:I('B22-placa'),t:'Placa de la bomba',ref:`${fila}, fila 25`}],fotos:[{src:I('B22-bomba'),t:'Foto de la bomba (SIN USO)',ref:`${fila}, fila 25`}],fab:[],
     pendiente:'B22/B24: el croquis de la página 8 rotula B22 en la posición que la página 1 y la confirmación del 08-oct-2026 asignan a B24. B22 se conserva en el frente como SIN USO; falta conciliar el documento de origen.',
     nota:'Equipo marcado SIN USO en el Excel; la placa existe pero su texto no se transcribió: sin datos técnicos.'},
