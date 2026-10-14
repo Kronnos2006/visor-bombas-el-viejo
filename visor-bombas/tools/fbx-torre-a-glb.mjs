@@ -16,16 +16,18 @@ const buf=readFileSync(src);
 const root=new FBXLoader().parse(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength),'');root.updateMatrixWorld(true);
 const FT=.3048, M=new THREE.Matrix4().set(FT,0,0,0, 0,0,FT,0, 0,-FT,0,0, 0,0,0,1);
 const limpio=n=>n.replace(/^_DUSA_(planta_)?-_/,'').replace(/^_DUSA_planta_-_/,'').replace(/_\d{6,}$/,'').replace(/_/g,' ').trim();
-// Fuera: bombas del FBX (las interactivas son las fichas Bxx), tuberías y conexiones, y las dos
-// cubiertas superiores (Cubierta 1 [1245301] y Cubierta 2 [1245302], +25,3 a +27 m). Se conserva la
-// cubierta baja (Cubierta 3 [1245303], +10,3 a +11,4 m).
-const EXCLUIR=/^(Bomba|Cubierta roja de bomba|Cubierta bomba|Conexiones|Tubería|Conexión cobre|Línea auxiliar|Salida superior|Cubierta [12]$)/;
+// Fuera: bombas del FBX (las interactivas son las fichas Bxx), tuberías y conexiones.
+// Las dos cubiertas superiores (Cubierta 1 [1245301] y 2 [1245302], +25,3 a +27 m) van como pieza aparte
+// «techoSuperior», oculta por defecto (se muestra con un botón). La cubierta baja (Cubierta 3) siempre se ve.
+const EXCLUIR=/^(Bomba|Cubierta roja de bomba|Cubierta bomba|Conexiones|Tubería|Conexión cobre|Línea auxiliar|Salida superior)/;
+const TECHO_SUPERIOR=/^Cubierta [12]$/;
 const CATS=[
  [/^(Losa base|Piso exterior)/,'concreto',0xb7b2a4],
  [/sobre sector existente/,'acero-existente',0x2a6aa8],
  [/^(Pilar|Vigas|Coronas|Soportes|Bastidor|Apoyo)/,'acero',0x2f5f9c],
  [/^(Plataforma|Continuación primer piso|Segundo piso)/,'rejilla',0x7d878c],
  [/^(Barandas|Reja amarilla)/,'baranda',0xe2b72a],
+ [/^Cubierta [12]$/,'techo-superior',0xb08070],
  [/^Cubierta \d/,'techo',0xa7aeb2],
  [/^(Escalera|Descanso|Tramo)/,'escalera',0x9aa3a6],
  [/(Alambique|alambique de cobre|Recipiente del alambique|Condensador del alambique|Probeta)/,'cobre',0xb87333],
@@ -33,8 +35,9 @@ const CATS=[
  [/^(Columna|Botella|Decantador)/,'inoxidable',0xc3cacd],
 ];
 const NOMBRADO=/^(Columna|Botella|Decantador|Alambique|Recipiente del alambique|Condensador|Probeta|Bancada)/;
+// Las coordenadas de textura se calculan en el visor (proyección de caja), así el archivo pesa menos.
 const doc=new Document();const buffer=doc.createBuffer();const scene=doc.createScene('Torre');
-const mats={};const mat=(cat,color)=>mats[cat]||(mats[cat]=doc.createMaterial(cat).setBaseColorFactor([...new THREE.Color(color).toArray(),1]).setMetallicFactor(cat==='inoxidable'||cat==='cobre'?.75:.35).setRoughnessFactor(cat==='concreto'?.9:.5).setDoubleSided(cat==='techo'));
+const mats={};const mat=(cat,color)=>mats[cat]||(mats[cat]=doc.createMaterial(cat).setBaseColorFactor([...new THREE.Color(color).toArray(),1]).setMetallicFactor(cat==='inoxidable'||cat==='cobre'?.75:.35).setRoughnessFactor(cat==='concreto'?.9:.5).setDoubleSided(/^techo/.test(cat)));
 const resumen=[];let tris=0;const grupos={};const piezas=[];
 const exportados=new Set();
 root.traverse(o=>{
@@ -49,7 +52,7 @@ root.traverse(o=>{
  resumen.push({nombre,id,cat:c[1],min:b.min.toArray().map(v=>+v.toFixed(2)),max:b.max.toArray().map(v=>+v.toFixed(2))});
  tris+=g.attributes.position.count/3;
  // Equipos con nombre: malla propia (se pueden señalar). Estructura: una malla por material.
- if(NOMBRADO.test(nombre)||c[1]==='acero-existente')piezas.push({nombre,c,g,extras:{cat:c[1],nombre:NOMBRADO.test(nombre)?nombre:'',existente:c[1]==='acero-existente',fbx:id}});
+ if(NOMBRADO.test(nombre)||c[1]==='acero-existente'||TECHO_SUPERIOR.test(nombre))piezas.push({nombre,c,g,extras:{cat:c[1],nombre:NOMBRADO.test(nombre)?nombre:'',existente:c[1]==='acero-existente',techoSuperior:TECHO_SUPERIOR.test(nombre),fbx:id}});
  else (grupos[c[1]]||(grupos[c[1]]={c,gs:[]})).gs.push(g);
 });
 for(const [cat,{c,gs}] of Object.entries(grupos))piezas.push({nombre:'Estructura · '+cat,c,g:mergeGeometries(gs,false),extras:{cat,nombre:'',existente:false}});

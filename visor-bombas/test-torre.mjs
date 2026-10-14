@@ -33,9 +33,9 @@ test('modelo DUSA 3D: cada piso tiene estructura, se aísla por recorte y las bo
  for(const s of SECCIONES){const [lo,hi]=rangoSeccion(s.id);assert.ok(partes.some(o=>o.max[1]>=lo&&o.min[1]<=hi&&o.cat!=='concreto'),`estructura en ${s.id}`);}
  assert.ok(partes.some(o=>/^Columna Vinaza/.test(o.nombre))&&partes.some(o=>/^Columna Rectificadora HO/.test(o.nombre)));
  assert.ok(!partes.some(o=>/^(Bomba|Tubería|Conexiones)/.test(o.nombre)),'sin bombas ni tuberías del FBX');
- assert.ok(!partes.some(o=>['1245301','1245302'].includes(o.id)),'sin las dos cubiertas superiores');
+ assert.deepEqual(partes.filter(o=>['1245301','1245302'].includes(o.id)).map(o=>o.cat),['techo-superior','techo-superior'],'cubiertas superiores aparte (ocultas por defecto)');
  const baja=partes.find(o=>o.id==='1245303');assert.ok(baja&&baja.min[1]>10&&baja.max[1]<11.5,'cubierta baja conservada');
- assert.ok(Math.max(...partes.map(o=>o.max[1]))<25.5,'parte alta abierta: nada sobre las coronas');
+ assert.ok(Math.max(...partes.filter(o=>o.cat!=='techo-superior').map(o=>o.max[1]))<25.5,'sin el techo superior, la parte alta queda abierta');
  assert.equal(seccionDe(.3),'n1');assert.equal(seccionDe(5.3),'n21');assert.equal(seccionDe(20.3),'n5');assert.equal(seccionDe(25.4),'techo');
  assert.ok(torrePumps.every(p=>seccionDe(p.y)==='n1'));
  const choques=[...torrePumps,...torreSinTag.map(s=>({tag:'Sin TAG',...s}))].flatMap(p=>partes.filter(o=>!['concreto','rejilla'].includes(o.cat)&&o.min[1]<1.6&&o.max[0]>p.x-.42&&o.min[0]<p.x+.42&&o.max[2]>p.z-1.12&&o.min[2]<p.z+1.04).map(o=>p.tag+' ↔ '+o.nombre));

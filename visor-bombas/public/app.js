@@ -23,7 +23,7 @@ import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const state={area:'planta',seccion:null,existente:false,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
+const state={area:'planta',seccion:null,existente:false,techo:false,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
 let busyAI=false;
 function toast(text){$('#toast').textContent=text;$('#toast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').hidden=true,4500);}
 async function api(route,body){const r=await fetch(route,body?{method:'POST',headers:{'Content-Type':'application/json','X-Local-Token':state.token},body:JSON.stringify(body)}:{});let data;try{data=await r.json();}catch{throw new Error(r.status===504||r.status===500?'El servidor tardó demasiado o falló al responder. Probá de nuevo en un momento.':`Respuesta inesperada del servidor (HTTP ${r.status}).`);}if(!r.ok){const error=new Error(data.error||'No se pudo completar la acción.');error.code=data.code;throw error;}return data;}
@@ -48,7 +48,7 @@ const viewport=$('#viewport');
 // En pantallas angostas el panel de bombas de la torre empieza plegado para no tapar el modelo.
 if(innerWidth<700)state.pumpRailCollapsed=true;
 let renderer,scene,camera,controls,plant,pumpGroup,photoDetail;
-const pickables=[],markers=[],componentGroups=[];let cameraFlight=null,render3D=null;
+const pickables=[],markers=[],componentGroups=[];let cameraFlight=null,render3D=null;let solModo=null,solCaja=null;
 let anatomy=null;
 let simRig=null;const sims={};
 let areaGroups={},torre=null;const pumpObjects={};
@@ -139,7 +139,7 @@ function initScene(){
  renderer.setAnimationLoop(()=>{
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
   componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x=reducedMotion.matches?x:g.position.x+(x-g.position.x)*.12;});
-  controls.update();renderer.render(scene,camera);
+  controls.update();solSegunVista();renderer.render(scene,camera);
   const partLabels=[],pumpLabels=[];
   for(const m of markers){if(m.leader)m.leader.hidden=true;const show=m.kind!=='part'?state.view==='plant'&&markerInArea(m):state.view==='pump'&&m.obj.parent.visible&&(!state.sector||state.detail==='schematic');m.el.hidden=!show;if(!show)continue;const v=m.obj.getWorldPosition(new THREE.Vector3()).project(camera);m.el.hidden=v.z>1||v.z< -1||Math.abs(v.x)>1||Math.abs(v.y)>1;const x=(v.x+1)/2*viewport.clientWidth,y=(-v.y+1)/2*viewport.clientHeight;m.el.style.left=x+'px';m.el.style.top=y+'px';if(m.kind==='part'&&!m.el.hidden)partLabels.push({marker:m,x,y,anchorY:y});if(m.kind==='pump'&&m.area==='torre'&&!m.el.hidden)pumpLabels.push({m,x,y});}
   separarEtiquetas(pumpLabels);
@@ -643,6 +643,21 @@ function encuadrar(box,dir,margen=1.08,correrX=0){
  const t=c.clone().addScaledVector(right,d*th*correrX);
  return [t.clone().addScaledVector(d0,d).toArray(),t.toArray()];
 }
+// Sombras en la planta: la luz principal (realismo.js) se reubica sobre el área que se mira, con su
+// cámara de sombra ajustada a esa área. En la vista de una bomba vuelve a su posición original.
+function ajustarSol(box){solCaja=box.clone();solModo=null;}
+function solSegunVista(){
+ const L=render3D?.clave;if(!L)return;
+ const modo=state.view==='plant'&&solCaja?'planta:'+solCaja.min.toArray().join():'bomba';if(modo===solModo)return;solModo=modo;
+ const c=L.shadow.camera;L.userData.orig??={pos:L.position.clone(),obj:L.target.position.clone(),cam:[c.left,c.right,c.top,c.bottom,c.near,c.far],i:L.intensity,env:scene.environmentIntensity??1};
+ if(modo==='bomba'){const o=L.userData.orig;L.position.copy(o.pos);L.target.position.copy(o.obj);[c.left,c.right,c.top,c.bottom,c.near,c.far]=o.cam;L.intensity=o.i;scene.environmentIntensity=o.env;}
+ else{const centro=solCaja.getCenter(new THREE.Vector3()),r=solCaja.getSize(new THREE.Vector3()).length()/2;
+  L.target.position.copy(centro);L.position.copy(centro).addScaledVector(new THREE.Vector3(-.55,1,.42).normalize(),r+30);
+  c.left=c.bottom=-r;c.right=c.top=r;c.near=1;c.far=2*r+60;
+  // sol de exterior: más luz directa y menos luz ambiente, para que se lean las sombras
+  L.intensity=3.6;scene.environmentIntensity=.45;}
+ if(!L.target.parent)scene.add(L.target);L.target.updateMatrixWorld();c.updateProjectionMatrix();L.shadow.needsUpdate=true;
+}
 function cajaTorre(seccion){
  const g=areaGroups.torre;g.updateMatrixWorld(true);const r=seccion?rangoSeccion(seccion):null;
  const y0=r?Math.max(LIMITES.min[1],r[0]):LIMITES.min[1],y1=r?Math.min(LIMITES.max[1],r[1]):LIMITES.max[1],b=new THREE.Box3();
@@ -654,15 +669,17 @@ function flyArea(id,vista){
  const dirLocal=(g,from,to)=>g.localToWorld(new THREE.Vector3(...from)).sub(g.localToWorld(new THREE.Vector3(...to)));
  if(id==='planta'||!areaGroups[id]){
   const b=cajaTorre(null).union(new THREE.Box3().setFromObject(areaGroups.tanques||plant));
-  const [pos,obj]=encuadrar(b,vista==='superior'?new THREE.Vector3(0,1,.02):new THREE.Vector3(0,85,72),1.12);fly(pos,obj,900);return;
+  ajustarSol(b);const [pos,obj]=encuadrar(b,vista==='superior'?new THREE.Vector3(0,1,.02):new THREE.Vector3(0,85,72),1.12);fly(pos,obj,900);return;
  }
  const g=areaGroups[id],a=AREA(id);g.updateMatrixWorld(true);
  if(id==='torre'){
   const panel=(!state.seccion||state.seccion==='n1')&&!state.pumpRailCollapsed&&viewport.clientWidth>=700;
+  ajustarSol(cajaTorre(null));
   const v=VISTAS[vista||'iso'],[pos,obj]=encuadrar(cajaTorre(state.seccion),dirLocal(g,v.pos,[CENTRO.x,CENTRO.y,CENTRO.z]),panel?1.15:1.08,panel?.14:0);
   fly(pos,obj,900);return;
  }
- const [pos,obj]=encuadrar(new THREE.Box3().setFromObject(g),vista==='superior'?new THREE.Vector3(0,1,.02):dirLocal(g,a.camara.pos,a.camara.obj));
+ const caja=new THREE.Box3().setFromObject(g);ajustarSol(caja);
+ const [pos,obj]=encuadrar(caja,vista==='superior'?new THREE.Vector3(0,1,.02):dirLocal(g,a.camara.pos,a.camara.obj));
  fly(pos,obj,900);
 }
 function setArea(id,volar=true){
@@ -674,13 +691,13 @@ function setArea(id,volar=true){
 function applyArea(){
  const id=state.area,a=AREA(id);
  for(const [k,g] of Object.entries(areaGroups))g.visible=id==='planta'||k===id;
- if(torre){aplicarSeccion(torre.objetos,id==='torre'?state.seccion:null,{existente:id==='torre'&&state.existente});
+ if(torre){aplicarSeccion(torre.objetos,id==='torre'?state.seccion:null,{existente:id==='torre'&&state.existente,techo:state.techo});
   for(const g of Object.values(pumpObjects))if(g.parent===areaGroups.torre)g.visible=!state.seccion||state.seccion==='n1';}
   renderRail();
  document.querySelectorAll('#area-menu [data-area]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.area===id)));
  const tools=$('#torre-tools');if(tools)tools.hidden=!(id==='torre'&&state.view==='plant');
  document.querySelectorAll('#torre-tools [data-seccion]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.seccion||null)===(state.seccion||null)||(!b.dataset.seccion&&!state.seccion))));
- $('#torre-existente')?.setAttribute('aria-pressed',String(state.existente));
+ $('#torre-existente')?.setAttribute('aria-pressed',String(state.existente));$('#torre-techo')?.setAttribute('aria-pressed',String(state.techo));
  const s=SECCIONES.find(x=>x.id===state.seccion);
  if($('#torre-status'))$('#torre-status').textContent=s?`${s.nombre} aislado · ${s.detalle}. Los demás pisos se ocultan para no tapar la vista.${s.id==='n1'?' Única planta con bombas (nota de la lámina A07).':' Esta planta no tiene bombas: solo estructura y equipos.'}`:'Toda la torre. Elegí una planta para aislarla o una vista (frontal, derecha, trasera, izquierda).';
  if(state.view==='plant'){
@@ -700,6 +717,7 @@ function applyArea(){
  tools.querySelectorAll('[data-seccion]').forEach(b=>b.onclick=()=>{state.seccion=b.dataset.seccion||null;applyArea();flyArea('torre');});
  tools.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>flyArea('torre',b.dataset.vista));
  $('#torre-existente').onclick=()=>{state.existente=!state.existente;applyArea();};
+ if($('#torre-techo'))$('#torre-techo').onclick=()=>{state.techo=!state.techo;applyArea();};
 })();
 setTimeout(()=>{if(state.view==='plant'&&!location.hash)flyArea(state.area);},50);
 

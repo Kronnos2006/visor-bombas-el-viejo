@@ -2,9 +2,9 @@
 // convertido con tools/fbx-torre-a-glb.mjs a public/modelos/torre-dusa.glb (pies → metros).
 // Coordenadas locales en metros: x desde el eje 1 hacia el 5, z desde el eje A hacia el E,
 // y = nivel (+0,00 = terreno). Coinciden con los ejes de las láminas A07–A14.
-// No se cargan: las bombas del FBX (las interactivas son las fichas Bxx), las tuberías (pedido del
-// usuario) ni las dos cubiertas superiores (Cubierta 1 y 2, +25,3 a +27 m). Se conserva la cubierta
-// baja (Cubierta 3, +10,3 a +11,4 m).
+// No se cargan las bombas del FBX (las interactivas son las fichas Bxx) ni las tuberías (pedido del
+// usuario). Las dos cubiertas superiores (Cubierta 1 y 2, +25,3 a +27 m) vienen ocultas por pedido del
+// usuario y se muestran con el botón «Techo superior». La cubierta baja (Cubierta 3) siempre se ve.
 export const EJES_X={1:0,2:5.5,3:6.76,4:12.7,5:15.4};
 export const EJES_Z={A:0,B:5.93,C:11.9,D:16.9,E:21.9};
 export const MODELO='/modelos/torre-dusa.glb';
@@ -37,6 +37,38 @@ export const VISTAS={
  iso:{nombre:'3D',pos:[-30,32,-26]},
  superior:{nombre:'Superior',pos:[7.7,70,11.2]}
 };
+// Acabados como en la escena de Blender del usuario (texturas de realismo-local/texturas).
+// Cada textura se repite cada 2 m; las coordenadas se calculan aquí por proyección de caja.
+const TEX='/texturas/torre/';
+export const ACABADOS={
+ acero:{tex:'estructura_azul',metal:.45,rough:.5},
+ 'acero-existente':{tex:'estructura_azul',metal:.45,rough:.5},
+ baranda:{tex:'seguridad_amarillo',metal:.35,rough:.45},
+ concreto:{tex:'concreto',metal:0,rough:.92},
+ rejilla:{tex:'acero_satinado',metal:.55,rough:.55,color:0xc8ced1},
+ escalera:{tex:'acero_satinado',metal:.55,rough:.5,color:0xd5dadc},
+ inoxidable:{tex:'acero_satinado',metal:.92,rough:.22,color:0xf1f4f5},
+ cobre:{tex:'guarda_ocre',metal:.85,rough:.32,color:0xffd2b0},
+ azul:{tex:'bomba_azul',metal:.35,rough:.5},
+ techo:{tex:'cobertura_baja',metal:.3,rough:.6},
+ 'techo-superior':{tex:'cubierta_terracota',metal:.25,rough:.65}
+};
+function uvCaja(T,o){
+ const g=o.geometry,p=g.attributes.position,n=g.attributes.normal;if(!p||g.attributes.uv)return;
+ const nm=new T.Matrix3().getNormalMatrix(o.matrixWorld),v=new T.Vector3(),w=new T.Vector3(),uv=new Float32Array(p.count*2);
+ for(let i=0;i<p.count;i++){
+  v.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);
+  if(n)w.fromBufferAttribute(n,i).applyMatrix3(nm);else w.set(0,1,0);
+  const ax=Math.abs(w.x),ay=Math.abs(w.y),az=Math.abs(w.z);
+  const [a,b]=ay>=ax&&ay>=az?[v.x,v.z]:ax>=az?[v.z,v.y]:[v.x,v.y];uv[i*2]=a/2;uv[i*2+1]=b/2;
+ }
+ g.setAttribute('uv',new T.BufferAttribute(uv,2));
+}
+function acabar(T,m){
+ const a=ACABADOS[m.name];if(!a)return;
+ const t=new T.TextureLoader().load(TEX+a.tex+'.jpg');t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;
+ m.map=t;m.color.setHex(a.color??0xffffff);m.metalness=a.metal;m.roughness=a.rough;m.envMapIntensity=.9;m.needsUpdate=true;
+}
 // Planos de recorte compartidos por todos los materiales de la torre.
 let planos=null;
 // cargar(url) → Promise<{scene}>: lo pone el visor (GLTFLoader + meshopt). En pruebas se omite.
@@ -48,8 +80,9 @@ export function buildTorre(T,{cargar=null,alCargar=null}={}){
   const mats=new Set();gltf.scene.updateMatrixWorld(true);
   gltf.scene.traverse(o=>{
    if(!o.isMesh)return;
-   const m=o.material;if(!mats.has(m)){mats.add(m);m.clippingPlanes=planos;m.clipShadows=true;}
-   if(m.name==='techo'){m.color.setHex(0x8b969b);m.transparent=true;m.opacity=.78;m.depthWrite=false;}
+   const m=o.material;if(!mats.has(m)){mats.add(m);m.clippingPlanes=planos;m.clipShadows=true;acabar(T,m);}
+   uvCaja(T,o);o.castShadow=true;o.receiveShadow=true;
+   if(o.userData.techoSuperior)o.visible=false;
    // Caja en metros locales de la torre: la malla viene cuantizada y la escala está en el nodo.
    o.geometry.computeBoundingBox();const b=o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld);
    o.userData.yMin=b.min.y;o.userData.yMax=b.max.y;o.userData.section=seccionDe(b.min.y);
@@ -63,11 +96,11 @@ export function buildTorre(T,{cargar=null,alCargar=null}={}){
 }
 
 // Aislar un piso: se recorta el modelo entre la cota del piso y la del siguiente.
-export function aplicarSeccion(objetos,seccion,{existente=false}={}){
+export function aplicarSeccion(objetos,seccion,{existente=false,techo=false}={}){
  const r=seccion?rangoSeccion(seccion):null;
  if(planos){planos[0].constant=r?-r[0]:1e3;planos[1].constant=r?r[1]:1e3;}
  for(const o of objetos){
-  o.visible=!r||(o.userData.yMax>=r[0]&&o.userData.yMin<=r[1]);
+  o.visible=(!r||(o.userData.yMax>=r[0]&&o.userData.yMin<=r[1]))&&(!o.userData.techoSuperior||techo);
   if(o.material.name==='acero-existente')o.material.color.setHex(existente?0x63c7e8:o.userData.base.color);
  }
 }
