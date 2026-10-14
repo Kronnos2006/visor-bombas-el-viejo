@@ -3,8 +3,8 @@
 // Coordenadas locales en metros: x desde el eje 1 hacia el 5, z desde el eje A hacia el E,
 // y = nivel (+0,00 = terreno). Coinciden con los ejes de las láminas A07–A14.
 // No se cargan las bombas del FBX (las interactivas son las fichas Bxx) ni las tuberías (pedido del
-// usuario). Las dos cubiertas superiores (Cubierta 1 y 2, +25,3 a +27 m) vienen ocultas por pedido del
-// usuario y se muestran con el botón «Techo superior». La cubierta baja (Cubierta 3) siempre se ve.
+// usuario). Las dos cubiertas superiores (Cubierta 1 y 2, +25,3 a +27 m) se ven por defecto
+// (pedido del usuario, 14-oct) y se ocultan con el botón «Techo superior». La cubierta baja (Cubierta 3) siempre se ve.
 export const EJES_X={1:0,2:5.5,3:6.76,4:12.7,5:15.4};
 export const EJES_Z={A:0,B:5.93,C:11.9,D:16.9,E:21.9};
 export const MODELO='/modelos/torre-dusa.glb';
