@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import {temperaturaTrabajo} from './public/temperatura-trabajo.js';
 
 export function safeText(str) {
   if (str === null || str === undefined) return '';
@@ -285,7 +286,7 @@ export async function generatePumpPDF(pump, { reportes = [] } = {}) {
     ]);
 
     drawSectionTitle('2. Especificaciones de Proceso e Hidráulica');
-    const processSpecs = (data.specs || []).map(([k, v]) => [k, v]);
+    const processSpecs = [['Temperatura de trabajo', temperaturaTrabajo(data)], ...(data.specs || []).map(([k, v]) => [k, v])];
     if (processSpecs.length) {
       drawGrid(processSpecs);
     } else {
@@ -340,7 +341,7 @@ export async function generatePumpPDF(pump, { reportes = [] } = {}) {
     drawSectionTitle('2. Datos de Operación e Hidráulica');
     drawGrid([
       ['Fluido', data.fluido || 'No registrado'],
-      ['Temperatura', data.temperatura_c ? `${data.temperatura_c} °C` : 'No registrada'],
+      ['Temperatura de trabajo', data.temperatura_c ? `${data.temperatura_c} °C` : temperaturaTrabajo(data)],
       ['Caudal nominal', data.caudal_m3h ? `${data.caudal_m3h} m³/h` : 'No registrado'],
       ['Altura dinámica', data.altura_m ? `${data.altura_m} m` : 'No registrada'],
       ['Presión', data.presion_bar ? `${data.presion_bar} bar` : 'No registrada'],

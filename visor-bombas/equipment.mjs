@@ -6,6 +6,7 @@ import path from 'node:path';
 import { readFile, writeFile, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { splitNote, setKey, one, fileOf, kindOf, FIELDS } from './survey.mjs';
+import {rangoTemperaturaTrabajo} from './public/temperatura-trabajo.js';
 
 // Límites de cada área en sus coordenadas locales (sector de tanques y torre: ejes 1–5 × A–E).
 const LIMITS = {tanques: {x0: -15.5, x1: 15.5, z0: -14, z1: 12}, torre: {x0: -1, x1: 16.5, z0: -1, z1: 23}};
@@ -109,6 +110,7 @@ export function equipmentStore(vault, basePositions) {
   const values = Object.fromEntries(fields.map(f => [f.id, one(input.fields?.[f.id])]).filter(([, v]) => v));
   if (!values.marca || !values.modelo) throw new Error('Indicá al menos la marca y el modelo de la bomba nueva.');
   const note = await load(tag), d = note.data, key = id => fields.find(f => f.id === id)?.[k];
+  const previousTemperature = rangoTemperaturaTrabajo(d);
   const old = id => key(id) ? d[key(id)] : '';
   let body = appendRow(note.body, 'Equipos anteriores en esta posición',
    '| Retirada | Marca | Modelo | Serie | Tamaño | Motivo | Responsable |\n|---|---|---|---|---|---|---|',
@@ -120,6 +122,8 @@ export function equipmentStore(vault, basePositions) {
    for (const s of SEAL_KEYS[k]) if (s in d) front = setKey(front, s, `${s}: ""`);
    front = setKey(front, 'orings', 'orings: []');
   }
+  if (previousTemperature) body = appendLog(body, 'Cambios de temperatura de trabajo', `- ${date} · ${cell(author)}: al reemplazar la bomba se archivó el rango anterior ${previousTemperature.min} a ${previousTemperature.max} °C. Fuente: ${cell(previousTemperature.fuente)}.`);
+  for (const key of ['temperatura_trabajo_min_c', 'temperatura_trabajo_max_c', 'temperatura_trabajo_fuente']) if (key in d) front = setKey(front, key, `${key}: ""`);
   if (k === 'B') {
    front = setKey(front, 'asociacion_placa', `asociacion_placa: ${values.serie ? 'confirmada_en_campo' : 'sin_asociar'}`);
    front = setKey(front, 'placa_nota', `placa_nota: ${JSON.stringify(values.serie ? `Bomba instalada el ${date}; placa registrada por ${author}` : `Bomba reemplazada el ${date}; placa por levantar`)}`);
@@ -129,5 +133,21 @@ export function equipmentStore(vault, basePositions) {
   await save(tag, front, body);
   return {tag, action: 'replace', previous: {marca: old('marca'), modelo: old('modelo'), serie: old('serie')}};
  }
- return {move, swap, replace};
+ async function temperature(tag, input) {
+  const rawMin=String(input.min ?? '').trim().replace(',', '.');
+  const rawMax=String(input.max ?? '').trim().replace(',', '.');
+  const min=Number(rawMin),max=Number(rawMax);
+  if(!rawMin||!rawMax||!Number.isFinite(min)||!Number.isFinite(max)||min>max||min< -273.15)throw new Error('Ingresá un mínimo y un máximo válidos en °C; el mínimo no puede superar al máximo.');
+  const source=one(input.source,160),author=one(input.author,100);
+  if(!source||!author)throw new Error('Indicá la fuente del rango y quién lo registró.');
+  const note=await load(tag),before=rangoTemperaturaTrabajo(note.data);
+  let front=setKey(note.front,'temperatura_trabajo_min_c',`temperatura_trabajo_min_c: ${min}`);
+  front=setKey(front,'temperatura_trabajo_max_c',`temperatura_trabajo_max_c: ${max}`);
+  front=setKey(front,'temperatura_trabajo_fuente',`temperatura_trabajo_fuente: ${JSON.stringify(source)}`);
+  const date=new Date().toISOString().slice(0,10);
+  const log=`- ${date} · ${cell(author)}: temperatura de trabajo ${before?`${before.min} a ${before.max} °C`:'sin rango registrado'} → ${min} a ${max} °C. Fuente declarada: ${cell(source)}.`;
+  await save(tag,front,appendLog(note.body,'Cambios de temperatura de trabajo',log));
+  return {tag,min,max,source};
+ }
+ return {move, swap, replace, temperature};
 }

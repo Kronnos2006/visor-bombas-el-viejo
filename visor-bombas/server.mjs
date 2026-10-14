@@ -248,6 +248,12 @@ export async function handler(req,res) {
     if(body.action==='replace') return send(res,200,await equipment.replace(tag,body));
     throw new Error('Acción desconocida.');
    }
+   if(url.pathname==='/api/temperature-range') {
+    if(!configuration.writable||DEMO)return send(res,403,{code:'NOT_WRITABLE',error:'Este alojamiento no guarda rangos en Obsidian. La versión DEMO solo puede guardarlos en este navegador.'});
+    const tag=String(body.tag||'');
+    if(!tagPattern.test(tag)||!tag.startsWith('B'))throw new Error('TAG inválido.');
+    return send(res,200,await equipment.temperature(tag,body));
+   }
    if(url.pathname==='/api/parts-request') {
     const pdf=await generatePartsRequestPDF({...body,demo:DEMO});
     res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename="Solicitud_bodega_${new Date().toISOString().slice(0,10)}.pdf"`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});

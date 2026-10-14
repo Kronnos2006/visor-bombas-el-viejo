@@ -203,3 +203,12 @@ button.pdf-btn.primary{background:#255047;border-color:var(--accent);color:#dcfc
 #pump-resumen .rs-link{cursor:pointer}#pump-resumen .rs-link:hover{background:#223027}
 #pump-resumen .rs-off{font-size:9px;padding:1px 5px;border:1px solid #c9a227;color:#e2c14d;border-radius:8px;margin-left:4px}
 #pump-resumen .rs-src{margin:6px 0 0;font-size:9.5px;color:#6f8582}
+#pump-resumen .rs-temperature{border-top:1px solid #2c4040;margin-top:7px;padding-top:7px}
+#pump-resumen .rs-edit{background:transparent;border:1px solid #47645c;border-radius:6px;color:var(--accent);font-size:10.5px;padding:5px 8px;cursor:pointer}
+#pump-resumen .rs-temp-form{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+#pump-resumen .rs-temp-form[hidden]{display:none}
+#pump-resumen .rs-temp-form label{display:grid;gap:3px;color:#b6cbc2;font-size:10px}
+#pump-resumen .rs-temp-form label:nth-of-type(n+3){grid-column:1/-1}
+#pump-resumen .rs-temp-form input{min-width:0;width:100%;box-sizing:border-box;background:#0f1b1a;border:1px solid #47645c;border-radius:5px;color:#e6efe9;padding:6px;font:inherit}
+#pump-resumen .rs-temp-form button,#pump-resumen .rs-temp-error{grid-column:1/-1}
+#pump-resumen .rs-temp-error{margin:0;color:#f3a48b;font-size:10px}

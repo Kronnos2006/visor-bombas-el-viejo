@@ -13,6 +13,7 @@ import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
 import {expediente, enlaces, linksBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
+import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
 import {listReports, addReport, deleteReport, configureReports, reportsInObsidian, importReports} from './reportes.js';
 import {reportMeasurements} from './measurements.js';
 import {renderRechartsHistory} from './vendor/history-chart.js';
@@ -371,6 +372,9 @@ async function downloadPumpPDF(tag){
 }
 
 // Resumen rápido en la cabecera del expediente: datos de operación y componentes críticos.
+function demoTemperature(tag){
+ try{return rangoTemperaturaTrabajo(JSON.parse(localStorage.getItem('vocatus-temperatura-demo-'+tag)||'null')||{});}catch{return null;}
+}
 function paintPumpSummary(p){
  let el=document.getElementById('pump-resumen');
  if(!el){el=document.createElement('div');el.id='pump-resumen';$('#source-status').after(el);}
@@ -381,9 +385,26 @@ function paintPumpSummary(p){
  const m=p.motor||{},se=p.seal||{},ro=p.rodamientos||{};
  const motor=[m.marca,m.potencia,m.rpm].filter(ok).join(' · ');
  const sello=[se.tipo,ok(se.diametro)?'eje '+se.diametro:''].filter(ok).join(' · ');
+ const recorded=rangoTemperaturaTrabajo(p),temperature=state.demo?demoTemperature(p.tag)||recorded:recorded;
+ const tempNote=state.demo?'DEMO · Guardado solo en este navegador; esta edición no aparece en el PDF.':temperature?.fuente?`Fuente declarada: ${esc(temperature.fuente)} · Ficha ${esc(p.tag)}.`:`Sin rango documentado para ${esc(p.tag)}.`;
+ const tempEditor=`<div class="rs-temperature"><button type="button" class="rs-edit" data-temp-edit aria-expanded="false">${temperature?'Actualizar':'Agregar'} rango de temperatura</button><form class="rs-temp-form" hidden><label>Mínima °C<input name="min" type="number" step="any" min="-273.15" value="${temperature?.min??''}" required></label><label>Máxima °C<input name="max" type="number" step="any" min="-273.15" value="${temperature?.max??''}" required></label><label>Fuente del dato<input name="source" maxlength="160" value="${esc(temperature?.fuente||'')}" placeholder="Medición, informe o placa" required></label><label>Registrado por<input name="author" maxlength="100" placeholder="Nombre" required></label><p class="rs-temp-error" role="alert"></p><button type="submit" class="primary">Guardar rango</button></form><p class="rs-src">${tempNote}</p></div>`;
  el.hidden=false;
- el.innerHTML=`<div class="rs-card"><h4>Resumen de la bomba${p.enUso===false||p.inactive?' <span class="rs-off">SIN USO</span>':''}</h4><dl>${fila('Servicio',p.servicio)}${fila('Ubicación',p.nombre)}${fila('Tamaño',p.size)}${fila('Caudal',spec('Caudal'))}${fila('Altura',spec('Altura'))}${fila('Velocidad',spec('Velocidad de bomba'))}${fila('Impulsor',spec('Impulsor'))}${fila('Motor',motor,9)}</dl></div><div class="rs-card"><h4>Componentes críticos</h4><dl>${fila('Sello mecánico',sello,5)}${fila('Elastómero eje (acople)',p.acople,8)}${fila('Rol delantero',ro.delantero,7)}${fila('Rol trasero',ro.trasero,7)}${ok(p.observaciones)?fila('Observaciones',p.observaciones):''}</dl><p class="rs-src">Columnas del Excel «Libro1.bombas_3» · hoja Bombas</p></div>`;
+ el.innerHTML=`<div class="rs-card"><h4>Resumen de la bomba${p.enUso===false||p.inactive?' <span class="rs-off">SIN USO</span>':''}</h4><dl>${fila('Servicio',p.servicio)}${fila('Ubicación',p.nombre)}${fila('Tamaño',p.size)}${fila('Caudal',spec('Caudal'))}${fila('Altura',spec('Altura'))}${fila('Velocidad',spec('Velocidad de bomba'))}${fila('Impulsor',spec('Impulsor'))}${fila('Temperatura de trabajo',formatoRangoTemperatura(temperature))}${fila('Motor',motor,9)}</dl>${tempEditor}</div><div class="rs-card"><h4>Componentes críticos</h4><dl>${fila('Sello mecánico',sello,5)}${fila('Elastómero eje (acople)',p.acople,8)}${fila('Rol delantero',ro.delantero,7)}${fila('Rol trasero',ro.trasero,7)}${ok(p.observaciones)?fila('Observaciones',p.observaciones):''}</dl><p class="rs-src">Componentes según la ficha y el Excel; los campos vacíos siguen pendientes.</p></div>`;
  el.querySelectorAll('[data-part]').forEach(r=>r.onclick=()=>{if(typeof selectPart==='function')selectPart(Number(r.dataset.part));});
+ const edit=el.querySelector('[data-temp-edit]'),form=el.querySelector('.rs-temp-form');
+ const tempField=name=>form.elements.namedItem(name);
+ edit.onclick=()=>{form.hidden=!form.hidden;edit.setAttribute('aria-expanded',String(!form.hidden));if(!form.hidden)tempField('min').focus();};
+ form.onsubmit=async event=>{
+  event.preventDefault();const error=form.querySelector('.rs-temp-error'),submit=form.querySelector('[type=submit]');error.textContent='';
+  const min=Number(tempField('min').value),max=Number(tempField('max').value);
+  if(!Number.isFinite(min)||!Number.isFinite(max)||min>max||min< -273.15){error.textContent='Revisá el rango: la mínima debe ser menor o igual a la máxima.';return;}
+  const update={tag:p.tag,min,max,source:tempField('source').value.trim(),author:tempField('author').value.trim()};
+  submit.disabled=true;
+  try{
+   if(state.demo){localStorage.setItem('vocatus-temperatura-demo-'+p.tag,JSON.stringify({temperatura_trabajo_min_c:min,temperatura_trabajo_max_c:max,temperatura_trabajo_fuente:update.source,author:update.author}));paintPumpSummary(p);toast('Rango DEMO guardado en este navegador.');}
+   else{await api('/api/temperature-range',update);await refresh();toast('Rango guardado en la ficha '+p.tag+'.');}
+  }catch(e){error.textContent=e.message||'No se pudo guardar el rango.';submit.disabled=false;}
+ };
 }
 function paintPumpLinks(p){
  paintPumpSummary(p);

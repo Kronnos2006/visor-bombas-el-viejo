@@ -8,6 +8,7 @@ import {AREAS,pxAMundo} from './public/planta-general.js';
 import {simParams,createPumpModel} from './public/pump-sim.js';
 import {readPump,handler} from './server.mjs';
 import {Readable} from 'node:stream';
+import {rangoTemperaturaTrabajo,temperaturaTrabajo} from './public/temperatura-trabajo.js';
 
 test('la torre tiene las 16 bombas (B9 sin uso) anotadas en el croquis, sin repetir TAG del sector',()=>{
  assert.deepEqual(torrePumps.map(p=>p.tag),['B2','B3','B4','B5','B6','B7','B8','B9','B10','B11','B12','B17','B18','B19','B20','B21']);
@@ -85,6 +86,33 @@ test('mover/intercambiar bombas de la torre en una bóveda de prueba',async()=>{
  await assert.rejects(eq.move('B4',{...who,x:4,z:30}),/fuera de la torre/);
  await eq.swap('B4','B5',who);
  await assert.rejects(eq.swap('B4','B30',who),/misma área/);
+});
+
+test('temperatura de trabajo: rango por TAG, fuente y actualización en bóveda de prueba',async()=>{
+ const {mkdtemp,mkdir,copyFile,readFile:rf}=await import('node:fs/promises');
+ const os=await import('node:os');const path=await import('node:path');
+ const {equipmentStore}=await import('./equipment.mjs');
+ assert.equal(temperaturaTrabajo(photoPumps.find(p=>p.tag==='B30')),'Por confirmar');
+ assert.equal(rangoTemperaturaTrabajo({temperatura_trabajo_min_c:80,temperatura_trabajo_max_c:40}),null);
+ const dir=await mkdtemp(path.join(os.tmpdir(),'vocatus-temp-'));await mkdir(path.join(dir,'00-Proyecto/equipos'),{recursive:true});
+ const file=path.join(dir,'00-Proyecto/equipos/B30.md');
+ await copyFile(new URL('../00-Proyecto/equipos/B30.md',import.meta.url),file);
+ const eq=equipmentStore(dir,plantPumps);
+ await assert.rejects(eq.temperature('B30',{min:90,max:50,source:'Medición',author:'Prueba'}),/mínimo/);
+ await assert.rejects(eq.temperature('B30',{min:30,max:50,source:'',author:'Prueba'}),/fuente/);
+ await eq.temperature('B30',{min:30,max:50,source:'Medición en campo',author:'Prueba'});
+ const text=await rf(file,'utf8');
+ assert.match(text,/temperatura_trabajo_min_c: 30/);
+ assert.match(text,/temperatura_trabajo_max_c: 50/);
+ assert.match(text,/temperatura_trabajo_fuente: "Medición en campo"/);
+ assert.match(text,/## Cambios de temperatura de trabajo/);
+ assert.match(text,/caudal_gpm: "8"/);
+ assert.equal(temperaturaTrabajo({documental:{temperatura_trabajo_min_c:30,temperatura_trabajo_max_c:50}}),'30 a 50 °C');
+ await eq.replace('B30',{date:'2026-10-14',author:'Prueba',fields:{marca:'Otra marca',modelo:'Otro modelo'}});
+ const replaced=await rf(file,'utf8');
+ assert.match(replaced,/temperatura_trabajo_min_c: ""/);
+ assert.match(replaced,/temperatura_trabajo_max_c: ""/);
+ assert.match(replaced,/se archivó el rango anterior 30 a 50 °C/);
 });
 
 test('rendimiento: cada bomba se dibuja con una malla por material sin cambiar su forma',async()=>{
