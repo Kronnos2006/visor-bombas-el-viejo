@@ -2,8 +2,9 @@
 // convertido con tools/fbx-torre-a-glb.mjs a public/modelos/torre-dusa.glb (pies → metros).
 // Coordenadas locales en metros: x desde el eje 1 hacia el 5, z desde el eje A hacia el E,
 // y = nivel (+0,00 = terreno). Coinciden con los ejes de las láminas A07–A14.
-// Las bombas del FBX y las tuberías no se cargan: las bombas son las interactivas del visor
-// (fichas Bxx) y las tuberías quedan fuera por pedido del usuario.
+// No se cargan: las bombas del FBX (las interactivas son las fichas Bxx), las tuberías (pedido del
+// usuario) ni las dos cubiertas superiores (Cubierta 1 y 2, +25,3 a +27 m). Se conserva la cubierta
+// baja (Cubierta 3, +10,3 a +11,4 m).
 export const EJES_X={1:0,2:5.5,3:6.76,4:12.7,5:15.4};
 export const EJES_Z={A:0,B:5.93,C:11.9,D:16.9,E:21.9};
 export const MODELO='/modelos/torre-dusa.glb';
@@ -18,12 +19,14 @@ export const SECCIONES=[
  {id:'n31',nombre:'Nivel 3.1',cota:10.3,detalle:'Cubierta baja +10.30'},
  {id:'n4',nombre:'Nivel 4',cota:15.3,detalle:'Plataformas 6 y 7 · NPT +15.35'},
  {id:'n5',nombre:'Nivel 5',cota:20.3,detalle:'Plataformas 8 y 9 · NPT +20.35'},
- {id:'techo',nombre:'Coronas y techo',cota:25.3,detalle:'Coronas +25.30 y cubiertas hasta +27.00'}
+ {id:'techo',nombre:'Coronas',cota:25.3,detalle:'Coronas +25.30 · parte alta abierta (sin cubiertas superiores)'}
 ];
 const BAJO=.4; // se incluyen las vigas que quedan bajo cada plataforma
 export const rangoSeccion=id=>{const i=SECCIONES.findIndex(s=>s.id===id);if(i<0)return null;const sig=SECCIONES[i+1];return [i?SECCIONES[i].cota-BAJO:-5,sig?sig.cota-BAJO:1e3];};
 export const seccionDe=y=>{let id=SECCIONES[0].id;for(const s of SECCIONES)if(y>=s.cota-.05)id=s.id;return id;};
 export const CENTRO={x:7.7,y:12,z:11};
+// Límites reales del modelo convertido (m, coordenadas locales), medidos en public/modelos/torre-dusa.json.
+export const LIMITES={min:[-1.24,0,-1.3],max:[17.57,25.35,22.39]};
 // Vistas con los nombres del usuario: frontal = lado del eje 1 · derecha = lado del eje A ·
 // trasera = lado del eje 5 · izquierda = lado del eje E.
 export const VISTAS={
@@ -42,12 +45,13 @@ export function buildTorre(T,{cargar=null,alCargar=null}={}){
  planos=[new T.Plane(new T.Vector3(0,1,0),1e3),new T.Plane(new T.Vector3(0,-1,0),1e3)];
  const objetos=[];
  const listo=!cargar?Promise.resolve(objetos):cargar(MODELO).then(gltf=>{
-  const mats=new Set();
+  const mats=new Set();gltf.scene.updateMatrixWorld(true);
   gltf.scene.traverse(o=>{
    if(!o.isMesh)return;
    const m=o.material;if(!mats.has(m)){mats.add(m);m.clippingPlanes=planos;m.clipShadows=true;}
-   if(m.name==='techo'){m.transparent=true;m.opacity=.55;m.depthWrite=false;}
-   o.geometry.computeBoundingBox();const b=o.geometry.boundingBox;
+   if(m.name==='techo'){m.color.setHex(0x8b969b);m.transparent=true;m.opacity=.78;m.depthWrite=false;}
+   // Caja en metros locales de la torre: la malla viene cuantizada y la escala está en el nodo.
+   o.geometry.computeBoundingBox();const b=o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld);
    o.userData.yMin=b.min.y;o.userData.yMax=b.max.y;o.userData.section=seccionDe(b.min.y);
    o.userData.base={color:m.color.getHex()};
    objetos.push(o);

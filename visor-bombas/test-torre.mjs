@@ -33,7 +33,10 @@ test('modelo DUSA 3D: cada piso tiene estructura, se aísla por recorte y las bo
  for(const s of SECCIONES){const [lo,hi]=rangoSeccion(s.id);assert.ok(partes.some(o=>o.max[1]>=lo&&o.min[1]<=hi&&o.cat!=='concreto'),`estructura en ${s.id}`);}
  assert.ok(partes.some(o=>/^Columna Vinaza/.test(o.nombre))&&partes.some(o=>/^Columna Rectificadora HO/.test(o.nombre)));
  assert.ok(!partes.some(o=>/^(Bomba|Tubería|Conexiones)/.test(o.nombre)),'sin bombas ni tuberías del FBX');
- assert.equal(seccionDe(.3),'n1');assert.equal(seccionDe(5.3),'n21');assert.equal(seccionDe(20.3),'n5');assert.equal(seccionDe(26),'techo');
+ assert.ok(!partes.some(o=>['1245301','1245302'].includes(o.id)),'sin las dos cubiertas superiores');
+ const baja=partes.find(o=>o.id==='1245303');assert.ok(baja&&baja.min[1]>10&&baja.max[1]<11.5,'cubierta baja conservada');
+ assert.ok(Math.max(...partes.map(o=>o.max[1]))<25.5,'parte alta abierta: nada sobre las coronas');
+ assert.equal(seccionDe(.3),'n1');assert.equal(seccionDe(5.3),'n21');assert.equal(seccionDe(20.3),'n5');assert.equal(seccionDe(25.4),'techo');
  assert.ok(torrePumps.every(p=>seccionDe(p.y)==='n1'));
  const choques=[...torrePumps,...torreSinTag.map(s=>({tag:'Sin TAG',...s}))].flatMap(p=>partes.filter(o=>!['concreto','rejilla'].includes(o.cat)&&o.min[1]<1.6&&o.max[0]>p.x-.42&&o.min[0]<p.x+.42&&o.max[2]>p.z-1.12&&o.min[2]<p.z+1.04).map(o=>p.tag+' ↔ '+o.nombre));
  assert.deepEqual(choques,[]);
@@ -82,4 +85,14 @@ test('mover/intercambiar bombas de la torre en una bóveda de prueba',async()=>{
  await assert.rejects(eq.move('B4',{...who,x:4,z:30}),/fuera de la torre/);
  await eq.swap('B4','B5',who);
  await assert.rejects(eq.swap('B4','B30',who),/misma área/);
+});
+
+test('rendimiento: cada bomba se dibuja con una malla por material sin cambiar su forma',async()=>{
+ const {exterior}=await import('./public/sector-fotos.js');
+ const {compactar}=await import('./public/compactar.js');
+ const cuenta=g=>{let n=0;g.traverse(o=>{if(o.isMesh)n++;});return n;};
+ const a=exterior(THREE,.72,'lf'),b=compactar(THREE,exterior(THREE,.72,'lf'));
+ const ba=new THREE.Box3().setFromObject(a),bb=new THREE.Box3().setFromObject(b);
+ assert.ok(cuenta(b)<=8&&cuenta(a)>40,`${cuenta(a)} → ${cuenta(b)} mallas`);
+ assert.ok(ba.min.distanceTo(bb.min)<1e-6&&ba.max.distanceTo(bb.max)<1e-6,'misma caja');
 });
