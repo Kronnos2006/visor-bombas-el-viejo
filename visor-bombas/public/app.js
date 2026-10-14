@@ -3,7 +3,9 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { aplicarRealismo } from './realismo.js';
 import {photoPumps, plantPumps, plateEvidence, photoURL, photo3URL, exterior, sector} from './sector-fotos.js';
 import {torreSinTag} from './equipos-torre.js';
-import {buildTorre, aplicarSeccion, SECCIONES, VISTAS, EJES_X, EJES_Z, CENTRO} from './torre-model.js';
+import {buildTorre, aplicarSeccion, dentroDeSeccion, SECCIONES, VISTAS, EJES_X, EJES_Z, CENTRO} from './torre-model.js';
+import {GLTFLoader} from '/vendor/GLTFLoader.js';
+import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
 import {fotosActualizadas, guardarFoto, originales, htmlFotos} from './fotos-bomba.js';
 import {componentRows, sectorCorners} from './equipos-sector.js';
@@ -66,7 +68,7 @@ function rebuildPlant(){
   const tq=ubicar(new THREE.Group(),AREA('tanques')),tr=ubicar(new THREE.Group(),AREA('torre'));
   areaGroups={tanques:tq,torre:tr};plant.add(tq,tr);
   tq.add(sector(THREE,placed.filter(p=>areaOf(p)==='tanques')));
-  torre=buildTorre(THREE);tr.add(torre.root);
+  torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:()=>{if(typeof applyArea==='function')applyArea();}});tr.add(torre.root);
   for(const k in pumpObjects)delete pumpObjects[k];
   for(const p of placed){const parent=areaGroups[areaOf(p)]||tq;const g=exterior(THREE,p.scale,p.variant);g.position.set(p.x,p.y??.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;g.userData.section='n1';parent.add(g);pumpObjects[p.tag]=g;if(areaOf(p)==='torre'){const hit=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.4,3.3),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(0,1,.1);hit.userData.hitProxy=true;g.add(hit);}g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);markers.at(-1).area=areaOf(p);}
   for(const s of torreSinTag){const g=exterior(THREE,.72,'lf');g.position.set(s.x,.3,s.z);tr.add(g);const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);etiqueta(a,'Sin TAG','corner-label pending-label','torre',s.nota);}
@@ -118,7 +120,7 @@ function buildPump(variant='lf'){
 function fly(pos,target,duration=1100){cameraFlight={start:performance.now(),duration:reducedMotion.matches?1:duration,from:camera.position.clone(),to:new THREE.Vector3(...pos),fromTarget:controls.target.clone(),toTarget:new THREE.Vector3(...target)};}
 function initScene(){
  try{
- renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);viewport.prepend(renderer.domElement);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);renderer.localClippingEnabled=true;viewport.prepend(renderer.domElement);
  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(43,1,.1,600);camera.position.set(-18,85,80);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=190;controls.maxPolarAngle=Math.PI*.49;controls.target.set(-18,0,8);controls.addEventListener('start',()=>cameraFlight=null);
  scene.add(new THREE.HemisphereLight(0xd8efe6,0x263c40,2.5));const light=new THREE.DirectionalLight(0xffecd5,3.5);light.position.set(-5,12,8);scene.add(light);const rim=new THREE.DirectionalLight(0x95bcde,2);rim.position.set(5,3,-7);scene.add(rim);
  plant=new THREE.Group();pumpGroup=new THREE.Group();scene.add(plant,pumpGroup);pumpGroup.visible=false;buildPump();
@@ -365,7 +367,23 @@ async function downloadPumpPDF(tag){
  }
 }
 
+// Resumen rápido en la cabecera del expediente: datos de operación y componentes críticos.
+function paintPumpSummary(p){
+ let el=document.getElementById('pump-resumen');
+ if(!el){el=document.createElement('div');el.id='pump-resumen';$('#source-status').after(el);}
+ if(!p){el.hidden=true;el.innerHTML='';return;}
+ const ok=v=>v!=null&&String(v).trim()!==''&&!/^(por confirmar|sin dato)/i.test(String(v).trim());
+ const spec=k=>(p.specs||[]).find(([n])=>n===k)?.[1];
+ const fila=(k,v,part)=>`<div class="rs-row${part!=null?' rs-link':''}"${part!=null?` data-part="${part}" title="Ver ${esc(k.toLowerCase())} en el 3D"`:''}><dt>${esc(k)}</dt><dd${ok(v)?'':' class="rs-pend"'}>${ok(v)?esc(v):'Por confirmar'}</dd></div>`;
+ const m=p.motor||{},se=p.seal||{},ro=p.rodamientos||{};
+ const motor=[m.marca,m.potencia,m.rpm].filter(ok).join(' · ');
+ const sello=[se.tipo,ok(se.diametro)?'eje '+se.diametro:''].filter(ok).join(' · ');
+ el.hidden=false;
+ el.innerHTML=`<div class="rs-card"><h4>Resumen de la bomba${p.enUso===false||p.inactive?' <span class="rs-off">SIN USO</span>':''}</h4><dl>${fila('Servicio',p.servicio)}${fila('Ubicación',p.nombre)}${fila('Tamaño',p.size)}${fila('Caudal',spec('Caudal'))}${fila('Altura',spec('Altura'))}${fila('Velocidad',spec('Velocidad de bomba'))}${fila('Impulsor',spec('Impulsor'))}${fila('Motor',motor,9)}</dl></div><div class="rs-card"><h4>Componentes críticos</h4><dl>${fila('Sello mecánico',sello,5)}${fila('Elastómero eje (acople)',p.acople,8)}${fila('Rol delantero',ro.delantero,7)}${fila('Rol trasero',ro.trasero,7)}${ok(p.observaciones)?fila('Observaciones',p.observaciones):''}</dl><p class="rs-src">Columnas del Excel «Libro1.bombas_3» · hoja Bombas</p></div>`;
+ el.querySelectorAll('[data-part]').forEach(r=>r.onclick=()=>{if(typeof selectPart==='function')selectPart(Number(r.dataset.part));});
+}
 function paintPumpLinks(p){
+ paintPumpSummary(p);
  let el=document.getElementById('pump-links');
  if(!el){el=document.createElement('div');el.id='pump-links';$('#selected-tag').after(el);}
  if(!p){el.hidden=true;el.innerHTML='';return;}
@@ -373,7 +391,7 @@ function paintPumpLinks(p){
  const L=linksBomba(p);
  const manualBtn=L?`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.manual.t)}">📘 Manual de la bomba</a>`:'';
  const planosBtn=L?`<a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos</a>`:'';
- el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}${p.areaId==='torre'?'':`<a class="pl-btn" href="/equipo.html?tag=${encodeURIComponent(p.tag)}" title="Cambiar de lugar o reemplazar esta bomba">⇄ Mover o cambiar</a>`}`;
+ el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}<a class="pl-btn" href="/equipo.html?tag=${encodeURIComponent(p.tag)}" title="Cambiar de lugar o reemplazar esta bomba">⇄ Mover o cambiar</a>`;
  const btn=$('#download-summary-pdf-header');
  if(btn) btn.onclick=()=>downloadPumpPDF(p.tag);
 }
@@ -642,7 +660,7 @@ function applyArea(){
  if(state.view==='plant'){
   $('#scene-title').textContent=a?.nombre||'Planta general';
   $('#breadcrumb').textContent=id==='planta'?'PLANTA / VISTA GENERAL':'PLANTA / '+a.nombre.toUpperCase()+(s?' / '+s.nombre.toUpperCase():'');
-  $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · LÁMINAS A07–A14 (S3 INGENIEROS) · COTAS APROXIMADAS':'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
+  $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
   $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':'Seleccioná una bomba para acercarte';
  }
 }
@@ -697,7 +715,7 @@ function resaltarBomba(tag){
    const hit=raycaster.intersectObjects(pickables,false).find(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return true;});
    const tag=hit?.object.userData.tag||null;resaltarBomba(tag);
    if(!tag){
-    const eq=state.area==='torre'&&torre?raycaster.intersectObjects(torre.objetos.filter(o=>o.visible&&o.userData.nombre),false)[0]:null;
+    const eq=state.area==='torre'&&torre?raycaster.intersectObjects(torre.objetos.filter(o=>o.visible&&o.userData.nombre),false).find(h=>dentroDeSeccion(state.seccion,h.point.y)):null;
     if(eq){tip.textContent=eq.object.userData.nombre;tip.style.left=(e.clientX-r.left+14)+'px';tip.style.top=(e.clientY-r.top+14)+'px';tip.hidden=false;renderer.domElement.style.cursor='';return;}
     tip.hidden=true;renderer.domElement.style.cursor='';return;}
    const p=state.pumps.find(x=>x.tag===tag);tip.textContent=`${tag} · ${p?.nombre||''}${p?.enUso===false?' · SIN USO':''}`;tip.style.left=(e.clientX-r.left+14)+'px';tip.style.top=(e.clientY-r.top+14)+'px';tip.hidden=false;renderer.domElement.style.cursor='pointer';

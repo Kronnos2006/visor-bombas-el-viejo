@@ -8,7 +8,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 0.9,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -69,6 +69,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "REXNORD ES-4R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -81,7 +82,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 2.32,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -142,6 +143,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -154,7 +156,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 3.74,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -215,6 +217,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -227,7 +230,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 5.16,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -288,6 +291,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "2R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -300,7 +304,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 6.58,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -361,6 +365,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "2R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -373,7 +378,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 8,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -434,6 +439,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -446,7 +452,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 9.42,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -507,6 +513,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -519,7 +526,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 10.84,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -580,6 +587,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -592,7 +600,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 12.26,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -653,6 +661,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -665,7 +674,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 13.68,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -726,6 +735,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "3R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -738,7 +748,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 15.1,
-  "z": 10.9,
+  "z": 10.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -799,6 +809,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "3R",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -872,6 +883,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -945,6 +957,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -1018,6 +1031,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Amortiguador LoveJoy L-100",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -1030,7 +1044,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 6.2,
-  "z": 20.6,
+  "z": 20.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -1091,6 +1105,7 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Amortiguador LoveJoy L-101",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
@@ -1103,7 +1118,7 @@ export const torrePumps = [
   "area": "Torre · Nivel 1",
   "grupo": "torre",
   "x": 9.2,
-  "z": 20.6,
+  "z": 20.3,
   "y": 0.3,
   "rotation": 0,
   "scale": 0.72,
@@ -1164,10 +1179,11 @@ export const torrePumps = [
    "conjunto": "por confirmar"
   },
   "acople": "Por confirmar",
+  "observaciones": "",
   "orings": [],
   "history": [],
   "demonstracion": false,
   "areaPlanta": "2. DESTILACIÓN PLANTA PRAJ"
  }
 ];
-export const torreSinTag = [{"x":12.2,"z":20.6,"nota":"Posición marcada con X en el croquis y tercera cubierta de la foto de la página 16; sin TAG asignado."}];
+export const torreSinTag = [{"x":12.2,"z":20.3,"nota":"Posición marcada con X en el croquis y tercera cubierta de la foto de la página 16; sin TAG asignado."}];

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from './public/vendor/three.module.js';
 import {torrePumps,torreSinTag} from './public/equipos-torre.js';
 import {photoPumps,plantPumps} from './public/sector-fotos.js';
-import {buildTorre,aplicarSeccion,SECCIONES,EJES_X,EJES_Z,seccionDe} from './public/torre-model.js';
+import {buildTorre,aplicarSeccion,SECCIONES,EJES_X,EJES_Z,seccionDe,rangoSeccion,dentroDeSeccion} from './public/torre-model.js';
 import {AREAS,pxAMundo} from './public/planta-general.js';
 import {simParams,createPumpModel} from './public/pump-sim.js';
 import {readPump,handler} from './server.mjs';
@@ -26,14 +26,19 @@ test('datos de las fichas: B11 Vinaza 2X3-8 MTO, B17 Durco, B20 agua',()=>{
  const t=tag=>torrePumps.find(p=>p.tag===tag);
  assert.equal(t('B11').size,'2X3-8 MTO');assert.equal(t('B11').variant,'mto');assert.equal(t('B17').marca,'DURCO');assert.equal(t('B20').servicio,'Agua');
 });
-test('el modelo se aísla por piso y solo el Nivel 1 tiene bombas',()=>{
- const {objetos}=buildTorre(THREE);
- for(const s of SECCIONES)assert.ok(objetos.some(o=>o.userData.section===s.id),`objetos en ${s.id}`);
- assert.equal(seccionDe(.3),'n1');assert.equal(seccionDe(5.3),'n21');assert.equal(seccionDe(20.3),'n5');assert.equal(seccionDe(35.3),'techo');
- aplicarSeccion(objetos,'n4');
- assert.ok(objetos.every(o=>o.visible===(o.userData.section==='n4')),'solo el piso elegido queda visible');
- aplicarSeccion(objetos,null);assert.ok(objetos.every(o=>o.visible));
+test('modelo DUSA 3D: cada piso tiene estructura, se aísla por recorte y las bombas no chocan',async()=>{
+ const {readFile,stat}=await import('node:fs/promises');
+ assert.ok((await stat(new URL('./public/modelos/torre-dusa.glb',import.meta.url))).size<4e6,'GLB liviano para la web');
+ const partes=JSON.parse(await readFile(new URL('./public/modelos/torre-dusa.json',import.meta.url),'utf8'));
+ for(const s of SECCIONES){const [lo,hi]=rangoSeccion(s.id);assert.ok(partes.some(o=>o.max[1]>=lo&&o.min[1]<=hi&&o.cat!=='concreto'),`estructura en ${s.id}`);}
+ assert.ok(partes.some(o=>/^Columna Vinaza/.test(o.nombre))&&partes.some(o=>/^Columna Rectificadora HO/.test(o.nombre)));
+ assert.ok(!partes.some(o=>/^(Bomba|Tubería|Conexiones)/.test(o.nombre)),'sin bombas ni tuberías del FBX');
+ assert.equal(seccionDe(.3),'n1');assert.equal(seccionDe(5.3),'n21');assert.equal(seccionDe(20.3),'n5');assert.equal(seccionDe(26),'techo');
  assert.ok(torrePumps.every(p=>seccionDe(p.y)==='n1'));
+ const choques=[...torrePumps,...torreSinTag.map(s=>({tag:'Sin TAG',...s}))].flatMap(p=>partes.filter(o=>!['concreto','rejilla'].includes(o.cat)&&o.min[1]<1.6&&o.max[0]>p.x-.42&&o.min[0]<p.x+.42&&o.max[2]>p.z-1.12&&o.min[2]<p.z+1.04).map(o=>p.tag+' ↔ '+o.nombre));
+ assert.deepEqual(choques,[]);
+ const {objetos,listo}=buildTorre(THREE);await listo;assert.equal(objetos.length,0,'sin cargador no se pide el GLB');
+ aplicarSeccion([],'n4');assert.ok(dentroDeSeccion('n4',16)&&!dentroDeSeccion('n4',22)&&dentroDeSeccion(null,99));
 });
 test('áreas sobre el plano de sitio: torre en el área 2, junto al sector de tanques',()=>{
  const torre=AREAS.find(a=>a.id==='torre'),tanques=AREAS.find(a=>a.id==='tanques');
@@ -63,4 +68,18 @@ test('fotos del expediente: guarda, sustituye y conserva la anterior en el histo
 test('el expediente de la torre trae las fotos del Excel Libro1.bombas_3',async()=>{
  const {expediente}=await import('./public/expediente.js');
  for(const t of ['B3','B5','B11','B17','B21'])assert.ok(expediente[t].fotos.length&&expediente[t].placas.length,t);
+});
+
+test('mover/intercambiar bombas de la torre en una bóveda de prueba',async()=>{
+ const {mkdtemp,mkdir,copyFile,readFile:rf}=await import('node:fs/promises');
+ const os=await import('node:os');const path=await import('node:path');
+ const {equipmentStore}=await import('./equipment.mjs');
+ const dir=await mkdtemp(path.join(os.tmpdir(),'boveda-prueba-'));await mkdir(path.join(dir,'00-Proyecto/equipos'),{recursive:true});
+ for(const t of ['B4','B5','B30'])await copyFile(new URL(`../00-Proyecto/equipos/${t}.md`,import.meta.url),path.join(dir,'00-Proyecto/equipos',t+'.md'));
+ const eq=equipmentStore(dir,plantPumps),who={date:'2026-10-13',author:'Prueba'};
+ await eq.move('B4',{...who,x:4,z:18,rotation:90});
+ assert.match(await rf(path.join(dir,'00-Proyecto/equipos/B4.md'),'utf8'),/posicion_z: 18/);
+ await assert.rejects(eq.move('B4',{...who,x:4,z:30}),/fuera de la torre/);
+ await eq.swap('B4','B5',who);
+ await assert.rejects(eq.swap('B4','B30',who),/misma área/);
 });

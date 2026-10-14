@@ -1,4 +1,4 @@
-// Mover o reemplazar una bomba del sector desde el visor.
+// Mover o reemplazar una bomba (sector de tanques o torre) desde el visor.
 // Todo cambio queda en la ficha de Obsidian: la posición nueva en el frontmatter y
 // una línea en «## Cambios de ubicación y reemplazos». Al reemplazar, los datos de la
 // bomba retirada se archivan en una tabla para no perderlos.
@@ -7,7 +7,9 @@ import { readFile, writeFile, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { splitNote, setKey, one, fileOf, kindOf, FIELDS } from './survey.mjs';
 
-const LIMIT_X = 15.5, LIMIT_Z_MIN = -14, LIMIT_Z_MAX = 12;
+// Límites de cada área en sus coordenadas locales (sector de tanques y torre: ejes 1–5 × A–E).
+const LIMITS = {tanques: {x0: -15.5, x1: 15.5, z0: -14, z1: 12}, torre: {x0: -1, x1: 16.5, z0: -1, z1: 23}};
+const areaOf = base => base?.areaId === 'torre' ? 'torre' : 'tanques';
 const round = v => Math.round(v * 100) / 100;
 // Campos de identificación que se reemplazan cuando se instala otra bomba.
 export const REPLACE_FIELDS = [
@@ -39,10 +41,11 @@ function common(input) {
  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || !author) throw new Error('Completá la fecha y quién hizo el cambio.');
  return {date, author, reason};
 }
-function position(input) {
+function position(input, area = 'tanques') {
+ const L = LIMITS[area];
  const x = Number(input.x), z = Number(input.z), rotation = Number(input.rotation ?? 0);
  if (![x, z, rotation].every(Number.isFinite)) throw new Error('Posición inválida.');
- if (Math.abs(x) > LIMIT_X || z < LIMIT_Z_MIN || z > LIMIT_Z_MAX) throw new Error('La posición queda fuera del sector.');
+ if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) throw new Error(area === 'torre' ? 'La posición queda fuera de la torre.' : 'La posición queda fuera del sector.');
  return {x: round(x), z: round(z), rotation: ((Math.round(rotation) % 360) + 360) % 360};
 }
 
@@ -82,7 +85,7 @@ export function equipmentStore(vault, basePositions) {
  const where = p => `(x ${round(p.x)}, z ${round(p.z)}, ${Math.round(p.rotation)}°)`;
 
  async function move(tag, input) {
-  const {date, author, reason} = common(input), to = position(input);
+  const {date, author, reason} = common(input), to = position(input, areaOf(basePositions.find(p => p.tag === tag)));
   const note = await load(tag), from = current(tag, note.data);
   const body = appendLog(note.body, 'Cambios de ubicación y reemplazos', `- ${date} · ${author}: movida de ${where(from)} a ${where(to)}${reason ? `. Motivo: ${reason}` : ''}`);
   await save(tag, placed(note, to), body);
@@ -91,6 +94,8 @@ export function equipmentStore(vault, basePositions) {
  async function swap(tag, other, input) {
   const {date, author, reason} = common(input);
   if (tag === other) throw new Error('Elegí otra bomba para intercambiar.');
+  const ba = basePositions.find(p => p.tag === tag), bb = basePositions.find(p => p.tag === other);
+  if (ba && bb && areaOf(ba) !== areaOf(bb)) throw new Error('Solo se pueden intercambiar bombas de la misma área.');
   const a = await load(tag), b = await load(other);
   const pa = current(tag, a.data), pb = current(other, b.data);
   const log = (who, from, to) => `- ${date} · ${author}: intercambió lugar con ${who}, de ${where(from)} a ${where(to)}${reason ? `. Motivo: ${reason}` : ''}`;
