@@ -49,7 +49,7 @@ const viewport=$('#viewport');
 // En pantallas angostas el panel de bombas de la torre empieza plegado para no tapar el modelo.
 if(innerWidth<700)state.pumpRailCollapsed=true;
 let renderer,scene,camera,controls,plant,pumpGroup,photoDetail;
-const pickables=[],markers=[],componentGroups=[];let cameraFlight=null,render3D=null;let solModo=null,solCaja=null;
+const pickables=[],areaPickables=[],markers=[],componentGroups=[];let cameraFlight=null,render3D=null;let solModo=null,solCaja=null;
 let anatomy=null;
 let simRig=null;const sims={};
 let areaGroups={},torre=null;const pumpObjects={};
@@ -64,13 +64,22 @@ function add(parent,obj,x=0,y=0,z=0){obj.position.set(x,y,z);parent.add(obj);ret
 function marker(obj,text,kind,id){const el=document.createElement('button');el.className='label'+(kind==='part'?' part-label':'');el.textContent=text;el.title=kind==='part'?partName(id):text;el.setAttribute('aria-label',kind==='part'?'Seleccionar '+partName(id):'Acercarse a '+text);el.onclick=()=>kind==='part'?selectPart(id):selectPump(id);$('#labels').append(el);let leader=null;if(kind==='part'){leader=document.createElement('div');leader.className='part-leader';leader.hidden=true;$('#labels').append(leader);}markers.push({obj,el,kind,id,leader});}
 function clearGroup(group){group.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of(Array.isArray(o.material)?o.material:[o.material]))m.dispose();});group.clear();}
 function rebuildPlant(){
- clearGroup(plant);pickables.length=0;
+ clearGroup(plant);pickables.length=0;areaPickables.length=0;
  for(let i=markers.length-1;i>=0;i--)if(markers[i].kind!=='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}
  if(state.sector){
   const placed=state.pumps.length?state.pumps:plantPumps; // posiciones de la ficha si la bomba se movió
   plant.add(sueloSitio(THREE));
   const tq=ubicar(new THREE.Group(),AREA('tanques')),tr=ubicar(new THREE.Group(),AREA('torre'));
   areaGroups={tanques:tq,torre:tr};plant.add(tq,tr);
+  for(const area of AREAS.filter(a=>a.modelo)){
+   const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);
+   new GLTFLoader().loadAsync(area.modelo).then(glb=>{
+    if(g.parent!==plant)return;
+    glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.userData.areaId=area.id;areaPickables.push(o);}});
+    g.add(glb.scene);
+    if(state.view==='plant'&&state.area===area.id)flyArea(area.id);
+   }).catch(err=>console.warn('No se cargó '+area.nombre,err));
+  }
   tq.add(sector(THREE,placed.filter(p=>areaOf(p)==='tanques')));
   torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:()=>{performance.mark('torre-cargada');if(typeof applyArea==='function')applyArea();}});tr.add(torre.root);
   for(const k in pumpObjects)delete pumpObjects[k];
@@ -79,8 +88,11 @@ function rebuildPlant(){
   for(const corner of sectorCorners){const anchor=new THREE.Object3D();anchor.position.set(corner.x,1.1,corner.z);tq.add(anchor);etiqueta(anchor,corner.name,'corner-label','tanques');}
   for(const [k,x] of Object.entries(EJES_X)){const a=new THREE.Object3D();a.position.set(x,.4,-2.6);tr.add(a);etiqueta(a,k,'axis-label','torre');}
   for(const [k,z] of Object.entries(EJES_Z)){const a=new THREE.Object3D();a.position.set(-3,.4,z);tr.add(a);etiqueta(a,k,'axis-label','torre');}
-  for(const area of AREAS.filter(a=>a.id!=='planta')){const g=areaGroups[area.id],a=new THREE.Object3D();a.position.set(...(area.id==='torre'?[CENTRO.x,30,CENTRO.z]:[0,9,-3]));g.add(a);
-   const el=document.createElement('button');el.className='label area-label '+area.estado;el.innerHTML=`${esc(area.nombre)}<small>${area.estado==='nueva'?'NUEVA ÁREA':'YA MODELADA'}</small>`;el.onclick=()=>setArea(area.id);$('#labels').append(el);markers.push({obj:a,el,kind:'area',area:'planta'});}
+  for(const area of AREAS.filter(a=>a.id!=='planta')){const g=areaGroups[area.id],a=new THREE.Object3D();a.position.set(...(area.id==='torre'?[CENTRO.x,30,CENTRO.z]:area.modelo?[0,area.huella[2]+1,0]:[0,9,-3]));g.add(a);
+   const el=document.createElement('button');el.className='label area-label '+area.estado;
+   const nombres={tanques:'Tanques',torre:'Torre',area1:'1 · Oficina',area7:'7 · Bodega',area4:'4 · Baños',area5:'5 · Eléctrico',area6:'6 · Químicos'};
+   el.textContent=nombres[area.id]||area.corto;el.title=area.nombre;el.setAttribute('aria-label','Ver '+area.nombre);
+   el.onclick=()=>setArea(area.id);$('#labels').append(el);markers.push({obj:a,el,kind:'area',area:'planta'});}
   for(const p of PENDIENTES){const [x,z]=pxAMundo(p.px,p.py),a=new THREE.Object3D();a.position.set(x,1,z);plant.add(a);etiqueta(a,`Área ${p.n} · por modelar`,'pending-area','planta');}
   document.querySelector('.sidebar footer p').textContent=`${placed.filter(p=>areaOf(p)==='tanques').length} en el sector de tanques · ${placed.filter(p=>areaOf(p)==='torre').length} en la torre de destilación.`;
   applyArea();
@@ -134,8 +146,8 @@ function initScene(){
  let down=null;renderer.domElement.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);renderer.domElement.addEventListener('pointerup',e=>{
   if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
   const r=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
-  const hits=raycaster.intersectObjects(state.view==='plant'?pickables:(state.sector&&state.detail==='exterior'?[]:componentGroups),true);
-  const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant')selectPump(o.userData.tag);else if(o.userData.part!==undefined)selectPart(o.userData.part,o.userData.subcomponent||null);}
+  const hits=raycaster.intersectObjects(state.view==='plant'?[...pickables,...areaPickables]:(state.sector&&state.detail==='exterior'?[]:componentGroups),true);
+  const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant'){if(o.userData.areaId)setArea(o.userData.areaId);else if(o.userData.tag)selectPump(o.userData.tag);}else if(o.userData.part!==undefined)selectPart(o.userData.part,o.userData.subcomponent||null);}
  });
  renderer.setAnimationLoop(()=>{
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
@@ -149,7 +161,7 @@ function initScene(){
  }catch(e){$('#scene-error').hidden=false;$('#scene-error').textContent='No se pudo iniciar el visor 3D. Las fichas siguen disponibles. Detalle: '+e.message;}
 }
 function normalize(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
-function renderList(){const q=normalize($('#search').value),area=$('#area').value,tipo=$('#tipo').value,marca=$('#marca').value;const list=state.pumps.filter(p=>(!area||areaOf(p)===area)&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&normalize(`${p.tag} ${p.nombre} ${p.servicio} ${p.zona||''}`).includes(q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(p.nombre||p.servicio)} · ${esc(areaOf(p)==='torre'?'Torre':'Tanques')}</small></button>`).join('')||'<p class="muted">No hay coincidencias.</p>';$('#count').textContent=state.pumps.length;$('#pump-list').querySelectorAll('button').forEach(b=>b.onclick=()=>selectPump(b.dataset.tag));}
+function renderList(){const q=normalize($('#search').value),area=$('#area').value,tipo=$('#tipo').value,marca=$('#marca').value;const list=state.pumps.filter(p=>(!area||areaOf(p)===area)&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&normalize(`${p.tag} ${p.nombre} ${p.servicio} ${p.zona||''}`).includes(q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(p.nombre||p.servicio)} · ${esc(areaOf(p)==='torre'?'Torre':'Tanques')}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;$('#count').textContent=state.pumps.length;$('#pump-list').querySelectorAll('button').forEach(b=>b.onclick=()=>selectPump(b.dataset.tag));}
 async function selectPump(tag){
  if(state.sector)return selectPhotoPump(tag);
  const ticket=++state.loading;
@@ -685,11 +697,16 @@ function cajaTorre(seccion){
  for(const x of [LIMITES.min[0],LIMITES.max[0]])for(const y of [y0,y1])for(const z of [LIMITES.min[2],LIMITES.max[2]])b.expandByPoint(g.localToWorld(new THREE.Vector3(x,y,z)));
  return b;
 }
+function cajaEdificio(area){
+ const [w,d,h]=area.huella,r=Math.hypot(w,d)/2;
+ return new THREE.Box3(new THREE.Vector3(area.pos[0]-r,0,area.pos[1]-r),new THREE.Vector3(area.pos[0]+r,h,area.pos[1]+r));
+}
 function flyArea(id,vista){
  if(!camera)return;
  const dirLocal=(g,from,to)=>g.localToWorld(new THREE.Vector3(...from)).sub(g.localToWorld(new THREE.Vector3(...to)));
  if(id==='planta'||!areaGroups[id]){
   const b=cajaTorre(null).union(new THREE.Box3().setFromObject(areaGroups.tanques||plant));
+  for(const area of AREAS.filter(a=>a.modelo))b.union(cajaEdificio(area));
   ajustarSol(b);const [pos,obj]=encuadrar(b,vista==='superior'?new THREE.Vector3(0,1,.02):new THREE.Vector3(0,85,72),1.12);fly(pos,obj,900);return;
  }
  const g=areaGroups[id],a=AREA(id);g.updateMatrixWorld(true);
@@ -699,7 +716,7 @@ function flyArea(id,vista){
   const v=VISTAS[vista||'iso'],[pos,obj]=encuadrar(cajaTorre(state.seccion),dirLocal(g,v.pos,[CENTRO.x,CENTRO.y,CENTRO.z]),panel?1.15:1.08,panel?.14:0);
   fly(pos,obj,900);return;
  }
- const caja=new THREE.Box3().setFromObject(g);ajustarSol(caja);
+ const caja=a.modelo?cajaEdificio(a):new THREE.Box3().setFromObject(g);ajustarSol(caja);
  const [pos,obj]=encuadrar(caja,vista==='superior'?new THREE.Vector3(0,1,.02):dirLocal(g,a.camara.pos,a.camara.obj));
  fly(pos,obj,900);
 }
@@ -724,8 +741,8 @@ function applyArea(){
  if(state.view==='plant'){
   $('#scene-title').textContent=a?.nombre||'Planta general';
   $('#breadcrumb').textContent=id==='planta'?'PLANTA / VISTA GENERAL':'PLANTA / '+a.nombre.toUpperCase()+(s?' / '+s.nombre.toUpperCase():'');
-  $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
-  $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':'Seleccioná una bomba para acercarte';
+  $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':a?.modelo?`${a.nombre.toUpperCase()} · MODELO FBX · ASIGNACIÓN Y POSICIÓN APROXIMADAS`:'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
+  $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
  }
 }
 (function areaUI(){

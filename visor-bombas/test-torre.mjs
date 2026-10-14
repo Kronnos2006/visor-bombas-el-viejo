@@ -4,7 +4,7 @@ import * as THREE from './public/vendor/three.module.js';
 import {torrePumps,torreSinTag} from './public/equipos-torre.js';
 import {photoPumps,plantPumps} from './public/sector-fotos.js';
 import {buildTorre,aplicarSeccion,SECCIONES,EJES_X,EJES_Z,seccionDe,rangoSeccion,dentroDeSeccion} from './public/torre-model.js';
-import {AREAS,pxAMundo} from './public/planta-general.js';
+import {AREAS,PENDIENTES,pxAMundo} from './public/planta-general.js';
 import {simParams,createPumpModel} from './public/pump-sim.js';
 import {readPump,handler} from './server.mjs';
 import {Readable} from 'node:stream';
@@ -49,6 +49,33 @@ test('áreas sobre el plano de sitio: torre en el área 2, junto al sector de ta
  const [x2,z2]=pxAMundo(150,310);
  assert.ok(Math.hypot(torre.pos[0]-x2,torre.pos[1]-z2)<25);
  const d=Math.hypot(torre.pos[0]-tanques.pos[0],torre.pos[1]-tanques.pos[1]);assert.ok(d>35&&d<60,"áreas separadas pero cercanas: "+d);
+});
+test('los cinco edificios FBX siguen el orden corregido y la bodega mira a la oficina',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const expected=[['area1','oficina-administrativa'],['area7','bodega-pequena'],['area4','banos'],['area5','cuarto-electrico'],['area6','bodega-quimicos']];
+ assert.deepEqual(PENDIENTES,[]);
+ for(const [id,name] of expected){
+  const area=AREAS.find(a=>a.id===id);assert.ok(area,`${id} en menú`);
+  assert.match(area.modelo,new RegExp(`${name}\\.glb$`));
+  assert.equal(area.pos.length,2);
+  const file=new URL(`./public${area.modelo}`,import.meta.url);
+  const header=await readFile(file);assert.equal(header.toString('ascii',0,4),'glTF');
+  assert.ok(header.length>10000,`${name} tiene geometría`);
+ }
+ const fila=expected.slice(1).map(([id])=>AREAS.find(a=>a.id===id));
+ const ejeX=a=>a.pos[0]*Math.cos(fila[1].giro)-a.pos[1]*Math.sin(fila[1].giro);
+ for(let i=1;i<fila.length;i++){
+  const distancia=ejeX(fila[i-1])-ejeX(fila[i]);
+  assert.ok(distancia>(fila[i-1].huella[0]+fila[i].huella[0])/2,`sin solape entre ${fila[i-1].id} y ${fila[i].id}`);
+ }
+ const [bodega]=fila,oficina=AREAS.find(a=>a.id==='area1');
+ const haciaOficina=[oficina.pos[0]-bodega.pos[0],oficina.pos[1]-bodega.pos[1]];
+ const frente=[Math.cos(bodega.giro),-Math.sin(bodega.giro)];
+ assert.ok((frente[0]*haciaOficina[0]+frente[1]*haciaOficina[1])/Math.hypot(...haciaOficina)>.98);
+ const torre=AREAS.find(a=>a.id==='torre'),quimicos=fila.at(-1);
+ const delta=[quimicos.pos[0]-torre.pos[0],quimicos.pos[1]-torre.pos[1]];
+ const profundidad=delta[0]*Math.sin(torre.giro)+delta[1]*Math.cos(torre.giro);
+ assert.ok(-1.3-(profundidad+quimicos.huella[1]/2)>3,'torre separada de químicos');
 });
 test('el simulador funciona con las bombas de la torre',()=>{
  for(const p of torrePumps){const P=simParams(p);assert.ok(P,p.tag);const M=createPumpModel(P);let s=M.initialState(),i={...M.defaults(),running:true};for(let k=0;k<3000;k++)s=M.step(s,i,.1);assert.ok(Number.isFinite(M.derive(s,i).q));}
