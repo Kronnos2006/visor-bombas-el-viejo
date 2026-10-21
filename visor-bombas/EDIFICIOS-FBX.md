@@ -22,5 +22,8 @@ Fuente: `PLANTA_COMPLETA_ABRIR_EN_REVIT_2026.rvt` (copia de `Tanque de Agua.rvt`
 - Huella aproximada 87,5 × 73,9 m; altura 28,1 m.
 - Revit no exportó materiales: los colores se asignan por el nombre de cada elemento y son ilustrativos.
 - Aparece en el menú como **Modelo integrado** y se ve solo (`aparte: true`): no se dibuja en la vista general, porque repite la torre y los edificios y su ubicación no está ligada al plano de sitio.
-- Las bombas con ficha siguen en Tanques y Torre; las bombas del modelo integrado son representativas.
+- **Sectores:** barra «Aislar sector» (Torre de destilación, Fermentación, Semilleros, Almacenamiento de alcohol, Cuatro tanques, Agua y enfriamiento, Calderas y nave, Edificios). Los pisos quedan como referencia y la cubierta común se oculta al aislar. La asignación de cada parte del FBX a un sector está en `public/planta-integrada.js`.
+- **Bombas de la torre con ficha (B2–B21):** se ubican sobre el modelo con la misma posición que en la vista de la torre. La alineación torre → modelo integrado se calcula por mínimos cuadrados con las piezas DUSA de igual nombre en ambos modelos (110 piezas, error medio 0,66 m; giro y traslado en `planta-integrada.json`). Las bombas DUSA del FBX se omiten para no duplicarlas. Tocar una abre su ficha sin salir del modelo integrado.
+- **Bombas sin ficha:** las 18 bombas modeladas en el FBX que no tienen TAG llevan la etiqueta «Sin ficha» con su nombre.
+- Las 12 bombas del sector de tanques todavía no se ubican sobre el modelo integrado: falta confirmar a qué parte del modelo corresponde ese sector.
 - Medidas provisionales, según el propio respaldo: no es levantamiento exacto.

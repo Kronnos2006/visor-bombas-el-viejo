@@ -87,6 +87,18 @@ test('modelo integrado de Revit: área aparte, GLB comprimido y fuera del plano 
  const app=await readFile(new URL('./public/app.js',import.meta.url),'utf8');
  assert.match(app,/new GLTFLoader\(\)\.setMeshoptDecoder\(MeshoptDecoder\)\.loadAsync\(area\.modelo\)/);
  assert.match(app,/id==='planta'\?!AREA\(k\)\?\.aparte:k===id/,'oculto en la vista general');
+ const info=JSON.parse(await readFile(new URL('./public/modelos/planta-integrada.json',import.meta.url),'utf8'));
+ const {SECTORES_INT,SIEMPRE,CUBIERTA,torreAIntegrado,visibleCon,cajaSector}=await import('./public/planta-integrada.js');
+ // Cada sector del FBX pertenece a un sector del menú (o es piso/cubierta).
+ for(const k of Object.keys(info.sectores))assert.ok(SIEMPRE.includes(k)||k===CUBIERTA||SECTORES_INT.some(s=>s.sectores.includes(k)),'sector sin asignar: '+k);
+ for(const s of SECTORES_INT)assert.ok(cajaSector(info,s.id),'caja de '+s.id);
+ assert.equal(visibleCon(CUBIERTA,'torre'),false);assert.equal(visibleCon('Suelo VOCATUS','torre'),true);assert.equal(visibleCon('REF Fermentacion','torre'),false);
+ // Alineación de la torre: muchas piezas en común y error chico; las bombas caen dentro de la losa DUSA.
+ assert.ok(info.torre.piezas>50&&info.torre.errorMedio<1,JSON.stringify(info.torre));
+ const losa=info.sectores['DUSA'];
+ for(const p of torrePumps){const [x,,z]=torreAIntegrado(info.torre,p.x,.3,p.z);
+  assert.ok(x>losa.min[0]-1&&x<losa.max[0]+1&&z>losa.min[2]-1&&z<losa.max[2]+1,`${p.tag} dentro de la torre: ${x.toFixed(1)},${z.toFixed(1)}`);}
+ assert.ok(info.bombas.length>=10,'bombas sin ficha señaladas');
 });
 test('el simulador funciona con las bombas de la torre',()=>{
  for(const p of torrePumps){const P=simParams(p);assert.ok(P,p.tag);const M=createPumpModel(P);let s=M.initialState(),i={...M.defaults(),running:true};for(let k=0;k<3000;k++)s=M.step(s,i,.1);assert.ok(Number.isFinite(M.derive(s,i).q));}
