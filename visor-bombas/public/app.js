@@ -68,12 +68,12 @@ function rebuildPlant(){
  for(let i=markers.length-1;i>=0;i--)if(markers[i].kind!=='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}
  if(state.sector){
   const placed=state.pumps.length?state.pumps:plantPumps; // posiciones de la ficha si la bomba se movió
-  plant.add(sueloSitio(THREE));
+  const suelo=sueloSitio(THREE);suelo.userData.sitio=true;plant.add(suelo);
   const tq=ubicar(new THREE.Group(),AREA('tanques')),tr=ubicar(new THREE.Group(),AREA('torre'));
   areaGroups={tanques:tq,torre:tr};plant.add(tq,tr);
   for(const area of AREAS.filter(a=>a.modelo)){
    const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);
-   new GLTFLoader().loadAsync(area.modelo).then(glb=>{
+   new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo).then(glb=>{
     if(g.parent!==plant)return;
     glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.userData.areaId=area.id;areaPickables.push(o);}});
     g.add(glb.scene);
@@ -88,7 +88,7 @@ function rebuildPlant(){
   for(const corner of sectorCorners){const anchor=new THREE.Object3D();anchor.position.set(corner.x,1.1,corner.z);tq.add(anchor);etiqueta(anchor,corner.name,'corner-label','tanques');}
   for(const [k,x] of Object.entries(EJES_X)){const a=new THREE.Object3D();a.position.set(x,.4,-2.6);tr.add(a);etiqueta(a,k,'axis-label','torre');}
   for(const [k,z] of Object.entries(EJES_Z)){const a=new THREE.Object3D();a.position.set(-3,.4,z);tr.add(a);etiqueta(a,k,'axis-label','torre');}
-  for(const area of AREAS.filter(a=>a.id!=='planta')){const g=areaGroups[area.id],a=new THREE.Object3D();a.position.set(...(area.id==='torre'?[CENTRO.x,30,CENTRO.z]:area.modelo?[0,area.huella[2]+1,0]:[0,9,-3]));g.add(a);
+  for(const area of AREAS.filter(a=>a.id!=='planta'&&!a.aparte)){const g=areaGroups[area.id],a=new THREE.Object3D();a.position.set(...(area.id==='torre'?[CENTRO.x,30,CENTRO.z]:area.modelo?[0,area.huella[2]+1,0]:[0,9,-3]));g.add(a);
    const el=document.createElement('button');el.className='label area-label '+area.estado;
    const nombres={tanques:'Tanques',torre:'Torre',area1:'1 · Oficina',area7:'7 · Bodega',area4:'4 · Baños',area5:'5 · Eléctrico',area6:'6 · Químicos'};
    el.textContent=nombres[area.id]||area.corto;el.title=area.nombre;el.setAttribute('aria-label','Ver '+area.nombre);
@@ -699,6 +699,8 @@ function cajaTorre(seccion){
 }
 function cajaEdificio(area){
  const [w,d,h]=area.huella,r=Math.hypot(w,d)/2;
+ // El modelo integrado no gira (giro 0): su caja es la huella exacta y el encuadre queda más cerca.
+ if(area.aparte)return new THREE.Box3(new THREE.Vector3(area.pos[0]-w/2,0,area.pos[1]-d/2),new THREE.Vector3(area.pos[0]+w/2,h,area.pos[1]+d/2));
  return new THREE.Box3(new THREE.Vector3(area.pos[0]-r,0,area.pos[1]-r),new THREE.Vector3(area.pos[0]+r,h,area.pos[1]+r));
 }
 function flyArea(id,vista){
@@ -706,7 +708,7 @@ function flyArea(id,vista){
  const dirLocal=(g,from,to)=>g.localToWorld(new THREE.Vector3(...from)).sub(g.localToWorld(new THREE.Vector3(...to)));
  if(id==='planta'||!areaGroups[id]){
   const b=cajaTorre(null).union(new THREE.Box3().setFromObject(areaGroups.tanques||plant));
-  for(const area of AREAS.filter(a=>a.modelo))b.union(cajaEdificio(area));
+  for(const area of AREAS.filter(a=>a.modelo&&!a.aparte))b.union(cajaEdificio(area));
   ajustarSol(b);const [pos,obj]=encuadrar(b,vista==='superior'?new THREE.Vector3(0,1,.02):new THREE.Vector3(0,85,72),1.12);fly(pos,obj,900);return;
  }
  const g=areaGroups[id],a=AREA(id);g.updateMatrixWorld(true);
@@ -728,7 +730,8 @@ function setArea(id,volar=true){
 }
 function applyArea(){
  const id=state.area,a=AREA(id);
- for(const [k,g] of Object.entries(areaGroups))g.visible=id==='planta'||k===id;
+ for(const [k,g] of Object.entries(areaGroups))g.visible=id==='planta'?!AREA(k)?.aparte:k===id;
+ for(const o of plant.children)if(o.userData.sitio)o.visible=!a?.aparte;
  if(torre){aplicarSeccion(torre.objetos,id==='torre'?state.seccion:null,{existente:id==='torre'&&state.existente,techo:state.techo});
   for(const g of Object.values(pumpObjects))if(g.parent===areaGroups.torre)g.visible=!state.seccion||state.seccion==='n1';}
   renderRail();
@@ -741,8 +744,8 @@ function applyArea(){
  if(state.view==='plant'){
   $('#scene-title').textContent=a?.nombre||'Planta general';
   $('#breadcrumb').textContent=id==='planta'?'PLANTA / VISTA GENERAL':'PLANTA / '+a.nombre.toUpperCase()+(s?' / '+s.nombre.toUpperCase():'');
-  $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':a?.modelo?`${a.nombre.toUpperCase()} · MODELO FBX · ASIGNACIÓN Y POSICIÓN APROXIMADAS`:'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
-  $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
+  $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':a?.aparte?'MODELO INTEGRADO DE REVIT · MEDIDAS PROVISIONALES · COLORES ILUSTRATIVOS':a?.modelo?`${a.nombre.toUpperCase()} · MODELO FBX · ASIGNACIÓN Y POSICIÓN APROXIMADAS`:'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
+  $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.aparte?'Arrastrá para girar · Rueda para acercarte · Las bombas con ficha están en Tanques y Torre':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
  }
 }
 (function areaUI(){

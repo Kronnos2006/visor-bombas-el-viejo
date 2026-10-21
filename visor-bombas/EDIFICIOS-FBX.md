@@ -13,3 +13,14 @@ En la vista compartida por el usuario, el orden de izquierda a derecha es **bode
 | 6 | Bodega de químicos | 14,0 × 8,5 m | 130, 151 |
 
 El usuario confirmó el 14-oct-2026, mediante una captura, que la cara con cerramiento azul y escalones de la bodega pequeña debe mirar hacia la oficina administrativa. En el FBX esa cara corresponde al lado +X local; el visor gira el modelo 90° respecto del eje de la fila para orientarla hacia la oficina. Los números de área se mantienen como etiquetas del plano; la correspondencia final con los edificios debe verificarse con el CAD o en campo. No se agregaron bombas ni datos de equipos a estos edificios.
+
+## Modelo integrado de Revit (20-oct-2026)
+
+Fuente: `PLANTA_COMPLETA_ABRIR_EN_REVIT_2026.rvt` (copia de `Tanque de Agua.rvt`), vista **VOCATUS - Modelo general completo**, exportada a FBX con Revit 2027 el 20-oct-2026. Convertido con `tools/fbx-planta-a-glb.mjs` a `public/modelos/planta-integrada.glb` (pies → metros, centrado en su huella y apoyado en cota cero).
+
+- 887 elementos del FBX; 4,19 M triángulos simplificados a unos 0,85 M; archivo de 5,5 MB con compresión meshopt.
+- Huella aproximada 87,5 × 73,9 m; altura 28,1 m.
+- Revit no exportó materiales: los colores se asignan por el nombre de cada elemento y son ilustrativos.
+- Aparece en el menú como **Modelo integrado** y se ve solo (`aparte: true`): no se dibuja en la vista general, porque repite la torre y los edificios y su ubicación no está ligada al plano de sitio.
+- Las bombas con ficha siguen en Tanques y Torre; las bombas del modelo integrado son representativas.
+- Medidas provisionales, según el propio respaldo: no es levantamiento exacto.

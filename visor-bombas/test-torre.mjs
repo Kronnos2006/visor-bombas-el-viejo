@@ -77,6 +77,17 @@ test('los cinco edificios FBX siguen el orden corregido y la bodega mira a la of
  const profundidad=delta[0]*Math.sin(torre.giro)+delta[1]*Math.cos(torre.giro);
  assert.ok(-1.3-(profundidad+quimicos.huella[1]/2)>3,'torre separada de químicos');
 });
+test('modelo integrado de Revit: área aparte, GLB comprimido y fuera del plano de sitio',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const a=AREAS.find(x=>x.id==='integrado');assert.ok(a,'en el menú');assert.equal(a.aparte,true);
+ assert.match(a.modelo,/planta-integrada\.glb$/);
+ const glb=await readFile(new URL(`./public${a.modelo}`,import.meta.url));
+ assert.equal(glb.toString('ascii',0,4),'glTF');assert.ok(glb.length>1e6&&glb.length<12e6,'peso razonable: '+glb.length);
+ assert.ok(glb.includes('EXT_meshopt_compression'),'usa meshopt (el visor lo decodifica)');
+ const app=await readFile(new URL('./public/app.js',import.meta.url),'utf8');
+ assert.match(app,/new GLTFLoader\(\)\.setMeshoptDecoder\(MeshoptDecoder\)\.loadAsync\(area\.modelo\)/);
+ assert.match(app,/id==='planta'\?!AREA\(k\)\?\.aparte:k===id/,'oculto en la vista general');
+});
 test('el simulador funciona con las bombas de la torre',()=>{
  for(const p of torrePumps){const P=simParams(p);assert.ok(P,p.tag);const M=createPumpModel(P);let s=M.initialState(),i={...M.defaults(),running:true};for(let k=0;k<3000;k++)s=M.step(s,i,.1);assert.ok(Number.isFinite(M.derive(s,i).q));}
 });

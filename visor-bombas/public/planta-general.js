@@ -35,7 +35,12 @@ export const AREAS=[
   camara:{pos:[12,12,14],obj:[0,2,0]}},
  {id:'area6',numero:6,nombre:'Área 6 · Bodega de químicos',corto:'Área 6 · Bodega químicos',estado:'nueva',
   pos:separarFila(pxAMundo(130,151),-4),giro:GIRO,modelo:'/modelos/bodega-quimicos.glb',huella:[14,8.5,4.1],
-  camara:{pos:[18,14,18],obj:[0,2,0]}}
+  camara:{pos:[18,14,18],obj:[0,2,0]}},
+ // Modelo integrado de Revit (vista «VOCATUS - Modelo general completo», 20-oct-2026): toda la planta en un solo FBX.
+ // Se ve solo, aparte del plano de sitio: repite edificios y torre, y su ubicación no está ligada al plano.
+ {id:'integrado',nombre:'Modelo integrado · Revit 20-oct',corto:'Modelo integrado',estado:'nueva',aparte:true,
+  pos:[0,0],giro:0,modelo:'/modelos/planta-integrada.glb',huella:[87.5,73.9,28.1],
+  camara:{pos:[70,55,70],obj:[0,4,0]}}
 ];
 // Edificios numerados del plano de sitio que aún no se modelan.
 export const PENDIENTES=[];
