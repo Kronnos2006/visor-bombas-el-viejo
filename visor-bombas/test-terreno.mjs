@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {grid,contours,csv,obj,dxf,revit} from './public/terrain-core.js';
+test('malla georreferenciada en metros, centro y limites',()=>{const g=grid(10,-85,900,3);assert.equal(g.length,9);assert.equal(g[4].lat,10);assert.equal(g[4].lon,-85);assert.equal(g[0].x,-450);assert.equal(g[8].y,450);assert.ok(g[0].lat<10);assert.throws(()=>grid(90,0,900,3));assert.throws(()=>grid(0,0,0,3));});
+test('curvas de plano inclinado mantienen la cota y posicion',()=>{const g=grid(10,-85,200,3).map(p=>({...p,z:p.x+100}));const lines=contours(g,3,50);assert.ok(lines.length>0);for(const line of lines)for(const p of line){assert.equal(p.z%50,0);assert.ok(Math.abs(p.x+100-p.z)<1e-9);}assert.throws(()=>contours(g,3,0));assert.deepEqual(contours(g.map(p=>({...p,z:100})),3,5),[]);});
+test('exportaciones conservan metros, triangulos, cotas y conversion Revit',()=>{const g=grid(0,0,200,3).map(p=>({...p,z:123}));assert.equal(obj(g,3).split('\n').filter(s=>s.startsWith('f ')).length,8);assert.ok(csv(g).includes('-100,-100,123'));assert.ok(dxf([[g[0],g[1]]]).includes('30\n123'));const script=revit(g,{lat:0,lon:0});assert.ok(script.includes('Toposolid.Create'));assert.ok(script.includes('UnitUtils.ConvertToInternalUnits'));assert.ok(script.includes('transaction.RollBack'));});
