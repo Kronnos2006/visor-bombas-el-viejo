@@ -1,0 +1,175 @@
+/* Tema Vocatus (vista simple): ámbar y caña, vidrio, animaciones suaves, modo claro/oscuro.
+   Solo aplica con body.facil; la vista completa ("Más opciones") queda con el estilo original. */
+
+/* 49 · Tipografía: elegante para la marca, técnica para los datos */
+body.facil{
+  --marca:'Fraunces',Georgia,serif;
+  --texto:'Plus Jakarta Sans',Inter,'Segoe UI',sans-serif;
+  --datos:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  font-family:var(--texto);
+}
+
+/* 41 · Paleta ámbar + caña, fondo oscuro cálido */
+body.facil{
+  --fondo:#120f0b;--fondo-2:#1a1610;--superficie:rgba(38,31,22,.62);--superficie-solida:#221c14;
+  --borde:rgba(242,184,75,.18);--borde-fuerte:rgba(242,184,75,.45);
+  --tinta:#f4ead8;--tinta-2:#cdbfa6;--muted:#a3957c;--line:rgba(242,184,75,.14);
+  --accent:#f2b84b;--cana:#a9d46f;--orange:#f08a4b;
+  color:var(--tinta);background:transparent;
+}
+html:has(body.facil){background:
+    radial-gradient(1200px 600px at 85% -10%,rgba(242,184,75,.10),transparent 60%),
+    radial-gradient(900px 500px at -10% 110%,rgba(169,212,111,.08),transparent 60%),
+    #120f0b;background-attachment:fixed}
+
+/* 46 · Modo claro */
+body.facil.claro{
+  --fondo:#f7f1e6;--fondo-2:#efe6d6;--superficie:rgba(255,252,246,.72);--superficie-solida:#fffaf1;
+  --borde:rgba(150,104,24,.20);--borde-fuerte:rgba(150,104,24,.5);
+  --tinta:#2a2116;--tinta-2:#5a4a33;--muted:#7d6c52;--line:rgba(150,104,24,.16);
+  --accent:#b9770e;--cana:#4f7d1d;--orange:#c4581b;
+}
+html:has(body.facil.claro){background:radial-gradient(1200px 600px at 85% -10%,rgba(242,184,75,.18),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(120,170,60,.12),transparent 60%),#f7f1e6;background-attachment:fixed}
+
+/* Superficies de vidrio (42) */
+body.facil header,body.facil .sidebar,body.facil main,body.facil .inspector,body.facil #tabs{background:transparent}
+body.facil header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--fondo) 70%,transparent);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--line)}
+body.facil .sidebar,body.facil .inspector{border-color:var(--line)}
+body.facil .inspector{background:color-mix(in srgb,var(--fondo-2) 45%,transparent)}
+body.facil #viewport{border-radius:18px;margin:0 18px;border:1px solid var(--line);background:radial-gradient(ellipse at 50% 35%,#2a2218,#15110c 75%)}
+body.facil.claro #viewport{background:radial-gradient(ellipse at 50% 35%,#ffffff,#e9dfcc 80%)}
+body.facil .controls{border-color:var(--line)}
+body.facil button,body.facil .main-nav a,body.facil select,body.facil .search,body.facil details.filtros>summary,
+body.facil .record,body.facil #panel .notice,body.facil .anatomy-tools,body.facil .label,body.facil #parts-rail{
+  background:var(--superficie);border-color:var(--borde);color:var(--tinta);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+body.facil select{color:var(--tinta-2)}
+body.facil .search input,body.facil .search input::placeholder{color:var(--tinta-2)}
+body.facil .search input{color:var(--tinta)}
+body.facil button.primary{background:linear-gradient(135deg,#f6c766,#e9a23b);color:#2a1b05;border-color:transparent}
+body.facil.claro button.primary{color:#fff;background:linear-gradient(135deg,#c98818,#a5660a)}
+body.facil .pump-row{background:transparent;border-color:transparent;border-bottom-color:var(--line)}
+body.facil .pump-row small,body.facil .pump-row i{color:var(--muted)}
+body.facil .pump-row.active,body.facil .area-menu button[aria-pressed=true],body.facil .view-buttons button.active,body.facil #tabs button.active{
+  background:linear-gradient(135deg,rgba(242,184,75,.22),rgba(169,212,111,.12));border-color:var(--borde-fuerte);color:var(--accent)}
+body.facil #tabs{border-color:var(--line)}
+body.facil #tabs button{background:transparent;color:var(--muted);backdrop-filter:none}
+body.facil #tabs button.active{background:transparent;border-bottom-color:var(--accent)}
+body.facil .status{background:rgba(169,212,111,.14);border-color:rgba(169,212,111,.4);color:var(--cana)}
+body.facil .eyebrow,body.facil .field dt,body.facil .inspector-heading p:not(.eyebrow),body.facil .section-title span,body.facil #scene-help{color:var(--muted)}
+body.facil .field{border-color:var(--line)}
+body.facil .field dd{color:var(--tinta)}
+body.facil .sidebar footer{border-color:var(--line);color:var(--muted)}
+body.facil .sidebar footer strong{color:var(--tinta)}
+body.facil a{color:var(--accent)}
+body.facil .brand{color:var(--accent);font-family:var(--marca);font-weight:700}
+body.facil .brand span{font-family:var(--texto);color:var(--tinta)}
+body.facil .brand small{color:var(--muted)}
+body.facil h1,body.facil h2,body.facil h3{font-family:var(--marca);font-weight:600;letter-spacing:-.3px;color:var(--tinta)}
+/* Datos en tipografía técnica */
+body.facil .pump-row strong,body.facil #selected-tag,body.facil .field dd,body.facil .sidebar footer strong,body.facil .explosion output,body.facil .label{font-family:var(--datos);letter-spacing:0}
+body.facil .pump-row strong{font-weight:600}
+body.facil .dialog,body.facil dialog{background:var(--superficie-solida);color:var(--tinta);border:1px solid var(--borde);border-radius:18px}
+body.facil dialog input,body.facil dialog textarea{background:var(--fondo-2);color:var(--tinta);border:1px solid var(--borde)}
+
+/* Etiquetas del modelo 3D legibles en ambos modos */
+body.facil .label{background:color-mix(in srgb,var(--superficie-solida) 88%,transparent)}
+
+/* Cajas internas del panel que traen color fijo */
+body.facil.claro #panel [class*=resumen],body.facil.claro #panel section,body.facil.claro #panel .card{background:var(--superficie);color:var(--tinta);border-color:var(--borde)}
+body.facil.claro #panel *{color:inherit}
+body.facil.claro #panel .missing,body.facil.claro #panel small{color:var(--muted)!important}
+
+/* Menú inferior del celular con vidrio */
+@media(max-width:900px){
+  body.facil .main-nav{background:color-mix(in srgb,var(--fondo) 78%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line)}
+  body.facil .main-nav a{background:none;backdrop-filter:none}
+  body.facil #viewport{margin:0 10px}
+}
+
+/* 48 · Microanimaciones */
+body.facil button,body.facil .main-nav a,body.facil .pump-row,body.facil details.filtros>summary{transition:transform .18s cubic-bezier(.2,.8,.3,1.4),background-color .2s,border-color .2s,box-shadow .2s,color .2s}
+body.facil button:not(:disabled):hover,body.facil .main-nav a:hover,body.facil details.filtros>summary:hover{transform:translateY(-1px);box-shadow:0 6px 18px -8px rgba(242,184,75,.55);border-color:var(--borde-fuerte);color:var(--accent)}
+body.facil button:not(:disabled):active,body.facil .main-nav a:active,body.facil .pump-row:active{transform:scale(.96)}
+body.facil .pump-row:hover{background:rgba(242,184,75,.06)}
+.toque{position:absolute;border-radius:50%;pointer-events:none;background:rgba(242,184,75,.35);transform:scale(0);animation:toque .5s ease-out forwards}
+@keyframes toque{to{transform:scale(2.6);opacity:0}}
+
+/* 43 · Transiciones suaves */
+@view-transition{navigation:auto}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.35s}
+body.facil #panel>*{animation:entrar .35s ease both}
+body.facil #panel>*:nth-child(2){animation-delay:.04s}
+body.facil #panel>*:nth-child(3){animation-delay:.08s}
+@keyframes entrar{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* 44 · Burbujas de fondo (muy suaves; se apagan si el equipo pide menos movimiento) */
+#burbujas{position:fixed;inset:0;z-index:-1;pointer-events:none;display:none}
+body.facil #burbujas{display:block}
+
+/* 45 · Portada */
+#portada{position:fixed;inset:0;z-index:100;display:grid;place-items:center;text-align:center;color:#f4ead8;overflow:hidden;
+  background:radial-gradient(900px 500px at 50% 30%,rgba(242,184,75,.25),transparent 65%),linear-gradient(180deg,#1b150d,#0d0b08);
+  transition:opacity .6s ease,visibility .6s}
+#portada[hidden]{display:none}
+#portada.salir{opacity:0;visibility:hidden}
+#portada video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45}
+#portada .contenido{position:relative;padding:24px;max-width:640px}
+#portada .logo{font-family:'Fraunces',Georgia,serif;font-size:clamp(72px,16vw,140px);line-height:1;color:#f2b84b;text-shadow:0 10px 60px rgba(242,184,75,.45)}
+#portada h1{font-family:'Fraunces',Georgia,serif;font-size:clamp(32px,6vw,54px);margin:10px 0 6px;letter-spacing:4px;font-weight:600;color:#f4ead8}
+#portada p{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;color:#d8c9ad;margin:0 0 34px}
+#portada button{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;padding:18px 44px;border-radius:999px;border:0;color:#2a1b05;background:linear-gradient(135deg,#f6c766,#e9a23b);box-shadow:0 14px 40px -12px rgba(242,184,75,.8);cursor:pointer;animation:latido 2.4s ease-in-out infinite}
+#portada .cana{position:absolute;bottom:-20px;width:6px;border-radius:6px;background:linear-gradient(#a9d46f,#4f7d1d);transform-origin:bottom;opacity:.55;animation:mecer 5s ease-in-out infinite alternate}
+@keyframes latido{50%{transform:scale(1.05)}}
+@keyframes mecer{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+
+/* Botón claro/oscuro */
+#tema-toggle{white-space:nowrap}
+body:not(.facil) #tema-toggle{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  body.facil *,#portada *{animation:none!important;transition:none!important}
+  #burbujas{display:none!important}
+  ::view-transition-group(*){animation:none!important}
+}
+
+@media(max-width:580px){body.facil #tema-toggle span{display:none}}
+/* Piezas, sugerencias, respuestas y avisos con el tema */
+body.facil .part-button,body.facil .suggestions button,body.facil .ai-answer{background:var(--superficie);border-color:var(--borde);color:var(--tinta)}
+body.facil .part-button{font-size:15px;padding:13px 11px;border-radius:12px}
+body.facil .part-button span{color:var(--muted);font-size:13px}
+body.facil .part-button.active{border-color:var(--accent);color:var(--accent)}
+body.facil #panel .notice{background:rgba(242,184,75,.10);border-color:rgba(242,184,75,.35);color:var(--tinta)}
+body.facil #panel .notice.green{background:rgba(169,212,111,.12);border-color:rgba(169,212,111,.4)}
+body.facil .muted,body.facil .source,body.facil .answer-caption{color:var(--muted)}
+body.facil .muted{font-size:14px}
+body.facil textarea,body.facil input{background:var(--superficie);color:var(--tinta);border-color:var(--borde)}
+body.facil .suggestions button{font-size:15px;padding:13px}
+body.facil .ai-answer{font-size:15px}
+body.facil .panel-actions button,body.facil .panel-actions a{font-size:14px}
+body.facil #toast{font-size:16px;border-radius:14px;background:var(--superficie-solida);color:var(--tinta);border-color:var(--borde-fuerte)}
+body.facil .block{border-color:var(--line)}
+/* Resumen de la bomba: más grande y con el tema */
+body.facil #pump-resumen .rs-card{background:var(--superficie);border-color:var(--borde);border-radius:14px;padding:12px 14px}
+body.facil #pump-resumen .rs-row{font-size:15px;line-height:1.45;padding:4px 4px}
+body.facil #pump-resumen .rs-row:nth-child(odd){background:rgba(242,184,75,.04)}
+body.facil #pump-resumen .rs-pend{color:var(--muted)}
+body.facil #pump-resumen .rs-link:hover{background:rgba(242,184,75,.10)}
+body.facil #pump-resumen .rs-off{font-size:12px;padding:2px 8px}
+body.facil #pump-resumen .rs-src{font-size:13px;color:var(--muted)}
+body.facil #pump-resumen .rs-temperature{border-color:var(--line)}
+body.facil #pump-resumen .rs-edit{font-size:14px;padding:9px 12px;border-radius:10px;border-color:var(--borde-fuerte)}
+body.facil #pump-resumen .rs-temp-form label{font-size:14px;color:var(--tinta-2)}
+body.facil #pump-resumen .rs-temp-form input{background:var(--fondo-2);border-color:var(--borde);color:var(--tinta);padding:10px;border-radius:8px}
+body.facil #pump-resumen .rs-temp-error{font-size:14px}
+body.facil #panel [class*=rs-] h3,body.facil #panel .rs-card>strong,body.facil #panel .rs-card>p:first-child{font-size:13px}
+body.facil #pump-resumen h4{font-size:13px;color:var(--accent)}
+body.facil #pump-resumen dt{color:var(--tinta-2)}
+body.facil #pump-resumen dd{color:var(--tinta)}
+body.facil #pump-resumen dd.rs-pend{color:var(--muted)}
+body.facil #pump-links a,body.facil #pump-links button{font-size:14px;padding:10px 13px;border-radius:10px;background:var(--superficie);border:1px solid var(--borde);color:var(--tinta);text-decoration:none}
+/* En el celular el encabezado no usa vidrio: así el menú inferior queda fijo abajo */
+@media(max-width:900px){body.facil header{position:static;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--fondo)}}
+body.facil #tabs{background:color-mix(in srgb,var(--fondo) 94%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+@media(max-width:900px){body.facil .area-menu{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:10px}body.facil .area-menu button{flex:0 0 auto}}
