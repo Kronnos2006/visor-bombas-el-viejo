@@ -1,0 +1,20 @@
+import {SECTORES_INT, sectorDe} from './planta-integrada.js';
+import {htmlFotos, fotosActualizadas, guardarFoto} from './fotos-bomba.js';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const CAMPOS_PENDIENTES=[['tag','TAG de la máquina'],['nombre','Nombre de la máquina'],['marca','Marca'],['modelo','Modelo'],['serie','Número de serie'],['servicio','Servicio / fluido'],['potencia','Potencia (kW)'],['rpm','Velocidad (rpm)'],['size','Tamaño'],['caudal','Caudal (GPM)'],['altura','Altura (m)'],['impulsor','Impulsor (mm)'],['temperatura','Temperatura de trabajo'],['motor','Motor'],['acople','Elemento de acople'],['rodamiento_delantero','Rodamiento delantero'],['rodamiento_trasero','Rodamiento trasero'],['sello','Sello mecánico'],['empaque','Empaque'],['orings','O-rings'],['observaciones','Observaciones']];
+export function clavePendiente(s){return 'integrado:'+s.sector+':'+s.nombre;}
+export async function abrirFichaPendiente(panel,s){
+ const key=clavePendiente(s),sector=SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector;
+ let datos={};try{datos=JSON.parse(localStorage.getItem(key))||{};}catch{}
+ const rows=items=>'<dl class="fields">'+items.map(([label,id])=>`<div class="field"><dt>${esc(label)}</dt><dd>${esc(datos[id]||'')}</dd></div>`).join('')+'</dl>';
+ const resumen=`<div class="block"><h3>Resumen de la bomba</h3>${rows([['Servicio','servicio'],['Ubicación','nombre'],['Tamaño','size'],['Caudal (GPM)','caudal'],['Altura (m)','altura'],['Velocidad (rpm)','rpm'],['Impulsor (mm)','impulsor'],['Temperatura de trabajo','temperatura'],['Motor','motor']])}</div><div class="block"><h3>Componentes críticos</h3>${rows([['Sello mecánico','sello'],['Empaque','empaque'],['O-rings','orings'],['Elemento de acople','acople'],['Rodamiento delantero','rodamiento_delantero'],['Rodamiento trasero','rodamiento_trasero']])}</div>`;
+ panel.innerHTML=`<p class="eyebrow">${esc(sector)} · IDENTIFICACIÓN PENDIENTE</p><h2>${esc(s.nombre)}</h2><p class="notice">Bomba individual identificada por su geometría en el modelo 3D. Confirmá el TAG y los datos técnicos en campo. Los campos pendientes permanecen vacíos.</p>${resumen}<form id="maquina-pendiente"><h3>Ingresar datos de máquina</h3><div class="fields">${CAMPOS_PENDIENTES.map(([id,label])=>`<label class="field">${esc(label)}<input name="${id}" maxlength="500" value="${esc(datos[id]||'')}" style="width:100%;box-sizing:border-box"></label>`).join('')}</div><button class="primary wide" type="submit">Guardar datos en este navegador</button><p role="status" id="maquina-estado"></p></form><div id="imagenes-pendientes"></div><p class="muted">Datos y fotos de esta referencia se guardan solo en este navegador. Todavía no se vinculan a una ficha de Obsidian.</p>`;
+ panel.querySelector('form').onsubmit=e=>{e.preventDefault();try{const data=Object.fromEntries(new FormData(e.currentTarget));localStorage.setItem(key,JSON.stringify(data));abrirFichaPendiente(panel,s).then(()=>{if(panel.querySelector('#maquina-estado'))panel.querySelector('#maquina-estado').textContent='Datos guardados en este navegador.';});}catch{panel.querySelector('#maquina-estado').textContent='No se pudo guardar. Revisá el almacenamiento del navegador.';}};
+ const destino=panel.querySelector('#imagenes-pendientes');
+ async function pintar(){
+  const act=await fotosActualizadas(key,{writable:false});if(!destino.isConnected)return;
+  destino.innerHTML=htmlFotos({tag:s.nombre},{},act,{writable:false});
+  destino.querySelectorAll('input[data-slot]').forEach(input=>input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await guardarFoto(key,input.dataset.slot,file,{writable:false});await pintar();}catch(e){destino.querySelector('#fotos-error').textContent=e.message;input.disabled=false;}});
+ }
+ await pintar();
+}

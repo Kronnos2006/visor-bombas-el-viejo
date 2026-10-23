@@ -1,3 +1,5 @@
+import {cajaVisible,extraerBomba} from './planta-encuadre.js';
+import {abrirFichaPendiente} from './ficha-pendiente.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import {compactar} from './compactar.js';
@@ -8,7 +10,7 @@ import {buildTorre, aplicarSeccion, dentroDeSeccion, rangoSeccion, SECCIONES, VI
 import {GLTFLoader} from '/vendor/GLTFLoader.js';
 import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
-import {INFO_URL,SECTORES_INT,visibleCon,torreAIntegrado,cajaSector,sectorDe} from './planta-integrada.js';
+import {INFO_URL,SECTORES_INT,visibleCon,torreAIntegrado,cajaSector,sectorDe,ubicarTanques} from './planta-integrada.js';
 import {fotosActualizadas, guardarFoto, originales, htmlFotos} from './fotos-bomba.js';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
@@ -25,7 +27,34 @@ import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const state={area:'planta',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
+const state={area:'integrado',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
+let detailOrigin=null,detailFlightTicket=null;
+function transitionToPump(ticket,world,show){
+ detailFlightTicket=ticket;
+ const finish=()=>{if(ticket!==state.loading)return;show();setTimeout(()=>{if(detailFlightTicket===ticket)detailFlightTicket=null;},reducedMotion.matches?20:1120);};
+ if(plant?.visible&&world){const duration=reducedMotion.matches?1:600;fly([world.x+3,world.y+6,world.z+5],[world.x,world.y+1,world.z],duration);setTimeout(finish,reducedMotion.matches?2:620);}else finish();
+}
+function fitPumpMinimum(box){const size=box.getSize(new THREE.Vector3()).length();if(size>0)controls.minDistance=Math.max(.05,Math.min(4,size*.12));}
+function detailRailFraction(){
+ const rail=$('#parts-rail');if(!rail||rail.hidden||!viewport.clientWidth)return 0;
+ const r=rail.getBoundingClientRect(),v=viewport.getBoundingClientRect();
+ // A bottom rail on mobile does not occupy the right-hand viewing column.
+ if(!r.width||!r.height||r.width>v.width*.55||r.right<=v.left||r.left>=v.right||r.bottom<=v.top||r.top>=v.bottom)return 0;
+ return Math.max(0,Math.min(.45,(v.right-Math.max(v.left,r.left))/v.width));
+}
+
+
+function rememberDetailOrigin(){
+ if(detailOrigin||state.view!=='plant'||!camera||!controls)return;
+ detailOrigin={area:state.area,filtroInt:state.filtroInt,seccion:state.seccion,position:camera.position.toArray(),target:controls.target.toArray(),aspect:camera.aspect,minDistance:controls.minDistance,maxDistance:controls.maxDistance,top:$('#top').classList.contains('active')};
+}
+function areaName(id){return SECTORES_INT.find(s=>s.id===id)?.nombre||AREA(id)?.nombre||id;}
+function chooseArea(id){
+ if(state.view!=='plant'||state.pump)$('#back').click();
+ if(id.startsWith('sector:')){setArea('integrado',false);state.filtroInt=id.slice(7)||null;aplicarFiltroInt();applyArea();if($('#area'))$('#area').value=state.filtroInt?'sector:'+state.filtroInt:'integrado';renderList();flyIntegrado();return;}
+ if(id==='integrado'){state.filtroInt=null;aplicarFiltroInt();}
+ setArea(id);
+}
 let busyAI=false;
 function toast(text){$('#toast').textContent=text;$('#toast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').hidden=true,4500);}
 async function api(route,body){const r=await fetch(route,body?{method:'POST',headers:{'Content-Type':'application/json','X-Local-Token':state.token},body:JSON.stringify(body)}:{});let data;try{data=await r.json();}catch{throw new Error(r.status===504||r.status===500?'El servidor tardó demasiado o falló al responder. Probá de nuevo en un momento.':`Respuesta inesperada del servidor (HTTP ${r.status}).`);}if(!r.ok){const error=new Error(data.error||'No se pudo completar la acción.');error.code=data.code;throw error;}return data;}
@@ -145,12 +174,12 @@ function initScene(){
  plant=new THREE.Group();pumpGroup=new THREE.Group();scene.add(plant,pumpGroup);pumpGroup.visible=false;buildPump();
  try{render3D=aplicarRealismo({THREE,renderer,scene,camera});}catch(err){console.warn('Realismo no aplicado:',err.message);}
  anatomy=createAnatomyView({THREE,root:pumpGroup,renderer});anatomy.register(componentGroups);
- const observer=new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();});observer.observe(viewport);
+ let resizeTimer=null,previousSize=null;const observer=new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(!w||!h)return;const changed=previousSize&&(previousSize[0]!==w||previousSize[1]!==h);previousSize=[w,h];renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(changed){clearTimeout(resizeTimer);resizeTimer=setTimeout(refitCurrentView,120);}});observer.observe(viewport);
  let down=null;renderer.domElement.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);renderer.domElement.addEventListener('pointerup',e=>{
   if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
   const r=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
   const hits=raycaster.intersectObjects(state.view==='plant'?[...pickables,...areaPickables]:(state.sector&&state.detail==='exterior'?[]:componentGroups),true);
-  const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant'){if(o.userData.areaId)setArea(o.userData.areaId);else if(o.userData.tag)selectPump(o.userData.tag);}else if(o.userData.part!==undefined)selectPart(o.userData.part,o.userData.subcomponent||null);}
+  const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant'){if(o.userData.pending)selectPendingPump(o.userData.pending);else if(o.userData.areaId)setArea(o.userData.areaId);else if(o.userData.tag)selectPump(o.userData.tag);}else if(o.userData.part!==undefined)selectPart(o.userData.part,o.userData.subcomponent||null);}
  });
  renderer.setAnimationLoop(()=>{
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
@@ -164,9 +193,12 @@ function initScene(){
  }catch(e){$('#scene-error').hidden=false;$('#scene-error').textContent='No se pudo iniciar el visor 3D. Las fichas siguen disponibles. Detalle: '+e.message;}
 }
 function normalize(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
-function renderList(){const q=normalize($('#search').value),area=$('#area').value,tipo=$('#tipo').value,marca=$('#marca').value;const list=state.pumps.filter(p=>(!area||areaOf(p)===area||(area==='integrado'&&areaOf(p)==='torre'))&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&normalize(`${p.tag} ${p.nombre} ${p.servicio} ${p.zona||''}`).includes(q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(p.nombre||p.servicio)} · ${esc(areaOf(p)==='torre'?'Torre':'Tanques')}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;$('#count').textContent=state.pumps.length;$('#pump-list').querySelectorAll('button').forEach(b=>b.onclick=()=>selectPump(b.dataset.tag));}
+function renderList(){const q=normalize($('#search').value),area=state.area,tipo=$('#tipo').value,marca=$('#marca').value;const selectedArea=area;const list=state.pumps.filter(p=>(state.area!=='integrado'||!state.filtroInt||areaOf(p)===state.filtroInt)&&(!selectedArea||areaOf(p)===selectedArea||selectedArea==='integrado')&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&normalize(`${p.tag} ${p.nombre} ${p.servicio} ${p.zona||''}`).includes(q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(p.nombre||p.servicio)} · ${esc(areaName(areaOf(p)))}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;const pendientes=(state.area==='integrado'?integrado?.references||[]:[]).filter(p=>(!state.filtroInt||sectorDe(p.sector)===state.filtroInt)&&(!tipo&&!marca)&&normalize(`${p.nombre} ${SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre||''}`).includes(q));
+ if(pendientes.length){if(!list.length)$('#pump-list').innerHTML='';$('#pump-list').insertAdjacentHTML('beforeend',pendientes.map(p=>`<button class="pump-row ${state.pump?.pending===p?'active':''}" data-pending="${integrado.references.indexOf(p)}"><i>↗</i><strong>Bomba ${p.numero}</strong><small>${esc(SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre)} · sin TAG</small></button>`).join(''));$('#pump-list').querySelectorAll('[data-pending]').forEach(b=>b.onclick=()=>selectPendingPump(integrado.references[Number(b.dataset.pending)]));}
+ $('#count').textContent=state.area==='integrado'?list.length+pendientes.length:state.pumps.length;$('#pump-list').querySelectorAll('button[data-tag]').forEach(b=>b.onclick=()=>selectPump(b.dataset.tag));}
 async function selectPump(tag){
  if(state.sector)return selectPhotoPump(tag);
+ rememberDetailOrigin();
  const ticket=++state.loading;
  try{const p=await api('/api/pump?tag='+encodeURIComponent(tag));if(ticket!==state.loading)return;state.pump=p;state.part=null;state.view='pump';state.explode=0;$('#explode').value=0;$('#percent').textContent='0%';$('#explode').disabled=false;$('#explode-all').disabled=false;$('#back').hidden=false;
  $('#selected-tag').textContent=p.tag;$('#selected-name').textContent=p.data.nombre||p.data.servicio||'';$('#source-status').textContent=state.demo?'DEMOSTRACIÓN · DATOS FICTICIOS':'FICHA LEÍDA DE OBSIDIAN · '+(p.data.confianza||'sin verificar').toUpperCase();$('#scene-title').textContent=p.tag+' · Exploración';$('#breadcrumb').textContent='PLANTA / '+(p.data.area||'ÁREA')+' / '+p.tag;
@@ -210,6 +242,7 @@ function selectPart(index,subcomponent=null){
 }
 function fields(entries){return '<dl class="fields">'+entries.map(([label,key])=>{const v=state.pump.data[key],missing=v===undefined||v===null||v==='';return `<div class="field"><dt>${esc(label)}</dt><dd class="${missing?'missing':''}">${missing?'Sin levantar':esc(typeof v==='object'?JSON.stringify(v):v)}</dd></div>`;}).join('')+'</dl>';}
 function renderPanel(){
+ if(state.pump?.pending){renderPendingPanel();return;}
  if(state.sector){renderPhotoPanel();return;}
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));const p=state.pump;
  if(!p){$('#panel').innerHTML='<div class="empty-state"><div class="symbol">◎</div>Elegí una bomba en el mapa o en el explorador para abrir su expediente.</div>';return;}
@@ -261,19 +294,22 @@ $('#back').onclick=()=>{
  history.replaceState(null,'',location.pathname+location.search);
  if(photoDetail)photoDetail.visible=false;
  state.view='plant';
+ const origin=detailOrigin;detailOrigin=null;
+ if(origin){state.area=origin.area;state.filtroInt=origin.filtroInt;state.seccion=origin.seccion;}
  state.pump=null;
  selectPart(null);
  if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;}
- if(plant){plant.visible=true;pumpGroup.visible=false;flyArea(state.area);}
+ if(plant){plant.visible=true;pumpGroup.visible=false;if(origin){controls.minDistance=origin.minDistance;controls.maxDistance=origin.maxDistance;if(Math.abs(origin.aspect-camera.aspect)<.01)fly(origin.position,origin.target);else setTimeout(()=>{if(state.view==='plant')refitCurrentView();},0);}else if(state.area==='integrado')flyIntegrado();else flyArea(state.area);}
  $('#back').hidden=true;
  $('#explode').disabled=true;
  $('#explode-all').disabled=true;
  $('#explode').value=0;
  $('#percent').textContent='0%';
  state.explode=0;
-  applyArea();
+  aplicarFiltroInt();applyArea();
+ if($('#area'))$('#area').value=state.area==='integrado'&&state.filtroInt?'sector:'+state.filtroInt:state.area;
  $('#scene-help').textContent='Seleccioná una bomba para acercarte';
- setViewButtons(true);
+ setViewButtons(origin?origin.top:true);
  $('#selected-tag').textContent='Seleccioná una bomba';
  $('#selected-name').textContent='Ficha, componentes e historial en un mismo lugar.';
  $('#source-status').textContent='Esperando selección';
@@ -288,7 +324,7 @@ $('#back').onclick=()=>{
 };
 $('#breadcrumb').onclick=()=>{if(!$('#back').hidden)$('#back').click();};
 $('#top').onclick=()=>{if(camera){if(state.view==='plant')flyArea(state.area,'superior');else fly([0,25,.1],[0,0,0]);}setViewButtons(true);};$('#iso').onclick=()=>{if(camera){if(state.view==='plant')flyArea(state.area);else fly([10,8,state.explode>30?21:12],[0,0,0]);}setViewButtons(false);};
-$('#search').oninput=renderList;$('#area').onchange=()=>setArea($('#area').value||'planta');for(const id of ['#tipo','#marca'])$(id).onchange=renderList;document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;renderPanel();});
+$('#search').oninput=renderList;$('#area').onchange=()=>chooseArea($('#area').value||'planta');for(const id of ['#tipo','#marca'])$(id).onchange=renderList;document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;renderPanel();});
 $('#close-settings').onclick=()=>$('#settings').close();$('#close-report').onclick=()=>$('#report-dialog').close();
 $('#config-form').onsubmit=async e=>{e.preventDefault();const form=e.target;try{const r=await api('/api/config',Object.fromEntries(new FormData(form)));state.configured=r.configured;state.model=r.model;form.elements.apiKey.value='';$('#settings').close();renderPanel();toast('Clave guardada solo durante esta sesión.');}catch(e){$('#config-error').textContent=e.message;}};
 $('#report-form').onsubmit=async e=>{e.preventDefault();const tag=state.pump.tag,form=e.target,button=form.querySelector('button.primary');button.disabled=true;try{await api('/api/maintenance',{...Object.fromEntries(new FormData(form)),tag});$('#report-dialog').close();form.reset();if(state.pump?.tag===tag)state.pump=await api('/api/pump?tag='+encodeURIComponent(tag));renderPanel();toast(state.demo?'Informe de prueba guardado en la carpeta de demostración.':'Informe guardado en Obsidian.');}catch(e){$('#report-error').textContent=e.message;}finally{button.disabled=false;}};
@@ -302,11 +338,11 @@ function setPhotoDetail(schematic){
  if(plant)plant.visible=false;if(pumpGroup)pumpGroup.visible=schematic;if(photoDetail)photoDetail.visible=!schematic;
  $('#explode').disabled=!schematic;$('#explode-all').disabled=false;$('#explode-all').textContent=schematic?(state.explode>50?'Juntar piezas':'Separar piezas ↗'):'Ver vista explosionada ↗';
  const identity=state.pump?.data?`${state.pump.data.marca} ${state.pump.data.modelo}`:'bomba seleccionada';
- $('#scene-badge').textContent=state.pump?.data?.inactive?'EXTERIOR ILUSTRATIVO · SIN USO · MODELO SIN IDENTIFICAR':schematic?`DESPIECE DE REFERENCIA · ${identity.toUpperCase()} · NO ES CAD DEL FABRICANTE`:`EXTERIOR ${identity.toUpperCase()} · BASADO EN FOTOS`;
+ $('#scene-badge').textContent=state.pump?.pending?(schematic?'ANATOMÍA ILUSTRATIVA · NO IDENTIFICA EL TIPO INSTALADO':state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR'):state.pump?.data?.inactive?'EXTERIOR ILUSTRATIVO · SIN USO · MODELO SIN IDENTIFICAR':schematic?`DESPIECE DE REFERENCIA · ${identity.toUpperCase()} · NO ES CAD DEL FABRICANTE`:`EXTERIOR ${identity.toUpperCase()} · BASADO EN FOTOS`;
  $('#parts-title').textContent=schematic?`Despiece de ${identity}`:'Conjunto exterior';$('#part-count').textContent=schematic?(state.pump?.data?.variant==='goulds'?'8':'10')+' componentes de referencia · ficha individual':'Carcasa · guarda · motor · cubierta';
  const componentButtons=schematic?parts.map((part,index)=>state.pump?.data?.variant==='goulds'&&(index===7||index===8)?'':`<button class="part-button" data-part="${index}"><span>${String(index+1).padStart(2,'0')}</span>${esc(partName(index))}</button>`).join(''):'';
  $('#parts').innerHTML='<button id="switch-detail">'+(schematic?'← Volver al exterior de esta bomba':'Ver vista explosionada de esta bomba ↗')+'</button>'+componentButtons;
- $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));if(camera)fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);syncAnatomyTools();renderRail();
+ $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));syncAnatomyTools();renderRail();if(camera){const box=schematic?anatomy?.bounds():photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;if(box&&!box.isEmpty()){fitPumpMinimum(box);const [pos,obj]=encuadrar(box,new THREE.Vector3(...(schematic?[-8,7,12]:[5,4,7])),1.15,detailRailFraction());fly(pos,obj);}else fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);}syncAnatomyTools();renderRail();
 }
 function syncAnatomyTools(){
  const available=!!anatomy&&!!state.pump&&!state.pump.data.inactive&&state.view==='pump';
@@ -324,31 +360,35 @@ function ensureAnatomy(){
 }
 function fitAnatomy(){
  if(!camera||!anatomy)return;
- const bounds=anatomy.bounds();if(bounds.isEmpty())return;
- const sphere=bounds.getBoundingSphere(new THREE.Sphere());
- const distance=Math.min(controls.maxDistance,sphere.radius/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))/Math.min(1,camera.aspect)*1.15);
- const center=sphere.center,position=center.clone().add(new THREE.Vector3(state.part===9?8:-8,6,12).normalize().multiplyScalar(distance));
- fly(position.toArray(),center.toArray(),500);
+ const bounds=anatomy.bounds();if(bounds.isEmpty())return;fitPumpMinimum(bounds);
+ const [position,target]=encuadrar(bounds,new THREE.Vector3(state.part===9?8:-8,6,12),1.15,detailRailFraction());
+ fly(position,target,500);
 }
 $('#anatomy-cut').onclick=()=>{if(!ensureAnatomy())return;anatomy.set({cutaway:!anatomy.state.cutaway});syncAnatomyTools();fitAnatomy();};
 $('#anatomy-transparent').onclick=()=>{if(!ensureAnatomy())return;anatomy.set({transparent:!anatomy.state.transparent});syncAnatomyTools();};
 $('#anatomy-isolate').onclick=()=>{if(!ensureAnatomy()||state.part===null)return;anatomy.set({isolate:!anatomy.state.isolate});syncAnatomyTools();fitAnatomy();};
 $('#anatomy-fit').onclick=()=>{if(ensureAnatomy())fitAnatomy();};
+function refitCurrentView(){
+ if(!camera||!controls||(detailFlightTicket!==null&&detailFlightTicket===state.loading))return;
+ if(state.view==='plant'){if(state.area==='integrado'&&state.filtroInt)flyIntegrado();else flyArea(state.area,$('#top').classList.contains('active')?'superior':undefined);return;}
+ const box=state.detail==='schematic'?anatomy?.bounds():photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;
+ if(!box||box.isEmpty())return;const direction=camera.position.clone().sub(controls.target);if(direction.lengthSq()<1e-6)direction.set(5,4,7);const [pos,obj]=encuadrar(box,direction,1.15,detailRailFraction());fly(pos,obj);
+}
 function resetAnatomy(){
  if(!ensureAnatomy())return;anatomy.reset();state.part=null;setExplosion(0);selectPart(null);syncAnatomyTools();fitAnatomy();
 }
 $('#anatomy-reset').onclick=resetAnatomy;
 $('#anatomy-assembled').onclick=resetAnatomy;
 function selectPhotoPump(tag){
- const p=state.pumps.find(p=>p.tag===tag);if(!p)return;const ticket=++state.loading;
+ const p=state.pumps.find(p=>p.tag===tag);if(!p)return;rememberDetailOrigin();const ticket=++state.loading;
  history.replaceState(null,'','#'+p.tag);
  state.pump={tag,data:p,photo:true};state.tab=state.tab==='sim'?'sim':'ficha';state.part=null;
  api('/api/pump?tag='+encodeURIComponent(tag)).then(current=>{if(ticket!==state.loading)return;state.pump={...current,photo:true};renderPanel();}).catch(error=>{if(ticket===state.loading)toast(error.message);});
  $('#selected-tag').textContent=tag;$('#selected-name').textContent=`${p.marca} ${p.modelo} · ${p.nombre}`;$('#source-status').textContent=p.inactive?'SIN USO · SIN DATOS TÉCNICOS':'DATOS APORTADOS · GEOMETRÍA APROXIMADA';
- $('#scene-title').textContent=tag+' · Exterior';$('#breadcrumb').textContent=(areaOf(p)==='torre'?'TORRE DE DESTILACIÓN / ':'SECTOR DE TANQUES / ')+tag;$('#back').hidden=false;
+ $('#scene-title').textContent=tag+' · Exterior';$('#breadcrumb').textContent='PLANTA / '+areaName(state.area==='integrado'?(state.filtroInt||areaOf(p)):areaOf(p)).toUpperCase()+' / '+tag;$('#back').hidden=false;
  $('#scene-help').textContent='Arrastrá para girar · Rueda para acercarte';
  const show=()=>{if(ticket!==state.loading)return;state.view='pump';if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=exterior(THREE,p.scale*1.7,p.variant);scene.add(photoDetail);}setPhotoDetail(false);renderPanel();};
- if(plant?.visible){if(areaOf(p)!==state.area&&state.area!=='planta'&&state.area!=='integrado')setArea(areaOf(p),false);const w=pumpWorld(p.tag)||new THREE.Vector3(p.x,0,p.z);fly([w.x+3,w.y+6,w.z+5],[w.x,w.y+1,w.z],600);setTimeout(show,620);}else show();renderList();renderPanel();setViewButtons(false);
+ if(plant?.visible&&areaOf(p)!==state.area&&state.area!=='planta'&&state.area!=='integrado')setArea(areaOf(p),false);transitionToPump(ticket,pumpWorld(p.tag)||new THREE.Vector3(p.x,0,p.z),show);renderList();renderPanel();setViewButtons(false);
  if(matchMedia('(max-width:900px)').matches)setTimeout(()=>document.querySelector('.inspector')?.scrollIntoView({behavior:'smooth',block:'start'}),700);
 }
 
@@ -521,6 +561,7 @@ function renderPhotoPanel(){
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
  const p=state.pump?.data;
  paintPumpLinks(p);
+ if(!p&&state.area==='integrado'){$('#panel').innerHTML='<p class="eyebrow">PLANTA COMPLETA</p><h2>Seleccioná un sector y una bomba</h2><p class="notice">Cada bomba tiene su selección individual, incluso cuando hay varias juntas. Elegí un sector para ver sus etiquetas, o buscá una bomba en el explorador.</p><p>Las fichas existentes conservan sus datos. En los equipos pendientes, los campos e imágenes quedan vacíos para completar el levantamiento.</p>';return;}
  if(!p){$('#panel').innerHTML=`<p class="eyebrow">SECTOR FOTOGRAFIADO · 07 OCT 2026</p><h2>Seleccioná una bomba</h2><p class="notice">El expediente mostrará únicamente la bomba elegida. Los datos de sellos, o-rings e historial están preparados para la demostración y se distinguen de la evidencia real.</p><img src="${photo3URL('142609')}" alt="Vista elevada de los tanques del sector"><p class="muted">Referencia utilizada para orientar y completar los tanques del render.</p>`;return;}
 
  const demo=state.demo?'<span class="demo-chip">DEMO · POR CONFIRMAR</span>':'<span class="demo-chip">DATOS DOCUMENTALES / POR CONFIRMAR</span>';
@@ -653,6 +694,7 @@ function markerInArea(m){
  if(state.area==='planta')return false;
  if(m.area!==state.area)return false;
  if(m.area==='integrado'&&state.filtroInt&&m.sectorInt!==state.filtroInt)return false;
+ if(m.area==='integrado'&&!state.filtroInt&&m.kind==='pump')return false;
  if(m.kind==='pump'&&m.area==='torre'&&state.seccion!=='n1')return false; // en la torre se eligen desde el panel o al pasar el mouse
  if(m.kind==='corner'&&m.area==='torre'&&m.el.classList.contains('pending-label')&&state.seccion!=='n1')return false;
  if(m.kind==='corner'&&m.area==='torre'&&state.seccion&&state.seccion!=='n1')return false;
@@ -663,8 +705,8 @@ function pumpWorld(tag){const g=(state.area==='integrado'&&pumpObjectsInt[tag])|
 const tipoDe=p=>{const s=normalize(p.servicio);return [/alcohol/.test(s)&&'alcohol',/agua/.test(s)&&'agua',/mosto|vinaza/.test(s)&&'mosto',(/sin uso/.test(s)||p.enUso===false)&&'sin-uso'].filter(Boolean);};
 function fillFilters(){
  const area=$('#area').value,marca=$('#marca').value;
- $('#area').innerHTML='<option value="">Todas las áreas</option>'+AREAS.filter(a=>a.id!=='planta').map(a=>`<option value="${a.id}">${esc(a.nombre)}</option>`).join('');
- $('#area').value=state.area==='planta'?'':state.area;
+ $('#area').innerHTML='<option value="">Todas las áreas</option>'+AREAS.filter(a=>a.id!=='planta').map(a=>`<option value="${a.id}">${esc(a.nombre)}</option>`).join('');for(const sector of SECTORES_INT){const option=document.createElement('option');option.value='sector:'+sector.id;option.textContent='Planta completa · '+sector.nombre;$('#area').append(option);}$('#area').value=state.area==='integrado'&&state.filtroInt?'sector:'+state.filtroInt:state.area;
+ $('#area').value=state.area==='integrado'&&state.filtroInt?'sector:'+state.filtroInt:state.area==='planta'?'':state.area;
  const marcas=[...new Set(state.pumps.map(p=>p.marca).filter(m=>m&&!/sin dato|por confirmar/i.test(m)))].sort();
  $('#marca').innerHTML='<option value="">Todas las marcas</option>'+marcas.map(m=>`<option>${esc(m)}</option>`).join('');$('#marca').value=marcas.includes(marca)?marca:'';
 }
@@ -674,7 +716,7 @@ function encuadrar(box,dir,margen=1.08,correrX=0){
  const c=box.getCenter(new THREE.Vector3()),d0=dir.clone().normalize(),fwd=d0.clone().negate();
  let right=new THREE.Vector3().crossVectors(fwd,new THREE.Vector3(0,1,0));if(right.lengthSq()<1e-6)right.set(1,0,0);right.normalize();
  const up=new THREE.Vector3().crossVectors(right,fwd).normalize(),asp=viewport.clientWidth&&viewport.clientHeight?viewport.clientWidth/viewport.clientHeight:camera.aspect,tv=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),th=tv*asp;
- let d=0;for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){const v=new THREE.Vector3(x,y,z).sub(c);const k=v.dot(d0);d=Math.max(d,Math.abs(v.dot(right))/th+k,Math.abs(v.dot(up))/tv+k);}
+ let d=0;for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){const v=new THREE.Vector3(x,y,z).sub(c);const k=v.dot(d0);d=Math.max(d,Math.abs(v.dot(right))/(th*Math.max(.55,1-correrX))+k,Math.abs(v.dot(up))/tv+k);}
  d=Math.max(controls.minDistance,d*margen);controls.maxDistance=Math.max(190,d*1.6);
  // correrX: fracción del ancho que tapa un panel a la derecha; el contenido se centra en lo visible.
  const t=c.clone().addScaledVector(right,d*th*correrX);
@@ -703,39 +745,85 @@ function cajaTorre(seccion){
 }
 // Modelo integrado: bombas de la torre con ficha (misma posición que en la vista de la torre, llevada al
 // modelo con la alineación calculada) y etiquetas «Sin ficha» para las bombas modeladas sin TAG.
+function selectPendingPump(reference){
+ rememberDetailOrigin();
+ const ticket=++state.loading;history.replaceState(null,'',location.pathname+location.search);
+ state.pump={tag:'Sin TAG',pending:reference,data:{variant:'lf',marca:'',modelo:'',seal:{},orings:[],history:[]}};
+ state.part=null;state.tab='ficha';
+ $('#selected-tag').textContent='Sin TAG';$('#selected-name').textContent=reference.nombre;
+ $('#source-status').textContent='IDENTIFICACIÓN PENDIENTE · GEOMETRÍA DE REFERENCIA';
+ $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
+ $('#back').hidden=false;
+ const show=()=>{if(ticket!==state.loading)return;state.view='pump';$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
+ if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf');}
+ if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}
+ photoDetail=integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail)photoDetail=exterior(THREE,1.2,'lf');scene.add(photoDetail);setPhotoDetail(false);
+ $('#scene-badge').textContent=state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR';
+ $('#scene-help').textContent='Arrastrá para girar · Abrí Piezas de la bomba para ver el despiece';
+ setViewButtons(false);renderList();renderPanel();
+ };
+ const center=new THREE.Vector3(...reference.min).add(new THREE.Vector3(...reference.max)).multiplyScalar(.5);if(integrado?.g){integrado.g.updateMatrixWorld(true);integrado.g.localToWorld(center);}transitionToPump(ticket,center,show);renderList();renderPanel();
+}
+function renderPendingPanel(){
+ const reference=state.pump.pending;
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='ficha'));
+ $('#pump-links')?.remove();$('#pump-resumen')?.remove();
+ abrirFichaPendiente($('#panel'),reference).catch(e=>toast(e.message));
+ if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
+}
 function montarIntegrado(g,escena,placed){
- integrado={g,escena,info:null};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
- fetch(INFO_URL).then(r=>r.json()).then(info=>{
+ integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
+ Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();})]).then(([info,grupos])=>{
   if(g.parent!==plant)return;integrado.info=info;
   if(info.torre)for(const p of placed.filter(p=>areaOf(p)==='torre')){
    const b=compactar(THREE,exterior(THREE,p.scale,p.variant)),[x,y,z]=torreAIntegrado(info.torre,p.x,p.y??.3,p.z);
-   b.position.set(x,y,z);b.rotation.y=p.rotation+info.torre.giro;b.userData.tag=p.tag;g.add(b);pumpObjectsInt[p.tag]=b;
+   b.position.set(x,y,z);b.rotation.y=p.rotation+info.torre.giro;b.userData.tag=p.tag;b.userData.sectorInt='torre';g.add(b);pumpObjectsInt[p.tag]=b;
    b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.userData.tag=p.tag;pickables.push(o);}});
    const a=new THREE.Object3D();a.position.set(0,2.2,0);b.add(a);marker(a,p.tag,'pump',p.tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:'torre'});
   }
-  for(const s of info.bombas){
-   const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
-   const el=document.createElement('button');el.className='label corner-label pending-label sin-ficha';el.textContent='Sin ficha';el.title=s.nombre;
-   el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);
-   el.onclick=()=>{toast(`${s.nombre}. Bomba del modelo integrado: todavía sin TAG ni ficha.`);const w=a.getWorldPosition(new THREE.Vector3());fly([w.x+6,w.y+8,w.z+8],[w.x,w.y-1.5,w.z],700);};
-   $('#labels').append(el);markers.push({obj:a,el,kind:'corner',area:'integrado',sectorInt:sectorDe(s.sector)});
+  const tankPumps=placed.filter(p=>areaOf(p)==='tanques');
+  const tanques=sector(THREE,tankPumps);tanques.userData.sector='Sector de tanques';g.add(tanques);integrado.tanques=tanques;
+  for(const p of tankPumps){const body=compactar(THREE,exterior(THREE,p.scale,p.variant));body.position.set(p.x,p.y??.3,p.z);body.rotation.y=p.rotation;body.userData.tag=p.tag;body.userData.sectorInt='tanques';tanques.add(body);pumpObjectsInt[p.tag]=body;
+   body.traverse(o=>{if(o.isMesh){o.castShadow=true;o.userData.tag=p.tag;pickables.push(o);}});
+   const anchor=new THREE.Object3D();anchor.position.set(0,2.2,0);body.add(anchor);marker(anchor,p.tag,'pump',p.tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:'tanques'});
   }
-  aplicarFiltroInt();
+  tanques.updateMatrixWorld(true);const local=new THREE.Box3().setFromObject(tanques);
+  const placement=ubicarTanques(info,AREA('tanques'),AREA('torre'),{min:local.min.toArray(),max:local.max.toArray()});
+  tanques.position.set(placement.x,placement.y,placement.z);tanques.rotation.y=placement.giro;tanques.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(tanques);info.sectores['Sector de tanques']={min:bounds.min.toArray(),max:bounds.max.toArray()};
+  const labelAnchor=new THREE.Object3D();labelAnchor.position.set(0,local.max.y+1,-1);tanques.add(labelAnchor);
+  const label=document.createElement('button');label.className='label area-label';label.textContent='Sector de tanques';label.setAttribute('aria-label','Ver sector de tanques en la planta completa');
+  label.onclick=()=>{state.filtroInt='tanques';aplicarFiltroInt();applyArea();if($('#area'))$('#area').value=state.filtroInt?'sector:'+state.filtroInt:'integrado';renderList();flyIntegrado();};$('#labels').append(label);markers.push({obj:labelAnchor,el:label,kind:'corner',area:'integrado',sectorInt:'tanques'});
+
+  const numeracion={};
+  for(const grupo of grupos)for(const [indice,caja] of grupo.bombas.entries()){
+   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1}`:grupo.nombre,grupo:grupo.nombre,indice:indice+1};
+   s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
+   const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
+   const el=document.createElement('button');el.className='label pending-label sin-ficha';el.textContent=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;el.title=s.nombre;
+   el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);
+   el.onclick=()=>{selectPendingPump(s);};
+   $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector)});
+   const size=s.max.map((v,i)=>v-s.min[i]);
+   const hit=new THREE.Mesh(new THREE.BoxGeometry(size[0],size[1],size[2]),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+   hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);
+  }
+  aplicarFiltroInt();renderList();if(state.area==='integrado'&&state.view==='plant'&&detailFlightTicket!==state.loading)flyIntegrado();
  }).catch(err=>console.warn('Sin datos del modelo integrado',err));
 }
 function aplicarFiltroInt(){
  const f=state.filtroInt||null;
  document.querySelectorAll('#integrado-sectores [data-sector]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.sector||null)===f)));
  const s=SECTORES_INT.find(x=>x.id===f);
- if($('#integrado-status'))$('#integrado-status').textContent=s?`${s.nombre} aislado. Los pisos quedan como referencia y la cubierta común se oculta.`:'Toda la planta. Elegí un sector para aislarlo; tocá una bomba con TAG para abrir su ficha.';
+ if($('#integrado-status'))$('#integrado-status').textContent=s?`${s.nombre} aislado. Los pisos quedan como referencia y la cubierta común se oculta.`:'Toda la planta. Elegí un sector para aislarlo; tocá una bomba o referencia para abrir su ficha y completar datos e imágenes.';
  if(!integrado)return;
- integrado.escena.traverse(o=>{if(o.isMesh&&o.userData.sector)o.visible=visibleCon(o.userData.sector,f);});
- for(const b of Object.values(pumpObjectsInt))b.visible=!f||f==='torre';
+ integrado.g.traverse(o=>{if(o.userData.sector)o.visible=visibleCon(o.userData.sector,f);});
+ for(const b of Object.values(pumpObjectsInt))b.visible=!f||b.userData.sectorInt===f;
 }
 function flyIntegrado(){
  const a=AREA('integrado'),g=areaGroups.integrado,c=state.filtroInt&&integrado?.info&&cajaSector(integrado.info,state.filtroInt);
  if(!g||!c)return flyArea('integrado');
- g.updateMatrixWorld(true);const box=new THREE.Box3(new THREE.Vector3(...c.min),new THREE.Vector3(...c.max)).applyMatrix4(g.matrixWorld);ajustarSol(box);
+ g.updateMatrixWorld(true);let box=cajaVisible(THREE,g);if(box.isEmpty())box=new THREE.Box3(new THREE.Vector3(...c.min),new THREE.Vector3(...c.max)).applyMatrix4(g.matrixWorld);ajustarSol(box);
  const [pos,obj]=encuadrar(box,new THREE.Vector3(...a.camara.pos).sub(new THREE.Vector3(...a.camara.obj)),1.15);fly(pos,obj,900);
 }
 function cajaEdificio(area){
@@ -745,6 +833,7 @@ function cajaEdificio(area){
  return new THREE.Box3(new THREE.Vector3(area.pos[0]-r,0,area.pos[1]-r),new THREE.Vector3(area.pos[0]+r,h,area.pos[1]+r));
 }
 function flyArea(id,vista){
+ if(id==='planta')id='integrado';
  if(!camera)return;
  const dirLocal=(g,from,to)=>g.localToWorld(new THREE.Vector3(...from)).sub(g.localToWorld(new THREE.Vector3(...to)));
  if(id==='planta'||!areaGroups[id]){
@@ -759,11 +848,14 @@ function flyArea(id,vista){
   const v=VISTAS[vista||'iso'],[pos,obj]=encuadrar(cajaTorre(state.seccion),dirLocal(g,v.pos,[CENTRO.x,CENTRO.y,CENTRO.z]),panel?1.15:1.08,panel?.14:0);
   fly(pos,obj,900);return;
  }
- const caja=a.modelo?cajaEdificio(a):new THREE.Box3().setFromObject(g);ajustarSol(caja);
+ let caja=cajaVisible(THREE,g);if(caja.isEmpty())caja=a.modelo?cajaEdificio(a):new THREE.Box3().setFromObject(g);ajustarSol(caja);
  const [pos,obj]=encuadrar(caja,vista==='superior'?new THREE.Vector3(0,1,.02):dirLocal(g,a.camara.pos,a.camara.obj));
  fly(pos,obj,900);
 }
 function setArea(id,volar=true){
+ if(id==='integrado'){state.filtroInt=null;aplicarFiltroInt();}
+ if(id.startsWith('sector:')){state.filtroInt=id.slice(7)||null;id='integrado';aplicarFiltroInt();}
+ if(id==='planta'){id='integrado';state.filtroInt=null;aplicarFiltroInt();}
  state.area=id;if(id!=='torre')state.seccion=null;
  if($('#area'))$('#area').value=id==='planta'?'':id;
  applyArea();renderList();
@@ -776,7 +868,7 @@ function applyArea(){
  if(torre){aplicarSeccion(torre.objetos,id==='torre'?state.seccion:null,{existente:id==='torre'&&state.existente,techo:state.techo});
   for(const g of Object.values(pumpObjects))if(g.parent===areaGroups.torre)g.visible=!state.seccion||state.seccion==='n1';}
   renderRail();
- document.querySelectorAll('#area-menu [data-area]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.area===id)));
+ document.querySelectorAll('#area-menu [data-area]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.area===(id==='integrado'&&state.filtroInt?'sector:'+state.filtroInt:id))));
  const tools=$('#torre-tools');if(tools)tools.hidden=!(id==='torre'&&state.view==='plant');
  const toolsInt=$('#integrado-tools');if(toolsInt)toolsInt.hidden=!(a?.aparte&&state.view==='plant');
  document.querySelectorAll('#torre-tools [data-seccion]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.seccion||null)===(state.seccion||null)||(!b.dataset.seccion&&!state.seccion))));
@@ -786,17 +878,18 @@ function applyArea(){
  if(state.view==='plant'){
   $('#scene-title').textContent=a?.nombre||'Planta general';
   $('#breadcrumb').textContent=id==='planta'?'PLANTA / VISTA GENERAL':'PLANTA / '+a.nombre.toUpperCase()+(s?' / '+s.nombre.toUpperCase():'');
-  $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':a?.aparte?'MODELO INTEGRADO DE REVIT · MEDIDAS PROVISIONALES · COLORES ILUSTRATIVOS':a?.modelo?`${a.nombre.toUpperCase()} · MODELO FBX · ASIGNACIÓN Y POSICIÓN APROXIMADAS`:'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
-  $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.aparte?'Tocá una bomba con TAG para abrir su ficha · Elegí un sector abajo para aislarlo':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
+  $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':a?.aparte?'MODELO INTEGRADO · 1 UNIDAD = 1 m · TANQUES: UBICACIÓN PROVISIONAL · MEDIDAS Y COLORES ILUSTRATIVOS':a?.modelo?`${a.nombre.toUpperCase()} · MODELO FBX · ASIGNACIÓN Y POSICIÓN APROXIMADAS`:'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
+  $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.aparte?'Tocá una bomba o referencia para abrir su ficha · Elegí un sector abajo para aislarlo':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
  }
 }
 (function areaUI(){
  const menu=$('#area-menu');if(!menu)return;
- menu.innerHTML=AREAS.map(a=>`<button type="button" data-area="${a.id}" class="${a.estado}" aria-pressed="${a.id===state.area}">${esc(a.corto)}${a.estado==='nueva'?'<i>nueva</i>':''}</button>`).join('')+PENDIENTES.map(p=>`<button type="button" disabled title="Área ${p.n} del plano de sitio: falta modelarla">Área ${p.n}</button>`).join('');
- menu.querySelectorAll('[data-area]').forEach(b=>b.onclick=()=>{if(state.view!=='plant')$('#back').click();setArea(b.dataset.area);});
+ menu.innerHTML=AREAS.filter(a=>['integrado','torre','tanques'].includes(a.id)).sort((a,b)=>(b.id==='integrado')-(a.id==='integrado')).map(a=>`<button type="button" data-area="${a.id}" class="${a.estado}" aria-pressed="${a.id===state.area}">${esc(a.id==='integrado'?'Toda la planta':a.id==='torre'?'Torre · detalle por plantas':a.id==='tanques'?'Tanques · vista de referencia':a.corto)}${a.estado==='nueva'?'<i>nueva</i>':''}</button>`).join('')+PENDIENTES.map(p=>`<button type="button" disabled title="Área ${p.n} del plano de sitio: falta modelarla">Área ${p.n}</button>`).join('');
+ menu.insertAdjacentHTML('beforeend',SECTORES_INT.map(s=>`<button type="button" data-area="sector:${s.id}" aria-pressed="false">${esc(s.nombre)}</button>`).join(''));
+ menu.querySelectorAll('[data-area]').forEach(b=>b.onclick=()=>chooseArea(b.dataset.area));
  const toolsInt=$('#integrado-tools');
  if(toolsInt){$('#integrado-sectores').innerHTML=`<button type="button" data-sector="">Toda la planta</button>`+SECTORES_INT.map(s=>`<button type="button" data-sector="${s.id}">${esc(s.nombre)}</button>`).join('');
-  toolsInt.querySelectorAll('[data-sector]').forEach(b=>b.onclick=()=>{state.filtroInt=b.dataset.sector||null;aplicarFiltroInt();flyIntegrado();});aplicarFiltroInt();}
+  toolsInt.querySelectorAll('[data-sector]').forEach(b=>b.onclick=()=>{state.filtroInt=b.dataset.sector||null;aplicarFiltroInt();applyArea();if($('#area'))$('#area').value=state.filtroInt?'sector:'+state.filtroInt:'integrado';renderList();flyIntegrado();});aplicarFiltroInt();}
  const tools=$('#torre-tools');if(!tools)return;
  $('#torre-secciones').innerHTML=`<button type="button" data-seccion="">Toda la torre</button>`+SECCIONES.map(s=>`<button type="button" data-seccion="${s.id}" title="${esc(s.detalle)}">${s.nombre}${s.id==='n1'?' · bombas':''}</button>`).join('');
  $('#torre-vistas').innerHTML=Object.entries(VISTAS).map(([k,v])=>`<button type="button" data-vista="${k}">${v.nombre}</button>`).join('');
@@ -843,6 +936,7 @@ function resaltarBomba(tag){
    const r=renderer.domElement.getBoundingClientRect();
    raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
    const hit=raycaster.intersectObjects(pickables,false).find(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return true;});
+   const pendiente=hit?.object.userData.pending;if(pendiente){tip.textContent=pendiente.nombre+' · sin TAG';tip.style.left=(e.clientX-r.left+14)+'px';tip.style.top=(e.clientY-r.top+14)+'px';tip.hidden=false;renderer.domElement.style.cursor='pointer';resaltarBomba(null);return;}
    const tag=hit?.object.userData.tag||null;resaltarBomba(tag);
    if(!tag){
     const eq=state.area==='torre'&&torre?raycaster.intersectObjects(torre.objetos.filter(o=>o.visible&&o.userData.nombre),false).find(h=>dentroDeSeccion(state.seccion,h.point.y)):null;

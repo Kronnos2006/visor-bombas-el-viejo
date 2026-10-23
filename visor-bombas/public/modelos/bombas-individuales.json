@@ -1,0 +1,518 @@
+[
+ {
+  "nombre": "Bomba 1 con motor y guarda roja",
+  "sector": "REF Fotos",
+  "bombas": [
+   {
+    "min": [
+     6.57,
+     0.3,
+     -21.62
+    ],
+    "max": [
+     8.42,
+     1.09,
+     -20.82
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba 2 con motor y guarda roja",
+  "sector": "REF Fotos",
+  "bombas": [
+   {
+    "min": [
+     6.57,
+     0.3,
+     -23.08
+    ],
+    "max": [
+     8.42,
+     1.09,
+     -22.28
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba central pequena con motor y guarda roja",
+  "sector": "REF Fotos",
+  "bombas": [
+   {
+    "min": [
+     6.94,
+     0.3,
+     -22.19
+    ],
+    "max": [
+     8.05,
+     0.774,
+     -21.71
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba auxiliar exterior de tanques de agua - motor y guarda ventilada",
+  "sector": "REF Agua y enfriamiento",
+  "bombas": [
+   {
+    "min": [
+     16.9,
+     0.3,
+     2.2
+    ],
+    "max": [
+     18.2,
+     1.18,
+     3.45
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Tres bombas de circulacion con guardas y bancadas",
+  "sector": "REF Agua y enfriamiento",
+  "bombas": [
+   {
+    "min": [
+     28.9,
+     0.3001,
+     -3.8198
+    ],
+    "max": [
+     31.1997,
+     1.4499,
+     -2.7802
+    ]
+   },
+   {
+    "min": [
+     32.6002,
+     0.3001,
+     -3.8198
+    ],
+    "max": [
+     34.8998,
+     1.4499,
+     -2.7802
+    ]
+   },
+   {
+    "min": [
+     36.3003,
+     0.3001,
+     -3.8198
+    ],
+    "max": [
+     38.6,
+     1.4499,
+     -2.7802
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Par de bombas lado oficina entre tanques 1 y 2",
+  "sector": "REF Cuatro tanques detalle",
+  "bombas": [
+   {
+    "min": [
+     -8.85,
+     0.3,
+     -1.5501
+    ],
+    "max": [
+     -7.8499,
+     1.03,
+     -0.2499
+    ]
+   },
+   {
+    "min": [
+     -7.2501,
+     0.3,
+     -1.5501
+    ],
+    "max": [
+     -6.25,
+     1.03,
+     -0.2499
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Par de bombas posterior entre tanques 1 y 2",
+  "sector": "REF Cuatro tanques detalle",
+  "bombas": [
+   {
+    "min": [
+     -8.85,
+     0.3,
+     6.5001
+    ],
+    "max": [
+     -7.8499,
+     1.03,
+     7.7999
+    ]
+   },
+   {
+    "min": [
+     -7.2501,
+     0.3,
+     6.5001
+    ],
+    "max": [
+     -6.25,
+     1.03,
+     7.7999
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Par de bombas auxiliares marcado junto al verde",
+  "sector": "REF Cuatro tanques detalle",
+  "bombas": [
+   {
+    "min": [
+     11.3662,
+     0.48,
+     -1.1449
+    ],
+    "max": [
+     12.0162,
+     0.9545,
+     -0.3
+    ]
+   },
+   {
+    "min": [
+     12.8662,
+     0.48,
+     -1.1449
+    ],
+    "max": [
+     13.5162,
+     0.9545,
+     -0.3
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Tres bombas con motores bases y guardas",
+  "sector": "REF Torre pequena",
+  "bombas": [
+   {
+    "min": [
+     -15.4395,
+     0.6,
+     11.715
+    ],
+    "max": [
+     -14.2395,
+     1.575,
+     12.5149
+    ]
+   },
+   {
+    "min": [
+     -11.8895,
+     0.6,
+     11.715
+    ],
+    "max": [
+     -10.6896,
+     1.575,
+     12.5149
+    ]
+   },
+   {
+    "min": [
+     -9.9395,
+     0.6,
+     11.715
+    ],
+    "max": [
+     -8.7395,
+     1.575,
+     12.5149
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba a la derecha de escalera 1 - segun foto",
+  "sector": "REF Semilleros y pies de cuba",
+  "bombas": [
+   {
+    "min": [
+     39.55,
+     0.14,
+     15.6
+    ],
+    "max": [
+     41.25,
+     1.355,
+     16.7
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba a la derecha de escalera 2 - segun foto",
+  "sector": "REF Semilleros y pies de cuba",
+  "bombas": [
+   {
+    "min": [
+     39.55,
+     0.14,
+     13.8
+    ],
+    "max": [
+     41.25,
+     1.355,
+     14.9
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Cuatro bombas dos por tanque del lado oficina",
+  "sector": "REF Fermentacion",
+  "bombas": [
+   {
+    "min": [
+     -0.75,
+     0.3,
+     7.9001
+    ],
+    "max": [
+     0.1498,
+     1.295,
+     9.2998
+    ]
+   },
+   {
+    "min": [
+     0.7498,
+     0.3,
+     7.9001
+    ],
+    "max": [
+     1.6502,
+     1.295,
+     9.2998
+    ]
+   },
+   {
+    "min": [
+     4.6498,
+     0.3,
+     7.9001
+    ],
+    "max": [
+     5.5502,
+     1.295,
+     9.2998
+    ]
+   },
+   {
+    "min": [
+     6.1502,
+     0.3,
+     7.9001
+    ],
+    "max": [
+     7.05,
+     1.295,
+     9.2998
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Motor y bomba auxiliar Bach 1",
+  "sector": "DUSA",
+  "bombas": [
+   {
+    "min": [
+     -29.5412,
+     0.6,
+     -3.6439
+    ],
+    "max": [
+     -28.2411,
+     1.9804,
+     -2.804
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Motor y bomba auxiliar Bach 2",
+  "sector": "DUSA",
+  "bombas": [
+   {
+    "min": [
+     -29.5412,
+     0.6,
+     -1.6439
+    ],
+    "max": [
+     -28.2411,
+     1.9804,
+     -0.804
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Dos bombas frontales y tres frente a semilleros",
+  "sector": "REF Fermentacion",
+  "bombas": [
+   {
+    "min": [
+     18.5,
+     0.3003,
+     27.3997
+    ],
+    "max": [
+     19.4004,
+     1.2947,
+     28.7995
+    ]
+   },
+   {
+    "min": [
+     20.0998,
+     0.3003,
+     27.3997
+    ],
+    "max": [
+     21.0005,
+     1.2947,
+     28.7995
+    ]
+   },
+   {
+    "min": [
+     32.7896,
+     0.3003,
+     30.2005
+    ],
+    "max": [
+     33.69,
+     1.2947,
+     31.6003
+    ]
+   },
+   {
+    "min": [
+     34.0502,
+     0.3003,
+     30.2005
+    ],
+    "max": [
+     34.9496,
+     1.2947,
+     31.6003
+    ]
+   },
+   {
+    "min": [
+     35.3096,
+     0.3003,
+     30.2005
+    ],
+    "max": [
+     36.21,
+     1.2947,
+     31.6003
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba 1 enfrentada sin tuberias",
+  "sector": "REF Pasillo",
+  "bombas": [
+   {
+    "min": [
+     18.5,
+     0.3,
+     8.15
+    ],
+    "max": [
+     19.9,
+     1.295,
+     9.05
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba 2 enfrentada sin tuberias",
+  "sector": "REF Pasillo",
+  "bombas": [
+   {
+    "min": [
+     20.8,
+     0.3,
+     8.15
+    ],
+    "max": [
+     22.2,
+     1.295,
+     9.05
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Tres bombas exteriores con guardas rojas",
+  "sector": "REF Almacenamiento alcohol",
+  "bombas": [
+   {
+    "min": [
+     -13.6,
+     0.2996,
+     27.9997
+    ],
+    "max": [
+     -12.7003,
+     1.2954,
+     29.4003
+    ]
+   },
+   {
+    "min": [
+     -6.7001,
+     0.2996,
+     27.9997
+    ],
+    "max": [
+     -5.8004,
+     1.2954,
+     29.4003
+    ]
+   },
+   {
+    "min": [
+     2.6003,
+     0.2996,
+     27.9997
+    ],
+    "max": [
+     3.5,
+     1.2954,
+     29.4003
+    ]
+   }
+  ]
+ }
+]

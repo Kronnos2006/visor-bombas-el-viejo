@@ -2,6 +2,7 @@
 // Los nombres de sector salen de los elementos del FBX (ver tools/fbx-planta-a-glb.mjs y planta-integrada.json).
 export const INFO_URL='/modelos/planta-integrada.json';
 export const SECTORES_INT=[
+ {id:'tanques',nombre:'Sector de tanques',sectores:['Sector de tanques']},
  {id:'torre',nombre:'Torre de destilación',sectores:['DUSA','DUSA planta','VOCATUS Enlace destilacion']},
  {id:'fermentacion',nombre:'Fermentación',sectores:['REF Fermentacion','REF Fermentacion ampliacion']},
  {id:'semilleros',nombre:'Semilleros',sectores:['REF Semilleros y pies de cuba']},
@@ -34,4 +35,20 @@ export function cajaSector(info,id){
  for(const k of s.sectores){const b=info.sectores[k];if(!b)continue;
   min=min?min.map((v,i)=>Math.min(v,b.min[i])):[...b.min];max=max?max.map((v,i)=>Math.max(v,b.max[i])):[...b.max];}
  return min?{min,max}:null;
+}
+
+// Conserva la relación con la torre en el plano existente. La separación final es de
+// presentación: desplaza el sector hacia el frente solo lo necesario para no invadir
+// los edificios del conjunto. No son coordenadas de levantamiento.
+export function ubicarTanques(info,area,torre,local){
+ const dx=area.pos[0]-torre.pos[0],dz=area.pos[1]-torre.pos[1],c=Math.cos(torre.giro),s=Math.sin(torre.giro);
+ const [x,,z]=torreAIntegrado(info.torre,c*dx-s*dz,0,s*dx+c*dz);
+ const giro=info.torre.giro+area.giro-torre.giro,cg=Math.cos(giro),sg=Math.sin(giro);
+ const corners=[];for(const a of [local.min[0],local.max[0]])for(const b of [local.min[2],local.max[2]])corners.push([cg*a+sg*b,-sg*a+cg*b]);
+ const minX=x+Math.min(...corners.map(p=>p[0])),maxX=x+Math.max(...corners.map(p=>p[0]));
+ const minZ=z+Math.min(...corners.map(p=>p[1])),maxZ=z+Math.max(...corners.map(p=>p[1]));
+ let desplazar=0;
+ const obstacle=Object.entries(info.sectores).filter(([name])=>!SIEMPRE.includes(name)&&name!==CUBIERTA&&name!=='Sector de tanques').map(([,b])=>b);
+ let changed=true;while(changed){changed=false;for(const b of obstacle){if(minX<b.max[0]+1&&maxX>b.min[0]-1&&minZ+desplazar<b.max[2]+1-1e-6&&maxZ+desplazar>b.min[2]-1+1e-6){desplazar=b.max[2]+1-minZ;changed=true;}}}
+ return {x,y:(info.sectores['Suelo VOCATUS']?.max[1]||0)-local.min[1],z:z+desplazar,giro,desplazamiento:desplazar};
 }

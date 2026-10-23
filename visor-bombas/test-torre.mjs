@@ -77,7 +77,7 @@ test('los cinco edificios FBX siguen el orden corregido y la bodega mira a la of
  const profundidad=delta[0]*Math.sin(torre.giro)+delta[1]*Math.cos(torre.giro);
  assert.ok(-1.3-(profundidad+quimicos.huella[1]/2)>3,'torre separada de químicos');
 });
-test('modelo integrado de Revit: área aparte, GLB comprimido y fuera del plano de sitio',async()=>{
+test('modelo integrado: GLB comprimido, sectores Revit y alineación de torre',async()=>{
  const {readFile}=await import('node:fs/promises');
  const a=AREAS.find(x=>x.id==='integrado');assert.ok(a,'en el menú');assert.equal(a.aparte,true);
  assert.match(a.modelo,/planta-integrada\.glb$/);
@@ -91,7 +91,8 @@ test('modelo integrado de Revit: área aparte, GLB comprimido y fuera del plano 
  const {SECTORES_INT,SIEMPRE,CUBIERTA,torreAIntegrado,visibleCon,cajaSector}=await import('./public/planta-integrada.js');
  // Cada sector del FBX pertenece a un sector del menú (o es piso/cubierta).
  for(const k of Object.keys(info.sectores))assert.ok(SIEMPRE.includes(k)||k===CUBIERTA||SECTORES_INT.some(s=>s.sectores.includes(k)),'sector sin asignar: '+k);
- for(const s of SECTORES_INT)assert.ok(cajaSector(info,s.id),'caja de '+s.id);
+ // Tanques se incorpora desde el sector existente en tiempo de ejecución; su caja y separación se comprueban en test-planta-individual.
+ for(const s of SECTORES_INT.filter(s=>s.id!=='tanques'))assert.ok(cajaSector(info,s.id),'caja de '+s.id);
  assert.equal(visibleCon(CUBIERTA,'torre'),false);assert.equal(visibleCon('Suelo VOCATUS','torre'),true);assert.equal(visibleCon('REF Fermentacion','torre'),false);
  // Alineación de la torre: muchas piezas en común y error chico; las bombas caen dentro de la losa DUSA.
  assert.ok(info.torre.piezas>50&&info.torre.errorMedio<1,JSON.stringify(info.torre));
