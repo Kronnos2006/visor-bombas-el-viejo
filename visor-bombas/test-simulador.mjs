@@ -12,10 +12,10 @@ test('lee la designación de tamaño de cada bomba',()=>{
  assert.deepEqual(parseSize('3X4X8G MTO'),{descarga:3,succion:4,impulsor:8});
  assert.deepEqual(parseSize('2X2 1/2-6'),{descarga:2,succion:2.5,impulsor:6});
 });
-test('cada bomba activa pasa por su punto de placa y B22 no se simula',()=>{
+test('cada bomba activa pasa por su punto de placa y las SIN USO se simulan con datos supuestos',()=>{
  for(const p of photoPumps){
   const P=simParams(p);
-  if(p.inactive){assert.equal(P,null);continue;}
+  if(p.inactive){assert.ok(P,`${p.tag} se simula`);assert.ok(P.estimados.some(e=>/SIN USO/.test(e)),`${p.tag} avisa que es supuesto`);const d=steady(createPumpModel(P));assert.ok(Number.isFinite(d.q)&&d.q>0,`${p.tag} entrega caudal`);continue;}
   const d=steady(createPumpModel(P));
   const tol=P.nMotor===P.n0?.01:.03;
   assert.ok(Math.abs(d.q/P.Qd-1)<tol,`${p.tag} caudal`);assert.ok(Math.abs(d.H/P.Hd-1)<2*tol,`${p.tag} altura`);

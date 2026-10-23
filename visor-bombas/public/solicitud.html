@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Solicitud a bodega · Vocatus</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/campo.css"></head>
-<body>
-<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><nav class="campo-nav"><a href="/">Visor 3D</a><a href="/levantamiento.html">Levantamiento</a><a href="/avance.html">Avance</a><a href="/solicitud.html" aria-current="page">Solicitud a bodega</a><a href="/equipo.html">Mover o cambiar</a></nav></header>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Solicitud a bodega · Vocatus</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/campo.css"><link rel="stylesheet" href="/tema-vocatus.css"><link rel="stylesheet" href="/tema-campo.css"></head>
+<body class="facil">
+<script>try{if(localStorage.getItem('vocatus-vista')==='completa')document.body.classList.remove('facil')}catch(e){}</script>
+<header><a class="brand" href="/">V<span>VOCATUS<small>ATLAS DE MANTENIMIENTO</small></span></a><nav class="campo-nav"><a href="/"><b aria-hidden="true">🏭</b>Visor 3D</a><a href="/levantamiento.html"><b aria-hidden="true">📋</b>Levantamiento</a><a href="/avance.html"><b aria-hidden="true">📊</b>Avance</a><a href="/solicitud.html" aria-current="page"><b aria-hidden="true">📦</b>Pedir a bodega</a><a href="/equipo.html"><b aria-hidden="true">🔧</b>Mover o cambiar</a></nav><button id="tema-toggle" type="button" aria-pressed="false" title="Cambiar entre modo claro y oscuro"><b aria-hidden="true">☀️</b> <span>Claro</span></button><button id="vista-toggle" type="button" aria-pressed="false" title="Mostrar u ocultar la vista original">⚙ <span>Más opciones</span></button></header>
 <main class="campo">
 <p class="eyebrow">REPUESTOS</p>
 <h1>Solicitud a bodega</h1>
@@ -33,4 +34,6 @@
 </section>
 </main>
 <script type="module" src="/solicitud.js"></script>
+<canvas id="burbujas" aria-hidden="true"></canvas>
+<script src="/tema-vocatus.js"></script>
 </body></html>

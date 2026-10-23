@@ -1,5 +1,5 @@
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
-import {abrirFichaPendiente} from './ficha-pendiente.js';
+import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import {compactar} from './compactar.js';
@@ -246,6 +246,7 @@ function renderPanel(){
  if(state.sector){renderPhotoPanel();return;}
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));const p=state.pump;
  if(!p){$('#panel').innerHTML='<div class="empty-state"><div class="symbol">◎</div>Elegí una bomba en el mapa o en el explorador para abrir su expediente.</div>';return;}
+ if(state.tab==='sim'){renderSimPanel(p.data?{...p.data,tag:p.tag}:p);return;}
  if(state.tab==='ficha'){
   const part=parts[state.part];const noteURI='obsidian://open?'+new URLSearchParams({vault:state.vaultName||'autocad el vieno vovatus',file:p.source});
   $('#panel').innerHTML=`<div class="notice">${state.demo?'PROPUESTA: datos e historial ficticios. Las medidas no son especificaciones de compra. ':''}${part?'Despiece según ANSI/ASME B73.1: la arquitectura es la de la norma, verificada contra las placas. Es una visualización de mantenimiento, no es plano de taller. Las medidas de cada pieza siguen pendientes del catálogo del fabricante.':'Ubicación y geometría de demostración. La ficha aporta los datos registrados; no confirma la construcción del modelo.'}</div>${part?`<div class="block"><p class="eyebrow">COMPONENTE ${String(state.part+1).padStart(2,'0')}</p><h2>${esc(part.name)}</h2><p class="eyebrow">${esc(part.pieza)}</p><p class="muted">${esc(part.desc)}</p>${part.ref?`<p class="norma">${esc(part.ref)}</p>`:''}${part.orings?renderOrings():fields(part.fields)}</div>`:`<div class="block"><h3>Identificación</h3>${fields([['Marca','marca'],['Modelo','modelo'],['Serie','serie'],['Tipo de bomba','tipo_bomba'],['Fluido','fluido'],['Confianza registrada','confianza']])}</div><div class="block"><h3>Sellado y repuestos</h3>${fields([['Tipo de sellado','tipo_sellado'],['Sello · modelo','sello_modelo'],['Sello · diámetro (mm)','sello_diametro_mm'],['Elastómero','sello_elastomero'],['Empaque · sección (mm)','empaque_seccion_mm']])}${renderOrings()}</div>`}<div class="block"><h3>Planos vinculados</h3>${p.files.map(f=>f.exists?`<a class="doc" href="/api/document?${new URLSearchParams({tag:p.tag,path:f.path})}">↓ ${esc(f.path.split('/').pop())}</a>`:`<p class="doc muted">${esc(f.path.split('/').pop())} · no encontrado</p>`).join('')||'<p class="muted">Sin archivos vinculados.</p>'}<p class="muted">Láminas: ${esc((Array.isArray(p.data.pid)?p.data.pid:[]).join(' · '))}</p></div><div class="source">${part?esc(NORMA)+'<br>':''}Fuente: ${esc(p.source)}<br>${esc(p.data.fuente_datos||'Fuente por verificar')}</div><div class="panel-actions">${state.demo?'<span class="muted">Ficha local de demostración</span>':`<a href="${esc(noteURI)}">Abrir ficha en Obsidian ↗</a>`}<button type="button" id="download-summary-pdf" class="primary pdf-btn">📄 Descargar resumen PDF</button><button id="print">Imprimir ficha</button></div>`;
@@ -640,9 +641,20 @@ function renderRail(){
 })();
 
 
+// Bomba sin TAG del modelo integrado: se simula con lo que se haya anotado en su ficha pendiente
+// (caudal, altura, rpm, potencia, servicio). Lo que falta se estima y el simulador lo avisa.
+function pumpPendienteParaSimular(reference){
+ let d={};try{d=JSON.parse(localStorage.getItem(clavePendiente(reference)))||{};}catch{}
+ const kw=parseFloat(String(d.potencia||'').replace(',','.')),specs=[];
+ if(d.caudal)specs.push(['Caudal',d.caudal+' gpm']);if(d.altura)specs.push(['Altura',String(d.altura)]);
+ const tag='Pendiente · '+reference.nombre;state.pump.simTag=tag;
+ const sinDatos=!d.caudal&&!d.altura&&!d.rpm&&!kw;
+ return {tag,nombre:reference.nombre,servicio:d.servicio||'',size:d.size||'',variant:'lf',specs,motor:{rpm:d.rpm||'',potencia:kw?String(kw*1.341):''},inactive:sinDatos};
+}
+
 // Simulador de operación por bomba (guía HIDROMAC 2196 ajustada a cada placa).
 function getSim(p){
- if(!p||p.inactive)return null;
+ if(!p)return null;
  if(!sims[p.tag]){const params=simParams(p);if(!params)return null;const model=createPumpModel(params);sims[p.tag]={model,inputs:model.defaults(),state:model.initialState(),paused:false,speed:1,showFlow:true,log:[],lastLog:-1};}
  return sims[p.tag];
 }
@@ -654,7 +666,6 @@ function showInside(){
 }
 function renderSimPanel(p){
  const panel=$('#panel');
- if(p.inactive){panel.innerHTML=`<p class="eyebrow">SIMULADOR · ${esc(p.tag)}</p><h2>${esc(p.tag)} · SIN USO</h2><p class="notice">Equipo marcado SIN USO y sin datos de placa (marca, caudal, altura, motor). No se simula para no inventar su comportamiento. Al levantar la placa en campo se habilita con sus propios datos.</p>`;return;}
  const sim=getSim(p);if(!sim){panel.innerHTML='<p class="notice">Faltan datos de placa para simular esta bomba.</p>';return;}
  panel.innerHTML=simPanelHTML(p,sim);
  const q=id=>panel.querySelector('#sim-'+id),refresh=()=>{const d=sim.model.derive(sim.state,sim.inputs);updateSimPanel(panel,sim,d);drawSimChart(q('chart'),sim,d);};
@@ -678,7 +689,7 @@ function renderSimPanel(p){
    if(sim.paused)continue;let left=dt*sim.speed;while(left>1e-6){const h=Math.min(.1,left);sim.state=sim.model.step(sim.state,sim.inputs,h);left-=h;}
    const second=Math.floor(sim.state.time);if(second!==sim.lastLog&&(sim.inputs.running||sim.state.rpm>1)){sim.lastLog=second;const d=sim.model.derive(sim.state,sim.inputs);sim.log.push({t:second,rpm:Math.round(d.rpm),caudal_m3h:+(d.q*3600).toFixed(3),altura_m:+d.H.toFixed(2),potencia_kW:+(d.electric/1000).toFixed(3),corriente_A:+d.current.toFixed(2),npsha_m:+d.npsha.toFixed(2),fase:d.phase});if(sim.log.length>900)sim.log.shift();}
   }
-  const cur=state.view==='pump'&&state.pump?sims[state.pump.tag]:null,d=cur?cur.model.derive(cur.state,cur.inputs):null;
+  const cur=state.view==='pump'&&state.pump?sims[state.pump.simTag||state.pump.tag]:null,d=cur?cur.model.derive(cur.state,cur.inputs):null;
   simRig?.update(cur,d,cur&&!cur.paused?dt*cur.speed:0,{reduced:reducedMotion.matches,showFlow:cur?.showFlow,exploded:state.explode>0});
   if(cur&&state.tab==='sim'){const panel=$('#panel');if(now-ui>150){ui=now;updateSimPanel(panel,cur,d);}if(now-chart>300){chart=now;drawSimChart(panel.querySelector('#sim-chart'),cur,d);}}
   requestAnimationFrame(tick);
@@ -766,8 +777,9 @@ function selectPendingPump(reference){
 }
 function renderPendingPanel(){
  const reference=state.pump.pending;
- document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='ficha'));
+ const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();
+ if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
  abrirFichaPendiente($('#panel'),reference).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }

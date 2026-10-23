@@ -7,7 +7,17 @@
   const body = document.body;
 
   // 46 · Modo claro / oscuro
+  // Vista simple / completa (también en las páginas de campo)
+  const vistaBtn = document.getElementById('vista-toggle');
+  if (vistaBtn && !vistaBtn.onclick) {
+    const s = vistaBtn.querySelector('span');
+    const pintarVista = () => { const completa = !body.classList.contains('facil'); vistaBtn.setAttribute('aria-pressed', completa); s.textContent = completa ? 'Vista simple' : 'Más opciones'; };
+    vistaBtn.onclick = () => { body.classList.toggle('facil'); guardar('vocatus-vista', body.classList.contains('facil') ? 'simple' : 'completa'); pintarVista(); };
+    pintarVista();
+  }
+
   const tema = document.getElementById('tema-toggle');
+  if (tema) {
   const pintarTema = () => {
     const claro = body.classList.contains('claro');
     tema.querySelector('b').textContent = claro ? '🌙' : '☀️';
@@ -20,9 +30,11 @@
     if (document.startViewTransition && !sinMovimiento) document.startViewTransition(cambiar); else cambiar();
   };
   pintarTema();
+  }
 
   // 45 · Portada (una vez por sesión). Si existe /portada.mp4 se usa de fondo.
   const portada = document.getElementById('portada');
+  if (portada) {
   let vista = null; try { vista = sessionStorage.getItem('vocatus-portada'); } catch {}
   if (!vista && body.classList.contains('facil')) {
     portada.hidden = false;
@@ -40,10 +52,11 @@
     portada.querySelector('button').onclick = entrar;
     addEventListener('keydown', e => { if (!portada.hidden && (e.key === 'Enter' || e.key === 'Escape')) entrar(); });
   }
+  }
 
   // 44 · Burbujas de fondo, lentas y tenues
   const lienzo = document.getElementById('burbujas');
-  if (!sinMovimiento && lienzo.getContext) {
+  if (lienzo && !sinMovimiento && lienzo.getContext) {
     const ctx = lienzo.getContext('2d');
     let w, h, dpr; const burbujas = [];
     const medir = () => { dpr = Math.min(devicePixelRatio || 1, 2); w = innerWidth; h = innerHeight; lienzo.width = w * dpr; lienzo.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
@@ -69,7 +82,7 @@
   // 48 · Onda al tocar botones
   if (!sinMovimiento) document.addEventListener('pointerdown', e => {
     if (!body.classList.contains('facil')) return;
-    const el = e.target.closest('button,.main-nav a,.pump-row'); if (!el || el.disabled) return;
+    const el = e.target.closest('button,.main-nav a,.campo-nav a,.pump-row'); if (!el || el.disabled) return;
     const r = el.getBoundingClientRect(), d = Math.max(r.width, r.height);
     const o = document.createElement('span'); o.className = 'toque';
     Object.assign(o.style, { width: d + 'px', height: d + 'px', left: (e.clientX - r.left - d / 2) + 'px', top: (e.clientY - r.top - d / 2) + 'px' });

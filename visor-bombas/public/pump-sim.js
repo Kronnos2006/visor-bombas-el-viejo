@@ -21,8 +21,8 @@ function flow(text){const v=num(text);if(v===null)return null;return /gpm/i.test
 
 // Parámetros por bomba a partir de la ficha. Lo que falta se estima y se informa.
 export function simParams(p){
- if(!p||p.inactive)return null;
- const estimados=[],size=parseSize(p.size)||{descarga:1.5,succion:2,impulsor:8};
+ if(!p)return null;
+ const estimados=p.inactive?['equipo SIN USO o sin placa: todo el comportamiento es supuesto']:[],size=parseSize(p.size)||{descarga:1.5,succion:2,impulsor:8};
  const nMotor=num(p.motor?.rpm)||num(spec(p,/velocidad/i))||1750;
  let n0=num(spec(p,/velocidad de bomba/i)),Qd=flow(spec(p,/caudal/i)),Hd=num(spec(p,/altura/i));
  const prated=(num(p.motor?.potencia)||(estimados.push('potencia del motor'),2))*HP;
