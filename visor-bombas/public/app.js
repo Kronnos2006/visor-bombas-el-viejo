@@ -1,3 +1,4 @@
+import {cargarModeloPlanta, prepararBombasBlender} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
 import * as THREE from 'three';
@@ -104,7 +105,7 @@ function rebuildPlant(){
   areaGroups={tanques:tq,torre:tr};plant.add(tq,tr);
   for(const area of AREAS.filter(a=>a.modelo)){
    const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);
-   new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo).then(glb=>{
+   (area.aparte&&new URLSearchParams(location.search).get('modelo')!=='original'?cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area}):new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo)).then(glb=>{
     if(g.parent!==plant)return;
     glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(area.aparte)return;o.userData.areaId=area.id;areaPickables.push(o);}});
     g.add(glb.scene);
@@ -168,7 +169,7 @@ function buildPump(variant='lf'){
 function fly(pos,target,duration=1100){cameraFlight={start:performance.now(),duration:reducedMotion.matches?1:duration,from:camera.position.clone(),to:new THREE.Vector3(...pos),fromTarget:controls.target.clone(),toTarget:new THREE.Vector3(...target)};}
 function initScene(){
  try{
- renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);renderer.localClippingEnabled=true;if(new URLSearchParams(location.search).has('medir'))window.__visor={renderer,get scene(){return scene;},get camera(){return camera;}};viewport.prepend(renderer.domElement);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);renderer.localClippingEnabled=true;if(new URLSearchParams(location.search).has('medir'))window.__visor={renderer,get scene(){return scene;},get camera(){return camera;}};viewport.prepend(renderer.domElement);
  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(43,1,.1,600);camera.position.set(-18,85,80);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=190;controls.maxPolarAngle=Math.PI*.49;controls.target.set(-18,0,8);controls.addEventListener('start',()=>cameraFlight=null);
  scene.add(new THREE.HemisphereLight(0xd8efe6,0x263c40,2.5));const light=new THREE.DirectionalLight(0xffecd5,3.5);light.position.set(-5,12,8);scene.add(light);const rim=new THREE.DirectionalLight(0x95bcde,2);rim.position.set(5,3,-7);scene.add(rim);
  plant=new THREE.Group();pumpGroup=new THREE.Group();scene.add(plant,pumpGroup);pumpGroup.visible=false;buildPump();
@@ -793,6 +794,15 @@ function montarIntegrado(g,escena,placed){
    b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.userData.tag=p.tag;pickables.push(o);}});
    const a=new THREE.Object3D();a.position.set(0,2.2,0);b.add(a);marker(a,p.tag,'pump',p.tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:'torre'});
   }
+  if(escena.userData.blenderLocal){
+   const enlaces=prepararBombasBlender(THREE,escena,{sector,exterior,photoPumps,grupos});
+   for(const [tag,body] of Object.entries(enlaces)){
+    body.userData.sectorInt='tanques';pumpObjectsInt[tag]=body;
+    body.traverse(o=>{if(o.isMesh){o.userData.tag=tag;pickables.push(o);}});
+    const anchor=new THREE.Object3D();anchor.position.set(0,2.2,0);body.add(anchor);marker(anchor,tag,'pump',tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:'tanques'});
+   }
+   window.__blenderIntegrado={bombas:Object.keys(enlaces),modelo:escena};
+  }else{
   const tankPumps=placed.filter(p=>areaOf(p)==='tanques');
   const tanques=sector(THREE,tankPumps);tanques.userData.sector='Sector de tanques';g.add(tanques);integrado.tanques=tanques;
   for(const p of tankPumps){const body=compactar(THREE,exterior(THREE,p.scale,p.variant));body.position.set(p.x,p.y??.3,p.z);body.rotation.y=p.rotation;body.userData.tag=p.tag;body.userData.sectorInt='tanques';tanques.add(body);pumpObjectsInt[p.tag]=body;
@@ -807,6 +817,7 @@ function montarIntegrado(g,escena,placed){
   const label=document.createElement('button');label.className='label area-label';label.textContent='Sector de tanques';label.setAttribute('aria-label','Ver sector de tanques en la planta completa');
   label.onclick=()=>{state.filtroInt='tanques';aplicarFiltroInt();applyArea();if($('#area'))$('#area').value=state.filtroInt?'sector:'+state.filtroInt:'integrado';renderList();flyIntegrado();};$('#labels').append(label);markers.push({obj:labelAnchor,el:label,kind:'corner',area:'integrado',sectorInt:'tanques'});
 
+  }
   const numeracion={};
   for(const grupo of grupos)for(const [indice,caja] of grupo.bombas.entries()){
    const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1}`:grupo.nombre,grupo:grupo.nombre,indice:indice+1};
