@@ -13,6 +13,15 @@ let info = {rows:[], fields:[], token:'', writable:false, demo:false}, photos = 
 let activeTag = '', selection = 0, replacementBase=null;
 const draftKey = tag => 'vocatus-borrador-' + tag, photoKey = tag => 'vocatus-fotos-' + tag;
 const photosByTag = new Map();
+let clearFields={};
+function syncClearFields(){
+ for(const button of document.querySelectorAll('[data-clear-field]')){
+  const id=button.dataset.clearField,marked=Object.hasOwn(clearFields,id),input=button.parentElement.querySelector('[name]');
+  button.setAttribute('aria-pressed',String(marked));button.textContent=marked?'↶ Conservar dato':'Quitar dato incorrecto';
+  input.disabled=marked;
+  button.parentElement.querySelector('[data-clear-status]').textContent=marked?'Se quitará al guardar. Quedará en respaldo e historial.':'';
+ }
+}
 const kind = tag => tag.startsWith('B') ? 'B' : 'P';
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 
@@ -30,9 +39,15 @@ function renderFields() {
    const unit = f.unit ? ` (${f.unit[k]})` : '';
    const input = f.options ? `<select name="${f.id}"><option value="">— sin cambio —</option>${f.options.map(o => `<option>${esc(o)}</option>`).join('')}</select>`
     : `<input name="${f.id}" ${NUMERIC_RULES[f.id]?.integer ? 'inputmode="numeric" pattern="[0-9]*"' : f.unit || f.number ? 'inputmode="decimal"' : ''} maxlength="200">`;
-   return `<label>${esc(f.label + unit)}${input}${has ? `<span class="current">En ficha: ${esc(now)}</span>` : ''}</label>`;
+   return `<div><label>${esc(f.label + unit)}${input}${has ? `<span class="current">En ficha: ${esc(now)}</span>` : ''}</label>${has?`<button type="button" data-clear-field="${f.id}" data-clear-value="${esc(now)}" aria-pressed="false">Quitar dato incorrecto</button><small data-clear-status role="status"></small>`:''}</div>`;
   }).join('');
  }
+ document.querySelectorAll('[data-clear-field]').forEach(button=>button.onclick=()=>{
+  const id=button.dataset.clearField;
+  if(Object.hasOwn(clearFields,id))delete clearFields[id];else clearFields[id]=button.dataset.clearValue;
+  syncClearFields();saveDraft();
+ });
+ syncClearFields();
 }
 function oringRow(o = {}) {
  const div = document.createElement('div'); div.className = 'oring';
@@ -44,19 +59,19 @@ function oringRow(o = {}) {
 }
 function collect() {
  const form = new FormData($('#form')), fields = {};
- for (const f of info.fields) { const v = String(form.get(f.id) ?? '').trim(); if (v) fields[f.id] = v; }
+ for (const f of info.fields) { const v = String(form.get(f.id) ?? '').trim(); if (v&&!Object.hasOwn(clearFields,f.id)) fields[f.id] = v; }
  const orings=[...document.querySelectorAll('.oring')].map(div=>{
   const item=Object.fromEntries([...div.querySelectorAll('[data-k]')].map(i=>[i.dataset.k,i.value.trim()]));
   if(div.dataset.existingIndex!==undefined)item.existingIndex=Number(div.dataset.existingIndex);
   return item;
  }).filter(o=>o.medida||o.codigo);
- return {replaceOrings:$('#replace-orings').checked,baseOrings:replacementBase||(current?.data?(current.data.documental||current.data).orings||[]:[]),tag: $('#tag').value.trim().toUpperCase(), date: form.get('date'), author: String(form.get('author') || '').trim(), fields, orings, observations: String(form.get('observations') || '').trim(),verification:{scopes:[...document.querySelectorAll('[name=verification-scope]:checked')].map(el=>el.value),evidence:String(form.get('verification-evidence')||'').trim()}};
+ return {clearFields:{...clearFields},clearReason:String(form.get('clearReason')||'').trim(),replaceOrings:$('#replace-orings').checked,baseOrings:replacementBase||(current?.data?(current.data.documental||current.data).orings||[]:[]),tag: $('#tag').value.trim().toUpperCase(), date: form.get('date'), author: String(form.get('author') || '').trim(), fields, orings, observations: String(form.get('observations') || '').trim(),verification:{scopes:[...document.querySelectorAll('[name=verification-scope]:checked')].map(el=>el.value),evidence:String(form.get('verification-evidence')||'').trim()}};
 }
 function saveDraft() {
  const d = collect(); store.set('vocatus-responsable', d.author);
  if (!TAG.test(activeTag)) return;
  d.tag = activeTag;
- if (Object.keys(d.fields).length || d.orings.length || d.observations || d.verification.scopes.length || d.replaceOrings) store.set(draftKey(activeTag), d); else store.del(draftKey(activeTag));
+ if (Object.keys(d.clearFields).length || Object.keys(d.fields).length || d.orings.length || d.observations || d.verification.scopes.length || d.replaceOrings) store.set(draftKey(activeTag), d); else store.del(draftKey(activeTag));
  savePhotos();
 }
 function savePhotos() {
@@ -66,6 +81,7 @@ function savePhotos() {
 }
 // Deja el formulario sin datos de ningún equipo (conserva fecha y responsable).
 function clearForm() {
+ clearFields={};$('#form [name=clearReason]').value='';
  for (const el of document.querySelectorAll('#form [data-group] [name]')) el.value = '';
  $('#form [name=observations]').value = '';
  $('#orings').innerHTML = '';$('#replace-orings').checked=false;replacementBase=null;$('#component-photos').innerHTML='';$('#orings-actuales').textContent='';
@@ -75,6 +91,7 @@ function clearForm() {
 function loadDraft(tag) {
  const d = store.get(draftKey(tag));
  if (d && d.tag === tag) {
+  clearFields={...(d.clearFields||{})};$('#form [name=clearReason]').value=d.clearReason||'';syncClearFields();
   for (const [k, v] of Object.entries(d.fields || {})) { const el = $(`#form [data-group] [name="${k}"]`); if (el) el.value = v; }
   $('#form [name=observations]').value = d.observations || '';
   $('#replace-orings').checked=d.replaceOrings===true;replacementBase=d.replaceOrings?d.baseOrings||[]:null;
@@ -139,7 +156,7 @@ function validate(data) {
  if (!TAG.test(data.tag)) throw new Error('Escribí un TAG válido (B1, P-1311…).');
  if (data.tag !== activeTag) throw new Error(`El formulario tiene datos de ${activeTag || 'ningún equipo'}; confirmá el TAG antes de guardar.`);
  validateSurveyInput(data);
- if (!Object.keys(data.fields).length && !data.orings.length && !photos.length && !data.observations && !data.verification.scopes.length && !data.replaceOrings) throw new Error('No hay datos para guardar.');
+ if (!Object.keys(data.clearFields||{}).length && !Object.keys(data.fields).length && !data.orings.length && !photos.length && !data.observations && !data.verification.scopes.length && !data.replaceOrings) throw new Error('No hay datos para guardar.');
 }
 $('#form').onsubmit = async e => {
  e.preventDefault(); const data = collect();

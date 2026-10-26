@@ -17,6 +17,12 @@ export function normalizeNumeric(id,value){
 export function validateSurveyInput(input){
  if(!validCalendarDate(input.date)||!String(input.author||'').trim())throw Error('Completá una fecha real y quién hizo el levantamiento.');
  const fields={...input.fields};
+ const clearFields=input.clearFields??{};
+ if(!clearFields||typeof clearFields!=='object'||Array.isArray(clearFields)||Object.values(clearFields).some(v=>typeof v!=='string'))throw Error('Lista de datos para quitar inválida.');
+ if(Object.keys(clearFields).length){
+  if(!String(input.clearReason||'').trim())throw Error('Escribí el motivo para quitar los datos incorrectos.');
+  for(const id of Object.keys(clearFields))if(String(fields[id]??'').trim())throw Error('No se puede quitar y reemplazar el mismo dato a la vez.');
+ }
  if(String(fields.motor_hp||'').trim()&&String(fields.motor_kw||'').trim())throw Error('Registrá la potencia del motor en HP o en kW, no ambas a la vez.');
  for(const key of Object.keys(NUMERIC_RULES))if(fields[key]!=null&&String(fields[key]).trim()!=='')fields[key]=normalizeNumeric(key,fields[key]);
  for(const o of input.orings||[])if(String(o.cantidad??'').trim()!==''&&(!/^\d+$/.test(String(o.cantidad).trim())||Number(o.cantidad)<1||Number(o.cantidad)>999))throw Error('O-rings: la cantidad debe ser un entero entre 1 y 999.');

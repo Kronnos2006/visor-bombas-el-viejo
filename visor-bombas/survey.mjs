@@ -137,6 +137,20 @@ export function surveyStore(vault, options = {}) {
   const note = splitNote(raw);
   if ((note.data.tag || note.data.id) !== tag) throw new Error('El identificador de la ficha no coincide con el equipo.');
   let front = note.front; const changed = [], changedIds=[];
+  const clearFields=input.clearFields??{},clearReason=one(input.clearReason,500);
+  for(const [id,expected] of Object.entries(clearFields)){
+   const field=FIELDS.find(f=>f.id===id),key=field?.[k];
+   if(!key)throw Error('Dato para quitar no válido en este equipo: '+id);
+   if(String(note.data[key]??'')!==expected)throw Error(field.label+': el dato cambió desde que abriste la ficha. Recargá antes de quitarlo.');
+   if(checked.scopes.some(scope=>field.invalida.includes(scope)))throw Error('Quitá el dato y revisá después su verificación; no se puede verificar el mismo apartado en esta retirada.');
+   if(!expected.trim())continue;
+   front=setKey(front,key,key+': ""');changedIds.push(id);
+   changed.push('Dato retirado: '+field.label+' (anterior: '+JSON.stringify(one(expected))+'). Motivo: '+clearReason);
+  }
+  if(Object.hasOwn(clearFields,'motor_hp')||Object.hasOwn(clearFields,'motor_kw')){
+   const remaining=['motor_hp','motor_kw'].find(id=>!Object.hasOwn(clearFields,id)&&filled(note.data[FIELDS.find(f=>f.id===id)[k]]));
+   front=setKey(front,'motor_potencia_vigente','motor_potencia_vigente: '+JSON.stringify(remaining==='motor_hp'?'HP':remaining==='motor_kw'?'kW':''));
+  }
   for (const f of FIELDS) {
    const key = f[k]; const value = one(input.fields?.[f.id]);
    if (!key || !value) continue;
@@ -144,11 +158,11 @@ export function surveyStore(vault, options = {}) {
    if (String(note.data[key] ?? '') === value) continue;
    front = setKey(front, key, `${key}: ${scalar(value, f.number || !!f.unit)}`); changed.push(f.label);changedIds.push(f.id);
   }
-  if(changedIds.includes('impulsor')&&k==='B')front=setKey(front,'impulsor_unidad','impulsor_unidad: mm');
+  if(changedIds.includes('impulsor')&&k==='B')front=setKey(front,'impulsor_unidad','impulsor_unidad: '+(Object.hasOwn(clearFields,'impulsor')?'""':'mm'));
   // Potencia: un solo dato vigente (HP o kW). Los valores anteriores no se pierden: quedan
   // como antecedente con su unidad, fecha y responsable en motor_potencia_antecedentes.
-  if(changedIds.includes('motor_hp')||changedIds.includes('motor_kw')){
-   const UNIT={motor_hp:'HP',motor_kw:'kW'},vigente=changedIds.includes('motor_hp')?'motor_hp':'motor_kw',other=vigente==='motor_hp'?'motor_kw':'motor_hp';
+  if((changedIds.includes('motor_hp')&&one(input.fields?.motor_hp))||(changedIds.includes('motor_kw')&&one(input.fields?.motor_kw))){
+   const UNIT={motor_hp:'HP',motor_kw:'kW'},vigente=one(input.fields?.motor_hp)?'motor_hp':'motor_kw',other=vigente==='motor_hp'?'motor_kw':'motor_hp';
    const keyOf=id=>FIELDS.find(f=>f.id===id)[k],previous=[];
    for(const id of [vigente,other]){const value=note.data[keyOf(id)];if(filled(value))previous.push({valor:String(value),unidad:UNIT[id],vigente_hasta:date,reemplazado_por:author});}
    if(filled(note.data[keyOf(other)]))front=setKey(front,keyOf(other),keyOf(other)+': ""');
