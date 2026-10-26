@@ -35,7 +35,7 @@
 }
 
 /* Enlaces bajo el número de bomba */
-#pump-links{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px}#pump-links[hidden]{display:none}.pl-btn{display:inline-block;padding:6px 10px;border:1px solid #3d5a56;border-radius:6px;background:#173032;color:var(--accent);font-size:12px;text-decoration:none}.pl-btn:hover{background:#1f4244}.part-docs{margin-top:12px}
+#pump-links{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px}#pump-links[hidden]{display:none}.pl-btn{display:inline-block;padding:6px 10px;border:1px solid #3d5a56;border-radius:6px;background:#173032;color:var(--accent);font-size:12px;text-decoration:none}.pl-btn:hover{background:#1f4244}.pl-pendiente{color:inherit;opacity:.75;border-style:dashed;cursor:default}.pl-pendiente:hover{background:#173032}.part-docs{margin-top:12px}
 .part-docs .doc-links li,.part-docs .doc-links a{font-size:13px;line-height:1.4}
 .manufacturer-reference{margin-top:14px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:#172327}.manufacturer-reference p:not(.eyebrow):not(.muted){font-size:11px;line-height:1.5;color:#c7d5d2}
 .manufacturer-reference .doc-links li,.manufacturer-reference .doc-links a{font-size:13px;line-height:1.4}

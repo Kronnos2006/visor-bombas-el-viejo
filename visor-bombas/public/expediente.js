@@ -89,27 +89,35 @@ const HID_PIEZA=[
   ['Carcasa · descripción',pag(8),'pág. 8'],['Juntas y o-rings en armado',pag(51),'pág. 51'],['Ajuste del impulsor',pag(30),'pág. 30–31'],
   ['Lista de partes y corte',pag(87),'pág. 87–92'],['Mantenimiento de sellos del eje',pag(40),'pág. 40'],['Mantenimiento de sellos del eje',pag(40),'pág. 40–41'],
   ['Eje y bocina',pag(59),'pág. 59'],['Mantenimiento de rodamientos',pag(38),'pág. 38–39'],['Instalación y alineación del acople',pag(12),'pág. 12'],null];
-const esHid=p=>/HIDROMAC/i.test(p.marca||'');
+// Documentación por fabricante y modelo: solo se asigna cuando la relación es explícita.
+// Lo que no coincide queda como "Documentación pendiente"; nunca se asume otro fabricante.
+// La relación explícita puede venir del modelo de la placa o del expediente (campo fab).
+const fabDe=p=>expediente[p.tag]?.fab||[];
+const esHid=p=>/HIDROMAC/i.test(p.marca||'')&&(/^2196\b/.test(String(p.modelo||'').trim())||fabDe(p).includes('hidromac'));
+const esGoulds=p=>/GOULDS/i.test(p.marca||'')&&(/SH/i.test(p.modelo||'')||fabDe(p).includes('goulds'));
 export function linksBomba(p){
   if(p.inactive)return null;
-  if(esHid(p))return{
+  if(esHid(p))return{alcance:'modelo',
     manual:{t:'Manual de instalación y mantenimiento Hidromac 2196 (112 pág.)',u:MAN},
     planos:{t:'Planos: corte, lista de partes y dimensiones (manual pág. 87–99)',u:pag(90)},
     extra:[{t:'Catálogo Hidromac 2196 (corte y curvas)',u:CAT_H},enlaces.hidromac[2]]};
-  return{
-    manual:{t:'Goulds e-SH · manuales en el sitio del fabricante',u:GOULDS.man},
-    planos:{t:'Goulds e-SH · guía de partes y vistas del kit (PDF)',u:GOULDS.guia},
+  if(esGoulds(p))return{alcance:'familia',nota:'Documentación de la familia Goulds e-SH; comprobar grupo y variante del modelo instalado.',
+    manual:{t:'Goulds e-SH · manuales en el sitio del fabricante (referencia de familia)',u:GOULDS.man},
+    planos:{t:'Goulds e-SH · guía de partes y vistas del kit (PDF, referencia de familia)',u:GOULDS.guia},
     extra:[{t:'Brochure técnico Goulds e-SH',u:GOULDS.bro}]};
+  return null;
 }
 export function linkPieza(p,i){
   if(p.inactive)return [];
   const out=[];
   if(esHid(p)){const h=HID_PIEZA[i];if(h)out.push({t:`Manual Hidromac 2196 · ${h[0]} (${h[2]})`,u:h[1]});out.push({t:'Catálogo Hidromac · corte y lista de partes',u:CAT_H});}
-  else{out.push({t:'Goulds e-SH · guía de partes del kit (PDF)',u:GOULDS.guia},{t:'Goulds e-SH · brochure técnico',u:GOULDS.bro});}
+  else if(esGoulds(p)){out.push({t:'Goulds e-SH · guía de partes del kit (PDF, referencia de familia)',u:GOULDS.guia},{t:'Goulds e-SH · brochure técnico',u:GOULDS.bro});}
   const e=expediente[p.tag]||{};
   if(i===8&&(e.fab||[]).includes('rexnord'))out.unshift(enlaces.rexnord[0]);
   if(i===5)out.unshift(...(sealReference(p)?.links||[]));
-  if(i===9)out.unshift(...((e.fab||[]).includes('usmotors')?enlaces.usmotors:p.motor?.catalogo==='00218XT3E145T'?[enlaces.weg[1],enlaces.weg[0]]:[enlaces.weg[0]]));
+  if(i===9){const fab=e.fab||[],marca=p.motor?.marca||'';
+    if(fab.includes('usmotors')||/US\s*MOTORS|NIDEC/i.test(marca))out.unshift(...enlaces.usmotors);
+    else if(fab.includes('weg')||/WEG/i.test(marca))out.unshift(...(p.motor?.catalogo==='00218XT3E145T'?[enlaces.weg[1],enlaces.weg[0]]:[enlaces.weg[0]]));}
   if(i===7&&e.rod)out.unshift(...e.rod.map(k=>enlaces.skf[k]).filter(Boolean));
   return out;
 }

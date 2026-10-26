@@ -1,4 +1,4 @@
-import {cargarModeloPlanta, prepararBombasBlender} from './blender-local.js';
+import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
 import * as THREE from 'three';
@@ -470,8 +470,9 @@ function paintPumpLinks(p){
  if(!p){el.hidden=true;el.innerHTML='';return;}
  el.hidden=false;
  const L=linksBomba(p);
- const manualBtn=L?`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.manual.t)}">📘 Manual de la bomba</a>`:'';
- const planosBtn=L?`<a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos</a>`:'';
+ const familia=L?.alcance==='familia'?' (familia)':'';
+ const manualBtn=L?`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota?L.manual.t+' · '+L.nota:L.manual.t)}">📘 Manual de la bomba${familia}</a>`:`<span class="pl-btn pl-pendiente" role="note" title="Sin documentación asociada a ${esc([p.marca,p.modelo].filter(Boolean).join(' ')||'esta bomba')}">📘 Documentación pendiente</span>`;
+ const planosBtn=L?`<a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos${familia}</a>`:'';
  el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}<a class="pl-btn" href="/equipo.html?tag=${encodeURIComponent(p.tag)}" title="Cambiar de lugar o reemplazar esta bomba">⇄ Mover o cambiar</a>`;
  const btn=$('#download-summary-pdf-header');
  if(btn) btn.onclick=()=>downloadPumpPDF(p.tag);
@@ -788,6 +789,7 @@ function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
  Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();})]).then(([info,grupos])=>{
   if(g.parent!==plant)return;integrado.info=info;
+  if(escena.userData.blenderLocal)integrado.desplazamientoBlender=alinearInfoBlender(THREE,escena,info,grupos);
   if(info.torre)for(const p of placed.filter(p=>areaOf(p)==='torre')){
    const b=compactar(THREE,exterior(THREE,p.scale,p.variant)),[x,y,z]=torreAIntegrado(info.torre,p.x,p.y??.3,p.z);
    b.position.set(x,y,z);b.rotation.y=p.rotation+info.torre.giro;b.userData.tag=p.tag;b.userData.sectorInt='torre';g.add(b);pumpObjectsInt[p.tag]=b;

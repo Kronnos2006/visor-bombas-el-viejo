@@ -13,6 +13,28 @@ export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area}){
  }finally{draco.dispose();}
 }
 
+// El modelo de Blender quedó desplazado respecto al modelo integrado anterior,
+// cuyas cajas guardan planta-integrada.json y bombas-individuales.json.
+// Mide ese desplazamiento comparando las cajas de los sectores comunes y lo aplica
+// a la ubicación de la torre, a las cajas de sectores y a las bombas de referencia.
+export function alinearInfoBlender(T,scene,info,grupos){
+ scene.updateWorldMatrix(true,true);
+ const local=new T.Matrix4();if(scene.parent)local.copy(scene.parent.matrixWorld).invert();
+ const boxes={};
+ scene.traverse(o=>{if(!o.isMesh||!o.userData.sector)return;const b=new T.Box3().setFromObject(o).applyMatrix4(local);if(!b.isEmpty())(boxes[o.userData.sector]??=new T.Box3()).union(b);});
+ const difs=[[],[],[]];
+ for(const [k,b] of Object.entries(boxes)){const o=info.sectores?.[k];if(!o)continue;for(let i=0;i<3;i++)difs[i].push((b.min.getComponent(i)-o.min[i]+b.max.getComponent(i)-o.max[i])/2);}
+ if(!difs[0].length)return [0,0,0];
+ info.sectores??={};
+ const mediana=v=>{const s=[...v].sort((a,b)=>a-b),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+ const d=difs.map(mediana);
+ if(info.torre){info.torre.x+=d[0];info.torre.y+=d[1];info.torre.z+=d[2];}
+ for(const [k,s] of Object.entries(info.sectores||{}))if(!boxes[k])info.sectores[k]={min:s.min.map((v,i)=>v+d[i]),max:s.max.map((v,i)=>v+d[i])};
+ for(const [k,b] of Object.entries(boxes))info.sectores[k]={min:b.min.toArray(),max:b.max.toArray()};
+ for(const grupo of grupos)for(const caja of grupo.bombas){caja.min=caja.min.map((v,i)=>v+d[i]);caja.max=caja.max.map((v,i)=>v+d[i]);}
+ return d;
+}
+
 // Reproduce solamente el orden del exportador para identificar las piezas originales.
 // No agrega la geometría de referencia a la escena ni recalcula su posición.
 export function prepararBombasBlender(T,scene,{sector,exterior,photoPumps,grupos}){
