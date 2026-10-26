@@ -1,89 +1,89 @@
 /* Tema Vocatus para las páginas de campo (Levantamiento, Avance, Solicitud a bodega, Mover o cambiar).
-   Usa las mismas variables de tema-vocatus.css. Solo aplica con body.facil. */
+   Usa las mismas variables de tema-vocatus.css. Aplica a las vistas simple y completa. */
 
-body.facil header{flex-wrap:wrap;gap:10px}
-body.facil .campo-nav{gap:8px}
-body.facil .campo-nav a{font-size:15px;padding:11px 14px;border-radius:12px;font-weight:550;display:flex;align-items:center;gap:6px;
+body header{flex-wrap:wrap;gap:10px}
+body .campo-nav{gap:8px}
+body .campo-nav a{font-size:15px;padding:11px 14px;border-radius:12px;font-weight:550;display:flex;align-items:center;gap:6px;
   background:var(--superficie);border:1px solid var(--borde);color:var(--tinta);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-body.facil .campo-nav a b{font-weight:400;font-size:19px}
-body.facil .campo-nav a[aria-current=page]{background:linear-gradient(135deg,rgba(242,184,75,.25),rgba(169,212,111,.12));border-color:var(--borde-fuerte);color:var(--accent)}
+body .campo-nav a b{font-weight:400;font-size:19px}
+body .campo-nav a[aria-current=page]{background:linear-gradient(135deg,rgba(242,184,75,.25),rgba(169,212,111,.12));border-color:var(--borde-fuerte);color:var(--accent)}
 body:not(.facil) .campo-nav a b{display:none}
-body.facil header>button{font-size:14px;padding:11px 13px;border-radius:12px}
+body header>button{font-size:14px;padding:11px 13px;border-radius:12px}
 
-body.facil .campo{max-width:1040px;padding:22px 18px 110px}
-body.facil .campo h1{font-size:34px}
-body.facil .campo>.eyebrow{font-size:12px}
-body.facil .campo .lead{font-size:17px;color:var(--tinta-2);line-height:1.5}
-body.facil .card{background:var(--superficie);border-color:var(--borde);border-radius:18px;padding:20px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:entrar .35s ease both}
-body.facil .card h2{font-size:22px;margin-bottom:10px}
-body.facil .card>p.muted,body.facil .campo .muted{font-size:15px;color:var(--muted)}
-body.facil .campo label{font-size:15px;color:var(--tinta-2);gap:7px}
-body.facil .campo label small{font-size:13px}
-body.facil .campo input,body.facil .campo select,body.facil .campo textarea{font-size:18px;padding:14px 13px;border-radius:12px;background:var(--fondo-2);color:var(--tinta);border:1px solid var(--borde)}
-body.facil .campo input:focus,body.facil .campo select:focus,body.facil .campo textarea:focus{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:1px;border-color:var(--accent)}
-body.facil .campo input::placeholder,body.facil .campo textarea::placeholder{color:var(--muted)}
-body.facil .campo button{font-size:16px;padding:14px 18px;border-radius:12px}
-body.facil .campo details>summary{font-size:15px;padding:8px 0;cursor:pointer;color:var(--tinta-2)}
-body.facil .grid{gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+body .campo{max-width:1040px;padding:22px 18px 110px}
+body .campo h1{font-size:34px}
+body .campo>.eyebrow{font-size:12px}
+body .campo .lead{font-size:17px;color:var(--tinta-2);line-height:1.5}
+body .card{background:var(--superficie);border-color:var(--borde);border-radius:18px;padding:20px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:entrar .35s ease both}
+body .card h2{font-size:22px;margin-bottom:10px}
+body .card>p.muted,body .campo .muted{font-size:15px;color:var(--muted)}
+body .campo label{font-size:15px;color:var(--tinta-2);gap:7px}
+body .campo label small{font-size:13px}
+body .campo input,body .campo select,body .campo textarea{font-size:18px;padding:14px 13px;border-radius:12px;background:var(--fondo-2);color:var(--tinta);border:1px solid var(--borde)}
+body .campo input:focus,body .campo select:focus,body .campo textarea:focus{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:1px;border-color:var(--accent)}
+body .campo input::placeholder,body .campo textarea::placeholder{color:var(--muted)}
+body .campo button{font-size:16px;padding:14px 18px;border-radius:12px}
+body .campo details>summary{font-size:15px;padding:8px 0;cursor:pointer;color:var(--tinta-2)}
+body .grid{gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
 
 /* Mensajes */
-body.facil .msg{font-size:16px;border-radius:14px;padding:14px 16px;line-height:1.5}
-body.facil .msg.ok{background:rgba(169,212,111,.14);border-color:rgba(169,212,111,.45);color:var(--tinta)}
-body.facil .msg.warn,body.facil #mode .msg,body.facil #mode>div{background:rgba(242,184,75,.12);border-color:rgba(242,184,75,.45);color:var(--tinta)}
-body.facil .msg.err{background:rgba(240,110,80,.14);border-color:rgba(240,110,80,.5);color:var(--tinta)}
+body .msg{font-size:16px;border-radius:14px;padding:14px 16px;line-height:1.5}
+body .msg.ok{background:rgba(169,212,111,.14);border-color:rgba(169,212,111,.45);color:var(--tinta)}
+body .msg.warn,body #mode .msg,body #mode>div{background:rgba(242,184,75,.12);border-color:rgba(242,184,75,.45);color:var(--tinta)}
+body .msg.err{background:rgba(240,110,80,.14);border-color:rgba(240,110,80,.5);color:var(--tinta)}
 
 /* Elegir bomba y opciones */
-body.facil .pump-pick{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-body.facil .pump-pick button{background:var(--superficie);border-color:var(--borde);padding:14px 14px;border-radius:14px}
-body.facil .pump-pick button b{font-size:22px;font-family:var(--datos)}
-body.facil .pump-pick button span{font-size:14px;white-space:normal;line-height:1.3;color:var(--muted)}
-body.facil .pump-pick button i{font-size:13px}
-body.facil .pump-pick button.active,body.facil .choice button.active{background:linear-gradient(135deg,rgba(242,184,75,.25),rgba(169,212,111,.12));border-color:var(--accent);color:var(--accent)}
-body.facil .choice button{background:var(--superficie);border-color:var(--borde);padding:20px;border-radius:16px}
-body.facil .choice b{font-size:20px}
-body.facil .choice span{font-size:15px;color:var(--tinta-2)}
-body.facil .pump-card{border-radius:14px;background:var(--superficie);border-color:var(--borde)}
-body.facil .pump-card b{font-size:19px}
-body.facil .pump-card span,body.facil .pump-card small{font-size:13px}
-body.facil .pump-card.old{background:rgba(240,110,80,.10);border-color:rgba(240,110,80,.4)}
-body.facil .pump-card.new{background:rgba(169,212,111,.12);border-color:rgba(169,212,111,.45)}
-body.facil .campo label.check{font-size:16px;color:var(--tinta)}
-body.facil .campo label.check input{width:26px;height:26px;flex-basis:26px;accent-color:var(--accent)}
-body.facil .button-link{font-size:16px;padding:14px 18px;border-radius:12px;background:var(--superficie);border-color:var(--borde);color:var(--tinta)}
+body .pump-pick{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+body .pump-pick button{background:var(--superficie);border-color:var(--borde);padding:14px 14px;border-radius:14px}
+body .pump-pick button b{font-size:22px;font-family:var(--datos)}
+body .pump-pick button span{font-size:14px;white-space:normal;line-height:1.3;color:var(--muted)}
+body .pump-pick button i{font-size:13px}
+body .pump-pick button.active,body .choice button.active{background:linear-gradient(135deg,rgba(242,184,75,.25),rgba(169,212,111,.12));border-color:var(--accent);color:var(--accent)}
+body .choice button{background:var(--superficie);border-color:var(--borde);padding:20px;border-radius:16px}
+body .choice b{font-size:20px}
+body .choice span{font-size:15px;color:var(--tinta-2)}
+body .pump-card{border-radius:14px;background:var(--superficie);border-color:var(--borde)}
+body .pump-card b{font-size:19px}
+body .pump-card span,body .pump-card small{font-size:13px}
+body .pump-card.old{background:rgba(240,110,80,.10);border-color:rgba(240,110,80,.4)}
+body .pump-card.new{background:rgba(169,212,111,.12);border-color:rgba(169,212,111,.45)}
+body .campo label.check{font-size:16px;color:var(--tinta)}
+body .campo label.check input{width:26px;height:26px;flex-basis:26px;accent-color:var(--accent)}
+body .button-link{font-size:16px;padding:14px 18px;border-radius:12px;background:var(--superficie);border-color:var(--borde);color:var(--tinta)}
 
 /* Avance */
-body.facil .stat{gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-body.facil .stat div{background:var(--superficie);border-color:var(--borde);border-radius:16px;padding:16px}
-body.facil .stat b{font-size:32px;color:var(--accent);font-family:var(--datos)}
-body.facil .stat span{font-size:14px;color:var(--tinta-2)}
-body.facil .table{font-size:15px}
-body.facil .table th{font-size:12px;border-color:var(--line)}
-body.facil .table td{border-color:var(--line);padding:14px 8px}
-body.facil .table td strong{font-size:18px;font-family:var(--datos)}
-body.facil .chip{font-size:14px;padding:6px 11px;border-color:var(--borde);color:var(--tinta-2)}
-body.facil .chip.ok{background:rgba(169,212,111,.16);border-color:rgba(169,212,111,.5);color:var(--cana)}
-body.facil .chip.no{background:rgba(242,184,75,.14);border-color:rgba(242,184,75,.5);color:var(--accent)}
-body.facil .bar{height:10px;border-radius:8px;background:color-mix(in srgb,var(--tinta) 12%,transparent)}
-body.facil .bar i{background:linear-gradient(90deg,var(--cana),var(--accent))}
+body .stat{gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+body .stat div{background:var(--superficie);border-color:var(--borde);border-radius:16px;padding:16px}
+body .stat b{font-size:32px;color:var(--accent);font-family:var(--datos)}
+body .stat span{font-size:14px;color:var(--tinta-2)}
+body .table{font-size:15px}
+body .table th{font-size:12px;border-color:var(--line)}
+body .table td{border-color:var(--line);padding:14px 8px}
+body .table td strong{font-size:18px;font-family:var(--datos)}
+body .chip{font-size:14px;padding:6px 11px;border-color:var(--borde);color:var(--tinta-2)}
+body .chip.ok{background:rgba(169,212,111,.16);border-color:rgba(169,212,111,.5);color:var(--cana)}
+body .chip.no{background:rgba(242,184,75,.14);border-color:rgba(242,184,75,.5);color:var(--accent)}
+body .bar{height:10px;border-radius:8px;background:color-mix(in srgb,var(--tinta) 12%,transparent)}
+body .bar i{background:linear-gradient(90deg,var(--cana),var(--accent))}
 
 /* Solicitud */
-body.facil .suggest{border-color:var(--line);padding:14px 0}
-body.facil .suggest p,body.facil .cart-line p{font-size:15px}
-body.facil .cart-line{border-color:var(--line);grid-template-columns:1fr 90px auto}
-body.facil .sticky-actions{background:linear-gradient(transparent,var(--fondo) 35%)}
-body.facil .sticky-actions button{font-size:17px;padding:16px}
-body.facil .current{font-size:13px;color:var(--cana)}
-body.facil .photos img{border-radius:12px;border-color:var(--borde)}
+body .suggest{border-color:var(--line);padding:14px 0}
+body .suggest p,body .cart-line p{font-size:15px}
+body .cart-line{border-color:var(--line);grid-template-columns:1fr 90px auto}
+body .sticky-actions{background:linear-gradient(transparent,var(--fondo) 35%)}
+body .sticky-actions button{font-size:17px;padding:16px}
+body .current{font-size:13px;color:var(--cana)}
+body .photos img{border-radius:12px;border-color:var(--borde)}
 
 /* Celular: menú grande abajo */
 @media(max-width:900px){
-  body.facil{padding-bottom:84px}
-  body.facil header{position:static;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--fondo);justify-content:space-between}
-  body.facil .campo-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0;gap:0;width:auto;display:grid;grid-template-columns:repeat(5,1fr);
+  body{padding-bottom:84px}
+  body header{position:static;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--fondo);justify-content:space-between}
+  body .campo-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0;gap:0;width:auto;display:grid;grid-template-columns:repeat(5,1fr);
     padding:6px 4px calc(6px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--fondo) 80%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line)}
-  body.facil .campo-nav a{flex-direction:column;justify-content:center;gap:3px;font-size:11px;padding:8px 2px;border:0;background:none;backdrop-filter:none;text-align:center;line-height:1.15;border-radius:10px}
-  body.facil .campo-nav a b{font-size:23px}
-  body.facil .sticky-actions{bottom:76px}
+  body .campo-nav a{flex-direction:column;justify-content:center;gap:3px;font-size:11px;padding:8px 2px;border:0;background:none;backdrop-filter:none;text-align:center;line-height:1.15;border-radius:10px}
+  body .campo-nav a b{font-size:23px}
+  body .sticky-actions{bottom:76px}
 }
-@media(max-width:580px){body.facil header>button span{display:none}body.facil .brand small{display:none}body.facil .campo h1{font-size:28px}}
-body.facil .pump-pick button{align-content:start}
+@media(max-width:580px){body header>button span{display:none}body .brand small{display:none}body .campo h1{font-size:28px}}
+body .pump-pick button{align-content:start}

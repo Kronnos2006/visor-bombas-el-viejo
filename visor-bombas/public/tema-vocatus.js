@@ -64,7 +64,7 @@
     const nueva = (y) => ({ x: Math.random() * w, y: y ?? h + 20, r: 1.5 + Math.random() * 5, v: .15 + Math.random() * .45, f: Math.random() * 6.28, a: .05 + Math.random() * .12 });
     for (let i = 0; i < 34; i++) burbujas.push(nueva(Math.random() * h));
     const dibujar = () => {
-      if (body.classList.contains('facil') && !document.hidden) {
+      if (!document.hidden) {
         ctx.clearRect(0, 0, w, h);
         const claro = body.classList.contains('claro');
         for (const b of burbujas) {
@@ -81,7 +81,6 @@
 
   // 48 · Onda al tocar botones
   if (!sinMovimiento) document.addEventListener('pointerdown', e => {
-    if (!body.classList.contains('facil')) return;
     const el = e.target.closest('button,.main-nav a,.campo-nav a,.pump-row'); if (!el || el.disabled) return;
     const r = el.getBoundingClientRect(), d = Math.max(r.width, r.height);
     const o = document.createElement('span'); o.className = 'toque';

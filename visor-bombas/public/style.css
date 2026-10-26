@@ -301,3 +301,7 @@ body.facil .status{font-size:13px;padding:7px 10px;border-radius:8px}
 body.facil #panel .notice{font-size:15px;line-height:1.5}
 body.facil #panel .eyebrow{font-size:12px}
 body.facil .compass{display:none}
+
+/* Explorador: controles contenidos y filtros recuperables. */
+.sidebar #area,.sidebar .filters select{width:100%;max-width:100%;min-width:0}
+#clear-filters{margin:0 0 10px;font-size:13px}#count{white-space:normal}
