@@ -4,6 +4,11 @@ const store = {get(k){try{return JSON.parse(localStorage.getItem(k));}catch{retu
 const TAG = /^(P-\d{4}[A-Z]?|B[1-9]\d{0,3})$/;
 const LABELS = {placa:'Placa', sello:'Sello', empaque:'Empaque', orings:'O-rings', fotos:'Fotos', bodega:'Bodega', verificado:'Verificado'};
 let info = {rows:[], fields:[], token:'', writable:false, demo:false}, photos = [], current = null;
+// Equipo cuyos datos están en el formulario. Los borradores se guardan siempre bajo este TAG,
+// nunca bajo lo que se esté escribiendo en el campo, para que un equipo no herede datos de otro.
+let activeTag = '', selection = 0;
+const draftKey = tag => 'vocatus-borrador-' + tag, photoKey = tag => 'vocatus-fotos-' + tag;
+const photosByTag = new Map();
 const kind = tag => tag.startsWith('B') ? 'B' : 'P';
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 
@@ -16,7 +21,6 @@ function renderFields() {
  const data = current?.data ? (current.data.documental || current.data) : {};
  for (const section of document.querySelectorAll('[data-group]')) {
   const grid = section.querySelector('.grid');
-  const keep = Object.fromEntries([...grid.querySelectorAll('[name]')].map(i => [i.name, i.value]));
   grid.innerHTML = info.fields.filter(f => f.group === section.dataset.group && f[k]).map(f => {
    const now = data[f[k]], has = now != null && String(now).trim() !== '';
    const unit = f.unit ? ` (${f.unit[k]})` : '';
@@ -24,7 +28,6 @@ function renderFields() {
     : `<input name="${f.id}" ${f.number || f.unit ? 'inputmode="decimal"' : ''} maxlength="200">`;
    return `<label>${esc(f.label + unit)}${input}${has ? `<span class="current">En ficha: ${esc(now)}</span>` : ''}</label>`;
   }).join('');
-  for (const [name, value] of Object.entries(keep)) { const el = grid.querySelector(`[name="${name}"]`); if (el) el.value = value; }
  }
 }
 function oringRow(o = {}) {
@@ -40,19 +43,56 @@ function collect() {
  const orings = [...document.querySelectorAll('.oring')].map(div => Object.fromEntries([...div.querySelectorAll('[data-k]')].map(i => [i.dataset.k, i.value.trim()]))).filter(o => o.medida || o.codigo);
  return {tag: $('#tag').value.trim().toUpperCase(), date: form.get('date'), author: String(form.get('author') || '').trim(), fields, orings, observations: String(form.get('observations') || '').trim()};
 }
-function saveDraft() { const d = collect(); if (TAG.test(d.tag)) store.set('vocatus-borrador-' + d.tag, d); store.set('vocatus-responsable', d.author); }
+function saveDraft() {
+ const d = collect(); store.set('vocatus-responsable', d.author);
+ if (!TAG.test(activeTag)) return;
+ d.tag = activeTag;
+ if (Object.keys(d.fields).length || d.orings.length || d.observations) store.set(draftKey(activeTag), d); else store.del(draftKey(activeTag));
+ savePhotos();
+}
+function savePhotos() {
+ if (!TAG.test(activeTag)) return;
+ photosByTag.set(activeTag, photos);
+ if (photos.length) store.set(photoKey(activeTag), photos.map(p => ({name: p.name, base64: p.base64}))); else store.del(photoKey(activeTag));
+}
+// Deja el formulario sin datos de ningún equipo (conserva fecha y responsable).
+function clearForm() {
+ for (const el of document.querySelectorAll('#form [data-group] [name]')) el.value = '';
+ $('#form [name=observations]').value = '';
+ $('#orings').innerHTML = '';
+ photos = []; renderPhotos();
+}
 function loadDraft(tag) {
- const d = store.get('vocatus-borrador-' + tag); if (!d) return;
- for (const [k, v] of Object.entries(d.fields || {})) { const el = $(`#form [name="${k}"]`); if (el) el.value = v; }
- $('#form [name=observations]').value = d.observations || '';
- $('#orings').innerHTML = ''; (d.orings || []).forEach(oringRow);
+ const d = store.get(draftKey(tag));
+ if (d && d.tag === tag) {
+  for (const [k, v] of Object.entries(d.fields || {})) { const el = $(`#form [data-group] [name="${k}"]`); if (el) el.value = v; }
+  $('#form [name=observations]').value = d.observations || '';
+  (d.orings || []).forEach(oringRow);
+ }
+ const saved = photosByTag.get(tag) || (store.get(photoKey(tag)) || []).map(p => ({name: p.name, base64: p.base64, url: 'data:image/jpeg;base64,' + p.base64}));
+ photos = [...saved]; renderPhotos();
 }
 async function selectTag() {
  const tag = $('#tag').value.trim().toUpperCase();
- current = null;
- if (TAG.test(tag)) { try { const r = await fetch('/api/pump?tag=' + encodeURIComponent(tag)); if (r.ok) current = await r.json(); } catch {} }
- renderFields(); if (TAG.test(tag)) { loadDraft(tag); history.replaceState(null, '', '?tag=' + tag); }
- $('#status').innerHTML = TAG.test(tag) ? chips(info.rows.find(r => r.tag === tag)) : '';
+ if (tag === activeTag && TAG.test(tag)) return;
+ clearTimeout(saveDraft.t); saveDraft();
+ const ticket = ++selection;
+ activeTag = TAG.test(tag) ? tag : ''; current = null;
+ clearForm(); renderFields(); showTarget();
+ if (!activeTag) { $('#status').innerHTML = ''; return; }
+ loadDraft(activeTag); history.replaceState(null, '', '?tag=' + activeTag);
+ $('#status').innerHTML = chips(info.rows.find(r => r.tag === activeTag));
+ let data = null;
+ try { const r = await fetch('/api/pump?tag=' + encodeURIComponent(activeTag)); if (r.ok) data = await r.json(); } catch {}
+ if (ticket !== selection) return; // llegó tarde: el usuario ya eligió otro equipo
+ current = data;
+ const typed = Object.fromEntries([...document.querySelectorAll('#form [data-group] [name]')].map(i => [i.name, i.value]));
+ renderFields();
+ for (const [name, value] of Object.entries(typed)) { const el = $(`#form [data-group] [name="${name}"]`); if (el) el.value = value; }
+}
+function showTarget() {
+ const el = $('#destino'); if (!el) return;
+ el.textContent = activeTag ? `Los datos de este formulario se guardan en ${activeTag}.` : 'Elegí un equipo para empezar.';
 }
 async function shrink(file) {
  const bitmap = await createImageBitmap(file).catch(() => null);
@@ -65,7 +105,7 @@ async function shrink(file) {
 }
 function renderPhotos() {
  $('#photos').innerHTML = photos.map((p, i) => `<figure><img src="${p.url}" alt="Foto ${i + 1}"><button type="button" data-i="${i}" aria-label="Quitar foto">✕</button></figure>`).join('');
- $('#photos').querySelectorAll('button').forEach(b => b.onclick = () => { photos.splice(Number(b.dataset.i), 1); renderPhotos(); });
+ $('#photos').querySelectorAll('button').forEach(b => b.onclick = () => { photos.splice(Number(b.dataset.i), 1); renderPhotos(); savePhotos(); });
 }
 function message(target, kind, text) { $(target).innerHTML = `<div class="msg ${kind}">${text}</div>`; }
 function packageOf(data) { return {formato: 'levantamiento-vocatus', version: 1, creado: new Date().toISOString(), ...data, photos: photos.map(p => ({name: p.name, base64: p.base64}))}; }
@@ -82,6 +122,7 @@ async function send(body) {
 }
 function validate(data) {
  if (!TAG.test(data.tag)) throw new Error('Escribí un TAG válido (B1, P-1311…).');
+ if (data.tag !== activeTag) throw new Error(`El formulario tiene datos de ${activeTag || 'ningún equipo'}; confirmá el TAG antes de guardar.`);
  if (!data.date || !data.author) throw new Error('Completá fecha y responsable.');
  if (!Object.keys(data.fields).length && !data.orings.length && !photos.length && !data.observations) throw new Error('No hay datos para guardar.');
 }
@@ -92,10 +133,10 @@ $('#form').onsubmit = async e => {
  $('#save').disabled = true; $('#save').textContent = 'Guardando…';
  try {
   const out = await send({...packageOf(data)});
-  store.del('vocatus-borrador-' + data.tag); photos = []; renderPhotos();
+  store.del(draftKey(data.tag)); store.del(photoKey(data.tag)); photosByTag.delete(data.tag); photos = []; renderPhotos();
   message('#result', 'ok', `Guardado en <code>${esc(out.file)}</code>: ${esc(out.changed.join(', ') || 'observación')}.`);
   const i = info.rows.findIndex(r => r.tag === data.tag); if (i >= 0) info.rows[i] = out.progress; else info.rows.push(out.progress);
-  $('#form').reset(); $('#tag').value = data.tag; $('#form [name=date]').value = data.date; $('#form [name=author]').value = data.author; $('#orings').innerHTML = ''; await selectTag();
+  $('#form').reset(); $('#tag').value = data.tag; $('#form [name=date]').value = data.date; $('#form [name=author]').value = data.author; activeTag = ''; await selectTag();
  } catch (err) {
   download(data);
   message('#result', 'err', `${esc(err.message)}<br>Para no perder el trabajo, se descargó el paquete.`);
@@ -116,11 +157,11 @@ $('#import').onchange = async e => {
 };
 $('#photo-input').onchange = async e => {
  for (const file of [...e.target.files].slice(0, 8 - photos.length)) { try { photos.push(await shrink(file)); } catch (err) { message('#result', 'err', esc(err.message)); } }
- e.target.value = ''; renderPhotos();
+ e.target.value = ''; renderPhotos(); savePhotos();
 };
 $('#add-oring').onclick = () => oringRow();
 $('#tag').addEventListener('change', selectTag);
-$('#form').addEventListener('input', () => { clearTimeout(saveDraft.t); saveDraft.t = setTimeout(saveDraft, 400); });
+$('#form').addEventListener('input', e => { if (e.target.id === 'tag') return; clearTimeout(saveDraft.t); saveDraft.t = setTimeout(saveDraft, 400); });
 
 try {
  const r = await fetch('/api/progress'); info = await r.json(); if (!r.ok) throw new Error(info.error);
