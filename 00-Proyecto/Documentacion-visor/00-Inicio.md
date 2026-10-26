@@ -1,11 +1,11 @@
 ---
-actualizado: 2026-10-07
+actualizado: 2026-10-26
 estado: documentacion
 ---
 
 # Visor de mantenimiento — documentación central
 
-Estado revisado el **2026-10-07**. Empezar aquí para retomar el proyecto o entregarlo a otra persona.
+La interfaz vigente y su validación están descritas en [[15-Interfaz-y-validacion-2026-10-26]]. Las notas del 7 de octubre y sus copias de código son material histórico.
 
 ## Navegación
 
@@ -25,7 +25,7 @@ Estado revisado el **2026-10-07**. Empezar aquí para retomar el proyecto o entr
 
 ## Regla de edición
 
-El código ejecutable está en **C:/Users/Isabella GM/vocatus/auto cad/visor-bombas**. Las notas de Código y las copias de Fuentes son una fotografía documental. Editar una copia documental no cambia el visor.
+El código ejecutable está en **visor-bombas/** dentro del repositorio actual. La ruta C:/Users/Isabella GM/vocatus/auto cad/visor-bombas pertenece a la instalación histórica. Las notas de Código y las copias de Fuentes son una fotografía documental. Editar una copia documental no cambia el visor.
 
 Se conserva el material anterior y se indica cuándo es histórico. No se copian credenciales ni configuraciones privadas de Obsidian o Claude.
 - [[13-Hallazgo-ANSI-B73]] — las placas indican norma ANSI B73.1: el despiece deja de ser genérico

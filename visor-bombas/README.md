@@ -1,5 +1,12 @@
 # Atlas de mantenimiento · Vocatus
 
+## Interfaz vigente · 26 de octubre de 2026
+
+Tema compartido entre vista simple y completa; búsqueda por TAG, marca, modelo y serie; acciones de expediente; apartados plegables y ficha móvil con el 3D visible. Avance separa documentación y verificación en campo. El visor incorpora controles de cámara, progreso de descarga y recuperación del 3D.
+
+`npm test` ejecuta la misma suite desde la raíz y desde `visor-bombas/` (80 pruebas en esta revisión). La revisión visual automatizada está en `visor-bombas/tools/e2e-interfaz.mjs` desde la raíz; usa un servidor DEMO separado y requiere Playwright. Consultar [la documentación vigente](../00-Proyecto/Documentacion-visor/15-Interfaz-y-validacion-2026-10-26.md) para opciones, almacenamiento y pendientes de campo. Las notas antiguas de Obsidian son evidencia histórica.
+
+
 Visor local unificado del sector fotografiado. Se abre en http://127.0.0.1:8766 y escucha únicamente en esta PC. La ficha, fotografías, historial, despiece e IA de cada bomba aparecen dentro de la misma experiencia.
 
 ## Abrir
