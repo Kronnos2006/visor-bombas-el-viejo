@@ -173,3 +173,9 @@ body #pump-links a,body #pump-links button{font-size:14px;padding:10px 13px;bord
 @media(max-width:900px){body header{position:static;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--fondo)}}
 body #tabs{background:color-mix(in srgb,var(--fondo) 94%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 @media(max-width:900px){body .area-menu{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:10px}body .area-menu button{flex:0 0 auto}}
+
+/* Contraste de controles heredados en el tema claro. */
+body.claro .area-menu button,body.claro .anatomy-actions button,body.claro #parts-rail .rail-item,body.claro #parts-rail .rail-head,body.claro details.filtros>summary,body.claro .expand-btn{background:var(--superficie-solida);color:var(--tinta);border-color:var(--borde)}
+body.claro #parts-rail .rail-hint,body.claro #scene-help{color:var(--tinta-2)}
+body.claro #parts-rail .rail-item span{background:var(--fondo-2);color:var(--tinta)}
+body.claro .area-menu button[aria-pressed=true],body.claro #parts-rail .rail-item.active{background:var(--fondo-2);color:var(--accent);border-color:var(--borde-fuerte)}
