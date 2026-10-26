@@ -220,4 +220,26 @@ body.claro .area-menu button[aria-pressed=true],body.claro #parts-rail .rail-ite
  body .inspector:not(.is-fullscreen) #pump-links .quick-actions a,
  body .inspector:not(.is-fullscreen) #pump-links .quick-actions button{padding:8px 4px;font-size:14px;min-height:44px}
 }
-
+/* Cabecera compacta: conserva avisos y acciones, prioriza el espacio del expediente. */
+@media (min-width:901px){
+ body .inspector:not(.is-fullscreen) .inspector-heading{padding:8px 16px 6px}
+ body .inspector:not(.is-fullscreen) .inspector-header-row{margin-bottom:0;min-height:30px}
+ body .inspector:not(.is-fullscreen) .inspector-header-row .eyebrow{font-size:10px;letter-spacing:1px}
+ body .inspector:not(.is-fullscreen) #expand-inspector{padding:5px 8px;font-size:12px;min-height:30px}
+ body .inspector:not(.is-fullscreen) #selected-tag{font-size:25px;line-height:1.1;margin:2px 0}
+ body .inspector:not(.is-fullscreen) #selected-name{font-size:12px;line-height:1.3;margin:2px 0}
+ body .inspector:not(.is-fullscreen) #source-status{font-size:11px;line-height:1.25;padding:3px 6px;border-radius:5px}
+ body .inspector:not(.is-fullscreen) #pump-meta{gap:4px;margin-top:4px}
+ body .inspector:not(.is-fullscreen) #pump-meta .chip{font-size:11px;line-height:1.25;padding:2px 5px}
+ body .inspector:not(.is-fullscreen) #pump-meta .storage-note{line-height:1.25}
+ body .inspector:not(.is-fullscreen) #pump-links{margin-top:5px}
+ body .inspector:not(.is-fullscreen) #pump-links .quick-actions{gap:4px}
+ body .inspector:not(.is-fullscreen) #pump-links .quick-actions a,
+ body .inspector:not(.is-fullscreen) #pump-links .quick-actions button{min-height:34px;padding:5px 4px;font-size:12px;border-radius:6px}
+ body .inspector:not(.is-fullscreen) #pump-links .secondary-actions{margin-top:3px;gap:2px}
+ body .inspector:not(.is-fullscreen) #pump-links .secondary-actions a,
+ body .inspector:not(.is-fullscreen) #pump-links .secondary-actions button{min-height:28px;font-size:12px;padding:4px 6px}
+ body .inspector:not(.is-fullscreen) #tabs{padding:0 8px;gap:0}
+ body .inspector:not(.is-fullscreen) #tabs button{font-size:14px;min-height:40px;padding:8px 5px;gap:4px}
+ body .inspector:not(.is-fullscreen) #tabs button b{font-size:16px}
+}
