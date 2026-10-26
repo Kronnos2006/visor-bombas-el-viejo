@@ -1,8 +1,8 @@
 // Presentación del expediente. No escribe fichas ni intervenciones.
-export function createInspectorUI({getSelection,onPart,onSummary}){
+export function createInspectorUI({getSelection,onPart,onSummary,onLayout}){
  const inspector=document.querySelector('.inspector'),panel=document.getElementById('panel');
  const mobile=matchMedia('(max-width:900px)');let lastSelection='',sheet='closed';
- const bar=document.createElement('div');bar.className='sheet-bar';bar.innerHTML='<button type="button" data-sheet="open">Resumen</button><button type="button" data-sheet="folded">Ver el 3D</button><button type="button" data-sheet="closed" aria-label="Volver a la lista de bombas">Lista</button>';
+ const bar=document.createElement('div');bar.className='sheet-bar';bar.innerHTML='<button type="button" data-sheet="open">Resumen</button><button type="button" data-sheet="folded">Ver el 3D</button><button type="button" data-sheet="closed" aria-label="Volver a la lista de bombas">Bombas</button>';
  inspector.prepend(bar);
  const preview=document.createElement('div');preview.className='sheet-preview';bar.after(preview);
  const reopen=document.createElement('button');reopen.type='button';reopen.className='sheet-reopen';reopen.textContent='Resumen';reopen.hidden=true;document.body.append(reopen);
@@ -15,8 +15,8 @@ export function createInspectorUI({getSelection,onPart,onSummary}){
   panel.scrollTo({top:0,behavior:'auto'});
  }
  bar.querySelectorAll('[data-sheet]').forEach(b=>b.onclick=()=>b.dataset.sheet==='open'?openSummary():setSheet(b.dataset.sheet));reopen.onclick=openSummary;
- function adapt(){fichaTab.innerHTML=mobile.matches?'<b aria-hidden="true">📄</b>Resumen':originalTab;document.querySelectorAll('.secondary-menu').forEach(menu=>menu.open=!mobile.matches);setSheet(sheet);}
- mobile.addEventListener('change',adapt);
+ function adapt(){fichaTab.innerHTML=mobile.matches?'<b aria-hidden="true">📄</b>Resumen':originalTab;document.querySelectorAll('.secondary-menu').forEach(menu=>menu.open=true);const filters=document.querySelector('details.filtros');if(filters&&mobile.matches)filters.open=true;setSheet(sheet);}
+ mobile.addEventListener('change',()=>{adapt();onLayout?.();});
  fichaTab.addEventListener('click',()=>{if(mobile.matches)openSummary();});
  function enhance(){
   const selection=getSelection(),key=selection?.tag||selection?.pending?.nombre||'';
@@ -41,13 +41,16 @@ export function createInspectorUI({getSelection,onPart,onSummary}){
    const body=document.createElement('div');body.className='exp-section-body';
    while(block.firstChild)body.append(block.firstChild);details.append(body);block.append(details);
    let saved;try{saved=sessionStorage.getItem(storageKey);}catch{}
-   details.open=mobile.matches&&/Resumen de la bomba|Componentes críticos/.test(title)?true:saved===null||saved===undefined?/Resumen de la bomba|Datos registrados|Información del fabricante|Sello|Sellado|O-rings/.test(title):saved==='open';
+   details.open=mobile.matches?true:saved===null||saved===undefined?/Resumen de la bomba|Datos registrados|Información del fabricante|Sello|Sellado|O-rings/.test(title):saved==='open';
    details.ontoggle=()=>{try{sessionStorage.setItem(storageKey,details.open?'open':'closed');}catch{}};
    if(block.classList.contains('interactive-part-block')){
     block.onclick=null;
     const button=document.createElement('button');button.type='button';button.textContent='Ver en 3D';button.className='section-part';button.onclick=e=>{e.preventDefault();e.stopPropagation();onPart(Number(block.dataset.part));};summary.append(button);
    }
   }
+  if(mobile.matches)for(const details of panel.querySelectorAll('details'))details.open=true;
+  for(const summary of panel.querySelectorAll('details>summary'))summary.onclick=event=>{if(mobile.matches&&!event.target.closest('button,a,input'))event.preventDefault();};
+  const filters=document.querySelector('details.filtros');if(filters){if(mobile.matches)filters.open=true;filters.querySelector('summary').onclick=event=>{if(mobile.matches)event.preventDefault();};}
   observer.observe(panel,{childList:true,subtree:true});
  }
  const observer=new MutationObserver(records=>{if(records.some(r=>[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.block,.rs-card')||n.querySelector?.('.block,.rs-card')))))enhance();});

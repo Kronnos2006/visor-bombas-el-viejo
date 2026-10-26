@@ -33,7 +33,7 @@ import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const primeraPlanta=createFirstFloorView(THREE);
 const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
-const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index),onSummary:()=>{state.tab="ficha";renderPanel();}});
+const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index),onSummary:()=>{state.tab="ficha";renderPanel();},onLayout:()=>renderPanel()});
 let detailOrigin=null,detailFlightTicket=null;
 function transitionToPump(ticket,world,show){
  detailFlightTicket=ticket;
@@ -278,6 +278,7 @@ function selectPart(index,subcomponent=null){
 }
 function fields(entries){return '<dl class="fields">'+entries.map(([label,key])=>{const v=state.pump.data[key],missing=v===undefined||v===null||v==='';return `<div class="field"><dt>${esc(label)}</dt><dd class="${missing?'missing':''}">${missing?'Sin levantar':esc(typeof v==='object'?JSON.stringify(v):v)}</dd></div>`;}).join('')+'</dl>';}
 function renderPanel(){
+ const previousLinks=$("#pump-links");if(previousLinks&&$("#panel").contains(previousLinks))$("#source-status").after(previousLinks);
  const requestLink=document.querySelector('header a[href^="/solicitud.html"]');if(requestLink)requestLink.href="/solicitud.html"+(state.pump?.tag?"?tag="+encodeURIComponent(state.pump.tag):"");
  renderPanelContent();
  const p=state.pump?.data;
@@ -287,6 +288,11 @@ function renderPanel(){
  }
  renderEditingAccess();
  if(matchMedia("(max-width:900px)").matches&&state.tab==="ficha"&&$("#pump-resumen"))$("#panel").prepend($("#pump-resumen"));
+ if(matchMedia('(max-width:900px)').matches&&$('#pump-links')){
+  const actions=document.createElement('section');actions.id='mobile-actions';actions.className='block';
+  const heading=document.createElement('h3');heading.textContent='Qué querés hacer con esta bomba';actions.append(heading,$('#pump-links'));
+  const summary=$('#pump-resumen .rs-card');if(summary)summary.after(actions);else $('#panel').append(actions);
+ }
  inspectorUI.enhance();
 }
 function renderPanelContent(){
@@ -519,7 +525,7 @@ function paintPumpLinks(p){
  if(!p){el.hidden=true;el.innerHTML='';$('#pump-meta')?.remove();return;}
  paintPumpMeta(p);
  el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'';
- el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu" ${matchMedia("(max-width:900px)").matches?"":"open"}><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button>${L?`<a href="${esc(L.planos.u)}" target="_blank" rel="noopener noreferrer">Planos${familia}</a>`:''}<a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
+ el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu" open><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button>${L?`<a href="${esc(L.planos.u)}" target="_blank" rel="noopener noreferrer">Planos${familia}</a>`:''}<a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
  el.querySelector('[data-quick=locate]').onclick=locateSelectedPump;
  el.querySelector('[data-quick=photos]').onclick=()=>{state.tab='ficha';renderPanel();inspectorUI.show($('#fuentes-'+p.tag));};
  el.querySelector('[data-quick=maintenance]').onclick=()=>{state.tab='historial';renderPanel();inspectorUI.show($('#rep-form')||$('#new-report'));};
