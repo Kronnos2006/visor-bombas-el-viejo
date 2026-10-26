@@ -30,7 +30,7 @@ test('B33 lee datos actuales de Obsidian y conserva los campos vacíos',async()=
  await writeFile(ficha,(await readFile(ficha,'utf8')).replace('Modelo documentado','Cambio en Obsidian'));
  assert.equal((await request('/api/pump?tag=B33')).data.data.modelo,'Cambio en Obsidian');
  assert.equal((await request('/api/pump?tag=../../privado')).status,400);
- assert.equal((await request('/api/pump?tag=B999')).status,400);
+ assert.equal((await request('/api/pump?tag=B999')).status,409);
 });
 test('B33 persiste informe y PDF, permite releerlos y elimina a papelera',async()=>{
  const bootstrap=await request('/api/bootstrap');const token=bootstrap.data.token;

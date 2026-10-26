@@ -3,19 +3,16 @@
 // La foto anterior no se borra: pasa a .../expediente/historial/<ranura>_<fecha>.<ext>.
 import {mkdir, readdir, readFile, rename, stat, writeFile} from 'node:fs/promises';
 import path from 'node:path';
+import {randomUUID} from 'node:crypto';
+import {PHOTO_SLOTS} from './public/photo-slots.js';
 
-export const SLOTS = {
- placa1: 'Placa de la bomba',
- placa2: 'Segunda placa (motor)',
- bomba: 'Foto de la bomba',
- posicion: 'Foto de la posición'
-};
+export const SLOTS=Object.fromEntries(PHOTO_SLOTS);
 const MAX = 8 * 1024 * 1024;
 const kind = bytes => bytes[0] === 0xFF && bytes[1] === 0xD8 ? 'jpg' : bytes.subarray(1, 4).toString() === 'PNG' ? 'png' : null;
 
 export function pumpPhotoStore(vault) {
  const dir = tag => path.join(vault, '00-Proyecto/fotos-campo', tag, 'expediente');
- const check = (tag, slot) => { if (!/^B\d{1,3}$|^P-\d{4}[A-Z]?$/.test(tag)) throw new Error('TAG inválido.'); if (!SLOTS[slot]) throw new Error('Foto desconocida.'); };
+ const check = (tag, slot) => { if (!/^B[1-9]\d{0,3}$|^P-\d{4}[A-Z]?$/.test(tag)) throw new Error('TAG inválido.'); if (!Object.hasOwn(SLOTS,slot)) throw new Error('Foto desconocida.'); };
  async function current(tag, slot) {
   for (const ext of ['jpg', 'png']) { const file = path.join(dir(tag), `${slot}.${ext}`); try { return {file, ext, info: await stat(file)}; } catch {} }
   return null;
@@ -32,7 +29,7 @@ export function pumpPhotoStore(vault) {
   if (!ext) throw new Error('La foto debe ser JPG o PNG.');
   await mkdir(path.join(dir(tag), 'historial'), {recursive: true});
   const prior = await current(tag, slot);
-  if (prior) await rename(prior.file, path.join(dir(tag), 'historial', `${slot}_${prior.info.mtime.toISOString().replace(/[:.]/g, '-')}.${prior.ext}`));
+  if (prior) await rename(prior.file, path.join(dir(tag), 'historial', `${slot}_${prior.info.mtime.toISOString().replace(/[:.]/g, '-')}_${randomUUID().slice(0,8)}.${prior.ext}`));
   await writeFile(path.join(dir(tag), `${slot}.${ext}`), bytes);
   return (await list(tag))[slot];
  }

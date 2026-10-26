@@ -23,7 +23,7 @@ export function createInspectorUI({getSelection,onPart}){
    const body=document.createElement('div');body.className='exp-section-body';
    while(block.firstChild)body.append(block.firstChild);details.append(body);block.append(details);
    let saved;try{saved=sessionStorage.getItem(storageKey);}catch{}
-   details.open=saved===null||saved===undefined?/Resumen de la bomba|Datos registrados|Información del fabricante/.test(title):saved==='open';
+   details.open=saved===null||saved===undefined?/Resumen de la bomba|Datos registrados|Información del fabricante|Sello|Sellado|O-rings/.test(title):saved==='open';
    details.ontoggle=()=>{try{sessionStorage.setItem(storageKey,details.open?'open':'closed');}catch{}};
    if(block.classList.contains('interactive-part-block')){
     block.onclick=null;

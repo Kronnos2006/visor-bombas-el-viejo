@@ -7,11 +7,11 @@
 <p class="eyebrow">ESTADO DEL DATO</p>
 <h1>Avance del levantamiento</h1>
 <p class="lead">Documentación disponible y verificación en campo, evaluadas por separado. Completar campos no confirma la exactitud técnica de sus datos.</p>
-<div id="mode"></div>
+<div id="mode"></div><p id="inventory-note" class="lead" role="status"></p>
 <div class="row no-print" style="margin:10px 0"><select id="kind" aria-label="Grupo de equipos"><option value="">Todos los equipos</option><option value="P">15 bombas del PFD (P-xxxx)</option><option value="B">Sector fotografiado (Bxx)</option></select><select id="only" aria-label="Filtro"><option value="">Todos</option><option value="pend">Documentación pendiente</option><option value="done">Documentados</option></select><select id="verified" aria-label="Verificación en campo"><option value="">Todas las verificaciones</option><option value="yes">Verificadas</option><option value="no">Sin verificar</option></select><button type="button" onclick="print()">Imprimir</button></div>
 <div class="stat" id="stats"></div>
 <section class="card progress-table"><table class="table"><thead><tr><th>EQUIPO</th><th>QUÉ FALTA</th><th>DOCUMENTACIÓN</th><th>VERIFICACIÓN EN CAMPO</th><th class="no-print"></th></tr></thead><tbody id="rows"></tbody></table></section>
-<p class="muted">✓ completo · ○ pendiente · – no aplica (por ejemplo, empaque en una bomba con sello mecánico). <b>Placa</b>: marca, modelo y serie. <b>Sello</b>: tipo, modelo, diámetro y elastómero. <b>Verificación en campo</b>: persona y fecha válida registradas; se muestra aparte y no suma al porcentaje de documentación.</p>
+<p class="muted">✓ completo · ○ pendiente · – no aplica (por ejemplo, empaque en una bomba con sello mecánico). <b>Placa</b>: marca, modelo y serie. <b>Sello</b>: tipo, modelo, diámetro y elastómero. <b>Verificación en campo</b>: identidad, placa y repuestos comprobados explícitamente, con responsable, fecha y evidencia. Los registros antiguos requieren revisión. No suma al porcentaje de documentación.</p>
 </main>
 <script type="module" src="/avance.js"></script>
 <canvas id="burbujas" aria-hidden="true"></canvas>

@@ -1,3 +1,7 @@
+import {fotosActualizadas,guardarFoto,htmlFotos,originales} from './fotos-bomba.js';
+import {expedienteDe} from './expediente.js';
+import {validateSurveyInput,NUMERIC_RULES} from './survey-validation.js';
+import {verificationText} from './verification-core.js';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store = {get(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}, del(k){try{localStorage.removeItem(k);}catch{}}};
@@ -6,7 +10,7 @@ const LABELS = {placa:'Placa', sello:'Sello', empaque:'Empaque', orings:'O-rings
 let info = {rows:[], fields:[], token:'', writable:false, demo:false}, photos = [], current = null;
 // Equipo cuyos datos están en el formulario. Los borradores se guardan siempre bajo este TAG,
 // nunca bajo lo que se esté escribiendo en el campo, para que un equipo no herede datos de otro.
-let activeTag = '', selection = 0;
+let activeTag = '', selection = 0, replacementBase=null;
 const draftKey = tag => 'vocatus-borrador-' + tag, photoKey = tag => 'vocatus-fotos-' + tag;
 const photosByTag = new Map();
 const kind = tag => tag.startsWith('B') ? 'B' : 'P';
@@ -14,7 +18,7 @@ const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOff
 
 function chips(row) {
  if (!row) return '<span class="chip">Equipo sin ficha en esta bóveda</span>';
- return Object.entries(row.checks).map(([k, v]) => `<span class="chip ${v === null ? 'na' : v ? 'ok' : 'no'}">${v === null ? '–' : v ? '✓' : '○'} ${LABELS[k]}</span>`).join('') + `<span class="chip">${row.done}/${row.total}</span>`;
+ return Object.entries(row.checks).filter(([k])=>k!=='verificado').map(([k, v]) => `<span class="chip ${v === null ? 'na' : v ? 'ok' : 'no'}">${v === null ? '–' : v ? '✓' : '○'} ${LABELS[k]}</span>`).join('') + `<span class="chip">${row.done}/${row.total}</span><span class="chip">${esc(verificationText(row.verification))}</span>`;
 }
 function renderFields() {
  const tag = $('#tag').value.trim().toUpperCase(), k = TAG.test(tag) ? kind(tag) : 'P';
@@ -25,7 +29,7 @@ function renderFields() {
    const now = data[f[k]], has = now != null && String(now).trim() !== '';
    const unit = f.unit ? ` (${f.unit[k]})` : '';
    const input = f.options ? `<select name="${f.id}"><option value="">— sin cambio —</option>${f.options.map(o => `<option>${esc(o)}</option>`).join('')}</select>`
-    : `<input name="${f.id}" ${f.number || f.unit ? 'inputmode="decimal"' : ''} maxlength="200">`;
+    : `<input name="${f.id}" ${NUMERIC_RULES[f.id]?.integer ? 'inputmode="numeric" pattern="[0-9]*"' : f.unit || f.number ? 'inputmode="decimal"' : ''} maxlength="200">`;
    return `<label>${esc(f.label + unit)}${input}${has ? `<span class="current">En ficha: ${esc(now)}</span>` : ''}</label>`;
   }).join('');
  }
@@ -34,20 +38,25 @@ function oringRow(o = {}) {
  const div = document.createElement('div'); div.className = 'oring';
  div.innerHTML = `<label>Posición<input data-k="posicion" maxlength="120" placeholder="Ej. tapa de carcasa"></label><label>Medida<input data-k="medida" maxlength="60" placeholder="Ej. 45 x 3 mm"></label><label>Material<input data-k="material" maxlength="60" placeholder="Viton, EPDM…"></label><label>Cant.<input data-k="cantidad" inputmode="numeric" maxlength="4"></label><label>Código<input data-k="codigo" maxlength="80"></label><button type="button" aria-label="Quitar o-ring">✕</button>`;
  for (const [k, v] of Object.entries(o)) { const el = div.querySelector(`[data-k="${k}"]`); if (el) el.value = v; }
+ if(Number.isInteger(o.existingIndex))div.dataset.existingIndex=String(o.existingIndex);
  div.querySelector('button').onclick = () => { div.remove(); saveDraft(); };
  $('#orings').append(div);
 }
 function collect() {
  const form = new FormData($('#form')), fields = {};
  for (const f of info.fields) { const v = String(form.get(f.id) ?? '').trim(); if (v) fields[f.id] = v; }
- const orings = [...document.querySelectorAll('.oring')].map(div => Object.fromEntries([...div.querySelectorAll('[data-k]')].map(i => [i.dataset.k, i.value.trim()]))).filter(o => o.medida || o.codigo);
- return {tag: $('#tag').value.trim().toUpperCase(), date: form.get('date'), author: String(form.get('author') || '').trim(), fields, orings, observations: String(form.get('observations') || '').trim()};
+ const orings=[...document.querySelectorAll('.oring')].map(div=>{
+  const item=Object.fromEntries([...div.querySelectorAll('[data-k]')].map(i=>[i.dataset.k,i.value.trim()]));
+  if(div.dataset.existingIndex!==undefined)item.existingIndex=Number(div.dataset.existingIndex);
+  return item;
+ }).filter(o=>o.medida||o.codigo);
+ return {replaceOrings:$('#replace-orings').checked,baseOrings:replacementBase||(current?.data?(current.data.documental||current.data).orings||[]:[]),tag: $('#tag').value.trim().toUpperCase(), date: form.get('date'), author: String(form.get('author') || '').trim(), fields, orings, observations: String(form.get('observations') || '').trim(),verification:{scopes:[...document.querySelectorAll('[name=verification-scope]:checked')].map(el=>el.value),evidence:String(form.get('verification-evidence')||'').trim()}};
 }
 function saveDraft() {
  const d = collect(); store.set('vocatus-responsable', d.author);
  if (!TAG.test(activeTag)) return;
  d.tag = activeTag;
- if (Object.keys(d.fields).length || d.orings.length || d.observations) store.set(draftKey(activeTag), d); else store.del(draftKey(activeTag));
+ if (Object.keys(d.fields).length || d.orings.length || d.observations || d.verification.scopes.length || d.replaceOrings) store.set(draftKey(activeTag), d); else store.del(draftKey(activeTag));
  savePhotos();
 }
 function savePhotos() {
@@ -59,7 +68,8 @@ function savePhotos() {
 function clearForm() {
  for (const el of document.querySelectorAll('#form [data-group] [name]')) el.value = '';
  $('#form [name=observations]').value = '';
- $('#orings').innerHTML = '';
+ $('#orings').innerHTML = '';$('#replace-orings').checked=false;replacementBase=null;$('#component-photos').innerHTML='';$('#orings-actuales').textContent='';
+ document.querySelectorAll('[name=verification-scope]').forEach(el=>el.checked=false);$('#form [name=verification-evidence]').value='';
  photos = []; renderPhotos();
 }
 function loadDraft(tag) {
@@ -67,7 +77,9 @@ function loadDraft(tag) {
  if (d && d.tag === tag) {
   for (const [k, v] of Object.entries(d.fields || {})) { const el = $(`#form [data-group] [name="${k}"]`); if (el) el.value = v; }
   $('#form [name=observations]').value = d.observations || '';
+  $('#replace-orings').checked=d.replaceOrings===true;replacementBase=d.replaceOrings?d.baseOrings||[]:null;
   (d.orings || []).forEach(oringRow);
+  document.querySelectorAll('[name=verification-scope]').forEach(el=>el.checked=(d.verification?.scopes||[]).includes(el.value));$('#form [name=verification-evidence]').value=d.verification?.evidence||'';
  }
  const saved = photosByTag.get(tag) || (store.get(photoKey(tag)) || []).map(p => ({name: p.name, base64: p.base64, url: 'data:image/jpeg;base64,' + p.base64}));
  photos = [...saved]; renderPhotos();
@@ -86,9 +98,12 @@ async function selectTag() {
  try { const r = await fetch('/api/pump?tag=' + encodeURIComponent(activeTag)); if (r.ok) data = await r.json(); } catch {}
  if (ticket !== selection) return; // llegó tarde: el usuario ya eligió otro equipo
  current = data;
+ const existing=(current?.data?.documental||current?.data||{}).orings||[];$('#orings-actuales').textContent=existing.length+' o-ring(s) registrados en '+activeTag+'.';
+ renderPhotoEditor();
  const typed = Object.fromEntries([...document.querySelectorAll('#form [data-group] [name]')].map(i => [i.name, i.value]));
  renderFields();
  for (const [name, value] of Object.entries(typed)) { const el = $(`#form [data-group] [name="${name}"]`); if (el) el.value = value; }
+ const section=document.getElementById(location.hash.slice(1));if(section)section.scrollIntoView({block:'start'});
 }
 function showTarget() {
  const el = $('#destino'); if (!el) return;
@@ -108,7 +123,7 @@ function renderPhotos() {
  $('#photos').querySelectorAll('button').forEach(b => b.onclick = () => { photos.splice(Number(b.dataset.i), 1); renderPhotos(); savePhotos(); });
 }
 function message(target, kind, text) { $(target).innerHTML = `<div class="msg ${kind}">${text}</div>`; }
-function packageOf(data) { return {formato: 'levantamiento-vocatus', version: 1, creado: new Date().toISOString(), ...data, photos: photos.map(p => ({name: p.name, base64: p.base64}))}; }
+function packageOf(data) { return {formato: 'levantamiento-vocatus', version: 2, creado: new Date().toISOString(), ...data, photos: photos.map(p => ({name: p.name, base64: p.base64}))}; }
 function download(data) {
  const blob = new Blob([JSON.stringify(packageOf(data))], {type: 'application/json'});
  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: `levantamiento_${data.tag}_${data.date}_${Date.now().toString(36)}.json`});
@@ -123,8 +138,8 @@ async function send(body) {
 function validate(data) {
  if (!TAG.test(data.tag)) throw new Error('Escribí un TAG válido (B1, P-1311…).');
  if (data.tag !== activeTag) throw new Error(`El formulario tiene datos de ${activeTag || 'ningún equipo'}; confirmá el TAG antes de guardar.`);
- if (!data.date || !data.author) throw new Error('Completá fecha y responsable.');
- if (!Object.keys(data.fields).length && !data.orings.length && !photos.length && !data.observations) throw new Error('No hay datos para guardar.');
+ validateSurveyInput(data);
+ if (!Object.keys(data.fields).length && !data.orings.length && !photos.length && !data.observations && !data.verification.scopes.length && !data.replaceOrings) throw new Error('No hay datos para guardar.');
 }
 $('#form').onsubmit = async e => {
  e.preventDefault(); const data = collect();
@@ -134,7 +149,7 @@ $('#form').onsubmit = async e => {
  try {
   const out = await send({...packageOf(data)});
   store.del(draftKey(data.tag)); store.del(photoKey(data.tag)); photosByTag.delete(data.tag); photos = []; renderPhotos();
-  message('#result', 'ok', `Guardado en <code>${esc(out.file)}</code>: ${esc(out.changed.join(', ') || 'observación')}.`);
+  message('#result', 'ok', `Guardado en <code>${esc(out.file)}</code>: ${esc(out.changed.join(', ') || 'observación')}. Respaldo previo: <code>${esc(out.backup||'')}</code>.`);
   const i = info.rows.findIndex(r => r.tag === data.tag); if (i >= 0) info.rows[i] = out.progress; else info.rows.push(out.progress);
   $('#form').reset(); $('#tag').value = data.tag; $('#form [name=date]').value = data.date; $('#form [name=author]').value = data.author; activeTag = ''; await selectTag();
  } catch (err) {
@@ -159,12 +174,17 @@ $('#photo-input').onchange = async e => {
  for (const file of [...e.target.files].slice(0, 8 - photos.length)) { try { photos.push(await shrink(file)); } catch (err) { message('#result', 'err', esc(err.message)); } }
  e.target.value = ''; renderPhotos(); savePhotos();
 };
+$('#replace-orings').onchange=()=>{
+ $('#orings').innerHTML='';
+ replacementBase=null;if($('#replace-orings').checked){const rings=(current?.data?.documental||current?.data||{}).orings||[];replacementBase=JSON.parse(JSON.stringify(rings));rings.forEach((o,existingIndex)=>oringRow({...o,existingIndex}));}
+ saveDraft();
+};
 $('#add-oring').onclick = () => oringRow();
 $('#tag').addEventListener('change', selectTag);
 $('#form').addEventListener('input', e => { if (e.target.id === 'tag') return; clearTimeout(saveDraft.t); saveDraft.t = setTimeout(saveDraft, 400); });
 
 try {
- const r = await fetch('/api/progress'); info = await r.json(); if (!r.ok) throw new Error(info.error);
+ const r = await fetch('/api/survey-catalog'); info = await r.json(); if (!r.ok) throw new Error(info.error);
 } catch (err) { message('#mode', 'err', 'No se pudo leer la lista de equipos: ' + esc(err.message)); }
 $('#tags').innerHTML = info.rows.map(r => `<option value="${esc(r.tag)}">${esc(r.servicio)}</option>`).join('');
 message('#mode', info.writable ? (info.demo ? 'warn' : 'ok') : 'warn', info.writable
@@ -175,3 +195,15 @@ $('#form [name=author]').value = store.get('vocatus-responsable') || '';
 const start = new URLSearchParams(location.search).get('tag');
 if (start) $('#tag').value = start.toUpperCase();
 await selectTag();
+
+async function renderPhotoEditor(){
+ const tag=activeTag,target=$('#component-photos');if(!tag||!current)return;
+ const p={...current.data,tag},options={writable:!!info.writable,token:info.token};
+ const original=originales(p,expedienteDe(p));
+ const act=await fotosActualizadas(tag,options);if(activeTag!==tag||!target.isConnected)return;
+ target.innerHTML=htmlFotos(p,original,act,options);
+ target.querySelectorAll('input[data-slot]').forEach(input=>{
+  const label=input.closest('label');label.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();input.click();}};
+  input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await guardarFoto(tag,input.dataset.slot,file,options);if(activeTag===tag)await renderPhotoEditor();}catch(error){if(activeTag===tag)target.querySelector('#fotos-error').textContent=error.message;input.disabled=false;}};
+ });
+}

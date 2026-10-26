@@ -30,3 +30,7 @@ El código ejecutable está en **visor-bombas/** dentro del repositorio actual. 
 Se conserva el material anterior y se indica cuándo es histórico. No se copian credenciales ni configuraciones privadas de Obsidian o Claude.
 - [[13-Hallazgo-ANSI-B73]] — las placas indican norma ANSI B73.1: el despiece deja de ser genérico
 - [[14-Indice-de-fotos-y-placas]] — las 41 fotos clasificadas, placas enderezadas y leídas
+
+- [Correcciones de integridad y revisión final · 26 oct 2026](16-Correcciones-integridad-2026-10-26.md)
+
+- [Editor de datos, fotos y componentes de todas las bombas](17-Editor-universal-bombas.md)

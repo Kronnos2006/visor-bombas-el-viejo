@@ -4,9 +4,12 @@
 import path from 'node:path';
 import { readFile, readdir, writeFile, mkdir, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import {backupFicha} from './backup.mjs';
+import {validateSurveyInput} from './public/survey-validation.js';
+import {verificationOf} from './public/verification-core.js';
 import { load, dump, JSON_SCHEMA } from './vendor/js-yaml.mjs';
 
-const MAX_PHOTO = 6 * 1024 * 1024, MAX_PHOTOS = 8, MAX_ORINGS = 12;
+const MAX_PHOTO = 6 * 1024 * 1024, MAX_PHOTOS = 8, MAX_ORINGS = 100;
 const PENDING = /^(|por confirmar|sin levantar|pendiente.*|<pendiente.*)$/i;
 export const filled = v => v != null && !PENDING.test(String(v).trim());
 export const one = (v, max = 200) => String(v ?? '').replace(/[\r\n]+/g, ' ').slice(0, max).trim();
@@ -15,6 +18,22 @@ export const one = (v, max = 200) => String(v ?? '').replace(/[\r\n]+/g, ' ').sl
 // P-xxxx: 00-Proyecto/bombas (plantilla de las 15 bombas del PFD).
 // Bxx:    00-Proyecto/equipos (sector fotografiado, importado del Excel).
 export const FIELDS = [
+ {id:'nombre',label:'Nombre / ubicación de la bomba',group:'general',P:'nombre',B:'ubicacion'},
+ {id:'servicio',label:'Servicio / fluido',group:'general',P:'servicio',B:'liquido'},
+ {id:'fluido',label:'Fluido registrado',group:'general',P:'fluido',B:null},
+ {id:'caudal',label:'Caudal de placa',group:'general',P:'caudal_m3h',B:'caudal_gpm',unit:{P:'m³/h',B:'GPM'}},
+ {id:'altura',label:'Altura de placa',group:'general',P:'altura_m',B:'altura_m',unit:{P:'m',B:'m'}},
+ {id:'impulsor',label:'Diámetro del impulsor',group:'general',P:'impulsor_mm',B:'impulsor_valor',unit:{P:'mm',B:'mm'}},
+ {id:'motor_marca',label:'Marca del motor',group:'motor',P:'motor_marca',B:'motor_marca'},
+ {id:'motor_modelo',label:'Modelo del motor',group:'motor',P:'motor_modelo',B:'motor_modelo'},
+ {id:'motor_catalogo',label:'Código / catálogo del motor',group:'motor',P:'motor_catalogo',B:'motor_catalogo'},
+ {id:'motor_serie',label:'Serie del motor',group:'motor',P:'motor_serie',B:'motor_serie'},
+ {id:'motor_hp',label:'Potencia del motor en HP',group:'motor',P:'motor_hp',B:'motor_hp',number:true},
+ {id:'motor_kw',label:'Potencia del motor en kW',group:'motor',P:'potencia_kw',B:'motor_kw',number:true},
+ {id:'motor_rpm',label:'Velocidad del motor',group:'motor',P:'motor_rpm',B:'motor_rpm',number:true},
+ {id:'rodamiento_delantero',label:'Código del rodamiento delantero',group:'componentes',P:'rodamiento_delantero',B:'rodamiento_delantero'},
+ {id:'rodamiento_trasero',label:'Código del rodamiento trasero',group:'componentes',P:'rodamiento_trasero',B:'rodamiento_trasero'},
+ {id:'acople',label:'Modelo / código del acople',group:'componentes',P:'acople',B:'acople'},
  {id:'marca', label:'Marca', group:'placa', P:'marca', B:'marca'},
  {id:'modelo', label:'Modelo', group:'placa', P:'modelo', B:'modelo'},
  {id:'serie', label:'N.º de serie (placa)', group:'placa', P:'serie', B:'placa_serie'},
@@ -31,7 +50,7 @@ export const FIELDS = [
  {id:'empaque_tipo', label:'Tipo de empaque', group:'empaque', P:'empaque_tipo', B:'empaque_declarado'},
  {id:'empaque_seccion', label:'Sección del empaque', group:'empaque', P:'empaque_seccion_mm', B:'empaque_seccion_mm', unit:{P:'mm', B:'mm'}},
  {id:'empaque_anillos', label:'Cantidad de anillos', group:'empaque', P:'empaque_anillos', B:'empaque_anillos', number:true},
- {id:'rodamientos', label:'Los rodamientos pertenecen a', group:'placa', P:null, B:'rodamientos_pertenecen_a', options:['bomba','motor']},
+ {id:'rodamientos', label:'Los rodamientos pertenecen a', group:'componentes', P:'rodamientos_pertenecen_a', B:'rodamientos_pertenecen_a', options:['bomba','motor']},
  {id:'codigo_bodega', label:'Código de bodega', group:'bodega', P:'codigo_bodega', B:'codigo_bodega'},
 ];
 export const kindOf = tag => tag.startsWith('B') ? 'B' : 'P';
@@ -55,7 +74,7 @@ export function setKey(front, key, rendered) {
  lines.splice(start, end - start, rendered);
  return lines.join('\n');
 }
-export const list = (key, items) => items.length ? dump({[key]: items}, {lineWidth: -1, schema: JSON_SCHEMA}).trimEnd() : `${key}: []`;
+export const list = (key, items) => (Array.isArray(items)?items.length:Object.keys(items).length) ? dump({[key]: items}, {lineWidth: -1, schema: JSON_SCHEMA}).trimEnd() : `${key}: []`;
 
 // Qué falta en cada ficha. null = no aplica (ej. empaque en una bomba con sello mecánico).
 export function progressOf(tag, data) {
@@ -69,15 +88,15 @@ export function progressOf(tag, data) {
   orings: Array.isArray(data.orings) && data.orings.some(o => filled(o?.medida)),
   fotos: Array.isArray(data.fotos) && data.fotos.length > 0,
   bodega: filled(get('codigo_bodega')),
-  verificado: filled(data.verificado_por) && filled(data.fecha_verificacion),
+  verificado: verificationOf(data).verified,
  };
- const applicable = Object.values(checks).filter(v => v !== null);
+ const applicable = Object.entries(checks).filter(([key,v])=>key!=='verificado'&&v!==null).map(([,v])=>v);
  return {tag, kind: k, area: one(data.area || ''), servicio: one(data.servicio || data.ubicacion || data.nombre || ''), checks,
-  verification: {author: one(data.verificado_por), date: one(data.fecha_verificacion)},
+  verification: verificationOf(data),
   done: applicable.filter(Boolean).length, total: applicable.length, demo: data.demostracion === true};
 }
 
-export function surveyStore(vault) {
+export function surveyStore(vault, options = {}) {
  const fullPath = tag => path.join(vault, fileOf(tag));
  async function progress(tags) {
   const rows = [], errors = [];
@@ -96,27 +115,50 @@ export function surveyStore(vault) {
   return {rows, errors};
  }
  async function save(tag, input) {
+  if(!/^(B[1-9]\d{0,3}|P-\d{4}[A-Z]?)$/.test(tag))throw Error('TAG inválido.');
+  const checked=validateSurveyInput(input);input={...input,fields:checked.fields};
   const k = kindOf(tag), file = fullPath(tag);
   const date = one(input.date, 10), author = one(input.author);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || !author) throw new Error('Completá la fecha y quién hizo el levantamiento.');
+
   const raw = await readFile(file, 'utf8');
   const note = splitNote(raw);
   if ((note.data.tag || note.data.id) !== tag) throw new Error('El identificador de la ficha no coincide con el equipo.');
-  let front = note.front; const changed = [];
+  let front = note.front; const changed = [], changedIds=[];
   for (const f of FIELDS) {
    const key = f[k]; const value = one(input.fields?.[f.id]);
    if (!key || !value) continue;
+   if(f.options&&!f.options.includes(value))throw Error(f.label+': opción no válida.');
    if (String(note.data[key] ?? '') === value) continue;
-   front = setKey(front, key, `${key}: ${scalar(value, f.number || !!f.unit)}`); changed.push(f.label);
+   front = setKey(front, key, `${key}: ${scalar(value, f.number || !!f.unit)}`); changed.push(f.label);changedIds.push(f.id);
   }
+  if(changedIds.includes('impulsor')&&k==='B')front=setKey(front,'impulsor_unidad','impulsor_unidad: mm');
+  // Potencia: un solo dato vigente (HP o kW). Los valores anteriores no se pierden: quedan
+  // como antecedente con su unidad, fecha y responsable en motor_potencia_antecedentes.
+  if(changedIds.includes('motor_hp')||changedIds.includes('motor_kw')){
+   const UNIT={motor_hp:'HP',motor_kw:'kW'},vigente=changedIds.includes('motor_hp')?'motor_hp':'motor_kw',other=vigente==='motor_hp'?'motor_kw':'motor_hp';
+   const keyOf=id=>FIELDS.find(f=>f.id===id)[k],previous=[];
+   for(const id of [vigente,other]){const value=note.data[keyOf(id)];if(filled(value))previous.push({valor:String(value),unidad:UNIT[id],vigente_hasta:date,reemplazado_por:author});}
+   if(filled(note.data[keyOf(other)]))front=setKey(front,keyOf(other),keyOf(other)+': ""');
+   if(previous.length){
+    const prior=Array.isArray(note.data.motor_potencia_antecedentes)?note.data.motor_potencia_antecedentes.filter(a=>a&&typeof a==='object'):[];
+    front=setKey(front,'motor_potencia_antecedentes',list('motor_potencia_antecedentes',[...prior,...previous]));
+    changed.push('Potencia anterior conservada como antecedente: '+previous.map(a=>a.valor+' '+a.unidad).join(', '));
+   }
+   front=setKey(front,'motor_potencia_vigente','motor_potencia_vigente: '+JSON.stringify(UNIT[vigente]));
+  }
+  const priorOrings=Array.isArray(note.data.orings)?note.data.orings:[];
+  if(input.replaceOrings===true&&JSON.stringify(input.baseOrings)!==JSON.stringify(priorOrings))throw Error('La lista de o-rings cambió desde que abriste la ficha. Recargá antes de reemplazarla.');
+  if((input.orings||[]).length>MAX_ORINGS)throw Error('La lista admite hasta '+MAX_ORINGS+' o-rings.');
   const orings = (Array.isArray(input.orings) ? input.orings : []).slice(0, MAX_ORINGS)
-   .map(o => ({posicion: one(o.posicion), medida: one(o.medida), material: one(o.material), cantidad: one(o.cantidad, 10), codigo: one(o.codigo)}))
-   .filter(o => o.medida || o.codigo)
-   .map(o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '').map(([key, v]) => [key, key === 'cantidad' && /^\d+$/.test(v) ? Number(v) : v])));
-  if (orings.length) {
-   const prior = Array.isArray(note.data.orings) ? note.data.orings.filter(o => o && typeof o === 'object') : [];
-   front = setKey(front, 'orings', list('orings', [...prior, ...orings])); changed.push(`${orings.length} o-ring(s)`);
-  }
+   .map(o=>{
+    const original=input.replaceOrings===true&&Number.isInteger(o.existingIndex)?priorOrings[o.existingIndex]||{}:{};
+    const item={...original};
+    for(const key of ['posicion','medida','material','cantidad','codigo']){const value=one(o[key],key==='cantidad'?10:200);if(value)item[key]=key==='cantidad'?Number(value):value;else delete item[key];}
+    return item;
+   }).filter(o=>o.medida||o.codigo);
+  const nextOrings=input.replaceOrings===true?orings:[...priorOrings,...orings];
+  const oringsChanged=JSON.stringify(nextOrings)!==JSON.stringify(priorOrings);
+  if(oringsChanged){front=setKey(front,'orings',list('orings',nextOrings));changed.push(input.replaceOrings===true?'Lista de o-rings actualizada':orings.length+' o-ring(s)');}
   const photos = (Array.isArray(input.photos) ? input.photos : []).slice(0, MAX_PHOTOS).map(p => {
    const encoded = p?.base64;
    if (typeof encoded !== 'string' || encoded.length > Math.ceil(MAX_PHOTO / 3) * 4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error('Foto inválida o mayor de 6 MB.');
@@ -125,6 +167,10 @@ export function surveyStore(vault) {
    if (!ext) throw new Error('Las fotos deben ser JPG o PNG.');
    return {bytes, ext, note: one(p.note, 120)};
   });
+  const observations = String(input.observations ?? '').replace(/\r/g, '').slice(0, 3000).trim();
+  if(!changed.length&&!observations&&!photos.length&&!checked.scopes.length)throw Error('No hay datos nuevos para guardar.');
+  // Un respaldo fallido impide cualquier escritura de ficha o fotos.
+  const backup=await (options.backup||backupFicha)(vault,tag);
   const saved = [];
   if (photos.length) {
    const dir = path.join(vault, '00-Proyecto/fotos-campo', tag); await mkdir(dir, {recursive: true});
@@ -135,14 +181,25 @@ export function surveyStore(vault) {
    const prior = Array.isArray(note.data.fotos) ? note.data.fotos : [];
    front = setKey(front, 'fotos', list('fotos', [...prior, ...saved])); changed.push(`${saved.length} foto(s)`);
   }
-  if (k === 'B' && one(input.fields?.serie)) {
+  if (k === 'B' && checked.scopes.includes('identidad')) {
    front = setKey(front, 'asociacion_placa', 'asociacion_placa: confirmada_en_campo');
    front = setKey(front, 'placa_nota', `placa_nota: ${JSON.stringify(`Placa leída en campo el ${date} por ${author}`)}`);
   }
-  const observations = String(input.observations ?? '').replace(/\r/g, '').slice(0, 3000).trim();
-  if (!changed.length && !observations) throw new Error('No hay datos nuevos para guardar.');
-  front = setKey(front, 'verificado_por', `verificado_por: ${JSON.stringify(author)}`);
-  front = setKey(front, 'fecha_verificacion', `fecha_verificacion: ${JSON.stringify(date)}`);
+  const records=note.data.verificaciones_campo&&typeof note.data.verificaciones_campo==='object'?{...note.data.verificaciones_campo}:{};
+  const invalid=new Set();
+  if(changedIds.some(id=>['marca','modelo','serie','tamano'].includes(id)))for(const scope of ['identidad','placa','repuestos'])invalid.add(scope);
+  if(changedIds.some(id=>FIELDS.find(f=>f.id===id)?.group==='placa'))invalid.add('placa');
+  if(oringsChanged||changedIds.some(id=>['sello','empaque','bodega','motor','componentes'].includes(FIELDS.find(f=>f.id===id)?.group)||id==='rodamientos'))invalid.add('repuestos');
+  for(const scope of invalid)if(records[scope])records[scope]={...records[scope],vigente:false};
+  for(const scope of checked.scopes)records[scope]={vigente:true,author,date,evidence:checked.evidence};
+  if(Object.keys(records).length)front=setKey(front,'verificaciones_campo',list('verificaciones_campo',records));
+  if(k==='B'&&changedIds.includes('serie')&&!checked.scopes.includes('identidad')){
+   front=setKey(front,'asociacion_placa','asociacion_placa: candidata');
+   front=setKey(front,'placa_nota','placa_nota: '+JSON.stringify('Serie registrada; identidad física pendiente de verificación explícita.'));
+  }
+  front=setKey(front,'levantado_por','levantado_por: '+JSON.stringify(author));
+  front=setKey(front,'fecha_levantamiento','fecha_levantamiento: '+JSON.stringify(date));
+  if(checked.scopes.length)changed.push('Verificación: '+checked.scopes.join(', '));
   const entry = `- ${date} · ${author}: ${changed.join(', ') || 'observación'}${observations ? `\n  > ${observations.replace(/\n/g, '\n  > ')}` : ''}`;
   let body = note.body;
   const heading = /^## Levantamiento de campo[^\S\n]*$/m;
@@ -152,7 +209,7 @@ export function surveyStore(vault) {
   splitNote(next); // valida antes de escribir
   const temp = `${file}.${randomUUID().slice(0, 8)}.tmp`;
   await writeFile(temp, next, 'utf8'); await rename(temp, file);
-  return {file: fileOf(tag), changed, photos: saved.length, progress: progressOf(tag, splitNote(next).data)};
+  return {file: fileOf(tag), backup: path.relative(vault,backup).replace(/\\/g,'/'), changed, photos: saved.length, progress: progressOf(tag, splitNote(next).data)};
  }
  return {progress, save};
 }

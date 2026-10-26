@@ -1,5 +1,7 @@
 // Solicitud de repuestos a bodega en PDF. No guarda nada: el PDF lo descarga quien lo pide.
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import {cleanDetail} from './public/request-core.js';
+import {validCalendarDate} from './public/verification-core.js';
 import { safeText } from './pdf-generator.mjs';
 
 export const MAX_ITEMS = 40;
@@ -15,14 +17,15 @@ export function normalizeRequest(input) {
  const raw = Array.isArray(input?.items) ? input.items : [];
  if (raw.length > MAX_ITEMS) throw new Error(`La solicitud tiene ${raw.length} líneas; el máximo es ${MAX_ITEMS}. Dividila en dos solicitudes.`);
  const items = raw.map((i, n) => {
-  const cantidad = Number.parseInt(i.cantidad, 10);
-  if (String(i.cantidad ?? '').trim() && (!Number.isFinite(cantidad) || cantidad < 1 || cantidad > 999)) throw new Error(`Línea ${n + 1}: la cantidad debe estar entre 1 y 999.`);
-  return {tag: one(i.tag, 12, `Línea ${n + 1}, TAG`), pieza: one(i.pieza, 80, `Línea ${n + 1}, pieza`), detalle: one(i.detalle, 160, `Línea ${n + 1}, detalle`), codigo: one(i.codigo, 60, `Línea ${n + 1}, código`), cantidad: Number.isFinite(cantidad) ? cantidad : 1};
+  const cantidad = Number(String(i.cantidad??'').trim().replace(',','.'));
+  if (String(i.cantidad ?? '').trim() && (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 999)) throw new Error(`Línea ${n + 1}: la cantidad debe estar entre 1 y 999.`);
+  return {tag: one(i.tag, 12, `Línea ${n + 1}, TAG`), pieza: one(i.pieza, 80, `Línea ${n + 1}, pieza`), detalle: one(cleanDetail(i.detalle), 160, `Línea ${n + 1}, detalle`), codigo: one(i.codigo, 60, `Línea ${n + 1}, código`), cantidad: String(i.cantidad??'').trim() ? cantidad : 1};
  }).filter(i => i.pieza);
  if (!items.length) throw new Error('Agregá al menos un repuesto a la solicitud.');
  const solicitante = one(input.solicitante, 80, 'Solicitante');
  if (!solicitante) throw new Error('Indicá quién solicita los repuestos.');
- const fecha = /^\d{4}-\d{2}-\d{2}$/.test(input.fecha) ? input.fecha : new Date().toISOString().slice(0, 10);
+ if(input.fecha&&!validCalendarDate(input.fecha))throw Error('La fecha de solicitud no es válida.');
+ const fecha = input.fecha || new Date().toISOString().slice(0,10);
  return {items, solicitante, fecha, area: one(input.area, 80, 'Área'), motivo: one(input.motivo, 300, 'Motivo'), orden: one(input.orden, 40, 'Orden de trabajo'), demo: !!input.demo};
 }
 

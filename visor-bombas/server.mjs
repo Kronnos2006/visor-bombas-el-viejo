@@ -1,4 +1,6 @@
 import http from 'node:http';
+import {inventorySummary} from './inventory.mjs';
+import {sectorDe} from './public/planta-integrada.js';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -82,18 +84,18 @@ export async function readPump(tag) {
  if (!tagPattern.test(tag)) throw new Error('TAG inválido.');
  if (tag.startsWith('B')) {
   const base = plantPumps.find(p => p.tag === tag);
-  if (!base) throw new Error('Equipo fuera del sector registrado.');
+
   const source = `00-Proyecto/equipos/${tag}.md`;
   let note;
   try { note = parseNote(await readFile(path.join(VAULT, source), 'utf8')); }
   catch (e) {
    if (e.code !== 'ENOENT') throw e;
-   if (DEMO) return {...readIntegratedPump(tag), demo: true, reports: await maintenance.list(tag)};
+   if (DEMO) {const integrated=readIntegratedPump(tag);if(integrated)return {...integrated,demo:true,reports:await maintenance.list(tag)};throw Error('No hay ficha para este TAG.');}
    const missing = new Error(`Falta la ficha ${source} en la bóveda ${path.basename(VAULT)}.`);
    missing.code = 'PUMP_NOT_AVAILABLE'; throw missing;
   }
   if (note.data.id !== tag) throw new Error('El identificador de la ficha no coincide con el equipo.');
-  return {tag, data: equipmentData(base, note.data), photo: true, demo: DEMO, history: section(note.body, 'Historial de intervenciones'), observations: section(note.body, 'Observaciones'), reports: await maintenance.list(tag), files: [], source};
+  return {tag, data: equipmentData(base||{tag}, note.data), photo: true, demo: DEMO, history: section(note.body, 'Historial de intervenciones'), observations: section(note.body, 'Observaciones'), reports: await maintenance.list(tag), files: [], source};
  }
  let note;
  try { note=await readFile(path.join(NOTES,tag+'.md'),'utf8'); }
@@ -162,9 +164,17 @@ export async function handler(req,res) {
    }
    return send(res,200,{pumps,sectorPumps,errors,token:TOKEN,geminiConfigured:!!apiKey,model,demo:DEMO,vaultName:path.basename(VAULT),maintenanceWritable:configuration.writable});
   }
+  if(req.method==='GET' && url.pathname==='/api/survey-catalog') {
+   const {rows,errors}=await survey.progress();
+   return send(res,200,{rows,errors,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS});
+  }
   if(req.method==='GET' && url.pathname==='/api/progress') {
    const {rows,errors}=await survey.progress(new Set(plantPumps.map(p=>p.tag)));
-   return send(res,200,{rows,errors,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS,replaceFields:REPLACE_FIELDS});
+   const groups=JSON.parse(await readFile(path.join(PUBLIC,'modelos/bombas-individuales.json'),'utf8'));
+   const referenceCount=groups.filter(g=>sectorDe(g.sector)).reduce((n,g)=>n+g.bombas.length,0);
+   const totalB=(await readdir(path.join(VAULT,'00-Proyecto/equipos')).catch(e=>{if(e.code==='ENOENT')return [];throw e;})).filter(n=>/^B[1-9]\d{0,3}\.md$/.test(n)).length;
+   const inventory=inventorySummary(rows,plantPumps.map(p=>p.tag),referenceCount,totalB);
+   return send(res,200,{rows,errors,inventory,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS,replaceFields:REPLACE_FIELDS});
   }
   if(req.method==='GET' && url.pathname==='/api/reports') {
    const p=await readPump(url.searchParams.get('tag')||'');

@@ -8,6 +8,9 @@
 // Los respaldos permiten recuperar un estado anterior; no protegen contra dos personas
 // editando la misma ficha al mismo tiempo (Obsidian y el visor).
 import path from 'node:path';
+import {validCalendarDate} from './public/verification-core.js';
+import {PHOTO_SLOTS} from './public/photo-slots.js';
+import {backupFicha} from './backup.mjs';
 import { readFile, writeFile, rename, mkdir, copyFile, readdir, access } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { splitNote, setKey, one, fileOf, kindOf, FIELDS } from './survey.mjs';
@@ -32,7 +35,7 @@ const SEAL_KEYS = {
 // Lo que describe la posición y no el equipo instalado: se conserva al reemplazar.
 export const POSITION_KEYS = new Set(['tipo', 'id', 'tag', 'area', 'ubicacion', 'liquido', 'servicio', 'posicion_x', 'posicion_z', 'rotacion_grados']);
 // Ranuras de fotos del expediente que muestran el equipo (no la posición).
-const EQUIPMENT_PHOTO_SLOTS = ['placa1', 'placa2', 'bomba'];
+const EQUIPMENT_PHOTO_SLOTS = PHOTO_SLOTS.map(([slot])=>slot).filter(slot=>slot!=='posicion');
 const stamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 const cell = v => String(v ?? '').replace(/\|/g, '/').replace(/[\r\n]+/g, ' ').trim() || '—';
 const scalar = (value, number) => number && /^-?\d+(\.\d+)?$/.test(String(value)) ? String(value) : JSON.stringify(String(value));
@@ -49,7 +52,7 @@ function appendRow(body, heading, header, row) {
 }
 function common(input) {
  const date = one(input.date, 10), author = one(input.author), reason = one(input.reason, 300);
- if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || !author) throw new Error('Completá la fecha y quién hizo el cambio.');
+ if (!validCalendarDate(date) || !author) throw new Error('Completá la fecha y quién hizo el cambio.');
  return {date, author, reason};
 }
 function position(input, area = 'tanques') {
@@ -83,12 +86,7 @@ export function equipmentStore(vault, basePositions, opciones = {}) {
  const file = tag => path.join(vault, fileOf(tag));
  const backupDir = path.join(vault, '00-Proyecto', 'Respaldos', 'fichas');
  // Copia la ficha tal como está antes de modificarla. Devuelve la ruta del respaldo.
- async function backup(tag) {
-  await mkdir(backupDir, {recursive: true});
-  const dest = path.join(backupDir, `${tag}_${stamp()}_${randomUUID().slice(0, 4)}.md.respaldo`);
-  await copyFile(file(tag), dest);
-  return dest;
- }
+ const backup = tag => backupFicha(vault,tag);
  async function restore(tag, copy) {
   const temp = `${file(tag)}.${randomUUID().slice(0, 8)}.tmp`;
   await copyFile(copy, temp); await rename(temp, file(tag));

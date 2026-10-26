@@ -1,6 +1,7 @@
 // «Actualizar fotos» del expediente: dos placas, la bomba y su posición.
 // En la computadora (Obsidian) se guardan en la bóveda; en Vercel quedan en este navegador.
-export const RANURAS=[['placa1','Placa de la bomba'],['placa2','Segunda placa (motor)'],['bomba','Foto de la bomba'],['posicion','Foto de la posición']];
+import {PHOTO_SLOTS} from './photo-slots.js';
+export const RANURAS=PHOTO_SLOTS;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function db(){return new Promise((ok,ko)=>{const r=indexedDB.open('vocatus-fotos',1);r.onupgradeneeded=()=>r.result.createObjectStore('fotos');r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error);});}
@@ -41,5 +42,5 @@ export function originales(p,exp){
 export function htmlFotos(p,orig,act,{writable}){
  const fecha=f=>new Date(f).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'});
  return `<div class="block exp-block" id="fotos-actualizar"><h3>Actualizar fotos</h3><p class="muted">${writable?'La foto nueva sustituye a la anterior en el expediente y se guarda en la bóveda (00-Proyecto/fotos-campo/'+esc(p.tag)+'/expediente). La anterior queda en el historial.':'En este alojamiento las fotos nuevas se guardan solo en este navegador. Para guardarlas en Obsidian, usá el visor de la computadora.'}</p><div class="foto-grid">${RANURAS.map(([slot,nombre])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src||'';
-  return `<figure class="foto-slot"><div class="foto-img">${src?`<a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(nombre)} de ${esc(p.tag)}" loading="lazy"></a>`:'<span>Sin foto</span>'}</div><figcaption><strong>${esc(nombre)}</strong><small>${a?`Actualizada ${fecha(a.fecha)}${a.local?' · solo en este navegador':''}`:o?esc(o.ref||'Original'):'Pendiente'}</small></figcaption><label class="foto-btn">📷 ${src?'Actualizar foto':'Agregar foto'}<input type="file" accept="image/*" capture="environment" data-slot="${slot}" hidden></label></figure>`;}).join('')}</div><p class="form-error" id="fotos-error"></p></div>`;
+  return `<figure class="foto-slot"><div class="foto-img">${src?`<a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(nombre)} de ${esc(p.tag)}" loading="lazy"></a>`:'<span>Sin foto</span>'}</div><figcaption><strong>${esc(nombre)}</strong><small>${a?`Actualizada ${fecha(a.fecha)}${a.local?' · solo en este navegador':''}`:o?esc(o.ref||'Original'):'Pendiente'}</small></figcaption><label class="foto-btn" tabindex="0" role="button">📷 ${src?'Actualizar foto':'Agregar foto'}<input type="file" accept="image/*" capture="environment" data-slot="${slot}" hidden></label></figure>`;}).join('')}</div><p class="form-error" id="fotos-error"></p></div>`;
 }

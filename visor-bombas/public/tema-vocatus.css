@@ -179,3 +179,14 @@ body.claro .area-menu button,body.claro .anatomy-actions button,body.claro #part
 body.claro #parts-rail .rail-hint,body.claro #scene-help{color:var(--tinta-2)}
 body.claro #parts-rail .rail-item span{background:var(--fondo-2);color:var(--tinta)}
 body.claro .area-menu button[aria-pressed=true],body.claro #parts-rail .rail-item.active{background:var(--fondo-2);color:var(--accent);border-color:var(--borde-fuerte)}
+
+/* Correcciones de campo: acciones legibles y controles táctiles. */
+@media(max-width:900px){
+ body.sheet-open .area-menu,body.sheet-open .scene-top{visibility:hidden}
+ body #pump-links .quick-actions{display:grid;width:100%;flex:1 0 100%;grid-template-columns:repeat(2,minmax(0,1fr))}
+ body #pump-links .quick-actions a,body #pump-links .quick-actions button{min-height:44px;min-width:0;overflow-wrap:normal;word-break:normal;white-space:nowrap;hyphens:none}
+ body header>button,body #tabs button,body .section-part,body .sheet-bar button{min-height:44px;min-width:44px}
+ body .main-nav a{word-break:normal;overflow-wrap:normal;hyphens:none}
+}
+
+.edit-equipment-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.edit-equipment-links a{padding:10px;min-height:44px;box-sizing:border-box;border:1px solid var(--borde);border-radius:8px;text-decoration:none;color:var(--tinta);background:var(--superficie)}.foto-btn[role=button]:focus-visible{outline:3px solid var(--accent);outline-offset:3px}

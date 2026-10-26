@@ -1,9 +1,11 @@
+import {known,joinDetails as join,cleanLegacyCart} from './request-core.js';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store = {get(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}};
-const known = v => v != null && String(v).trim() !== '' && !/^(por confirmar|sin levantar|pendiente)/i.test(String(v).trim());
-const join = (...parts) => parts.filter(known).join(' · ');
-let token = '', demo = false, cart = store.get('vocatus-solicitud') || [], options = [];
+
+const oldCart=store.get('vocatus-solicitud')||[], cleaned=cleanLegacyCart(oldCart);
+let token = '', demo = false, cart = cleaned.items, options = [];
+if(cleaned.changed){if(!store.get('vocatus-solicitud-antes-limpieza'))store.set('vocatus-solicitud-antes-limpieza',oldCart);store.set('vocatus-solicitud',cart);$('#cart-migration').textContent='Se quitaron '+cleaned.changed+' textos «false» del carrito. Se conservó una copia en este navegador. Revisá los PDF ya emitidos: no se modifican automáticamente.';}
 
 // Convierte la ficha (P-xxxx o Bxx) en líneas de repuesto. Solo lo que está documentado.
 function partsOf(p) {
@@ -43,7 +45,7 @@ async function choose(tag) {
  } catch (err) { $('#suggest').innerHTML = `<div class="msg err">${esc(err.message)}</div>`; }
 }
 $('#pump').onchange = e => choose(e.target.value);
-$('#manual').onsubmit = e => { e.preventDefault(); const f = new FormData(e.target); add({tag: $('#pump').value, pieza: f.get('pieza').trim(), detalle: f.get('detalle').trim(), codigo: f.get('codigo').trim(), cantidad: Number.parseInt(f.get('cantidad'), 10) || 1}); e.target.reset(); e.target.cantidad.value = 1; };
+$('#manual').onsubmit = e => { e.preventDefault(); const f = new FormData(e.target); add({tag: $('#pump').value, pieza: f.get('pieza').trim(), detalle: f.get('detalle').trim(), codigo: f.get('codigo').trim(), cantidad: Number(f.get('cantidad'))}); e.target.reset(); e.target.cantidad.value = 1; };
 $('#clear').onclick = () => { cart = []; saveCart(); $('#result').innerHTML = ''; };
 $('#pdf').onclick = async () => {
  const form = $('#request'); if (!form.reportValidity()) return;

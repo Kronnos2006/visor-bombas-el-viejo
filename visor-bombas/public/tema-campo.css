@@ -87,3 +87,8 @@ body .photos img{border-radius:12px;border-color:var(--borde)}
 }
 @media(max-width:580px){body header>button span{display:none}body .brand small{display:none}body .campo h1{font-size:28px}}
 body .pump-pick button{align-content:start}
+
+.verification-options{display:grid;gap:12px;margin:14px 0}.verification-options .check{display:flex;align-items:center;gap:12px}.verification-options input[type=checkbox]{width:26px;flex:0 0 26px}
+@media(max-width:900px){body .campo-nav a{font-size:10px;white-space:nowrap;word-break:normal;overflow-wrap:normal;hyphens:none;min-height:52px}}
+
+#component-photos .foto-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}#component-photos .foto-btn{display:block;min-height:44px;padding:12px;cursor:pointer;border:1px solid var(--borde);border-radius:8px}#component-photos .foto-img img{width:100%;max-height:220px;object-fit:contain}#component-photos .foto-slot{margin:0}#component-photos figcaption small{display:block}.campo #replace-orings{width:26px;height:26px}section[id^=editar-]{scroll-margin-top:20px}

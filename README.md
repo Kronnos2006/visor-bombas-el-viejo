@@ -1,5 +1,14 @@
 # Visor de bombas · Planta El Viejo
 
+## Edición de todas las bombas
+
+Editor común de datos, componentes y diez categorías de fotos para las 77 fichas B y 15 fichas P. Incluye edición de o-rings y acceso a fichas fuera del mapa. Ver [editor universal](00-Proyecto/Documentacion-visor/17-Editor-universal-bombas.md).
+
+## Correcciones de integridad
+
+Verificación explícita por identidad, placa y repuestos; validación de fechas y números; respaldo previo al levantamiento; corrección de pedidos y explicación de los conteos. `npm test`: 100 pruebas. Al cambiar la potencia del motor, el valor anterior y su unidad quedan como antecedente. Ver [cierre de auditoría](00-Proyecto/Documentacion-visor/16-Correcciones-integridad-2026-10-26.md).
+
+
 ## Interfaz vigente · 26 de octubre de 2026
 
 Tema compartido entre vista simple y completa; búsqueda por TAG, marca, modelo y serie; acciones de expediente; apartados plegables y ficha móvil con el 3D visible. Avance separa documentación y verificación en campo. El visor incorpora controles de cámara, progreso de descarga y recuperación del 3D.

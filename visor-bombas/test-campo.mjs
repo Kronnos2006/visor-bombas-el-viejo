@@ -42,12 +42,13 @@ test('el levantamiento escribe la ficha sin borrar datos y sin token se rechaza'
  const text = await readFile(fichaP, 'utf8');
  assert.match(text, /^marca: "Hidromac"$/m, 'un campo vacío no borra el dato');
  assert.match(text, /^modelo: "2196"$/m); assert.match(text, /^sello_diametro_mm: 35$/m); assert.match(text, /^sello_codigo: "SM-35"$/m);
- assert.match(text, /^verificado_por: "Técnico de prueba"$/m);
+ assert.match(text, /^levantado_por: "Técnico de prueba"$/m);
+ assert.match(text, /^verificado_por: ""$/m, "guardar no verifica");
  assert.match(text, /## Levantamiento de campo\n- 2026-10-12 · Técnico de prueba/);
  const pump = (await request('/api/pump?tag=P-1311')).data;
  assert.equal(pump.data.orings.length, 1); assert.equal(pump.data.orings[0].cantidad, 2); assert.equal(pump.data.fotos.length, 1);
  assert.equal((await readdir(path.join(vault, '00-Proyecto/fotos-campo/P-1311'))).length, 1);
- assert.equal(r.data.progress.checks.placa, true); assert.equal(r.data.progress.checks.sello, true); assert.equal(r.data.progress.checks.verificado, true);
+ assert.equal(r.data.progress.checks.placa, true); assert.equal(r.data.progress.checks.sello, true); assert.equal(r.data.progress.checks.verificado, false);
  // segundo levantamiento: los o-rings se agregan, el resto de la ficha se conserva
  const again = await request('/api/survey', {method: 'POST', token, body: {tag: 'P-1311', date: '2026-10-13', author: 'Otro', orings: [{medida: '30 x 2 mm'}]}});
  assert.equal(again.status, 201); assert.equal((await request('/api/pump?tag=P-1311')).data.data.orings.length, 2);
@@ -57,7 +58,7 @@ test('el levantamiento de un Bxx del sector asocia la placa y valida entradas', 
  const {data: {token}} = await request('/api/progress');
  const r = await request('/api/survey', {method: 'POST', token, body: {tag: 'B33', date: '2026-10-12', author: 'K', fields: {serie: '220105-1', sello_diametro: '1.3/8'}}});
  assert.equal(r.status, 201); const text = await readFile(path.join(vault, '00-Proyecto/equipos/B33.md'), 'utf8');
- assert.match(text, /^placa_serie: "220105-1"$/m); assert.match(text, /^asociacion_placa: confirmada_en_campo$/m); assert.match(text, /^# PROCEDENCIA$/m, 'conserva los comentarios');
+ assert.match(text, /^placa_serie: "220105-1"$/m); assert.match(text, /^asociacion_placa: candidata$/m); assert.match(text, /^# PROCEDENCIA$/m, 'conserva los comentarios');
  assert.equal((await request('/api/survey', {method: 'POST', token, body: {tag: 'B33', date: '2026-10-12', author: 'K'}})).status, 400, 'sin datos nuevos');
  assert.equal((await request('/api/survey', {method: 'POST', token, body: {tag: '../x', date: '2026-10-12', author: 'K', fields: {marca: 'x'}}})).status, 400);
  assert.equal((await request('/api/survey', {method: 'POST', token, body: {tag: 'P-9999', date: '2026-10-12', author: 'K', fields: {marca: 'x'}}})).status, 409);
