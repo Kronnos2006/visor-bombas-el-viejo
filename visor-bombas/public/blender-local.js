@@ -15,24 +15,46 @@ export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area}){
 
 // El modelo de Blender quedó desplazado respecto al modelo integrado anterior,
 // cuyas cajas guardan planta-integrada.json y bombas-individuales.json.
-// Mide ese desplazamiento comparando las cajas de los sectores comunes y lo aplica
-// a la ubicación de la torre, a las cajas de sectores y a las bombas de referencia.
+// Se mide el desplazamiento comparando las cajas de los sectores comunes (mediana por eje)
+// y se aplica igual a la torre, a las cajas de sector y a las bombas de referencia.
+// "residuo" es la mayor diferencia de un sector respecto a ese desplazamiento común: si crece,
+// el modelo nuevo no es una simple traslación del anterior y las ubicaciones deben revisarse.
+const mediana=v=>{const s=[...v].sort((a,b)=>a-b),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+export function medirDesplazamiento(cajas,info){
+ const difs=[[],[],[]],porSector={};
+ for(const [k,b] of Object.entries(cajas)){const o=info.sectores?.[k];if(!o)continue;
+  porSector[k]=[0,1,2].map(i=>(b.min[i]-o.min[i]+b.max[i]-o.max[i])/2);porSector[k].forEach((v,i)=>difs[i].push(v));}
+ if(!difs[0].length)return {d:[0,0,0],residuo:0,comunes:0};
+ const d=difs.map(mediana);
+ const residuo=Math.max(...Object.values(porSector).map(v=>Math.max(...v.map((x,i)=>Math.abs(x-d[i])))));
+ return {d,residuo,comunes:difs[0].length};
+}
+export function aplicarDesplazamiento(info,grupos,cajas,d){
+ info.sectores??={};
+ if(info.torre){info.torre.x+=d[0];info.torre.y+=d[1];info.torre.z+=d[2];}
+ for(const [k,s] of Object.entries(info.sectores))if(!cajas[k])info.sectores[k]={min:s.min.map((v,i)=>v+d[i]),max:s.max.map((v,i)=>v+d[i])};
+ for(const [k,b] of Object.entries(cajas))info.sectores[k]={min:[...b.min],max:[...b.max]};
+ for(const grupo of grupos)for(const caja of grupo.bombas){caja.min=caja.min.map((v,i)=>v+d[i]);caja.max=caja.max.map((v,i)=>v+d[i]);}
+}
+// Pisos y losas del modelo: una bomba se apoya en el más alto que tenga debajo, sin pasar de "techo".
+export const ES_PISO=/\b(losa|piso|suelo|contrapiso|plataforma)\b/i;
+export function alturaPiso(pisos,x,z,techo=Infinity){
+ let y=null;
+ for(const p of pisos)if(x>=p.min[0]&&x<=p.max[0]&&z>=p.min[2]&&z<=p.max[2]&&p.max[1]<=techo&&(y===null||p.max[1]>y))y=p.max[1];
+ return y;
+}
 export function alinearInfoBlender(T,scene,info,grupos){
  scene.updateWorldMatrix(true,true);
  const local=new T.Matrix4();if(scene.parent)local.copy(scene.parent.matrixWorld).invert();
- const boxes={};
- scene.traverse(o=>{if(!o.isMesh||!o.userData.sector)return;const b=new T.Box3().setFromObject(o).applyMatrix4(local);if(!b.isEmpty())(boxes[o.userData.sector]??=new T.Box3()).union(b);});
- const difs=[[],[],[]];
- for(const [k,b] of Object.entries(boxes)){const o=info.sectores?.[k];if(!o)continue;for(let i=0;i<3;i++)difs[i].push((b.min.getComponent(i)-o.min[i]+b.max.getComponent(i)-o.max[i])/2);}
- if(!difs[0].length)return [0,0,0];
- info.sectores??={};
- const mediana=v=>{const s=[...v].sort((a,b)=>a-b),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
- const d=difs.map(mediana);
- if(info.torre){info.torre.x+=d[0];info.torre.y+=d[1];info.torre.z+=d[2];}
- for(const [k,s] of Object.entries(info.sectores||{}))if(!boxes[k])info.sectores[k]={min:s.min.map((v,i)=>v+d[i]),max:s.max.map((v,i)=>v+d[i])};
- for(const [k,b] of Object.entries(boxes))info.sectores[k]={min:b.min.toArray(),max:b.max.toArray()};
- for(const grupo of grupos)for(const caja of grupo.bombas){caja.min=caja.min.map((v,i)=>v+d[i]);caja.max=caja.max.map((v,i)=>v+d[i]);}
- return d;
+ const cajas={},pisos=[];
+ scene.traverse(o=>{if(!o.isMesh||!o.userData.sector)return;const b=new T.Box3().setFromObject(o).applyMatrix4(local);if(b.isEmpty())return;
+  const c=cajas[o.userData.sector]??={min:b.min.toArray(),max:b.max.toArray()};
+  for(let i=0;i<3;i++){c.min[i]=Math.min(c.min[i],b.min.getComponent(i));c.max[i]=Math.max(c.max[i],b.max.getComponent(i));}
+  if(ES_PISO.test(o.userData.original_name||o.name))pisos.push({min:b.min.toArray(),max:b.max.toArray()});});
+ const medida=medirDesplazamiento(cajas,info);
+ aplicarDesplazamiento(info,grupos,cajas,medida.d);
+ if(medida.residuo>.25)console.warn(`Modelo de Blender: los sectores no se movieron juntos (residuo ${medida.residuo.toFixed(2)} m); revisar ubicaciones.`);
+ return {...medida,pisos};
 }
 
 // Reproduce solamente el orden del exportador para identificar las piezas originales.

@@ -1,4 +1,4 @@
-import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender} from './blender-local.js';
+import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
 import * as THREE from 'three';
@@ -789,10 +789,12 @@ function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
  Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();})]).then(([info,grupos])=>{
   if(g.parent!==plant)return;integrado.info=info;
-  if(escena.userData.blenderLocal)integrado.desplazamientoBlender=alinearInfoBlender(THREE,escena,info,grupos);
+  const alineado=escena.userData.blenderLocal?alinearInfoBlender(THREE,escena,info,grupos):null;integrado.desplazamientoBlender=alineado?.d||null;
   if(info.torre)for(const p of placed.filter(p=>areaOf(p)==='torre')){
    const b=compactar(THREE,exterior(THREE,p.scale,p.variant)),[x,y,z]=torreAIntegrado(info.torre,p.x,p.y??.3,p.z);
    b.position.set(x,y,z);b.rotation.y=p.rotation+info.torre.giro;b.userData.tag=p.tag;b.userData.sectorInt='torre';g.add(b);pumpObjectsInt[p.tag]=b;
+   if(alineado){b.updateMatrixWorld(true);const caja=new THREE.Box3().setFromObject(b).applyMatrix4(new THREE.Matrix4().copy(g.matrixWorld).invert()),c=caja.getCenter(new THREE.Vector3());
+    const piso=alturaPiso(alineado.pisos,c.x,c.z,caja.min.y+.5);if(piso!==null)b.position.y+=piso-caja.min.y;}
    b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.userData.tag=p.tag;pickables.push(o);}});
    const a=new THREE.Object3D();a.position.set(0,2.2,0);b.add(a);marker(a,p.tag,'pump',p.tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:'torre'});
   }
