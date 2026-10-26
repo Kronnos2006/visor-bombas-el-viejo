@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createPumpModel,simParams,GUIDE,parseSize} from './public/pump-sim.js';
+import {createPumpModel,simParams,GUIDE,parseSize,powerW} from './public/pump-sim.js';
 import {photoPumps} from './public/equipos-sector.js';
 const steady=(M,over={})=>{let s=M.initialState(),i={...M.defaults(),running:true,...over};for(let t=0;t<400;t+=.1)s=M.step(s,i,.1);return M.derive(s,i);};
 test('la generalización reproduce la referencia de la guía HIDROMAC 2196',()=>{
@@ -37,4 +37,21 @@ test('los valores se mantienen finitos en escenarios extremos',()=>{
  for(const p of photoPumps.filter(p=>!p.inactive)){const M=createPumpModel(simParams(p));
   for(const over of [{frequency:0},{frequency:60,valve:1,suction:-8,temperature:90},{valve:.001},{oil:0},{power:false},{frequency:'x',valve:-3}]){
    const d=steady(M,over);for(const k of ['q','H','electric','current','npsha','oilTemp','sealTemp','motorTemp'])assert.ok(Number.isFinite(d[k]),`${p.tag} ${k}`);}}
+});
+test('la potencia del motor se convierte según su unidad',()=>{
+ assert.equal(powerW('2 kW'),2000);
+ assert.ok(Math.abs(powerW('2 HP')-1491.4)<1e-9);
+ assert.ok(Math.abs(powerW('1 CV')-735.499)<1e-9);
+ assert.equal(powerW('2'),null,'sin unidad no se adivina');
+ const p=photoPumps.find(x=>x.tag==='B30');
+ assert.equal(simParams({...p,motor:{...p.motor,potencia:'2 kW'}}).prated,2000);
+ assert.ok(Math.abs(simParams({...p,motor:{...p.motor,potencia:'2 HP'}}).prated-1491.4)<1e-9);
+ const sinUnidad=simParams({...p,motor:{...p.motor,potencia:'2'}});
+ assert.ok(sinUnidad.estimados.some(e=>/sin unidad/.test(e)),'la potencia sin unidad debe figurar como estimada');
+});
+test('el incremento de presión no se presenta como presión de descarga',()=>{
+ const M=createPumpModel(GUIDE),d=steady(M,{suction:4});
+ const descarga=d.dischargeAbs-101325;
+ assert.ok(descarga>d.pressure,'con succión positiva la descarga manométrica supera al incremento');
+ assert.ok(Math.abs(descarga-d.pressure-(d.suctionAbs-101325))<1e-6);
 });

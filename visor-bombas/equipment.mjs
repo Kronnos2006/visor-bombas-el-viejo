@@ -1,9 +1,14 @@
 // Mover o reemplazar una bomba (sector de tanques o torre) desde el visor.
 // Todo cambio queda en la ficha de Obsidian: la posición nueva en el frontmatter y
-// una línea en «## Cambios de ubicación y reemplazos». Al reemplazar, los datos de la
-// bomba retirada se archivan en una tabla para no perderlos.
+// una línea en «## Cambios de ubicación y reemplazos».
+// Al reemplazar, la ficha completa de la bomba retirada se archiva en
+// 00-Proyecto/equipos/retirados/ y en la ficha de la posición solo se conservan los
+// datos de la posición (POSITION_KEYS); todo lo demás queda vacío hasta levantarlo.
+// Antes de escribir una ficha se guarda un respaldo en 00-Proyecto/Respaldos/fichas/.
+// Los respaldos permiten recuperar un estado anterior; no protegen contra dos personas
+// editando la misma ficha al mismo tiempo (Obsidian y el visor).
 import path from 'node:path';
-import { readFile, writeFile, rename } from 'node:fs/promises';
+import { readFile, writeFile, rename, mkdir, copyFile, readdir, access } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { splitNote, setKey, one, fileOf, kindOf, FIELDS } from './survey.mjs';
 import {rangoTemperaturaTrabajo} from './public/temperatura-trabajo.js';
@@ -24,6 +29,11 @@ const SEAL_KEYS = {
  P: ['tipo_sellado', 'sello_marca', 'sello_modelo', 'sello_tipo', 'sello_diametro_mm', 'sello_cara_rotativa', 'sello_cara_estatica', 'sello_elastomero', 'sello_resorte', 'sello_codigo', 'empaque_marca', 'empaque_tipo', 'empaque_seccion_mm', 'empaque_anillos'],
  B: ['tipo_sellado', 'sello_tipo', 'sello_eje_pulg', 'sello_cara_rotativa', 'sello_cara_estatica', 'sello_elastomero', 'sello_resorte', 'sello_codigo', 'empaque_declarado', 'empaque_seccion_pulg', 'empaque_seccion_mm', 'empaque_anillos'],
 };
+// Lo que describe la posición y no el equipo instalado: se conserva al reemplazar.
+export const POSITION_KEYS = new Set(['tipo', 'id', 'tag', 'area', 'ubicacion', 'liquido', 'servicio', 'posicion_x', 'posicion_z', 'rotacion_grados']);
+// Ranuras de fotos del expediente que muestran el equipo (no la posición).
+const EQUIPMENT_PHOTO_SLOTS = ['placa1', 'placa2', 'bomba'];
+const stamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 const cell = v => String(v ?? '').replace(/\|/g, '/').replace(/[\r\n]+/g, ' ').trim() || '—';
 const scalar = (value, number) => number && /^-?\d+(\.\d+)?$/.test(String(value)) ? String(value) : JSON.stringify(String(value));
 
@@ -50,8 +60,43 @@ function position(input, area = 'tanques') {
  return {x: round(x), z: round(z), rotation: ((Math.round(rotation) % 360) + 360) % 360};
 }
 
-export function equipmentStore(vault, basePositions) {
+// Valor vacío para una clave del frontmatter, según el tipo de lo que tenía.
+function emptyLine(key, lines) {
+ const first = lines[0].slice(key.length + 1).trim();
+ if (first.startsWith('[') || (first === '' && lines.length > 1 && /^\s*-\s/.test(lines[1]))) return `${key}: []`;
+ if (first === 'true' || first === 'false') return `${key}: false`;
+ return `${key}: ""`;
+}
+// Claves del frontmatter con todas sus líneas (las listas ocupan varias).
+function frontEntries(front) {
+ const out = [], lines = front.split('\n');
+ for (let i = 0; i < lines.length; i++) {
+  const m = /^([A-Za-z_][\w-]*):/.exec(lines[i]); if (!m) continue;
+  let end = i + 1; while (end < lines.length && /^(\s+\S|\s*-\s)/.test(lines[end])) end++;
+  out.push({key: m[1], lines: lines.slice(i, end)}); i = end - 1;
+ }
+ return out;
+}
+
+// opciones.antesDeEscribir(tag): solo para pruebas (simular un fallo de disco a mitad de un intercambio).
+export function equipmentStore(vault, basePositions, opciones = {}) {
  const file = tag => path.join(vault, fileOf(tag));
+ const backupDir = path.join(vault, '00-Proyecto', 'Respaldos', 'fichas');
+ // Copia la ficha tal como está antes de modificarla. Devuelve la ruta del respaldo.
+ async function backup(tag) {
+  await mkdir(backupDir, {recursive: true});
+  const dest = path.join(backupDir, `${tag}_${stamp()}_${randomUUID().slice(0, 4)}.md.respaldo`);
+  await copyFile(file(tag), dest);
+  return dest;
+ }
+ async function restore(tag, copy) {
+  const temp = `${file(tag)}.${randomUUID().slice(0, 8)}.tmp`;
+  await copyFile(copy, temp); await rename(temp, file(tag));
+ }
+ async function backups(tag) {
+  try { return (await readdir(backupDir)).filter(n => n.startsWith(tag + '_') && n.endsWith('.md.respaldo')).sort().map(n => path.join(backupDir, n)); }
+  catch (e) { if (e.code === 'ENOENT') return []; throw e; }
+ }
  async function load(tag) {
   let raw;
   try { raw = await readFile(file(tag), 'utf8'); }
@@ -61,6 +106,7 @@ export function equipmentStore(vault, basePositions) {
   return note;
  }
  async function save(tag, front, body) {
+  await opciones.antesDeEscribir?.(tag);
   const next = `---\n${front}\n---\n${body.startsWith('\n') ? '' : '\n'}${body}`;
   splitNote(next);
   const temp = `${file(tag)}.${randomUUID().slice(0, 8)}.tmp`;
@@ -89,8 +135,9 @@ export function equipmentStore(vault, basePositions) {
   const {date, author, reason} = common(input), to = position(input, areaOf(basePositions.find(p => p.tag === tag)));
   const note = await load(tag), from = current(tag, note.data);
   const body = appendLog(note.body, 'Cambios de ubicación y reemplazos', `- ${date} · ${author}: movida de ${where(from)} a ${where(to)}${reason ? `. Motivo: ${reason}` : ''}`);
+  const copy = await backup(tag);
   await save(tag, placed(note, to), body);
-  return {tag, action: 'move', from, to};
+  return {tag, action: 'move', from, to, backup: path.relative(vault, copy)};
  }
  async function swap(tag, other, input) {
   const {date, author, reason} = common(input);
@@ -100,9 +147,17 @@ export function equipmentStore(vault, basePositions) {
   const a = await load(tag), b = await load(other);
   const pa = current(tag, a.data), pb = current(other, b.data);
   const log = (who, from, to) => `- ${date} · ${author}: intercambió lugar con ${who}, de ${where(from)} a ${where(to)}${reason ? `. Motivo: ${reason}` : ''}`;
+  // Se respaldan ambas fichas antes de escribir. Si la segunda escritura falla, la primera vuelve
+  // a su estado original para no dejar dos bombas en el mismo lugar.
+  const copyA = await backup(tag), copyB = await backup(other);
   await save(tag, placed(a, pb), appendLog(a.body, 'Cambios de ubicación y reemplazos', log(other, pa, pb)));
-  await save(other, placed(b, pa), appendLog(b.body, 'Cambios de ubicación y reemplazos', log(tag, pb, pa)));
-  return {tag, other, action: 'swap'};
+  try { await save(other, placed(b, pa), appendLog(b.body, 'Cambios de ubicación y reemplazos', log(tag, pb, pa))); }
+  catch (err) {
+   let restored = true; try { await restore(tag, copyA); } catch { restored = false; }
+   const e = new Error(`No se pudo escribir ${other}: ${err.message}. ${restored ? `${tag} volvió a su posición original; no se hizo ningún cambio.` : `ATENCIÓN: ${tag} quedó modificada y no se pudo restaurar. Respaldo: ${path.relative(vault, copyA)}.`}`);
+   e.code = 'SWAP_FAILED'; throw e;
+  }
+  return {tag, other, action: 'swap', backups: [path.relative(vault, copyA), path.relative(vault, copyB)]};
  }
  async function replace(tag, input) {
   const {date, author, reason} = common(input), k = kindOf(tag);
@@ -112,26 +167,46 @@ export function equipmentStore(vault, basePositions) {
   const note = await load(tag), d = note.data, key = id => fields.find(f => f.id === id)?.[k];
   const previousTemperature = rangoTemperaturaTrabajo(d);
   const old = id => key(id) ? d[key(id)] : '';
-  let body = appendRow(note.body, 'Equipos anteriores en esta posición',
-   '| Retirada | Marca | Modelo | Serie | Tamaño | Motivo | Responsable |\n|---|---|---|---|---|---|---|',
-   `| ${date} | ${cell(old('marca'))} | ${cell(old('modelo'))} | ${cell(old('serie'))} | ${cell(old('tamano'))} | ${cell(reason)} | ${cell(author)} |`);
+  // 1. Expediente completo de la bomba retirada: copia íntegra de la ficha en retirados/.
+  const slug = v => String(v || 'sin-dato').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'sin-dato';
+  const archiveRel = `00-Proyecto/equipos/retirados/${tag}_retirada_${date}_${slug(old('marca'))}-${slug(old('modelo'))}_${randomUUID().slice(0, 4)}.md`;
+  let archived = setKey(note.front, 'tipo', 'tipo: equipo-retirado');
+  archived = setKey(archived, 'retirada_fecha', `retirada_fecha: ${JSON.stringify(date)}`);
+  archived = setKey(archived, 'retirada_por', `retirada_por: ${JSON.stringify(author)}`);
+  archived = setKey(archived, 'retirada_motivo', `retirada_motivo: ${JSON.stringify(reason)}`);
+  await mkdir(path.join(vault, '00-Proyecto/equipos/retirados'), {recursive: true});
+  await writeFile(path.join(vault, archiveRel), `---\n${archived}\n---\n\n> Expediente archivado de la bomba retirada de la posición [[${tag}]] el ${date}. No describe el equipo instalado actualmente.\n${note.body}`, {encoding: 'utf8', flag: 'wx'});
+  const archiveLink = `[[${archiveRel.replace(/^00-Proyecto\/equipos\//, '').replace(/\.md$/, '')}]]`;
+  // 2. Ficha de la posición: se conserva solo lo que describe la posición; el resto queda vacío.
   let front = note.front;
-  // Los datos de la bomba retirada no pueden quedar mezclados con la nueva: se vacían y se archivan arriba.
+  // Si quien registra confirma que la bomba nueva conserva el mismo sello, sello y o-rings no se vacían.
+  const keep = new Set([...POSITION_KEYS, ...(input.clearSeal === false ? [...SEAL_KEYS[k], 'orings'] : [])]);
+  for (const {key: name, lines} of frontEntries(note.front)) if (!keep.has(name)) front = setKey(front, name, emptyLine(name, lines));
   for (const f of fields) front = setKey(front, f[k], `${f[k]}: ${values[f.id] ? scalar(values[f.id], f.number) : '""'}`);
-  if (input.clearSeal !== false) {
-   for (const s of SEAL_KEYS[k]) if (s in d) front = setKey(front, s, `${s}: ""`);
-   front = setKey(front, 'orings', 'orings: []');
-  }
-  if (previousTemperature) body = appendLog(body, 'Cambios de temperatura de trabajo', `- ${date} · ${cell(author)}: al reemplazar la bomba se archivó el rango anterior ${previousTemperature.min} a ${previousTemperature.max} °C. Fuente: ${cell(previousTemperature.fuente)}.`);
-  for (const key of ['temperatura_trabajo_min_c', 'temperatura_trabajo_max_c', 'temperatura_trabajo_fuente']) if (key in d) front = setKey(front, key, `${key}: ""`);
+  front = setKey(front, 'fuente', `fuente: ${JSON.stringify(`Reemplazo registrado en el visor el ${date} por ${author}`)}`);
   if (k === 'B') {
    front = setKey(front, 'asociacion_placa', `asociacion_placa: ${values.serie ? 'confirmada_en_campo' : 'sin_asociar'}`);
    front = setKey(front, 'placa_nota', `placa_nota: ${JSON.stringify(values.serie ? `Bomba instalada el ${date}; placa registrada por ${author}` : `Bomba reemplazada el ${date}; placa por levantar`)}`);
   }
   front = setKey(front, 'fecha_instalacion', `fecha_instalacion: ${JSON.stringify(date)}`);
-  body = appendLog(body, 'Cambios de ubicación y reemplazos', `- ${date} · ${author}: reemplazada ${cell(old('marca'))} ${cell(old('modelo'))} por ${values.marca} ${values.modelo}${reason ? `. Motivo: ${reason}` : ''}${input.clearSeal !== false ? '. Sello y o-rings quedan por levantar.' : ''}`);
+  front = setKey(front, 'reemplazo_fecha', `reemplazo_fecha: ${JSON.stringify(date)}`);
+  front = setKey(front, 'reemplazo_archivo', `reemplazo_archivo: ${JSON.stringify(archiveLink)}`);
+  let body = appendRow(note.body, 'Equipos anteriores en esta posición',
+   '| Retirada | Marca | Modelo | Serie | Tamaño | Motivo | Responsable | Expediente |\n|---|---|---|---|---|---|---|---|',
+   `| ${date} | ${cell(old('marca'))} | ${cell(old('modelo'))} | ${cell(old('serie'))} | ${cell(old('tamano'))} | ${cell(reason)} | ${cell(author)} | ${archiveLink} |`);
+  if (previousTemperature) body = appendLog(body, 'Cambios de temperatura de trabajo', `- ${date} · ${cell(author)}: al reemplazar la bomba se archivó el rango anterior ${previousTemperature.min} a ${previousTemperature.max} °C. Fuente: ${cell(previousTemperature.fuente)}.`);
+  body = appendLog(body, 'Cambios de ubicación y reemplazos', `- ${date} · ${author}: reemplazada ${cell(old('marca'))} ${cell(old('modelo'))} por ${values.marca} ${values.modelo}${reason ? `. Motivo: ${reason}` : ''}. Expediente anterior: ${archiveLink}. ${input.clearSeal === false ? 'Sello y o-rings se conservan (confirmado al registrar). Prestaciones, motor, rodamientos, acople y fotos' : 'Prestaciones, motor, sello, o-rings, rodamientos, acople y fotos'} de la bomba nueva quedan por levantar.`);
+  const copy = await backup(tag);
   await save(tag, front, body);
-  return {tag, action: 'replace', previous: {marca: old('marca'), modelo: old('modelo'), serie: old('serie')}};
+  // 3. Las fotos del expediente que muestran el equipo pasan al historial (la de la posición se conserva).
+  const photoDir = path.join(vault, '00-Proyecto/fotos-campo', tag, 'expediente'), movedPhotos = [];
+  for (const slot of EQUIPMENT_PHOTO_SLOTS) for (const ext of ['jpg', 'png']) {
+   const src = path.join(photoDir, `${slot}.${ext}`);
+   try { await access(src); } catch { continue; }
+   await mkdir(path.join(photoDir, 'historial'), {recursive: true});
+   await rename(src, path.join(photoDir, 'historial', `${slot}_retirada_${date}_${stamp()}.${ext}`)); movedPhotos.push(slot);
+  }
+  return {tag, action: 'replace', previous: {marca: old('marca'), modelo: old('modelo'), serie: old('serie')}, archive: archiveRel, backup: path.relative(vault, copy), photosArchived: movedPhotos};
  }
  async function temperature(tag, input) {
   const rawMin=String(input.min ?? '').trim().replace(',', '.');
@@ -146,8 +221,9 @@ export function equipmentStore(vault, basePositions) {
   front=setKey(front,'temperatura_trabajo_fuente',`temperatura_trabajo_fuente: ${JSON.stringify(source)}`);
   const date=new Date().toISOString().slice(0,10);
   const log=`- ${date} · ${cell(author)}: temperatura de trabajo ${before?`${before.min} a ${before.max} °C`:'sin rango registrado'} → ${min} a ${max} °C. Fuente declarada: ${cell(source)}.`;
+  await backup(tag);
   await save(tag,front,appendLog(note.body,'Cambios de temperatura de trabajo',log));
   return {tag,min,max,source};
  }
- return {move, swap, replace, temperature};
+ return {move, swap, replace, temperature, backups, restore};
 }

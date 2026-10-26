@@ -20,8 +20,12 @@ export function equipmentData(base, note) {
  const place = {...(moved ? {x: number('posicion_x'), z: number('posicion_z')} : {}), ...(number('rotacion_grados') !== null ? {rotation: number('rotacion_grados') * Math.PI / 180} : {})};
  const value = key => String(note[key] ?? '').trim() || 'Por confirmar';
  const units = (key, unit) => note[key] === '' || note[key] == null ? 'Por confirmar' : `${note[key]} ${unit}`;
+ // Bomba reemplazada desde el visor: la forma 3D, las placas y las fotos del prototipo eran de la
+ // bomba retirada. Se usa una representación genérica hasta levantar la nueva.
+ const reemplazo = String(note.reemplazo_fecha || '').trim();
+ const nueva = reemplazo ? {variant: 'lf', representacion: 'genérica', reemplazo, reemplazoArchivo: String(note.reemplazo_archivo || '')} : {};
  return {
-  ...base, ...place, movido: moved, tag: note.id || base.tag, nombre: value('ubicacion'), servicio: value('liquido'),
+  ...base, ...nueva, ...place, movido: moved, tag: note.id || base.tag, nombre: value('ubicacion'), servicio: value('liquido'),
   marca: value('marca'), modelo: value('modelo'), size: value('tamano'), serie: String(note.placa_serie || ''),
   source: `00-Proyecto/equipos/${base.tag}.md`, documentarySource: note.fuente || '',
   association: note.placa_nota || 'Asociación de placa por confirmar',

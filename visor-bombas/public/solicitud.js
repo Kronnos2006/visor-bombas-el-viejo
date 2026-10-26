@@ -23,7 +23,9 @@ function partsOf(p) {
 function saveCart() { store.set('vocatus-solicitud', cart); renderCart(); }
 function add(item) { cart.push({...item, id: crypto.randomUUID?.() || String(Date.now() + Math.random())}); saveCart(); $('#result').innerHTML = `<div class="msg ok">Agregado: ${esc(item.pieza)} (${esc(item.tag || 'sin equipo')}).</div>`; }
 function renderCart() {
- $('#cart-count').textContent = cart.length ? `· ${cart.length} línea(s)` : '';
+ const largos = cart.filter(i => String(i.detalle || '').length > 160 || String(i.codigo || '').length > 60 || String(i.pieza || '').length > 80).length;
+ $('#cart-count').textContent = cart.length ? `· ${cart.length} de 40 línea(s)` : '';
+ if (cart.length > 40 || largos) $('#result').innerHTML = `<div class="msg warn">${cart.length > 40 ? `La solicitud tiene ${cart.length} líneas y el máximo es 40: dividila en dos. ` : ''}${largos ? `${largos} línea(s) tienen un texto demasiado largo (pieza 80, detalle 160, código 60 caracteres): editalas antes de generar el PDF.` : ''}</div>`;
  $('#cart').innerHTML = cart.length ? cart.map(i => `<div class="cart-line"><p><strong>${esc(i.tag ? i.tag + ' · ' : '')}${esc(i.pieza)}</strong><br><small class="muted">${esc(i.detalle || '—')}${i.codigo ? ' · código ' + esc(i.codigo) : ' · <span style="color:#f5c27f">sin código</span>'}</small></p><input type="number" min="1" max="999" value="${i.cantidad}" data-id="${i.id}" aria-label="Cantidad"><button type="button" data-del="${i.id}" aria-label="Quitar">✕</button></div>`).join('') : '<p class="muted">Todavía no agregaste repuestos.</p>';
  $('#cart').querySelectorAll('input').forEach(el => el.onchange = () => { const i = cart.find(x => x.id === el.dataset.id); i.cantidad = Math.max(1, Math.min(999, Number.parseInt(el.value, 10) || 1)); saveCart(); });
  $('#cart').querySelectorAll('[data-del]').forEach(b => b.onclick = () => { cart = cart.filter(x => x.id !== b.dataset.del); saveCart(); });

@@ -374,96 +374,76 @@ export async function generatePumpPDF(pump, { reportes = [] } = {}) {
   // 4. Maintenance Records / History
   drawSectionTitle('5. Registros de Mantenimiento e Historial');
 
-  const historyItems = [];
-
-  // Vault reports (if any)
-  if (Array.isArray(pump.reports) && pump.reports.length) {
-    for (const r of pump.reports) {
-      const matchTitle = (r.text || '').match(/^#\s+(.+)$/m);
-      const matchDate = (r.text || '').match(/fecha:\s*([^\n]+)/i);
-      const matchAuthor = (r.text || '').match(/Responsable:\s*([^\n]+)/i);
-      historyItems.push({
-        fecha: matchDate ? matchDate[1].trim() : 'Reciente',
-        tipo: 'Informe en Bóveda',
-        detalle: matchTitle ? matchTitle[1].trim() : r.file,
-        responsable: matchAuthor ? matchAuthor[1].trim() : 'Mantenimiento'
-      });
-    }
+  // Un solo listado, sin duplicados: los informes de Obsidian llegan del servidor y también
+  // en la lista del navegador (con el mismo id); los del navegador importados traen sourceId.
+  const historyItems = [], vistos = new Set();
+  const clave = (...ids) => ids.filter(Boolean).map(String);
+  const agregar = (item, ids) => {
+    const k = clave(...ids);
+    if (k.some(id => vistos.has(id))) return;
+    k.forEach(id => vistos.add(id));
+    historyItems.push(item);
+  };
+  for (const r of Array.isArray(pump.reports) ? pump.reports : []) {
+    const rec = r.record || {};
+    agregar({
+      fecha: rec.date || 'Sin fecha',
+      tipo: rec.demonstration ? 'Informe DEMO (Obsidian)' : 'Informe en Obsidian',
+      detalle: [rec.title, rec.text].filter(Boolean).join(': ') || r.file,
+      responsable: rec.author || 'Responsable no registrado',
+      procedencia: r.file || ''
+    }, [rec.id, rec.sourceId]);
   }
-
-  // Sector history (if any)
-  if (Array.isArray(data.history) && data.history.length) {
-    for (const h of data.history) {
-      historyItems.push(h);
-    }
+  for (const h of Array.isArray(data.history) ? data.history : []) {
+    agregar({...h, procedencia: h.procedencia || 'Ficha del equipo'}, [h.id]);
   }
-
-  // Browser field reports passed by user
-  if (Array.isArray(reportes) && reportes.length) {
-    for (const rep of reportes) {
-      historyItems.push({
-        fecha: rep.date || rep.fecha || 'Reciente',
-        tipo: 'Reporte de Campo (Navegador)',
-        detalle: `${rep.title || rep.titulo || ''}${rep.text ? ': ' + rep.text.slice(0, 150) : ''}`,
-        responsable: 'Técnico de Planta'
-      });
-    }
+  for (const rep of Array.isArray(reportes) ? reportes : []) {
+    agregar({
+      fecha: rep.date || rep.fecha || 'Sin fecha',
+      tipo: rep.demonstration ? 'Reporte DEMO' : rep.source === 'browser' ? 'Reporte guardado solo en el navegador' : 'Informe en Obsidian',
+      detalle: [rep.title || rep.titulo, rep.text].filter(Boolean).join(': '),
+      responsable: rep.author || rep.responsable || 'Responsable no registrado',
+      procedencia: rep.source === 'browser' ? 'Navegador de quien generó el PDF' : (rep.file || '')
+    }, [rep.id, rep.sourceId]);
   }
+  historyItems.sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
 
-  if (historyItems.length) {
-    for (const item of historyItems.slice(0, 8)) {
-      checkPageBreak(35);
+  const MAX_HISTORIAL = 30, mostrados = historyItems.slice(0, MAX_HISTORIAL);
+  const wrapLines = (text, f, size, width) => {
+    const out = []; let cur = '';
+    for (const w of text.split(' ')) {
+      const t = cur ? cur + ' ' + w : w;
+      if (f.widthOfTextAtSize(t, size) > width && cur) { out.push(cur); cur = w; } else cur = t;
+    }
+    if (cur) out.push(cur);
+    return out;
+  };
+  if (mostrados.length) {
+    if (historyItems.length > mostrados.length) {
+      checkPageBreak(18);
+      page.drawText(safeText(`Se muestran los ${mostrados.length} registros más recientes de ${historyItems.length}. El historial completo está en Obsidian.`), {x: marginX + 6, y: y - 8, size: 7.5, font: fontOblique, color: alertColor});
+      y -= 16;
+    }
+    for (const item of mostrados) {
       const itemTitle = safeText(`${item.fecha || ''} · ${item.tipo || 'Intervención'}`);
-      const itemDetail = safeText(item.detalle || item.title || item.texto || '');
-      const itemResp = safeText(item.responsable ? `Responsable: ${item.responsable}` : '');
-
-      page.drawText(itemTitle, {
-        x: marginX + 6,
-        y: y - 8,
-        size: 8,
-        font: fontBold,
-        color: primaryColor
-      });
-
-      if (itemResp) {
-        page.drawText(itemResp, {
-          x: marginX + contentWidth - 150,
-          y: y - 8,
-          size: 7,
-          font: fontOblique,
-          color: textMuted
-        });
+      const itemResp = safeText(`Responsable: ${item.responsable || 'no registrado'}`);
+      const lines = wrapLines(safeText(item.detalle || item.title || item.texto || ''), font, 7.5, contentWidth - 12);
+      const origen = item.procedencia ? safeText(`Procedencia: ${item.procedencia}`) : '';
+      checkPageBreak(24 + lines.length * 10 + (origen ? 10 : 0));
+      page.drawText(itemTitle, {x: marginX + 6, y: y - 8, size: 8, font: fontBold, color: primaryColor});
+      page.drawText(itemResp, {x: marginX + contentWidth - Math.min(220, font.widthOfTextAtSize(itemResp, 7) + 4), y: y - 8, size: 7, font: fontOblique, color: textMuted});
+      let ly = y - 19;
+      for (const l of lines) {
+        if (ly < 60) { checkPageBreak(1000); ly = y - 8; }
+        page.drawText(l, {x: marginX + 6, y: ly, size: 7.5, font, color: textDark}); ly -= 10;
       }
-
-      if (itemDetail) {
-        const truncated = itemDetail.length > 120 ? itemDetail.slice(0, 117) + '...' : itemDetail;
-        page.drawText(truncated, {
-          x: marginX + 6,
-          y: y - 19,
-          size: 7.5,
-          font,
-          color: textDark
-        });
-      }
-
-      page.drawLine({
-        start: { x: marginX, y: y - 25 },
-        end: { x: marginX + contentWidth, y: y - 25 },
-        thickness: 0.5,
-        color: borderLight
-      });
-
-      y -= 28;
+      if (origen) { page.drawText(origen, {x: marginX + 6, y: ly, size: 6.5, font: fontOblique, color: textMuted}); ly -= 10; }
+      page.drawLine({start: {x: marginX, y: ly + 3}, end: {x: marginX + contentWidth, y: ly + 3}, thickness: 0.5, color: borderLight});
+      y = ly - 4;
     }
   } else {
     checkPageBreak(25);
-    page.drawText(safeText('Sin registros documentales o intervenciones recientes asociadas.'), {
-      x: marginX + 8,
-      y: y - 10,
-      size: 8,
-      font: fontOblique,
-      color: textMuted
-    });
+    page.drawText(safeText('Sin registros documentales o intervenciones registradas.'), {x: marginX + 8, y: y - 10, size: 8, font: fontOblique, color: textMuted});
     y -= 25;
   }
 
@@ -472,16 +452,12 @@ export async function generatePumpPDF(pump, { reportes = [] } = {}) {
   if (notesText) {
     drawSectionTitle('6. Notas y Modos de Falla a Vigilar');
     checkPageBreak(30);
-    const cleanNotes = safeText(notesText);
-    const preview = cleanNotes.length > 200 ? cleanNotes.slice(0, 197) + '...' : cleanNotes;
-    page.drawText(preview, {
-      x: marginX + 6,
-      y: y - 10,
-      size: 7.5,
-      font,
-      color: textDark
-    });
-    y -= 24;
+    for (const l of wrapLines(safeText(notesText), font, 7.5, contentWidth - 12)) {
+      checkPageBreak(12);
+      page.drawText(l, {x: marginX + 6, y: y - 10, size: 7.5, font, color: textDark});
+      y -= 10;
+    }
+    y -= 14;
   }
 
   // Draw footer on last page

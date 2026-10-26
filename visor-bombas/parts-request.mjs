@@ -2,19 +2,28 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { safeText } from './pdf-generator.mjs';
 
-const MAX_ITEMS = 40;
-const one = (v, max = 160) => safeText(String(v ?? '').slice(0, max));
+export const MAX_ITEMS = 40;
+// Nada se recorta en silencio: si un texto supera el largo permitido, la solicitud se rechaza
+// indicando qué corregir (un código de repuesto cortado podría despachar la pieza equivocada).
+const one = (v, max, label) => {
+ const t = safeText(String(v ?? ''));
+ if (t.length > max) throw new Error(`${label} supera ${max} caracteres (${t.length}). Acortalo antes de generar la solicitud.`);
+ return t;
+};
 
 export function normalizeRequest(input) {
- const items = (Array.isArray(input?.items) ? input.items : []).slice(0, MAX_ITEMS).map(i => ({
-  tag: one(i.tag, 12), pieza: one(i.pieza, 80), detalle: one(i.detalle, 160), codigo: one(i.codigo, 60),
-  cantidad: Math.max(1, Math.min(999, Number.parseInt(i.cantidad, 10) || 1)),
- })).filter(i => i.pieza);
+ const raw = Array.isArray(input?.items) ? input.items : [];
+ if (raw.length > MAX_ITEMS) throw new Error(`La solicitud tiene ${raw.length} líneas; el máximo es ${MAX_ITEMS}. Dividila en dos solicitudes.`);
+ const items = raw.map((i, n) => {
+  const cantidad = Number.parseInt(i.cantidad, 10);
+  if (String(i.cantidad ?? '').trim() && (!Number.isFinite(cantidad) || cantidad < 1 || cantidad > 999)) throw new Error(`Línea ${n + 1}: la cantidad debe estar entre 1 y 999.`);
+  return {tag: one(i.tag, 12, `Línea ${n + 1}, TAG`), pieza: one(i.pieza, 80, `Línea ${n + 1}, pieza`), detalle: one(i.detalle, 160, `Línea ${n + 1}, detalle`), codigo: one(i.codigo, 60, `Línea ${n + 1}, código`), cantidad: Number.isFinite(cantidad) ? cantidad : 1};
+ }).filter(i => i.pieza);
  if (!items.length) throw new Error('Agregá al menos un repuesto a la solicitud.');
- const solicitante = one(input.solicitante, 80);
+ const solicitante = one(input.solicitante, 80, 'Solicitante');
  if (!solicitante) throw new Error('Indicá quién solicita los repuestos.');
  const fecha = /^\d{4}-\d{2}-\d{2}$/.test(input.fecha) ? input.fecha : new Date().toISOString().slice(0, 10);
- return {items, solicitante, fecha, area: one(input.area, 80), motivo: one(input.motivo, 300), orden: one(input.orden, 40), demo: !!input.demo};
+ return {items, solicitante, fecha, area: one(input.area, 80, 'Área'), motivo: one(input.motivo, 300, 'Motivo'), orden: one(input.orden, 40, 'Orden de trabajo'), demo: !!input.demo};
 }
 
 export async function generatePartsRequestPDF(input) {
@@ -26,7 +35,13 @@ export async function generatePartsRequestPDF(input) {
  const cols = [{k: '#', w: 22}, {k: 'TAG', w: 48}, {k: 'Pieza', w: 110}, {k: 'Detalle / medida', w: 175}, {k: 'Código', w: 110}, {k: 'Cant.', w: CW - 465}];
  let page, y;
  const fit = (text, f, size, width) => { let t = text; while (t && f.widthOfTextAtSize(t, size) > width) t = t.slice(0, -1); return t === text ? t : t.slice(0, -1) + '...'; };
- const wrap = (text, f, size, width) => { const out = []; let cur = ''; for (const w of text.split(' ')) { const t = cur ? cur + ' ' + w : w; if (f.widthOfTextAtSize(t, size) > width && cur) { out.push(cur); cur = w; } else cur = t; } if (cur) out.push(cur); return out.length ? out : ['']; };
+ // Corta por palabras; una palabra más ancha que la columna (p. ej. un código largo) se parte por caracteres.
+ const wrap = (text, f, size, width) => {
+  const out = []; let cur = '';
+  const push = w => { while (f.widthOfTextAtSize(w, size) > width && w.length > 1) { let k = w.length - 1; while (k > 1 && f.widthOfTextAtSize(w.slice(0, k), size) > width) k--; out.push(w.slice(0, k)); w = w.slice(k); } return w; };
+  for (const w of String(text).split(' ')) { const t = cur ? cur + ' ' + w : w; if (f.widthOfTextAtSize(t, size) <= width) { cur = t; continue; } if (cur) out.push(cur); cur = push(w); }
+  if (cur) out.push(cur); return out.length ? out : [''];
+ };
  function newPage() {
   page = doc.addPage([W, H]); y = H - 50;
   page.drawRectangle({x: 0, y: H - 8, width: W, height: 8, color: head});
@@ -49,14 +64,16 @@ export async function generatePartsRequestPDF(input) {
  };
  header();
  r.items.forEach((item, n) => {
-  const detail = wrap(item.detalle || '-', font, 8.5, cols[3].w - 6).slice(0, 3), h = Math.max(1, detail.length) * 11 + 8;
+  // Todas las líneas de cada celda se imprimen completas (sin cortar ni agregar "...").
+  const lines = {2: wrap(item.pieza, bold, 8.5, cols[2].w - 6), 3: wrap(item.detalle || '-', font, 8.5, cols[3].w - 6), 4: wrap(item.codigo || 'Sin codigo', font, 8.5, cols[4].w - 6)};
+  const h = Math.max(...Object.values(lines).map(l => l.length)) * 11 + 8;
   if (y - h < 150) { newPage(); header(); }
   if (n % 2) page.drawRectangle({x: X, y: y - h + 12, width: CW, height: h, color: alt});
   let cx = X + 4;
   const cells = [String(n + 1), item.tag || '-', item.pieza, null, item.codigo || 'Sin codigo', String(item.cantidad)];
   cells.forEach((text, i) => {
-   if (i === 3) detail.forEach((l, j) => page.drawText(l, {x: cx, y: y - j * 11, size: 8.5, font, color: dark}));
-   else page.drawText(fit(text, i === 2 ? bold : font, 8.5, cols[i].w - 6), {x: cx, y, size: 8.5, font: i === 2 ? bold : font, color: i === 4 && !item.codigo ? warn : dark});
+   if (lines[i]) lines[i].forEach((l, j) => page.drawText(l, {x: cx, y: y - j * 11, size: 8.5, font: i === 2 ? bold : font, color: i === 4 && !item.codigo ? warn : dark}));
+   else page.drawText(fit(text, font, 8.5, cols[i].w - 6), {x: cx, y, size: 8.5, font, color: dark});
    cx += cols[i].w;
   });
   y -= h; page.drawLine({start: {x: X, y: y + 10}, end: {x: X + CW, y: y + 10}, thickness: .5, color: line});
@@ -64,6 +81,7 @@ export async function generatePartsRequestPDF(input) {
  y -= 10;
  page.drawText(`${r.items.length} linea(s) · ${r.items.reduce((s, i) => s + i.cantidad, 0)} unidades`.replace('·', '-'), {x: X, y, size: 9, font, color: muted});
  if (r.items.some(i => !i.codigo)) { y -= 14; page.drawText('Las lineas "Sin codigo" requieren que bodega confirme el numero de parte antes de despachar.', {x: X, y, size: 8.5, font, color: warn}); }
+ if (y < 190) newPage();
  y = Math.min(y - 50, 120);
  for (const [i, label] of ['Solicita', 'Autoriza', 'Entrega bodega'].entries()) {
   const sx = X + i * (CW / 3);

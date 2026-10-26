@@ -1,7 +1,18 @@
 // Simulador reducido por bomba. Toma las funciones de la guía HIDROMAC 2196
 // (defaults, initialState, step, derive, normalize, vaporPressure) y las ajusta
 // con la placa de cada equipo. Curvas sintéticas: no son datos del fabricante.
-const G=9.80665, GPM=6.30902e-5, HP=745.7;
+const G=9.80665, GPM=6.30902e-5, HP=745.7, CV=735.499;
+// Potencia de placa en vatios según la unidad escrita (HP, CV o kW). Sin unidad no se adivina:
+// se devuelve null para que el simulador lo informe como estimado.
+export function powerW(text){
+ const v=num(text);if(v===null||!(v>0))return null;
+ const t=String(text);
+ if(/\bkw\b/i.test(t))return v*1000;
+ if(/\b(hp|bhp)\b/i.test(t))return v*HP;
+ if(/\bcv\b/i.test(t))return v*CV;
+ if(/\bw\b/i.test(t))return v;
+ return null;
+}
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 
 export const FLUIDS={
@@ -25,7 +36,7 @@ export function simParams(p){
  const estimados=p.inactive?['equipo SIN USO o sin placa: todo el comportamiento es supuesto']:[],size=parseSize(p.size)||{descarga:1.5,succion:2,impulsor:8};
  const nMotor=num(p.motor?.rpm)||num(spec(p,/velocidad/i))||1750;
  let n0=num(spec(p,/velocidad de bomba/i)),Qd=flow(spec(p,/caudal/i)),Hd=num(spec(p,/altura/i));
- const prated=(num(p.motor?.potencia)||(estimados.push('potencia del motor'),2))*HP;
+ const prated=powerW(p.motor?.potencia)??(estimados.push(num(p.motor?.potencia)?'potencia del motor sin unidad clara (se usó 2 HP)':'potencia del motor (se usó 2 HP)'),2*HP);
  if(!n0){n0=nMotor;estimados.push('velocidad de curva = velocidad del motor');}
  if(!Hd){const u=Math.PI*size.impulsor*.0254*n0/60;Hd=Math.round(.42*u*u/G);estimados.push('altura por diámetro nominal y velocidad');}
  if(!Qd){Qd=.62*prated/(FLUIDS.agua.rho*G*Hd);estimados.push('caudal por potencia del motor');}

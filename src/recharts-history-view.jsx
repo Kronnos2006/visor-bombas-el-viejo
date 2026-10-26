@@ -16,6 +16,13 @@ import {
   AreaChart
 } from 'recharts';
 
+const ORIGEN = {
+  registro: 'Medición anotada en el informe (campo con unidad)',
+  texto: 'Valor extraído del texto del informe; revisar el original',
+  demo: 'Serie de demostración: no es una lectura real'
+};
+const redondeo = v => Math.round(v * 100) / 100;
+
 function CustomTooltip({ active, payload, label, unit }) {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -33,13 +40,11 @@ function CustomTooltip({ active, payload, label, unit }) {
           {label} · {data.tipo || 'Registro'}
         </div>
         <div style={{ margin: '3px 0' }}>
-          <strong>Valor registrado:</strong> {payload[0].value} {unit}
+          <strong>{data.demo ? 'Valor DEMO (ficticio):' : 'Valor registrado:'}</strong> {payload[0].value} {unit}
         </div>
-        {data.nominal !== undefined && (
-          <div style={{ color: '#88a69f' }}>
-            <strong>Referencia de diseño:</strong> {data.nominal} {unit}
-          </div>
-        )}
+        <div style={{ color: '#88a69f', fontSize: '10px' }}>
+          {ORIGEN[data.origen] || ''}{data.responsable ? ` · ${data.responsable}` : ''}
+        </div>
         {data.detalle && (
           <div style={{ marginTop: '5px', color: '#9fb3af', maxWidth: '240px', fontSize: '10px', lineHeight: 1.4 }}>
             {data.detalle}
@@ -51,7 +56,7 @@ function CustomTooltip({ active, payload, label, unit }) {
   return null;
 }
 
-export function PumpHistoryCharts({ pumpTag, records = [], nominalPressure = null, nominalFlow = null }) {
+export function PumpHistoryCharts({ pumpTag, records = [], nominalPressure = null, nominalFlow = null, ambiguos = 0 }) {
   const [metric, setMetric] = useState('pressure'); // 'pressure' | 'flow' | 'both'
 
   // Build unified data series from maintenance records
@@ -63,8 +68,18 @@ export function PumpHistoryCharts({ pumpTag, records = [], nominalPressure = nul
     caudal: r.caudal !== undefined && r.caudal !== null ? Number(r.caudal) : null,
     nominalPresion: nominalPressure,
     nominalCaudal: nominalFlow,
-    detalle: r.detalle || r.titulo || ''
+    detalle: r.detalle || r.titulo || '',
+    demo: !!r.demo,
+    origen: r.origen || (r.demo ? 'demo' : 'texto'),
+    responsable: r.responsable || ''
   }));
+  // Las lecturas reales y las DEMO no se mezclan: si hay reales, solo se grafican las reales.
+  const reales = chartData.filter(d => !d.demo);
+  const serie = reales.length ? reales : chartData;
+  const soloDemo = !reales.length && chartData.length > 0;
+  const campo = metric === 'pressure' ? 'presion' : 'caudal';
+  const ultima = reales.filter(d => d[campo] !== null).slice(-1)[0];
+  const extraidas = reales.filter(d => d.origen === 'texto').length;
 
   const hasPressure = chartData.some(d => d.presion !== null);
   const hasFlow = chartData.some(d => d.caudal !== null);
@@ -85,10 +100,10 @@ export function PumpHistoryCharts({ pumpTag, records = [], nominalPressure = nul
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
         <div>
           <span style={{ fontSize: '9px', letterSpacing: '1.4px', color: '#7e9c96', fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>
-            TELEMETRÍA E HISTORIAL · {pumpTag}
+            HISTORIAL DE MEDICIONES · {pumpTag}
           </span>
           <h3 style={{ margin: '3px 0 0', fontSize: '14px', color: '#e2f4ef', fontWeight: 600 }}>
-            Histórico Operacional de Mantenimiento
+            Lecturas anotadas en informes de mantenimiento
           </h3>
         </div>
 
@@ -132,13 +147,12 @@ export function PumpHistoryCharts({ pumpTag, records = [], nominalPressure = nul
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', marginBottom: '14px' }}>
         <div style={{ background: '#0e181c', border: '1px solid #1f3237', borderRadius: '6px', padding: '8px 10px' }}>
           <span style={{ fontSize: '8.5px', color: '#7a9692', display: 'block', textTransform: 'uppercase' }}>
-            {metric === 'pressure' ? 'Presión actual / última' : 'Caudal actual / último'}
+            Última medición registrada
           </span>
-          <strong style={{ fontSize: '15px', color: activeColor }}>
-            {metric === 'pressure'
-              ? (chartData.filter(d => d.presion !== null).slice(-1)[0]?.presion ?? (nominalPressure ?? '—')) + ' bar'
-              : (chartData.filter(d => d.caudal !== null).slice(-1)[0]?.caudal ?? (nominalFlow ?? '—')) + ' m³/h'}
+          <strong style={{ fontSize: ultima ? '15px' : '12px', color: ultima ? activeColor : '#97b8b2' }}>
+            {ultima ? `${redondeo(ultima[campo])} ${activeUnit}` : 'Sin medición registrada'}
           </strong>
+          {ultima && <span style={{ fontSize: '9px', color: '#7a9692', display: 'block' }}>{ultima.fecha}{ultima.origen === 'texto' ? ' · extraída del texto' : ''}</span>}
         </div>
 
         <div style={{ background: '#0e181c', border: '1px solid #1f3237', borderRadius: '6px', padding: '8px 10px' }}>
@@ -154,10 +168,10 @@ export function PumpHistoryCharts({ pumpTag, records = [], nominalPressure = nul
 
         <div style={{ background: '#0e181c', border: '1px solid #1f3237', borderRadius: '6px', padding: '8px 10px' }}>
           <span style={{ fontSize: '8.5px', color: '#7a9692', display: 'block', textTransform: 'uppercase' }}>
-            Registros graficados
+            {soloDemo ? 'Serie DEMO graficada' : 'Lecturas reales'}
           </span>
           <strong style={{ fontSize: '15px', color: '#e0ecea' }}>
-            {chartData.length} lecturas
+            {soloDemo ? `${chartData.length} ficticias` : `${reales.length}`}
           </strong>
         </div>
       </div>
@@ -165,7 +179,7 @@ export function PumpHistoryCharts({ pumpTag, records = [], nominalPressure = nul
       {/* Chart container */}
       <div style={{ width: '100%', height: 210, position: 'relative' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 12, left: -18, bottom: 0 }}>
+          <AreaChart data={serie} margin={{ top: 10, right: 12, left: -18, bottom: 0 }}>
             <defs>
               <linearGradient id="colorPressure" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.45} />
@@ -243,8 +257,12 @@ export function PumpHistoryCharts({ pumpTag, records = [], nominalPressure = nul
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', fontSize: '9.5px', color: '#7a9692' }}>
-        <span>Gráfico interactivo generado con Recharts.</span>
-        <span>Puntos interpolados según calibración e intervenciones registradas.</span>
+        <span>
+          {soloDemo ? 'DEMOSTRACIÓN: valores ficticios, no son lecturas de la planta. ' : ''}
+          No hay telemetría: cada punto es una lectura anotada en un informe; la línea solo une lecturas.
+          {extraidas ? ` ${extraidas} lectura(s) extraída(s) del texto de informes anteriores.` : ''}
+          {ambiguos ? ` ${ambiguos} informe(s) con valores ambiguos no se graficaron; revisalos.` : ''}
+        </span>
       </div>
     </div>
   );

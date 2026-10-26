@@ -15,7 +15,7 @@ import {INFO_URL,SECTORES_INT,visibleCon,torreAIntegrado,cajaSector,sectorDe,ubi
 import {fotosActualizadas, guardarFoto, originales, htmlFotos} from './fotos-bomba.js';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
-import {expediente, enlaces, linksBomba, linkPieza} from './expediente.js';
+import {expediente, expedienteDe, enlaces, linksBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
 import {listReports, addReport, deleteReport, configureReports, reportsInObsidian, importReports} from './reportes.js';
@@ -267,7 +267,7 @@ function renderPanel(){
 function renderOrings(){const rings=state.pump.data.orings;return Array.isArray(rings)&&rings.length?'<div class="block"><h3>O-rings registrados</h3>'+rings.map(o=>`<div class="record"><strong>${esc(o.posicion||'Posición no registrada')}</strong><p class="muted">Medida: ${esc(o.medida||'Sin levantar')}<br>Material: ${esc(o.material||'Sin levantar')}<br>Cantidad: ${esc(o.cantidad??'Sin levantar')}<br>Código: ${esc(o.codigo||'Sin levantar')}</p></div>`).join('')+'</div>':'<p class="notice">No hay medidas de o-rings registradas.</p>';}
 function showAnswer(item){const target=$('#ai-output');if(target)target.innerHTML=`<p class="answer-caption">PREGUNTA: ${esc(item.question)}</p><div class="ai-answer">${esc(item.answer)}</div><p class="source">${esc(item.source)}</p>`;}
 async function ask(e){e.preventDefault();if(busyAI)return;const tag=state.pump.tag,question=$('#question').value;busyAI=true;const btn=$('#ask-form button');btn.disabled=true;btn.textContent='Consultando…';try{let reportes=[];try{let left=22000;reportes=(await listReports(tag)).map(r=>{const t=(r.text||'').slice(0,Math.min(3000,left));left-=t.length;return{fecha:r.date,titulo:r.title,texto:t,pdf:r.pdf?r.pdf.name+' (PDF adjunto: su contenido no se envía a Gemini)':''};});}catch{}
- const response=await api('/api/ask',{tag,question,component:anatomy?.state.subcomponent||parts[state.part]?.name||'',reportes,notaExpediente:(expediente[tag]||{}).nota||''});state.answers[tag]={...response,question};if(state.pump?.tag===tag&&state.tab==='ia')showAnswer(state.answers[tag]);}catch(error){if(state.pump?.tag===tag&&$('#ai-output'))$('#ai-output').innerHTML=`<p class="error">${esc(error.message)}</p>`;else toast(error.message);}finally{busyAI=false;if($('#ask-form button')){$('#ask-form button').disabled=false;$('#ask-form button').textContent='Consultar Gemini →';}}}
+ const response=await api('/api/ask',{tag,question,component:anatomy?.state.subcomponent||parts[state.part]?.name||'',reportes,notaExpediente:expedienteDe(state.pump?.data?.tag===tag?state.pump.data:{tag}).nota||''});state.answers[tag]={...response,question};if(state.pump?.tag===tag&&state.tab==='ia')showAnswer(state.answers[tag]);}catch(error){if(state.pump?.tag===tag&&$('#ai-output'))$('#ai-output').innerHTML=`<p class="error">${esc(error.message)}</p>`;else toast(error.message);}finally{busyAI=false;if($('#ask-form button')){$('#ask-form button').disabled=false;$('#ask-form button').textContent='Consultar Gemini →';}}}
 function setViewButtons(top){$('#top').classList.toggle('active',top);$('#iso').classList.toggle('active',!top);}
 function setExplosion(value){state.explode=Number(value);$('#explode').value=value;$('#percent').textContent=value+'%';if(state.sector&&state.detail==='schematic')$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';if(camera)fly([state.explode>30?10:8,8,state.explode>30?21:12],[0,0,0],650);}
 $('#explode').oninput=e=>{if(state.sector&&state.detail==='exterior')setPhotoDetail(true);setExplosion(e.target.value);};$('#explode-all').onclick=()=>{if(state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(100);renderPanel();return;}setExplosion(state.explode>50?0:100);$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';};
@@ -482,57 +482,32 @@ async function mountHistoryChart(pump){
  if(!mount) return;
  const tag=pump.tag||pump.data?.tag||'EQUIPO';
  const pData=pump.data||pump;
-
- let nominalFlow=null;
- let nominalPressure=null;
-
+ // Referencia de diseño: solo la que figura en la ficha. Nunca se muestra como lectura.
+ let nominalFlow=null,nominalPressure=null;
  if(Array.isArray(pData.specs)){
   const flowRow=pData.specs.find(([k])=>/caudal/i.test(k));
-  if(flowRow&&flowRow[1]){
-   const m=flowRow[1].match(/(\d+(?:[.,]\d+)?)/);
-   if(m){
-    const val=parseFloat(m[1].replace(',','.'));
-    nominalFlow=/gpm/i.test(flowRow[1])?Number((val*0.2271).toFixed(1)):val;
-   }
-  }
-
+  const m=flowRow?.[1]?.match(/(\d+(?:[.,]\d+)?)/);
+  if(m){const val=parseFloat(m[1].replace(',','.'));nominalFlow=/gpm/i.test(flowRow[1])?Number((val*0.227124707).toFixed(1)):val;}
  }
-
  if(pData.caudal_m3h) nominalFlow=parseFloat(pData.caudal_m3h);
  if(pData.presion_bar) nominalPressure=parseFloat(pData.presion_bar);
-
- const basePres=nominalPressure||2.1;
- const baseFlow=nominalFlow||12.5;
  if(pData.inactive){mount.innerHTML='<p class="muted">Equipo SIN USO: sin lecturas de presión ni caudal para graficar.</p>';return;}
- // Serie DEMO de 12 rondas mensuales (ver historial-demo.js); los reportes de campo se suman abajo.
- const records=state.demo?demoReadings(pData,basePres,baseFlow):[];
-
-
+ // Serie DEMO (ver historial-demo.js): solo en modo demostración y rotulada como tal.
+ const records=state.demo?demoReadings(pData,nominalPressure||2.1,nominalFlow||12.5).map(r=>({...r,demo:true,origen:'demo'})):[];
+ let ambiguos=0;
  try{
-  const userReps=await listReports(tag);
-  userReps.forEach(r=>{
-   const textAll=(r.text||'')+' '+(r.title||'');
-   const measured=reportMeasurements(textAll);
-   if(measured.pressure===null&&measured.flow===null)return;
-   records.push({
-    fecha:r.date||'Reciente',
-    tipo:r.demonstration?'Reporte DEMO':'Reporte de campo',
-    presion:measured.pressure,
-    caudal:measured.flow,
-    detalle:r.title||r.text||'Lectura registrada por el técnico'
-   });
-  });
+  for(const r of await listReports(tag)){
+   const m=reportMeasurements(r);
+   if(m.origen.pressure==='ambiguo'||m.origen.flow==='ambiguo')ambiguos++;
+   if(m.pressure===null&&m.flow===null)continue;
+   const origen=[m.origen.pressure,m.origen.flow].includes('registro')?'registro':'texto';
+   records.push({fecha:r.date||'Sin fecha',tipo:r.demonstration?'Informe DEMO':'Informe de mantenimiento',demo:!!r.demonstration,origen,
+    presion:m.pressure,caudal:m.flow,detalle:r.title||'Informe sin título',responsable:r.author||''});
+  }
  }catch(error){if(mount.isConnected)mount.innerHTML='<p class="form-error">'+esc(error.message)+'</p>';return;}
-
- records.sort((a,b)=>(a.fecha>b.fecha?1:-1));
-
+ records.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
  if(!mount.isConnected||state.pump?.tag!==tag)return;
- renderRechartsHistory(mount,{
-  pumpTag:tag,
-  records,
-  nominalPressure:nominalPressure,
-  nominalFlow:nominalFlow
- });
+ renderRechartsHistory(mount,{pumpTag:tag,records,nominalPressure,nominalFlow,ambiguos});
 }
 
 function reportUI(){return `<section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Responsable<input name="author" maxlength="200" ${reportsInObsidian()?'required':''}></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label>Presión medida (bar)<input name="pressure" type="number" step="0.1" placeholder="Ej. 2.1"></label><label>Caudal medido (m³/h)<input name="flow" type="number" step="0.1" placeholder="Ej. 18.0"></label></div><label>Reporte<textarea name="text" rows="5" maxlength="7500" placeholder="Observaciones, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">${reportsInObsidian()?'Se guarda en Obsidian, en '+esc(state.vaultName)+'. El PDF queda adjunto al informe.':'Se guarda en este navegador. Los reportes no se comparten entre equipos.'}${state.demo?' Registro marcado DEMO.':''}</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">${reportsInObsidian()?'Guardar en Obsidian':'Guardar en este navegador'}</button></form><div id="rep-list"></div></section>`;}
@@ -552,7 +527,7 @@ function initReports(tag){
   const flow=f.flow?.value?f.flow.value+' m3/h':'';
   const extra=[pres&&`Presión: ${pres}`,flow&&`Caudal: ${flow}`].filter(Boolean).join(' · ');
   const fullText=[f.text.value,extra].filter(Boolean).join('\n\n');
-  try{await addReport({tag,date:f.date.value,title:f.title.value,author:f.author.value,text:fullText,file:f.file.files[0]||null});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast(reportsInObsidian()?'Informe guardado en Obsidian.':'Reporte guardado en este navegador.');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
+  try{await addReport({tag,date:f.date.value,title:f.title.value,author:f.author.value,text:fullText,file:f.file.files[0]||null,pressure:f.pressure?.value,flow:f.flow?.value});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast(reportsInObsidian()?'Informe guardado en Obsidian.':'Reporte guardado en este navegador.');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
   catch(x){err.textContent=x.message||'No se pudo guardar el reporte.';}finally{btn.disabled=false;}};
  paintReports(tag);
 }
@@ -582,7 +557,7 @@ function renderPhotoPanel(){
  const seal=sealRecord(p),ref=sealReference(p);
  const sealInfo=`<h3>Datos registrados de ${esc(p.tag)}</h3>${seal.rows.length?fieldRows(seal.rows):'<p>La fuente de este equipo no identifica su sellado.</p>'}${seal.pending.length?`<p class="notice"><strong>POR CONFIRMAR</strong> · ${esc(seal.pending.join(' · '))}. Se completa con la identificación del sello o el registro de mantenimiento de esta bomba.</p>`:''}${ref?`<div class="block manufacturer-reference"><p class="eyebrow">REFERENCIA DEL FABRICANTE · NO ES IDENTIFICACIÓN DEL EQUIPO</p><h3>${esc(ref.title)}</h3><p>${esc(ref.scope)}</p>${fieldRows(ref.rows)}<ul class="doc-links">${linkRows(ref.links)}</ul><p class="muted">Los materiales son opciones de catálogo. La combinación instalada y su compatibilidad con el servicio requieren confirmación.</p></div>`:''}`;
  const componentCard=state.part!==null?`<section id="component-detail" class="component-focus" tabindex="-1"><p class="eyebrow">PIEZA ${String(state.part+1).padStart(2,'0')} SELECCIONADA</p><h2>${esc(anatomy?.state.subcomponent||partName(state.part,p))}</h2><p>${esc(parts[state.part].desc)}</p>${state.part===5?sealInfo:fieldRows(componentRows(p,state.part))}${representedSubparts(state.part)}<div class="block part-docs"><h3>${state.part===5?'Documentación de la bomba':'Información del fabricante · '+esc(partName(state.part,p))}</h3><ul class="doc-links">${linkRows(linkPieza(p,state.part).filter(l=>state.part!==5||!ref?.links.some(r=>r.u===l.u)))}</ul></div><p class="muted">Fuente: ${esc(p.source)}. La geometría es ilustrativa; los datos pendientes no se deducen del dibujo.</p></section>`:'';
- const exp=expediente[p.tag]||{placas:[],fotos:[],fab:[],rod:[]};
+ const exp=expedienteDe(p);
  const figs=(items,vacio)=>items.length?`<div class="exp-grid">${items.map(i=>`<figure><a href="${i.src}" target="_blank" rel="noopener"><img src="${i.src}" alt="${esc(i.t)}" loading="lazy"></a><figcaption>${esc(i.t)}${i.serie?` · serie leída: <b>${esc(i.serie)}</b> (verificar)`:''}<small>${esc(i.ref)}</small></figcaption></figure>`).join('')}</div>`:`<p class="muted">${vacio}</p>`;
  const docLinks=[...(exp.fab||[]).flatMap(k=>k==='weg'&&p.motor?.catalogo!=='00218XT3E145T'?[enlaces.weg[0]]:enlaces[k]||[]),...(exp.rod||[]).map(k=>enlaces.skf[k]).filter(Boolean).map(l=>({...l,k:'rodamiento · CAD'}))];
  const imagenes=`<div class="block exp-block" id="fuentes-${esc(p.tag)}"><h3>Imágenes del equipo</h3>${exp.pendiente?`<p class="notice pending-source"><strong>PENDIENTE · ${esc(p.tag)}</strong><br>${esc(exp.pendiente)}</p>`:''}<p><a class="doc" href="/#${esc(p.tag)}">Vínculo directo al expediente ${esc(p.tag)}</a></p><p class="eyebrow">PLACA DE CARACTERÍSTICAS</p>${figs(exp.placas,'Sin foto de placa asociada en el Excel.')}<p class="eyebrow">FOTO DE LA BOMBA</p>${figs(exp.fotos,'Sin foto individual en el Excel; ver referencia del lado.')}${exp.nota?`<p class="notice">${esc(exp.nota)}</p>`:''}<p class="muted">Imágenes tomadas de “Libro1 bomba2.xlsx”, asociadas por la fila donde estaban ancladas. Cada pie conserva su fila de origen; no se asignan placas por semejanza.</p></div>`;

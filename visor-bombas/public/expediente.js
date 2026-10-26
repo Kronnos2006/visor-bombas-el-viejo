@@ -92,7 +92,10 @@ const HID_PIEZA=[
 // Documentación por fabricante y modelo: solo se asigna cuando la relación es explícita.
 // Lo que no coincide queda como "Documentación pendiente"; nunca se asume otro fabricante.
 // La relación explícita puede venir del modelo de la placa o del expediente (campo fab).
-const fabDe=p=>expediente[p.tag]?.fab||[];
+// Las placas, fotos y fabricantes del expediente estático son de la bomba original de cada
+// posición: si la bomba se reemplazó desde el visor, ya no aplican.
+export const expedienteDe=p=>p?.reemplazo?{placas:[],fotos:[],fab:[],rod:[],nota:`Bomba reemplazada el ${p.reemplazo}: el expediente anterior está archivado.`}:(expediente[p?.tag]||{placas:[],fotos:[],fab:[],rod:[]});
+const fabDe=p=>expedienteDe(p).fab||[];
 const esHid=p=>/HIDROMAC/i.test(p.marca||'')&&(/^2196\b/.test(String(p.modelo||'').trim())||fabDe(p).includes('hidromac'));
 const esGoulds=p=>/GOULDS/i.test(p.marca||'')&&(/SH/i.test(p.modelo||'')||fabDe(p).includes('goulds'));
 export function linksBomba(p){
@@ -112,7 +115,7 @@ export function linkPieza(p,i){
   const out=[];
   if(esHid(p)){const h=HID_PIEZA[i];if(h)out.push({t:`Manual Hidromac 2196 · ${h[0]} (${h[2]})`,u:h[1]});out.push({t:'Catálogo Hidromac · corte y lista de partes',u:CAT_H});}
   else if(esGoulds(p)){out.push({t:'Goulds e-SH · guía de partes del kit (PDF, referencia de familia)',u:GOULDS.guia},{t:'Goulds e-SH · brochure técnico',u:GOULDS.bro});}
-  const e=expediente[p.tag]||{};
+  const e=expedienteDe(p);
   if(i===8&&(e.fab||[]).includes('rexnord'))out.unshift(enlaces.rexnord[0]);
   if(i===5)out.unshift(...(sealReference(p)?.links||[]));
   if(i===9){const fab=e.fab||[],marca=p.motor?.marca||'';

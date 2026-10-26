@@ -69,7 +69,8 @@ test('la solicitud a bodega genera un PDF y exige datos', async () => {
  assert.equal(pdf.status, 200); assert.ok(Buffer.from(pdf.raw).subarray(0, 5).toString() === '%PDF-');
  assert.equal((await request('/api/parts-request', {method: 'POST', token, body: {solicitante: 'K', items: []}})).status, 400);
  assert.equal((await request('/api/parts-request', {method: 'POST', body: {solicitante: 'K', items: [{pieza: 'x'}]}})).status, 403);
- assert.equal(normalizeRequest({solicitante: 'K', items: [{pieza: 'x', cantidad: '5000'}]}).items[0].cantidad, 999);
+ // Una cantidad fuera de rango se rechaza con un mensaje; no se cambia en silencio a 999.
+ assert.throws(() => normalizeRequest({solicitante: 'K', items: [{pieza: 'x', cantidad: '5000'}]}), /cantidad debe estar entre 1 y 999/);
 });
 test('la contraseña de Vercel solo se exige si está configurada', () => {
  const basic = p => 'Basic ' + btoa('cualquiera:' + p);
