@@ -305,3 +305,50 @@ body.facil .compass{display:none}
 /* Explorador: controles contenidos y filtros recuperables. */
 .sidebar #area,.sidebar .filters select{width:100%;max-width:100%;min-width:0}
 #clear-filters{margin:0 0 10px;font-size:13px}#count{white-space:normal}
+
+/* Expediente: acciones siempre accesibles y detalle dentro del panel desplazable. */
+body .inspector{height:calc(100dvh - 78px);max-height:calc(100dvh - 78px);position:sticky;top:78px;min-height:0}
+body .inspector-heading{padding:16px 18px 12px;flex:none}
+body .inspector-heading #selected-name{margin:5px 0;font-size:13px}
+body #selected-tag{font-size:26px}
+body #pump-links{margin-top:12px}
+body #pump-links .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+body #pump-links .quick-actions a,body #pump-links .quick-actions button{font-size:13px;min-height:44px;padding:8px;text-align:center;display:flex;align-items:center;justify-content:center;text-decoration:none;border-radius:8px;min-width:0;overflow-wrap:anywhere}
+body #pump-links .secondary-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+body #pump-links .secondary-actions a,body #pump-links .secondary-actions button{font-size:12px;padding:5px 7px;border:0;background:none}
+body #panel{min-height:0;padding:14px 18px;overscroll-behavior:contain}
+body #tabs{flex:none;flex-wrap:wrap}
+body #tabs button{min-width:0}
+body .exp-section>summary{cursor:pointer;display:flex;gap:8px;align-items:center;justify-content:space-between;list-style:revert;padding:9px 0;color:var(--tinta)}
+body .exp-section>summary::before{content:'▸';color:var(--accent)}
+body .exp-section[open]>summary::before{content:'▾'}
+body .exp-section>summary h3,body .exp-section>summary h4{font-size:14px;margin:0;flex:1}
+body .exp-section-body{padding:5px 0 10px}
+body .section-part{font-size:11px!important;padding:6px 8px!important}
+body .block:has(>.exp-section){padding-top:4px;margin-top:10px}
+body #pump-resumen .rs-row{font-size:13px;padding:6px 4px}
+.sheet-bar,.sheet-reopen{display:none}
+.label.located{outline:3px solid var(--accent);outline-offset:3px;z-index:4}
+@media(max-width:1150px) and (min-width:901px){body.facil .layout{grid-template-columns:210px minmax(280px,1fr) 330px}header{height:auto;min-height:78px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}}
+@media(max-width:900px){
+ body .inspector{position:fixed;z-index:45;top:auto;left:8px;right:8px;bottom:calc(85px + env(safe-area-inset-bottom));height:60dvh;max-height:60dvh;border:1px solid var(--borde-fuerte);border-radius:16px 16px 6px 6px;background:var(--superficie-solida);box-shadow:0 -8px 35px #0006;overflow:hidden;transition:height .2s}
+ body .inspector[data-sheet=closed]{visibility:hidden;pointer-events:none}
+ body .inspector[data-sheet=folded]{height:142px}
+ body .inspector[data-sheet=folded] #panel,body .inspector[data-sheet=folded] #tabs,body .inspector[data-sheet=folded] #pump-links,body .inspector[data-sheet=folded] #source-status,body .inspector[data-sheet=folded] #selected-name{display:none}
+ body .sheet-bar{display:flex;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);flex:none}
+ body .sheet-bar button{min-height:44px;font-size:13px;padding:8px 10px}
+ body .sheet-bar button:last-child{margin-left:auto}
+ body .sheet-reopen:not([hidden]){display:block;position:fixed;z-index:46;right:16px;bottom:calc(92px + env(safe-area-inset-bottom));min-height:44px;background:var(--superficie-solida);border:1px solid var(--borde-fuerte)}
+ body .inspector-heading{padding:8px 12px}
+ body .inspector-heading .eyebrow,body #expand-inspector{display:none}
+ body .inspector-heading #selected-tag{font-size:22px}
+ body #panel{max-height:none;padding:12px;overflow:auto}
+ body.facil #pump-list{max-height:180px}
+ body.facil .sidebar{padding:12px}
+ body #viewport{height:clamp(250px,44dvh,420px)}
+ body .main-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(4,1fr);background:var(--fondo);padding:6px 4px calc(6px + env(safe-area-inset-bottom));gap:0}
+ body .main-nav a{min-height:60px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px}
+ body .inspector.is-fullscreen{inset:auto 8px calc(85px + env(safe-area-inset-bottom));height:60dvh;max-height:60dvh}
+}
+@media(prefers-reduced-motion:reduce){body .inspector{transition:none}}
+@media print{body .inspector{position:static;height:auto;max-height:none;visibility:visible}.sheet-bar,.sheet-reopen,#pump-links{display:none!important}body .exp-section-body{display:block}body .exp-section{content-visibility:visible}}

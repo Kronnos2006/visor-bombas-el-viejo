@@ -1,3 +1,4 @@
+import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
@@ -29,6 +30,7 @@ import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={area:'integrado',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
+const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index)});
 let detailOrigin=null,detailFlightTicket=null;
 function transitionToPump(ticket,world,show){
  detailFlightTicket=ticket;
@@ -243,6 +245,15 @@ function selectPart(index,subcomponent=null){
 }
 function fields(entries){return '<dl class="fields">'+entries.map(([label,key])=>{const v=state.pump.data[key],missing=v===undefined||v===null||v==='';return `<div class="field"><dt>${esc(label)}</dt><dd class="${missing?'missing':''}">${missing?'Sin levantar':esc(typeof v==='object'?JSON.stringify(v):v)}</dd></div>`;}).join('')+'</dl>';}
 function renderPanel(){
+ renderPanelContent();
+ const p=state.pump?.data;
+ if(p&&state.sector&&!state.pump.pending){
+  if(state.tab==='ficha'){paintPumpSummary(p);$('#panel').prepend($('#pump-resumen'));}
+  else $('#pump-resumen')?.remove();
+ }
+ inspectorUI.enhance();
+}
+function renderPanelContent(){
  if(state.pump?.pending){renderPendingPanel();return;}
  if(state.sector){renderPhotoPanel();return;}
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));const p=state.pump;
@@ -392,7 +403,7 @@ function selectPhotoPump(tag){
  $('#scene-help').textContent='Arrastrá para girar · Rueda para acercarte';
  const show=()=>{if(ticket!==state.loading)return;state.view='pump';if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=exterior(THREE,p.scale*1.7,p.variant);scene.add(photoDetail);}setPhotoDetail(false);renderPanel();};
  if(plant?.visible&&areaOf(p)!==state.area&&state.area!=='planta'&&state.area!=='integrado')setArea(areaOf(p),false);transitionToPump(ticket,pumpWorld(p.tag)||new THREE.Vector3(p.x,0,p.z),show);renderList();renderPanel();setViewButtons(false);
- if(matchMedia('(max-width:900px)').matches)setTimeout(()=>document.querySelector('.inspector')?.scrollIntoView({behavior:'smooth',block:'start'}),700);
+
 }
 
 async function downloadPumpPDF(tag){
@@ -465,18 +476,24 @@ function paintPumpSummary(p){
  };
 }
 function paintPumpLinks(p){
- paintPumpSummary(p);
  let el=document.getElementById('pump-links');
- if(!el){el=document.createElement('div');el.id='pump-links';$('#selected-tag').after(el);}
+ if(!el){el=document.createElement('div');el.id='pump-links';$('#source-status').after(el);}
  if(!p){el.hidden=true;el.innerHTML='';return;}
- el.hidden=false;
- const L=linksBomba(p);
- const familia=L?.alcance==='familia'?' (familia)':'';
- const manualBtn=L?`<a class="pl-btn" href="${L.manual.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota?L.manual.t+' · '+L.nota:L.manual.t)}">📘 Manual de la bomba${familia}</a>`:`<span class="pl-btn pl-pendiente" role="note" title="Sin documentación asociada a ${esc([p.marca,p.modelo].filter(Boolean).join(' ')||'esta bomba')}">📘 Documentación pendiente</span>`;
- const planosBtn=L?`<a class="pl-btn" href="${L.planos.u}" target="_blank" rel="noopener noreferrer" title="${esc(L.planos.t)}">📐 Planos${familia}</a>`:'';
- el.innerHTML=`<button type="button" class="pl-btn pdf-btn" id="download-summary-pdf-header" title="Descargar resumen técnico en formato PDF">📄 Resumen técnico PDF</button>${manualBtn}${planosBtn}<a class="pl-btn" href="/equipo.html?tag=${encodeURIComponent(p.tag)}" title="Cambiar de lugar o reemplazar esta bomba">⇄ Mover o cambiar</a>`;
- const btn=$('#download-summary-pdf-header');
- if(btn) btn.onclick=()=>downloadPumpPDF(p.tag);
+ el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'';
+ el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><div class="secondary-actions"><button type="button" id="download-summary-pdf-header">Resumen PDF</button>${L?`<a href="${esc(L.planos.u)}" target="_blank" rel="noopener noreferrer">Planos${familia}</a>`:''}<a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div>`;
+ el.querySelector('[data-quick=locate]').onclick=locateSelectedPump;
+ el.querySelector('[data-quick=photos]').onclick=()=>{state.tab='ficha';renderPanel();inspectorUI.show($('#fuentes-'+p.tag));};
+ el.querySelector('[data-quick=maintenance]').onclick=()=>{state.tab='historial';renderPanel();inspectorUI.show($('#rep-form')||$('#new-report'));};
+ $('#download-summary-pdf-header').onclick=()=>downloadPumpPDF(p.tag);
+}
+function locateSelectedPump(){
+ const p=state.pump?.data;if(!p)return;
+ ++state.loading;detailFlightTicket=null;detailOrigin=null;state.view='plant';state.tab='ficha';state.explode=0;
+ if(photoDetail)photoDetail.visible=false;
+ if(plant&&camera){plant.visible=true;pumpGroup.visible=false;state.area=pumpObjectsInt[p.tag]?'integrado':areaOf(p);state.filtroInt=state.area==='integrado'?areaOf(p):null;aplicarFiltroInt();applyArea();const w=pumpWorld(p.tag);if(w){controls.minDistance=.5;fly([w.x+5,w.y+7,w.z+6],[w.x,w.y+1,w.z],600);resaltarBomba(p.tag);}}
+ $('#explode').disabled=true;$('#explode-all').disabled=true;$('#back').hidden=false;
+ markers.forEach(m=>m.el.classList.toggle('located',m.kind==='pump'&&m.id===p.tag));
+ renderList();renderPanel();toast(p.tag+' ubicada; su ficha permanece abierta.');
 }
 async function mountHistoryChart(pump){
  const mount=document.getElementById('chart-mount');
