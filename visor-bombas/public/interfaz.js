@@ -34,6 +34,6 @@ export function createInspectorUI({getSelection,onPart}){
  }
  const observer=new MutationObserver(records=>{if(records.some(r=>[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.block,.rs-card')||n.querySelector?.('.block,.rs-card')))))enhance();});
  observer.observe(panel,{childList:true,subtree:true});
- const show=element=>{setSheet('open');if(element){let n=element;while(n&&n!==panel){if(n.tagName==='DETAILS')n.open=true;n=n.parentElement;}element.scrollIntoView({block:'nearest',behavior:'auto'});element.querySelector('input,button,textarea')?.focus({preventScroll:true});}};
+ const show=element=>{setSheet('open');if(element){const own=element.querySelector(':scope > details');if(own)own.open=true;let n=element;while(n&&n!==panel){if(n.tagName==='DETAILS')n.open=true;n=n.parentElement;}element.scrollIntoView({block:'nearest',behavior:'auto'});element.querySelector('input,button,textarea')?.focus({preventScroll:true});}};
  setSheet('closed');return {enhance,show,close:()=>setSheet('closed')};
 }

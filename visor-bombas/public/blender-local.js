@@ -1,12 +1,12 @@
 // Modelo de Blender integrado; ?modelo=original conserva la vista anterior.
-export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area}){
+export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress}){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
- if(!area.aparte||new URLSearchParams(location.search).get('modelo')==='original')return loader.loadAsync(area.modelo);
+ if(!area.aparte||new URLSearchParams(location.search).get('modelo')==='original')return loader.loadAsync(area.modelo,onProgress);
  const {DRACOLoader}=await import('/vendor/blender-local/DRACOLoader.js');
  const draco=new DRACOLoader().setDecoderPath('/vendor/blender-local/draco/');
  loader.setDRACOLoader(draco);
  try{
-  const glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb');
+  const glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb',onProgress);
   glb.scene.userData.blenderLocal=true;
   glb.scene.traverse(o=>{if(o.userData.sector)o.userData.sector=o.userData.sector.trim();});
   return glb;

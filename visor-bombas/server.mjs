@@ -292,7 +292,7 @@ export async function handler(req,res) {
   const filename=path.resolve(PUBLIC,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!filename.startsWith(PUBLIC+path.sep)) return send(res,403,{error:'Ruta inválida.'});
   const content=await readFile(filename);
-  res.writeHead(200,{'Content-Type':mime[path.extname(filename)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'}); res.end(content);
+  res.writeHead(200,{'Content-Type':mime[path.extname(filename)]||'application/octet-stream','Content-Length':content.length,'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'}); res.end(content);
  } catch(e) { send(res,e.code==='PUMP_NOT_AVAILABLE'?409:e.code==='ENOENT'?404:400,{code:e.code,error:e.message==='fetch failed'?'No se pudo conectar con Gemini. Revisá la conexión a internet.':e.message}); }
 }
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {

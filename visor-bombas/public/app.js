@@ -107,14 +107,14 @@ function rebuildPlant(){
   const tq=ubicar(new THREE.Group(),AREA('tanques')),tr=ubicar(new THREE.Group(),AREA('torre'));
   areaGroups={tanques:tq,torre:tr};plant.add(tq,tr);
   for(const area of AREAS.filter(a=>a.modelo)){
-   const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);
-   (area.aparte&&new URLSearchParams(location.search).get('modelo')!=='original'?cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area}):new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo)).then(glb=>{
+   const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);if(area.aparte)reportModelProgress({loaded:0,total:0});
+   (area.aparte&&new URLSearchParams(location.search).get('modelo')!=='original'?cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress:reportModelProgress}):new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo)).then(glb=>{
     if(g.parent!==plant)return;
     glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(area.aparte)return;o.userData.areaId=area.id;areaPickables.push(o);}});
-    g.add(glb.scene);
+    g.add(glb.scene);if(area.aparte){$('#model-load').hidden=true;$('#scene-error').hidden=true;}
     if(area.aparte)montarIntegrado(g,glb.scene,placed);
     if(state.view==='plant'&&state.area===area.id)flyArea(area.id);
-   }).catch(err=>console.warn('No se cargó '+area.nombre,err));
+   }).catch(err=>{if(area.aparte)show3DError(err);else console.warn('No se cargó '+area.nombre,err);});
   }
   tq.add(sector(THREE,placed.filter(p=>areaOf(p)==='tanques')));
   torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:()=>{performance.mark('torre-cargada');if(typeof applyArea==='function')applyArea();}});tr.add(torre.root);
@@ -170,6 +170,35 @@ function buildPump(variant='lf'){
  render3D?.refrescar();anatomy?.register(componentGroups);
 }
 function fly(pos,target,duration=1100){cameraFlight={start:performance.now(),duration:reducedMotion.matches?1:duration,from:camera.position.clone(),to:new THREE.Vector3(...pos),fromTarget:controls.target.clone(),toTarget:new THREE.Vector3(...target)};}
+// Controles equivalentes al arrastre y recuperación sin modificar datos de equipos.
+function reportModelProgress(event){
+ const box=$('#model-load'),progress=$('#model-progress'),label=$('#model-progress-label');box.hidden=false;
+ if(event.total>0){const percent=Math.min(100,Math.round(event.loaded/event.total*100));progress.value=percent;label.textContent=percent+'%'+(percent===100?' · Preparando modelo':' · Descargando modelo');}
+ else{progress.removeAttribute('value');label.textContent=event.loaded?'Descargando modelo · '+(event.loaded/1e6).toFixed(1)+' MB':'Preparando descarga del modelo';}
+}
+function show3DError(error){
+ $('#model-load').hidden=true;$('#scene-error').hidden=false;
+ $('#scene-error-text').textContent='No se pudo cargar el 3D. Las fichas siguen disponibles. '+(error?.message||error||'');
+}
+$('#scene-retry').onclick=()=>{
+ document.body.classList.remove('fichas-only');$('#scene-error').hidden=true;
+ if(!renderer||!scene||!plant){
+  renderer?.setAnimationLoop(null);controls?.dispose();renderer?.dispose();renderer?.domElement?.remove();
+  renderer=null;camera=null;scene=null;plant=null;pumpGroup=null;anatomy=null;render3D=null;
+  markers.forEach(m=>{m.el.remove();m.leader?.remove();});markers.length=0;componentGroups.length=0;
+  initScene();
+ }
+ if(renderer&&plant){integrado=null;reportModelProgress({loaded:0,total:0});rebuildPlant();}
+};
+$('#scene-sheets').onclick=()=>{document.body.classList.add('fichas-only');$('#scene-error-text').textContent='Modo fichas: elegí un equipo en el explorador. Podés reintentar el 3D cuando quieras.';};
+document.querySelectorAll('#camera-tools [data-camera]').forEach(button=>button.onclick=()=>{
+ if(!camera||!controls){toast('El 3D no está disponible; podés seguir consultando fichas.');return;}
+ const action=button.dataset.camera,offset=camera.position.clone().sub(controls.target),spherical=new THREE.Spherical().setFromVector3(offset);
+ if(action==='in'||action==='out')spherical.radius=THREE.MathUtils.clamp(spherical.radius*(action==='in'?.8:1.25),controls.minDistance,controls.maxDistance);
+ else spherical.theta+=(action==='left'?1:-1)*Math.PI/12;
+ const position=new THREE.Vector3().setFromSpherical(spherical).add(controls.target);fly(position.toArray(),controls.target.toArray(),250);
+});
+
 function initScene(){
  try{
  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);renderer.localClippingEnabled=true;if(new URLSearchParams(location.search).has('medir'))window.__visor={renderer,get scene(){return scene;},get camera(){return camera;}};viewport.prepend(renderer.domElement);
@@ -194,7 +223,7 @@ function initScene(){
   separarEtiquetas(pumpLabels);
   for(const label of labelPositions(partLabels,viewport.clientWidth,viewport.clientHeight)){const m=label.marker;m.el.hidden=!!label.hidden;if(label.hidden)continue;m.el.style.top=label.y+'px';m.leader.hidden=!label.offset;m.leader.style.left=label.x+'px';m.leader.style.top=Math.min(label.y,label.anchorY)+'px';m.leader.style.height=Math.abs(label.offset)+'px';}
  });
- }catch(e){$('#scene-error').hidden=false;$('#scene-error').textContent='No se pudo iniciar el visor 3D. Las fichas siguen disponibles. Detalle: '+e.message;}
+ }catch(e){show3DError(e);}
 }
 function normalize(s){return normalizeSearch(s); }
 function renderList(){const q=normalize($('#search').value),area=state.area,tipo=$('#tipo').value,marca=$('#marca').value;const selectedArea=area;const list=state.pumps.filter(p=>(state.area!=='integrado'||!state.filtroInt||areaOf(p)===state.filtroInt)&&(!selectedArea||areaOf(p)===selectedArea||selectedArea==='integrado')&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&searchPump(p,q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(p.nombre||p.servicio)} · ${esc(areaName(areaOf(p)))}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;const pendientes=(state.area==='integrado'?integrado?.references||[]:[]).filter(p=>(!state.filtroInt||sectorDe(p.sector)===state.filtroInt)&&(!tipo&&!marca)&&normalize(`${p.nombre} ${SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre||''}`).includes(q));
@@ -249,7 +278,7 @@ function renderPanel(){
  renderPanelContent();
  const p=state.pump?.data;
  if(p&&state.sector&&!state.pump.pending){
-  if(state.tab==='ficha'){paintPumpSummary(p);$('#panel').prepend($('#pump-resumen'));}
+  if(state.tab==='ficha'){paintPumpSummary(p);$('#panel').prepend($('#pump-resumen'));} const meta=$('#pump-meta');if(meta){const copy=document.createElement('div');copy.className='mobile-pump-meta';copy.innerHTML=meta.innerHTML;$('#panel').prepend(copy);}
   else $('#pump-resumen')?.remove();
  }
  inspectorUI.enhance();
@@ -780,7 +809,7 @@ function selectPendingPump(reference){
 function renderPendingPanel(){
  const reference=state.pump.pending;
  const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
- $('#pump-links')?.remove();$('#pump-resumen')?.remove();
+ $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
  if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
  abrirFichaPendiente($('#panel'),reference).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
