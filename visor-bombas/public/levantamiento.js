@@ -92,7 +92,7 @@ async function selectTag() {
  activeTag = TAG.test(tag) ? tag : ''; current = null;
  clearForm(); renderFields(); showTarget();
  if (!activeTag) { $('#status').innerHTML = ''; return; }
- loadDraft(activeTag); history.replaceState(null, '', '?tag=' + activeTag);
+ loadDraft(activeTag); history.replaceState(null, '', '?tag=' + activeTag + location.hash);
  $('#status').innerHTML = chips(info.rows.find(r => r.tag === activeTag));
  let data = null;
  try { const r = await fetch('/api/pump?tag=' + encodeURIComponent(activeTag)); if (r.ok) data = await r.json(); } catch {}
