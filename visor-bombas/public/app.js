@@ -1,3 +1,4 @@
+import {normalizeSearch,searchPump,completeness,verificationOf,storageDescription} from './interfaz-core.js';
 import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
@@ -195,8 +196,8 @@ function initScene(){
  });
  }catch(e){$('#scene-error').hidden=false;$('#scene-error').textContent='No se pudo iniciar el visor 3D. Las fichas siguen disponibles. Detalle: '+e.message;}
 }
-function normalize(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[\s\-–—]+/g,'');}
-function renderList(){const q=normalize($('#search').value),area=state.area,tipo=$('#tipo').value,marca=$('#marca').value;const selectedArea=area;const list=state.pumps.filter(p=>(state.area!=='integrado'||!state.filtroInt||areaOf(p)===state.filtroInt)&&(!selectedArea||areaOf(p)===selectedArea||selectedArea==='integrado')&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&normalize(`${p.tag} ${p.nombre} ${p.servicio} ${p.zona||''} ${p.marca||''} ${p.modelo||''} ${p.serie||''} ${p.size||''}`).includes(q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(p.nombre||p.servicio)} · ${esc(areaName(areaOf(p)))}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;const pendientes=(state.area==='integrado'?integrado?.references||[]:[]).filter(p=>(!state.filtroInt||sectorDe(p.sector)===state.filtroInt)&&(!tipo&&!marca)&&normalize(`${p.nombre} ${SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre||''}`).includes(q));
+function normalize(s){return normalizeSearch(s); }
+function renderList(){const q=normalize($('#search').value),area=state.area,tipo=$('#tipo').value,marca=$('#marca').value;const selectedArea=area;const list=state.pumps.filter(p=>(state.area!=='integrado'||!state.filtroInt||areaOf(p)===state.filtroInt)&&(!selectedArea||areaOf(p)===selectedArea||selectedArea==='integrado')&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&searchPump(p,q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(p.nombre||p.servicio)} · ${esc(areaName(areaOf(p)))}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;const pendientes=(state.area==='integrado'?integrado?.references||[]:[]).filter(p=>(!state.filtroInt||sectorDe(p.sector)===state.filtroInt)&&(!tipo&&!marca)&&normalize(`${p.nombre} ${SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre||''}`).includes(q));
  if(pendientes.length){if(!list.length)$('#pump-list').innerHTML='';$('#pump-list').insertAdjacentHTML('beforeend',pendientes.map(p=>`<button class="pump-row ${state.pump?.pending===p?'active':''}" data-pending="${integrado.references.indexOf(p)}"><i>↗</i><strong>Bomba ${p.numero}</strong><small>${esc(SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre)} · sin TAG</small></button>`).join(''));$('#pump-list').querySelectorAll('[data-pending]').forEach(b=>b.onclick=()=>selectPendingPump(integrado.references[Number(b.dataset.pending)]));}
  $('#count').textContent=`${list.length+pendientes.length} de ${state.pumps.length+(state.area==='integrado'?(integrado?.references.length||0):0)}`;$('#clear-filters').hidden=!(q||tipo||marca||state.filtroInt||state.area!=='integrado');$('#pump-list').querySelectorAll('button[data-tag]').forEach(b=>b.onclick=()=>selectPump(b.dataset.tag));}
 async function selectPump(tag){
@@ -478,13 +479,19 @@ function paintPumpSummary(p){
 function paintPumpLinks(p){
  let el=document.getElementById('pump-links');
  if(!el){el=document.createElement('div');el.id='pump-links';$('#source-status').after(el);}
- if(!p){el.hidden=true;el.innerHTML='';return;}
+ if(!p){el.hidden=true;el.innerHTML='';$('#pump-meta')?.remove();return;}
+ paintPumpMeta(p);
  el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'';
  el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><div class="secondary-actions"><button type="button" id="download-summary-pdf-header">Resumen PDF</button>${L?`<a href="${esc(L.planos.u)}" target="_blank" rel="noopener noreferrer">Planos${familia}</a>`:''}<a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div>`;
  el.querySelector('[data-quick=locate]').onclick=locateSelectedPump;
  el.querySelector('[data-quick=photos]').onclick=()=>{state.tab='ficha';renderPanel();inspectorUI.show($('#fuentes-'+p.tag));};
  el.querySelector('[data-quick=maintenance]').onclick=()=>{state.tab='historial';renderPanel();inspectorUI.show($('#rep-form')||$('#new-report'));};
  $('#download-summary-pdf-header').onclick=()=>downloadPumpPDF(p.tag);
+}
+function paintPumpMeta(p){
+ let el=$('#pump-meta');if(!el){el=document.createElement('div');el.id='pump-meta';$('#source-status').after(el);}
+ const c=completeness(p),v=verificationOf(p);
+ el.innerHTML=`<span class="chip">Completos ${c.done}/${c.total}</span><span class="chip ${v.verified?'ok':'no'}">${v.verified?esc((state.demo?'DEMO · ':'')+'Verificado en campo · '+v.date+' · '+v.author):'Sin verificar en campo'}</span><p class="storage-note">${esc(storageDescription(state))}</p>`;
 }
 function locateSelectedPump(){
  const p=state.pump?.data;if(!p)return;

@@ -73,6 +73,7 @@ export function progressOf(tag, data) {
  };
  const applicable = Object.values(checks).filter(v => v !== null);
  return {tag, kind: k, area: one(data.area || ''), servicio: one(data.servicio || data.ubicacion || data.nombre || ''), checks,
+  verification: {author: one(data.verificado_por), date: one(data.fecha_verificacion)},
   done: applicable.filter(Boolean).length, total: applicable.length, demo: data.demostracion === true};
 }
 

@@ -83,3 +83,5 @@
 .button-link{display:inline-flex;align-items:center;justify-content:center;flex:1 1 120px;padding:11px 14px;border:1px solid #35444b;border-radius:7px;text-decoration:none;color:#c9d9dc}
 @media(max-width:640px){.choice{grid-template-columns:1fr}.swap-cards{grid-template-columns:1fr}.swap-cards .arrow{transform:rotate(90deg);justify-self:center}}
 #map .axis{stroke:#3d5558;stroke-width:.06;stroke-dasharray:.4 .25}
+
+.progress-table{overflow-x:auto}.progress-table .table{min-width:650px}.progress-table td{vertical-align:top}.progress-table td small{display:block;margin-top:8px}.stat span{overflow-wrap:anywhere}
