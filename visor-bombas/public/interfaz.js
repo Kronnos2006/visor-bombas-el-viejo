@@ -5,7 +5,7 @@ export function createInspectorUI({getSelection,onPart}){
  const bar=document.createElement('div');bar.className='sheet-bar';bar.innerHTML='<button type="button" data-sheet="open">Ver la ficha</button><button type="button" data-sheet="folded">Ver el 3D</button><button type="button" data-sheet="closed" aria-label="Cerrar ficha">✕</button>';
  inspector.prepend(bar);
  const reopen=document.createElement('button');reopen.type='button';reopen.className='sheet-reopen';reopen.textContent='Ver la ficha';reopen.hidden=true;document.body.append(reopen);
- const setSheet=value=>{sheet=value;inspector.dataset.sheet=value;inspector.inert=mobile.matches&&value==='closed';reopen.hidden=!(mobile.matches&&value==='closed'&&getSelection());bar.querySelector('[data-sheet="open"]').setAttribute('aria-expanded',String(value==='open'));window.dispatchEvent(new Event('resize'));};
+ const setSheet=value=>{sheet=value;inspector.dataset.sheet=value;document.body.classList.toggle('sheet-open',mobile.matches&&value==='open');inspector.inert=mobile.matches&&value==='closed';reopen.hidden=!(mobile.matches&&value==='closed'&&getSelection());bar.querySelector('[data-sheet="open"]').setAttribute('aria-expanded',String(value==='open'));window.dispatchEvent(new Event('resize'));};
  bar.querySelectorAll('[data-sheet]').forEach(b=>b.onclick=()=>setSheet(b.dataset.sheet));reopen.onclick=()=>setSheet('open');
  mobile.addEventListener('change',()=>setSheet(sheet));
  function enhance(){

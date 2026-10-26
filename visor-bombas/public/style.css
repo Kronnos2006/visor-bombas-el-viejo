@@ -385,3 +385,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media print{#camera-tools,#model-load,#scene-error{display:none!important}.mobile-pump-meta{display:none}}
 
 @media(max-width:900px){body.facil .inspector,body:not(.facil) .inspector{background:var(--superficie-solida)}body .sheet-bar{background:var(--superficie-solida)}}
+
+@media(max-width:900px){body.sheet-open #viewport{position:fixed;z-index:44;top:78px;bottom:calc(60dvh + 93px + env(safe-area-inset-bottom));left:8px;right:8px;height:auto!important;min-height:80px;margin:0!important}body.sheet-open .sidebar{visibility:hidden}body.sheet-open #parts-rail,body.sheet-open .compass,body.sheet-open .scene-badge,body.sheet-open #scene-help{display:none}}
