@@ -6,8 +6,8 @@ import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
 import {addReport,listReports} from './reportes.js';
-import {crearFlujoCabecera} from './cabecera-flujo.js';
 import {areasHistorial,filtrarHistorial} from './historial-core.js';
+import {glare, tituloVidrio, tuberia} from './header-fx.js';
 const movil = matchMedia('(max-width:900px)');
 const SECCIONES = [
  {id: 'areas', nombre: 'Áreas', icono: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6"/>'},
@@ -16,6 +16,13 @@ const SECCIONES = [
  {id: 'bodega', nombre: 'Bodega', icono: '<path d="M3 8l9-5 9 5v10l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v10"/>'},
  {id: 'mantenimiento', nombre: 'Reportar', icono: '<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>'},
 ];
+// Dibujos simples para pantallas vacías (línea dorada, sin texto).
+const ILUS = {
+ bomba: '<svg class="ilus" viewBox="0 0 120 80" aria-hidden="true"><path d="M8 62h104"/><rect x="22" y="56" width="70" height="6" rx="2"/><circle cx="44" cy="40" r="15"/><circle cx="44" cy="40" r="5"/><path d="M59 33h26v14H59M88 30v20M64 33v14M70 33v14M76 33v14M29 40H10"/><path d="M44 25V12h20"/></svg>',
+ listo: '<svg class="ilus" viewBox="0 0 120 80" aria-hidden="true"><circle cx="60" cy="38" r="26"/><path d="M47 39l9 9 18-20"/><path d="M20 70h80"/></svg>',
+ buscar: '<svg class="ilus" viewBox="0 0 120 80" aria-hidden="true"><circle cx="54" cy="36" r="20"/><path d="M69 51l18 18"/><path d="M46 36h16"/></svg>',
+ caja: '<svg class="ilus" viewBox="0 0 120 80" aria-hidden="true"><path d="M30 26l30-14 30 14v32L60 72 30 58z"/><path d="M30 26l30 14 30-14M60 40v32"/></svg>'
+};
 const AREAS = {tanques: 'Sector de tanques', torre: 'Torre de destilación'};
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const hoy = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
@@ -54,13 +61,51 @@ function iniciar() {
  const draftStore=createDraftStore(localStorage);
 
  // ---------- Estructura ----------
- crearFlujoCabecera($('header'));
  const titulo = document.createElement('div'); titulo.id = 'tel-titulo'; $('header')?.append(titulo);
+ // Encabezado: del logo sale una tubería con líquido ámbar que pasa por una bomba (igual en todas las secciones).
+ const tubo = document.createElement('div'); tubo.id = 'tel-tubo'; tubo.setAttribute('aria-hidden', 'true');
+ $('header')?.append(tubo);
+ // Efectos del encabezado (header-fx.js, React Bits adaptado + estilo de la entrada): título de vidrio
+ // que se llena de líquido, tubería de vidrio con curvas que pasa por la bomba y cae en cascada.
+ const vidrio = tituloVidrio(titulo), tub = tuberia(tubo);
+ // Pausa de la animación del encabezado (idea de Codex); se recuerda en este navegador.
+ const pausa = document.createElement('button'); pausa.type = 'button'; pausa.id = 'tel-pausa';
+ const pintarPausa = p => { document.body.classList.toggle('tel-cab-pausa', p); pausa.setAttribute('aria-pressed', String(p)); const t = p ? 'Reanudar animación del encabezado' : 'Pausar animación del encabezado'; pausa.title = t; pausa.setAttribute('aria-label', t); pausa.innerHTML = icono(p ? '<path d="M8 5l11 7-11 7z"/>' : '<path d="M9 5v14M15 5v14"/>', 16); };
+ pausa.onclick = () => { const p = !document.body.classList.contains('tel-cab-pausa'); pintarPausa(p); guardar('vocatus-cab-pausa', p ? '1' : ''); };
+ tubo.after(pausa); pintarPausa(leer('vocatus-cab-pausa') === '1');
+ glare($('header .brand-logo'));
+ $('header .brand')?.addEventListener('pointerenter', () => vidrio.golpe(0.8));
+ document.addEventListener('vocatus:bomba', () => { vidrio.golpe(1); tub.llenar(); });
  const franja = document.createElement('nav'); franja.id = 'tel-franja'; franja.setAttribute('aria-label', 'Bombas por código');
  $('#viewport')?.append(franja);
  const ampliar=document.createElement('button');ampliar.type='button';ampliar.id='tel-ampliar';
  const mostrarMapaAmplio=active=>{document.body.classList.toggle('tel-mapa-amplio',active);ampliar.setAttribute('aria-expanded',String(active));ampliar.innerHTML=icono('<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',18)+'<span>'+(active?'Mostrar lista':'Ampliar planta')+'</span>';window.dispatchEvent(new Event('resize'));};
  ampliar.onclick=()=>mostrarMapaAmplio(!document.body.classList.contains('tel-mapa-amplio'));$('#viewport')?.append(ampliar);mostrarMapaAmplio(false);
+ // Controles de la vista explosionada (ficha abierta): juntar o separar piezas y vistas de la bomba.
+ // Una sola botonera con dos diseños (CSS): fila compacta en teléfono, panel con grupos en computadora.
+ const vistas = document.createElement('div'); vistas.id = 'tel-vistas'; vistas.setAttribute('role', 'toolbar'); vistas.setAttribute('aria-label', 'Vista de la bomba');
+ const ic = d => `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+ vistas.innerHTML = `<div class="tv-grupo"><span class="tv-titulo">Piezas</span>
+   <button type="button" data-piezas>${ic('<path d="M4 12h4M16 12h4M12 4v4M12 16v4"/><rect x="9" y="9" width="6" height="6" rx="1"/>')}<span>Juntar piezas</span></button></div>
+  <div class="tv-grupo"><span class="tv-titulo">Ver por dentro</span>
+   <button type="button" data-corte aria-pressed="false">${ic('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9" stroke-dasharray="2 2"/><path d="M12 3v9l-8-4.5"/>')}<span>Corte 1/4</span></button>
+   <button type="button" data-transparente aria-pressed="false">${ic('<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/>')}<span>Transparente</span></button></div>
+  <div class="tv-grupo"><span class="tv-titulo">Cámara</span>
+   <button type="button" data-vista="tres">${ic('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>')}<span>3/4</span></button>
+   <button type="button" data-vista="frente">${ic('<rect x="5" y="5" width="14" height="14" rx="1.5"/>')}<span>Frente</span></button>
+   <button type="button" data-vista="arriba">${ic('<rect x="5" y="5" width="14" height="14" rx="1.5"/><path d="M12 9v6M9.5 11.5L12 9l2.5 2.5"/>')}<span>Arriba</span></button></div>`;
+ $('#viewport')?.append(vistas);
+ const pintarPiezas = () => {
+  vistas.querySelector('[data-piezas] span').textContent = (V()?.explosion || 0) > 30 ? 'Juntar piezas' : 'Separar piezas';
+  const a = V()?.anatomia || {};
+  vistas.querySelector('[data-corte]').setAttribute('aria-pressed', String(!!a.cutaway));
+  vistas.querySelector('[data-corte] span').textContent = a.cutaway ? 'Reponer 1/4' : 'Corte 1/4';
+  vistas.querySelector('[data-transparente]').setAttribute('aria-pressed', String(!!a.transparent));
+ };
+ vistas.querySelector('[data-piezas]').onclick = () => { V()?.explode((V()?.explosion || 0) > 30 ? 0 : 100); setTimeout(pintarPiezas, 50); };
+ vistas.querySelector('[data-corte]').onclick = () => { V()?.corte(); setTimeout(pintarPiezas, 50); };
+ vistas.querySelector('[data-transparente]').onclick = () => { V()?.transparente(); setTimeout(pintarPiezas, 50); };
+ vistas.querySelectorAll('[data-vista]').forEach(b => b.onclick = () => V()?.vista(b.dataset.vista));
  const contenido = document.createElement('section'); contenido.id = 'tel-contenido';
  document.body.append(contenido);
  const barra = document.createElement('nav'); barra.id = 'tel-barra'; barra.setAttribute('aria-label', 'Secciones');
@@ -71,6 +116,9 @@ function iniciar() {
  ficha.innerHTML = '<button type="button" class="tel-volver"></button>';
  contenido.append(ficha);
  const inspector = $('.inspector'); if (inspector) ficha.append(inspector);
+ const detalleVacio = document.createElement('div'); detalleVacio.className = 'tel-detalle-vacio tel-vacio-ilus';
+ detalleVacio.innerHTML = `${ILUS.bomba}<p>Elegí una bomba de la lista para ver su ficha aquí.</p>`; contenido.append(detalleVacio);
+ const resumen = document.createElement('aside'); resumen.className = 'tel-resumen'; resumen.setAttribute('aria-label', 'Bomba elegida'); contenido.append(resumen);
  const fab = document.createElement('button'); fab.type = 'button'; fab.className = 'tel-fab';
  fab.innerHTML = icono('<path d="M12 5v14M5 12h14"/>', 22) + '<span>Reportar</span>'; fab.setAttribute('aria-label', 'Reportar un mantenimiento de esta bomba');
  fab.hidden = true; document.body.append(fab);
@@ -149,8 +197,13 @@ function iniciar() {
 
  paneles.pendientes.innerHTML = `<div id="pend-lista"><p class="tel-vacio">Cargando…</p></div>`;
 
- paneles.historial.innerHTML = `<p class="tel-intro">Elegí un área o buscá una bomba para ver su historial.</p><label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',20)}<input id="hist-buscar" type="search" placeholder="TAG, marca, modelo o serie" aria-label="Buscar bomba en Historial"></label><div id="hist-filtro" class="tel-chips" role="group" aria-label="Filtrar historial por área"></div><p id="hist-cuenta" class="tel-cuenta" aria-live="polite"></p><div id="hist-tarjetas" class="tel-tarjetas"></div>`;
- $('#hist-buscar').oninput=()=>pintarTarjetasHistorial();
+ paneles.historial.innerHTML = `<label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="hist-buscar" type="search" placeholder="TAG, marca, modelo o serie" aria-label="Buscar bomba en Historial" autocomplete="off"></label>
+  <div class="tel-filtros"><div class="tel-campo tf-area"><label for="hist-area">Área</label><select id="hist-area"></select></div><div class="tel-campo"><label for="hist-fluido">Fluido</label><select id="hist-fluido"><option value="">Todos</option><option value="alcohol">Alcohol</option><option value="agua">Agua</option><option value="mosto">Mosto / vinaza</option><option value="sin-uso">Sin uso</option></select></div>
+  <div class="tel-campo"><label for="hist-marca">Marca</label><select id="hist-marca"><option value="">Todas</option></select></div></div>
+  <p id="hist-cuenta" class="tel-cuenta" aria-live="polite"></p>
+  <div id="hist-tarjetas" class="tel-tarjetas"></div>`;
+ for (const id of ['hist-buscar', 'hist-fluido', 'hist-marca']) $('#' + id).addEventListener(id === 'hist-buscar' ? 'input' : 'change', () => pintarHistorial());
+ $('#hist-area').onchange = e => { filtroHist = e.target.value; if (filtroHist) V()?.chooseArea(filtroHist); pintarHistorial(); };
 
  paneles.bodega.innerHTML = `<div class="tel-campo"><label for="bod-bomba">Bomba</label><select id="bod-bomba"></select></div>
   <h2 class="tel-sub">Repuestos de la ficha</h2><div id="bod-lista"><p class="tel-vacio">Elegí una bomba para ver sus repuestos.</p></div>
@@ -163,12 +216,13 @@ function iniciar() {
  const mismo = (a, b) => a.tag === b.tag && a.pieza === b.pieza && (a.codigo || '') === (b.codigo || '') && (a.detalle || '') === (b.detalle || '');
  let repuestosFicha = [];const bodegaGate=createRequestGate();
  function pintarBodega() {
+  pintarResumen();
   const tag = $('#bod-bomba').value, c = carrito.leer();
   $('#bod-cuenta').textContent = c.length ? `${c.length} ${c.length === 1 ? 'repuesto' : 'repuestos'} en la solicitud` : 'La solicitud está vacía';
   const q = tag ? '?tag=' + encodeURIComponent(tag) : '';
   $('#bod-ir').href = '/solicitud.html' + q; $('#bod-manual').href = '/solicitud.html' + q;
   const lista = $('#bod-lista');
-  if (!tag) { lista.innerHTML = '<p class="tel-vacio">Elegí una bomba para ver sus repuestos.</p>'; return; }
+  if (!tag) { lista.innerHTML = `<div class="tel-vacio-ilus">${ILUS.caja}<p>Elegí una bomba para ver sus repuestos.</p></div>`; return; }
   if (!repuestosFicha.length) { lista.innerHTML = `<p class="tel-vacio">La ficha de ${esc(tag)} todavía no tiene sello, rodamientos ni o-rings registrados.</p>`; return; }
   lista.innerHTML = '<div class="tel-repuestos">' + repuestosFicha.map((r, i) => { const en = c.some(x => mismo(x, r));
    return `<div class="tel-rep-fila"><span><strong>${esc(r.tag)} · ${esc(r.pieza)}${r.cantidad > 1 ? ' ×' + r.cantidad : ''}</strong><small>${esc(r.codigo || r.detalle || 'sin código en la ficha')}</small></span>${en ? `<button type="button" class="tel-en" data-quitar="${i}" aria-label="Quitar ${esc(r.pieza)} de la solicitud">✓ En la solicitud</button>` : `<button type="button" class="tel-sec" data-agregar="${i}">+ Agregar</button>`}</div>`; }).join('') + '</div>';
@@ -194,10 +248,24 @@ function iniciar() {
   if (elegir) { V()?.ensure3D?.();eligiendo = elegir.dataset.elegir; aviso('mant', 'Tocá la bomba en el 3D o en la franja de códigos.'); document.body.classList.add('tel-eligiendo'); }
   if (localizar) { const tag = $('#' + localizar.dataset.localizar).value; if (tag) { document.body.classList.add('tel-3d');V()?.ensure3D?.();V()?.select(tag); setTimeout(() => V()?.locate(), 600); } else aviso('mant', 'Elegí primero la bomba.', 'error'); }
  });
+ function pintarResumen() {
+  const tag = seccion === 'bodega' ? $('#bod-bomba')?.value : $('#mant-bomba')?.value, p = bombas().find(x => x.tag === tag);
+  if (!p) { resumen.innerHTML = `<div class="tel-vacio-ilus">${ILUS.bomba}<p>Elegí una bomba para ver su resumen aquí.</p></div>`; return; }
+  const c = completeness(p), v = verificationOf(p), pct = c.total ? Math.round(c.done / c.total * 100) : 0, area = V()?.areaDe(p);
+  resumen.innerHTML = `<p class="tel-sub">Bomba elegida</p><p class="tr-tag">${esc(p.tag)}</p>
+   <p class="tr-nombre">${esc([p.marca, p.modelo].filter(x => x && !/por confirmar/i.test(x)).join(' ') || 'Marca por confirmar')}</p>
+   <p class="tr-linea">${esc(p.nombre || p.servicio || '')}${area ? ' · ' + esc(V()?.areaNombre(area) || area) : ''}</p>
+   ${enReparacion.has(p.tag) ? '<p class="tr-alerta">En reparación</p>' : ''}
+   <span class="tt-medidor"><i style="width:${pct}%"></i></span><p class="tr-linea">Ficha ${c.done}/${c.total} · ${v.verified ? 'verificada' : 'sin verificar en campo'}</p>
+   <div class="tr-acciones"><button type="button" class="tel-sec" data-ver>Ver ficha</button><button type="button" class="tel-sec" data-ubicar>Ver en el 3D</button></div>`;
+  resumen.querySelector('[data-ver]').onclick = () => abrirFicha(p.tag, 'ficha');
+  resumen.querySelector('[data-ubicar]').onclick = () => { document.body.classList.add('tel-3d'); V()?.select(p.tag); setTimeout(() => V()?.locate(), 600); };
+ }
  function pintarElegida(id) {
   const sel = $('#' + id), card = $('#' + id + '-elegida'), fila = $('#' + id + '-fila'), tag = sel.value;
   const p = bombas().find(x => x.tag === tag);
   card.hidden = !tag; fila.hidden = !!tag;
+  pintarResumen();
   if (tag) { card.innerHTML = `<strong>${esc(tag)}</strong><span>${esc([p?.marca, p?.modelo].filter(Boolean).join(' ') || '')}${p?.nombre ? ' · ' + esc(p.nombre) : ''}</span><button type="button" class="tel-cambiar">Cambiar</button>`; card.querySelector('button').onclick = () => { card.hidden = true; fila.hidden = false; sel.focus(); }; }
  }
  const resumenMant = () => { const a = $('#mant-autor').value.trim(), f = $('#mant-fecha').value; $('#mant-resumen').textContent = (a || 'Sin responsable') + ' · ' + (f === hoy() ? 'hoy' : f || 'sin fecha'); };
@@ -264,6 +332,7 @@ function iniciar() {
  }
  function pintarPendientes() {
   const lista = $('#pend-lista'); if (!lista) return;
+  if (pendientes.loading || !bombas().length) { lista.innerHTML = '<div class="tel-contadores"><span class="tel-silueta"></span><span class="tel-silueta"></span><span class="tel-silueta"></span></div><span class="tel-silueta fila"></span><span class="tel-silueta fila"></span>'; return; }
   const nombre = tag => esc(bombas().find(p => p.tag === tag)?.nombre || '');
   const flecha = icono('<path d="M9 6l6 6-6 6"/>', 20);
   const fila = (tag, linea, tipo, tab = 'ficha') => `<button type="button" class="tel-pend" data-tag="${esc(tag)}" data-tab="${tab}"><i class="tel-punto ${tipo}" aria-hidden="true"></i><span><strong>${esc(tag)}</strong><small>${linea}</small></span>${flecha}</button>`;
@@ -278,7 +347,7 @@ function iniciar() {
     <div class="tel-contador ambar"><b>${pendientes.available?sinFun.length:'—'}</b><span>Quedó sin funcionar</span></div>
     <div class="tel-contador"><b>${incompletas.length}</b><span>Fichas por completar</span></div></div>`
    + (pendientes.available?'':`<p class="tel-storage-note">${pendientes.loading?'Consultando el estado de planta…':pendientes.error?'No se pudo consultar el estado de planta. Reintentá cuando vuelva la conexión.':'Estado de planta no disponible: este alojamiento no está sincronizado con Obsidian.'}</p>`)
-   + `<h2 class="tel-sub">Atención ahora</h2>` + (!pendientes.available?'<p class="tel-vacio">No se puede confirmar si hay equipos fuera de su lugar o sin funcionar.</p>':atencion.length?`<div class="tel-pends">${atencion.join('')}</div>`:'<p class="tel-vacio">Sin equipos fuera de su lugar o sin funcionar en la última consulta a Obsidian.</p>')
+   + `<h2 class="tel-sub">Atención ahora</h2>` + (!pendientes.available?'<p class="tel-vacio">No se puede confirmar si hay equipos fuera de su lugar o sin funcionar.</p>':atencion.length?`<div class="tel-pends">${atencion.join('')}</div>`:`<div class="tel-vacio-ilus">${ILUS.listo}<p>Sin equipos fuera de su lugar o sin funcionar en la última consulta a Obsidian.</p></div>`)
    + `<h2 class="tel-sub">Revisión de fichas</h2>`
    + grupo('Fichas incompletas', incompletas.map(([p, c]) => fila(p.tag, `${nombre(p.tag)} · Completa ${c.done}/${c.total}`, 'gris')), 'Todas las fichas están completas.')
    + grupo('Sin verificar en campo', sinVer.map(p => { const v = verificationOf(p); return fila(p.tag, `${nombre(p.tag)} · ${v.legacy ? 'Registro antiguo' : v.partial ? 'Verificación parcial' : 'Sin verificar'}`, 'gris'); }), 'Todas las fichas están verificadas.');
@@ -311,30 +380,47 @@ function iniciar() {
 
  // ---------- Historial ----------
  let filtroHist = '';
- const areaBomba=p=>V()?.areaDe(p)||p.areaId;
+ // Áreas del visor (las mismas de la sección Áreas): [id del menú, nombre].
+ const areasMenu = () => [...document.querySelectorAll('#area-menu [data-area]')].map(b => [b.dataset.area, [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() || b.textContent.trim()]);
+ const areaDeMenu = id => !id || id === 'integrado' || id === 'planta' ? '' : id.replace(/^sector:/, '');
  function pintarHistorial() {
-  const list=bombas(),areas=areasHistorial(list,areaBomba);
-  $('#hist-filtro').innerHTML = [{id:'',nombre:'Todas las áreas',count:list.length},...areas].map(a=>`<button type="button" data-a="${esc(a.id)}" aria-pressed="${a.id===filtroHist}"><span>${esc(a.nombre)}</span><b>${a.count}</b></button>`).join('');
-  $('#hist-filtro').querySelectorAll('button').forEach(b=>b.onclick=()=>{filtroHist=b.dataset.a;pintarHistorial();V()?.chooseArea(filtroHist?'sector:'+filtroHist:'integrado');});
-  pintarTarjetasHistorial();
- }
- function pintarTarjetasHistorial(){
-  const list=filtrarHistorial(bombas(),{area:filtroHist,query:$('#hist-buscar').value},areaBomba);
-  const areaName=areasHistorial(bombas(),areaBomba).find(a=>a.id===filtroHist)?.nombre||'toda la planta';
-  $('#hist-cuenta').textContent=`${list.length} ${list.length===1?'bomba':'bombas'} con ficha en ${areaName}.`;
-  $('#hist-tarjetas').innerHTML=list.length?list.map(p=>`<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><strong>${esc(p.tag)}</strong><span>${esc(p.nombre||p.ubicacion||'')}</span></button>`).join(''):`<p class="tel-vacio">${$('#hist-buscar').value.trim()?'Ninguna bomba coincide con la búsqueda.':'Esta área todavía no tiene bombas con TAG y ficha registrados. Podés explorarla en la planta 3D.'}</p>`;
-  $('#hist-tarjetas').querySelectorAll('[data-tag]').forEach(b=>b.onclick=()=>abrirFicha(b.dataset.tag,'historial'));
+  const areas = areasMenu(), marcaSel = $('#hist-marca'), actual = marcaSel.value;
+  const marcas = [...new Set(bombas().map(p => String(p.marca || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  marcaSel.innerHTML = '<option value="">Todas</option>' + marcas.map(m => `<option>${esc(m)}</option>`).join(''); marcaSel.value = marcas.includes(actual) ? actual : '';
+  const cuantas = id => bombas().filter(p => !areaDeMenu(id) || V()?.areaDe(p) === areaDeMenu(id)).length; // conteo por área (idea de Codex)
+  $('#hist-area').innerHTML = (areas.length ? areas : [['', 'Toda la planta']]).map(([id, n]) => `<option value="${esc(id)}"${areaDeMenu(id) === areaDeMenu(filtroHist) ? ' selected' : ''}>${esc(n)} (${cuantas(id)})</option>`).join('');
+  const q = $('#hist-buscar').value.toUpperCase().replace(/[\s-]/g, ''), fluido = $('#hist-fluido').value, marca = marcaSel.value, area = areaDeMenu(filtroHist);
+  const enArea = bombas().filter(p => !area || V()?.areaDe(p) === area);
+  // Búsqueda de Codex (TAG, marca, modelo o serie) + filtros de fluido y marca.
+  const lista = filtrarHistorial(enArea, {query: $('#hist-buscar').value}, p => V()?.areaDe(p)).filter(p => (!fluido || (V()?.tipos(p) || []).includes(fluido)) && (!marca || String(p.marca || '').trim() === marca));
+  const nombreArea = areas.find(([id]) => id === filtroHist)?.[1] || 'toda la planta';
+  $('#hist-cuenta').textContent = !enArea.length ? `${nombreArea}: todavía no hay bombas con TAG y ficha.` : !lista.length ? 'Ninguna bomba coincide con los filtros.' : `${lista.length} ${lista.length === 1 ? 'bomba' : 'bombas'}${lista.length < enArea.length ? ` de ${enArea.length}` : ''} en ${nombreArea === 'toda la planta' ? nombreArea : nombreArea}.`;
+  if (!bombas().length) { $('#hist-tarjetas').innerHTML = '<span class="tel-silueta"></span>'.repeat(6); return; }
+  if (!lista.length) { $('#hist-tarjetas').innerHTML = `<div class="tel-vacio-ilus tt-ancho">${ILUS.buscar}<p>${enArea.length ? 'Ninguna bomba coincide con los filtros.' : 'Esta área todavía no tiene bombas con ficha.'}</p></div>`; return; }
+  $('#hist-tarjetas').innerHTML = lista.map(p => { const c = completeness(p), pct = c.total ? Math.round(c.done / c.total * 100) : 0, marcaP = String(p.marca || '').trim();
+   return `<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><span class="tt-cab"><strong>${esc(p.tag)}</strong>${marcaP && !/por confirmar/i.test(marcaP) ? `<em>${esc(marcaP)}</em>` : ''}</span><span>${esc(p.nombre || p.ubicacion || '')}</span>
+    <span class="tt-medidor" title="Ficha completa ${c.done} de ${c.total}"><i style="width:${pct}%"></i></span><small>Ficha ${c.done}/${c.total}</small></button>`; }).join('');
+  $('#hist-tarjetas').querySelectorAll('[data-tag]').forEach(b => b.onclick = () => abrirFicha(b.dataset.tag, 'historial'));
  }
 
  // ---------- Ficha dentro de la app ----------
  function abrirFicha(tag, pestana = 'ficha') {
   mostrarMapaAmplio(false);
   viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha'); fab.hidden = false;
-  Object.values(paneles).forEach(p => p.hidden = true);
+  // En computadora, Pendientes es «lista y detalle»: la lista queda a la izquierda y la ficha a la derecha.
+  const ladoALado = !movil.matches && seccion === 'pendientes';
+  Object.entries(paneles).forEach(([k, p]) => p.hidden = !(ladoALado && k === 'pendientes'));
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
   if (V()?.pump?.tag !== tag) V()?.select(tag);
-  const aplicar = () => { V()?.tab(pestana); if (pestana === 'historial') V()?.explode(100); };
-  setTimeout(aplicar, 700); setTimeout(aplicar, 1600); setTimeout(pintarRegreso, 900);
+  const aplicar = () => { V()?.tab(pestana); if (pestana === 'historial') V()?.explode(100); pintarRegreso(); pintarPiezas(); };
+  // Espera a que el visor termine de cargar esa bomba (con el 3D real puede tardar varios segundos);
+  // si se aplica antes, al terminar la carga el visor vuelve a juntar las piezas.
+  const inicio = Date.now();
+  (function esperar() {
+   if (!viendoFicha) return;
+   if (V()?.pump?.tag === tag && V()?.listo) { setTimeout(aplicar, 250); return; }
+   if (Date.now() - inicio < 12000) setTimeout(esperar, 150); else aplicar();
+  })();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
  ficha.querySelector('.tel-volver').onclick = () => { V()?.explode(0); V()?.back(); cerrarFicha(); };
@@ -364,17 +450,19 @@ function iniciar() {
   eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d');
   for (const [k, p] of Object.entries(paneles)) p.hidden = k !== id;
   barra.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.s === id ? 'page' : 'false'));
-  titulo.textContent = SECCIONES.find(s => s.id === id).nombre;
+  vidrio.poner(SECCIONES.find(s => s.id === id).nombre); tub.llenar();
   document.body.dataset.telSeccion = id;
   history.replaceState(null, '', '?s=' + id + location.hash);
   if (id === 'pendientes') { pintarPendientes(); leerPendientes(); }
   if (id === 'bodega') pintarBodega();
+  if (id === 'mantenimiento' || id === 'bodega') pintarResumen();
   if(id==='mantenimiento'){resumenMant();paintLocalReports();}
   if(['areas','historial'].includes(id))V()?.ensure3D?.();
   if (id === 'historial') pintarHistorial();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
- barra.querySelectorAll('button').forEach(b => b.onclick = () => { if (viendoFicha) { V()?.explode(0); V()?.back(); } mostrar(b.dataset.s); });
+ const transicion = cambio => { if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(cambio); else cambio(); };
+ barra.querySelectorAll('button').forEach(b => b.onclick = () => { if (b.dataset.s === seccion && !viendoFicha) return; if (viendoFicha) { V()?.explode(0); V()?.back(); } transicion(() => mostrar(b.dataset.s)); });
 
  function alCargar() {
   if(!V()?.pumps?.length)return;

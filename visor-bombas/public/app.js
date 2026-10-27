@@ -803,7 +803,7 @@ function solSegunVista(){
  if(!L.target.parent)scene.add(L.target);L.target.updateMatrixWorld();c.updateProjectionMatrix();L.shadow.needsUpdate=true;
 }
 function cajaTorre(seccion){
- const g=areaGroups.torre;g.updateMatrixWorld(true);const r=seccion?rangoSeccion(seccion):null;
+ const g=areaGroups.torre;if(!g)return new THREE.Box3();g.updateMatrixWorld(true);const r=seccion?rangoSeccion(seccion):null;
  const y0=r?Math.max(LIMITES.min[1],r[0]):LIMITES.min[1],y1=r?Math.min(LIMITES.max[1],r[1]):LIMITES.max[1],b=new THREE.Box3();
  for(const x of [LIMITES.min[0],LIMITES.max[0]])for(const y of [y0,y1])for(const z of [LIMITES.min[2],LIMITES.max[2]])b.expandByPoint(g.localToWorld(new THREE.Vector3(x,y,z)));
  return b;
@@ -1073,8 +1073,12 @@ window.vocatus={
  explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&Number(value)>30&&document.body.classList.contains('app-tel'))fly([15,12,32],[0,0,0],650);},
  locate:()=>locateSelectedPump(),
  back:()=>{if(state.view!=='plant'||state.pump)$('#back').click();},
- chooseArea:id=>chooseArea(id),
+ chooseArea:id=>chooseArea(id),elegirArea:id=>chooseArea(id),
  get area(){return state.area==='integrado'?(state.filtroInt||'planta'):state.area;},
+ get explosion(){return state.explode;},
+ get listo(){return state.view==='pump';},
+ corte:()=>$('#anatomy-cut').click(),transparente:()=>$('#anatomy-transparent').click(),get anatomia(){return anatomy?{...anatomy.state}:{};},
+ vista:t=>{if(!camera||state.view==='plant')return;const ex=state.explode>30,k=document.body.classList.contains('app-tel')&&ex?1.5:1;const P={tres:[10,8,ex?21:12],frente:[0,1.2,ex?22:13],arriba:[0,ex?30:22,.1]}[t];if(P)fly(P.map(v=>v*k),[0,0,0],650);},
  areaDe:p=>areaOf(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
  ensure3D:ensurePlant,api
 };

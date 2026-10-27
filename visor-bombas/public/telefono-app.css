@@ -286,34 +286,6 @@ body.app-tel #mant-local,body.app-tel #mant-import{display:grid;gap:12px}
 body.app-tel #mant-import[hidden]{display:none}
 body.app-tel #mant-import-preview{overflow-wrap:anywhere;line-height:1.6}
 
-/* Circuito de marca integrado: SVG ligero, sin datos operativos ni otro renderer. */
-body.app-tel #tel-titulo{flex:0 0 auto}
-body.app-tel header #cab-flujo{order:2;flex:1;min-width:44px;height:48px;min-height:44px;margin:0 8px;padding:0;position:relative;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--accent);border-radius:8px;overflow:hidden;cursor:pointer;box-shadow:none}
-body.app-tel #cab-flujo svg{width:100%;max-width:900px;height:100%;pointer-events:none}
-body.app-tel #cab-flujo .cab-tuberia{stroke:url(#cab-ambar);stroke-width:5;stroke-linecap:round;opacity:.4}
-body.app-tel #cab-flujo .cab-corriente{stroke:currentColor;stroke-width:2;stroke-dasharray:3 15;stroke-linecap:round}
-body.app-tel #cab-flujo .cab-bomba{stroke:currentColor;stroke-width:1.5}
-body.app-tel #cab-flujo .cab-impulsor{fill:currentColor;stroke:none;transform-origin:246px 32px}
-body.app-tel #cab-flujo .cab-planta{stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;opacity:.65}
-body.app-tel #cab-flujo .cab-caida{stroke-width:2;stroke-dasharray:3 6;opacity:.65}
-body.app-tel #cab-flujo .cab-pausa{position:absolute;right:2px;top:4px;font-size:11px;opacity:0;transition:opacity .15s}
-body.app-tel #cab-flujo:is(:hover,:focus-visible) .cab-pausa,body.app-tel #cab-flujo[aria-pressed="true"] .cab-pausa{opacity:.8}
-body.app-tel #cab-flujo:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-body.app-tel #cab-flujo[aria-pressed="true"] :is(.cab-corriente,.cab-caida,.cab-impulsor){animation-play-state:paused}
-@keyframes cab-circula{to{stroke-dashoffset:-36}}
-@keyframes cab-gira{to{transform:rotate(360deg)}}
-@keyframes cab-baja{to{stroke-dashoffset:-18}}
-@media(prefers-reduced-motion:no-preference){
- body.app-tel #cab-flujo .cab-corriente{animation:cab-circula 1.8s linear infinite}
- body.app-tel #cab-flujo .cab-impulsor{animation:cab-gira 2.4s linear infinite}
- body.app-tel #cab-flujo .cab-caida{animation:cab-baja 1.8s linear infinite}
- body.app-tel #tel-barra button{transition:background-color .18s ease,color .18s ease}
-}
-@media(max-width:600px){
- body.app-tel header{gap:8px}
- body.app-tel header #cab-flujo{height:40px;margin:0;justify-content:flex-end}
- body.app-tel #cab-flujo svg{width:260px;min-width:260px;max-width:none;transform:translateX(68px)}
-}
 /* Historial completo: áreas visibles, recuentos y búsqueda sin perder el mapa. */
 body.app-tel #hist-filtro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 body.app-tel #hist-filtro button{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;min-height:44px;padding:8px 10px;border-radius:10px;text-align:left;white-space:normal;font-size:13px;line-height:1.25}
@@ -327,3 +299,190 @@ body.app-tel.tel-mapa-amplio #tel-contenido{display:none}
 @media(min-width:901px){body.app-tel.tel-mapa-amplio main{bottom:0}}
 
 body.app-tel header :is(#tema-toggle,#settings-open){order:3}
+/* Encabezado (todas las secciones): título de vidrio que se llena y tubería de vidrio con bomba y
+   cascada, con los colores de la entrada (vidrio verdoso, líquido ámbar #c38320 → #ffad32). */
+body.app-tel{--alto-enc:72px}
+body.app-tel header{gap:14px!important}
+body.app-tel #tel-titulo{order:1;flex:none;min-width:0;font:600 30px/1 var(--marca,Fraunces,Georgia,serif);letter-spacing:.005em;color:var(--tinta);display:flex;align-items:center}
+body.app-tel .tv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body.app-tel .titulo-vidrio{display:block;overflow:visible;font:inherit}
+body.app-tel .titulo-vidrio text{font:inherit;letter-spacing:inherit}
+body.app-tel .tv-vidrio{fill:rgba(194,200,178,.10)}
+body.app-tel .tv-ola-a{fill:url(#tv-liq)}
+body.app-tel .tv-ola-b{fill:#ffbb45;opacity:.35}
+body.app-tel .tv-borde{fill:none;stroke:rgba(236,224,196,.7);stroke-width:.9;paint-order:stroke}
+body.app-tel .tv-reflejo{fill:url(#tv-brillo);opacity:.28}
+body.app-tel .tv-burbujas circle{fill:#ffdc9a;opacity:0}
+:root[data-theme="light"] body.app-tel .tv-borde{stroke:rgba(70,52,20,.65)}
+:root[data-theme="light"] body.app-tel .tv-vidrio{fill:rgba(90,80,50,.10)}
+
+body.app-tel #tel-tubo{order:1;flex:1 1 60px;min-width:60px;align-self:stretch;position:relative;margin:6px 0}
+body.app-tel .tuberia{position:absolute;inset:0;overflow:visible}
+body.app-tel .tb-halo{fill:none;stroke:#ffbb45;stroke-width:12;opacity:0;filter:url(#tb-brillo);transition:opacity .6s}
+body.app-tel .tramo.lleno .tb-halo{opacity:.13}
+body.app-tel .tb-vidrio{fill:none;stroke:rgba(194,200,178,.28);stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+body.app-tel .tb-reflejo{fill:none;stroke:rgba(255,255,255,.16);stroke-width:1.2;stroke-linecap:round}
+body.app-tel .tb-liquido{fill:none;stroke:url(#tb-liq);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dashoffset:var(--L);transition:stroke-dashoffset .7s cubic-bezier(.45,.05,.55,.95)}
+body.app-tel .tramo.lleno .tb-liquido{stroke-dashoffset:0}
+body.app-tel .tb-flujo{fill:none;stroke:#ffdc9a;stroke-width:1.6;stroke-linecap:round;stroke-dasharray:2 16;opacity:0}
+body.app-tel .tuberia.fluye .tb-flujo{opacity:.8}
+body.app-tel .tb-base{fill:#243b3c}
+body.app-tel .tb-motor{fill:#2d514f;stroke:#84938e;stroke-width:.8}
+body.app-tel .tb-aletas{stroke:#84938e;stroke-width:.8;opacity:.7}
+body.app-tel .tb-voluta{fill:url(#tb-voluta);stroke:#dba848;stroke-width:1.2}
+body.app-tel .tb-ojo{fill:#101b1b}
+body.app-tel .tb-rotor path{fill:none;stroke:#ffad32;stroke-width:1.6;stroke-linecap:round}
+body.app-tel .tb-rotor{transform-box:fill-box;transform-origin:center}
+body.app-tel .tb-chorro{fill:url(#tb-chorro);opacity:0;transform-origin:top;transform:scaleY(0);transition:transform .45s ease-in,opacity .2s}
+body.app-tel .tb-cascada.cae .tb-chorro{opacity:.95;transform:scaleY(1)}
+body.app-tel .tb-gota{fill:#ffdc9a;opacity:0}
+body.app-tel .tb-charco{fill:#c38320;opacity:0;transition:opacity .4s .3s}
+body.app-tel .tb-cascada.cae .tb-charco{opacity:.55}
+body.app-tel .tb-onda{fill:none;stroke:#f1bf69;stroke-width:.8;opacity:0;transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion:no-preference){
+ body.app-tel .tuberia.fluye .tb-flujo{animation:tb-avanza 1s linear infinite}
+ body.app-tel .tb-rotor{animation:tb-gira 1.3s linear infinite}
+ body.app-tel .tuberia.bombea .tb-rotor{animation-duration:.32s}
+ body.app-tel .tb-cascada.cae .tb-gota{animation:tb-cae 1.1s ease-in infinite}
+ body.app-tel .tb-cascada.cae .g2{animation-delay:.37s}
+ body.app-tel .tb-cascada.cae .g3{animation-delay:.74s}
+ body.app-tel .tb-cascada.cae .tb-onda{animation:tb-onda 1.1s ease-out infinite .2s}
+ body.app-tel header .brand-logo{animation:tel-latido 3.6s ease-in-out infinite}
+}
+@keyframes tb-avanza{to{stroke-dashoffset:-18}}
+@keyframes tb-gira{to{transform:rotate(360deg)}}
+@keyframes tb-cae{0%{opacity:0;transform:translate(0,0)}15%{opacity:.95}85%{opacity:.8}100%{opacity:0;transform:translate(var(--dx,1px),var(--caida))}}
+.tb-gota.g1{--dx:-2px}.tb-gota.g3{--dx:2px}
+@keyframes tb-onda{0%{opacity:.8;transform:scale(.4)}100%{opacity:0;transform:scale(1.7)}}
+@keyframes tel-latido{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 8px rgba(255,173,50,.55))}}
+@media (max-width:900px){
+ body.app-tel{--alto-enc:58px}
+ body.app-tel #tel-titulo{font-size:23px}
+ body.app-tel header{gap:10px!important}
+ body.app-tel #tel-tubo{margin:4px 0}
+}
+/* GlareHover: destello diagonal que cruza el logo cada tanto y al pasar el mouse. */
+body.app-tel header .glare-hover{position:relative;display:inline-grid;overflow:hidden;border-radius:8px;isolation:isolate;flex:none}
+body.app-tel header .glare-hover__band{position:absolute;top:-50%;left:-60%;width:45%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,236,190,.75),transparent);transform:rotate(20deg) translateX(-120%);mix-blend-mode:overlay;pointer-events:none}
+@media (prefers-reduced-motion:no-preference){
+ body.app-tel header .glare-hover__band{animation:tel-destello 6.5s ease-in-out 1.2s infinite}
+ body.app-tel header .brand:hover .glare-hover__band{animation:tel-destello .9s ease-out}
+}
+@keyframes tel-destello{0%,70%{transform:rotate(20deg) translateX(-120%)}100%{transform:rotate(20deg) translateX(520%)}}
+body.app-tel header>#tema-toggle,body.app-tel header>#settings-open{order:2}
+
+/* Botonera de vista de la bomba (solo con una ficha abierta): dos diseños.
+   Teléfono: fila compacta deslizable sobre el borde inferior del 3D.
+   Computadora: panel de vidrio a la izquierda del 3D, con grupos y botones grandes. */
+body.app-tel #tel-vistas{position:absolute;z-index:31;display:none}
+body.app-tel.tel-con-ficha #tel-vistas{display:flex}
+body.app-tel #tel-vistas button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--borde-fuerte);background:color-mix(in srgb,var(--fondo) 85%,transparent);color:var(--tinta);font:600 13px var(--texto,system-ui);cursor:pointer;backdrop-filter:none;white-space:nowrap}
+body.app-tel #tel-vistas button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--fondo));color:var(--accent)}
+body.app-tel #tel-vistas [data-piezas]{border-color:var(--accent);color:var(--accent)}
+body.app-tel .tv-grupo{display:flex;gap:6px}
+body.app-tel .tv-titulo{display:none}
+@media (max-width:900px){
+ body.app-tel #tel-vistas{left:0;right:0;bottom:8px;gap:6px;padding:0 8px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+ body.app-tel #tel-vistas::-webkit-scrollbar{display:none}
+ body.app-tel #tel-vistas button{flex:none;min-height:36px;padding:0 12px;border-radius:18px}
+ body.app-tel #tel-vistas button svg{width:17px;height:17px}
+ body.app-tel .tv-grupo{flex:none}
+}
+@media (min-width:901px){
+ body.app-tel #tel-vistas{left:16px;top:50%;transform:translateY(-50%);flex-direction:column;gap:14px;width:188px;padding:16px;border-radius:18px;border:1px solid rgba(194,200,178,.28);background:color-mix(in srgb,var(--fondo) 78%,transparent);box-shadow:0 12px 32px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
+ body.app-tel .tv-grupo{flex-direction:column;gap:6px}
+ body.app-tel .tv-titulo{display:block;font:600 11px var(--texto,system-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-2);margin-bottom:2px}
+ body.app-tel #tel-vistas button{width:100%;min-height:44px;padding:0 14px;border-radius:12px;font-size:14px;justify-content:flex-start;gap:10px}
+ body.app-tel #tel-vistas button:hover{border-color:var(--accent)}
+}
+/* Historial en teléfono: las áreas en una fila deslizable para no ocupar media pantalla. */
+@media (max-width:900px){
+ body.app-tel #hist-filtro{flex-wrap:nowrap;overflow-x:auto;margin:0 -16px;padding:2px 16px 6px;scrollbar-width:none;scroll-snap-type:x proximity}
+ body.app-tel #hist-filtro::-webkit-scrollbar{display:none}
+ body.app-tel #hist-filtro button{flex:none;scroll-snap-align:start;white-space:nowrap}
+}
+
+/* Tarjetas de Historial: marca y medidor de vidrio con lo completa que está la ficha. */
+body.app-tel .tel-tarjeta{gap:6px;min-height:0;padding:12px 12px 10px}
+body.app-tel .tel-tarjeta .tt-cab{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0}
+body.app-tel .tel-tarjeta .tt-cab em{font-style:normal;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--tinta-2);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.app-tel .tt-medidor{display:block;height:7px;border-radius:4px;background:rgba(194,200,178,.14);border:1px solid rgba(194,200,178,.28);overflow:hidden;margin-top:2px}
+body.app-tel .tt-medidor i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#c38320,#ffad32);box-shadow:0 0 6px rgba(255,173,50,.45)}
+body.app-tel .tel-tarjeta small{font:500 11px var(--datos,monospace);color:var(--tinta-2)}
+body.app-tel .tel-tarjeta:hover{border-color:var(--borde-fuerte)}
+
+/* Computadora: barra lateral con el mismo estilo que el teléfono (pastilla detrás del ícono). */
+@media (min-width:901px){
+ body.app-tel{--panel:clamp(340px,30vw,440px)}
+ body.app-tel #tel-barra button,body.app-tel #tel-barra button:hover,body.app-tel #tel-barra button[aria-current="page"]{background:none}
+ body.app-tel #tel-barra button[aria-current="page"]::before{display:none}
+ body.app-tel #tel-barra button .tel-pill{width:56px;height:34px;border-radius:17px;transition:background-color .15s}
+ body.app-tel #tel-barra button:hover .tel-pill{background:var(--superficie)}
+ body.app-tel #tel-barra button[aria-current="page"] .tel-pill{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+ body.app-tel #tel-barra button[aria-current="page"]{color:var(--accent)}
+ body.app-tel #tel-barra .tel-globo{top:8px;left:calc(50% + 10px)}
+ body.app-tel .tel-tarjetas{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* ===== Nivel 1: proporciones de computadora y tipografía pareja ===== */
+body.app-tel .tel-pend small,body.app-tel .tel-rep-fila small{font-size:14px}
+body.app-tel .tel-contador span{font-size:13px}
+body.app-tel .tel-cuenta{font-size:14px}
+body.app-tel .tel-filtros{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+body.app-tel .tel-filtros .tf-area{grid-column:1/-1}
+@media (min-width:901px){
+ body.app-tel{--riel:88px}
+ body.app-tel #tel-barra{padding:14px 6px}
+ body.app-tel #tel-barra button{flex-basis:76px;font-size:12px}
+ body.app-tel #tel-barra button .tel-pill{width:52px;height:32px}
+ /* La tubería no compite con el contenido: tramo acotado y el resto del encabezado limpio. */
+ body.app-tel #tel-tubo{flex:0 1 560px}
+ body.app-tel header>#tema-toggle{margin-left:auto}
+ /* Pendientes: lista y detalle. */
+ body.app-tel[data-tel-seccion="pendientes"] #tel-contenido{display:grid;grid-template-columns:minmax(340px,420px) minmax(0,1fr);column-gap:32px;align-items:start;padding:24px 32px 32px!important}
+ body.app-tel[data-tel-seccion="pendientes"] .tel-panel[data-s="pendientes"]{grid-column:1;grid-row:1;position:sticky;top:0}
+ body.app-tel[data-tel-seccion="pendientes"] .tel-ficha{grid-column:2;grid-row:1;min-width:0}
+ body.app-tel[data-tel-seccion="pendientes"] .tel-ficha .tel-volver{display:none}
+ body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) .tel-detalle-vacio.tel-vacio-ilus{display:grid;grid-column:2;grid-row:1;min-height:420px;border:1px dashed var(--borde-fuerte);border-radius:16px}
+ /* Reportar y Bodega: formulario de 640 px y resumen de la bomba elegida al costado. */
+ body.app-tel:is([data-tel-seccion="mantenimiento"],[data-tel-seccion="bodega"]):not(.tel-con-ficha) #tel-contenido{display:grid;grid-template-columns:minmax(0,640px) 300px;justify-content:center;column-gap:32px;align-items:start;padding:24px 32px 32px!important}
+ body.app-tel:is([data-tel-seccion="mantenimiento"],[data-tel-seccion="bodega"]):not(.tel-con-ficha) .tel-panel:not([hidden]){grid-column:1;grid-row:1}
+ body.app-tel:is([data-tel-seccion="mantenimiento"],[data-tel-seccion="bodega"]):not(.tel-con-ficha) .tel-resumen{display:grid;grid-column:2;grid-row:1;position:sticky;top:0}
+ body.app-tel:is([data-tel-seccion="mantenimiento"],[data-tel-seccion="bodega"]) .tel-accion{margin:4px 0 -32px;padding:14px 0;bottom:-32px}
+}
+body.app-tel .tel-resumen{display:none;gap:8px;padding:18px;border-radius:16px;border:1px solid var(--borde);background:var(--superficie)}
+body.app-tel .tel-resumen p{margin:0}
+body.app-tel .tel-resumen .tr-tag{font:600 28px/1 var(--datos,monospace);color:var(--accent)}
+body.app-tel .tel-resumen .tr-nombre{font:600 18px var(--marca,Georgia,serif)}
+body.app-tel .tel-resumen .tr-linea{font-size:14px;color:var(--tinta-2)}
+body.app-tel .tel-resumen .tr-alerta{font-size:14px;font-weight:600;color:#e8755f}
+body.app-tel .tel-resumen .tt-medidor{margin-top:6px}
+body.app-tel .tr-acciones{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+body.app-tel .tr-acciones .tel-sec{min-height:42px;padding:0 8px;font-size:14px}
+
+/* ===== Nivel 2: pulido ===== */
+/* Pantallas vacías con dibujo. */
+body.app-tel .tel-vacio-ilus{display:grid;justify-items:center;align-content:center;gap:10px;padding:24px 16px;text-align:center;color:var(--tinta-2);font-size:15px}
+body.app-tel .tel-vacio-ilus p{margin:0;max-width:34ch}
+body.app-tel .ilus{width:120px;height:80px;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+body.app-tel .tt-ancho{grid-column:1/-1}
+/* Siluetas de carga. */
+body.app-tel .tel-silueta{display:block;min-height:96px;border-radius:12px;background:linear-gradient(100deg,var(--superficie) 30%,color-mix(in srgb,var(--superficie) 70%,var(--borde-fuerte)) 50%,var(--superficie) 70%) 0 0/300% 100%}
+body.app-tel .tel-silueta.fila{min-height:64px;margin-top:8px}
+body.app-tel .tel-contadores .tel-silueta{min-height:76px}
+@media (prefers-reduced-motion:no-preference){body.app-tel .tel-silueta{animation:tel-silueta 1.4s ease-in-out infinite}}
+@keyframes tel-silueta{to{background-position:-150% 0}}
+/* Transición entre secciones (View Transitions): el contenido se funde y sube un poco. */
+body.app-tel #tel-contenido{view-transition-name:tel-contenido}
+::view-transition-old(tel-contenido){animation:tel-sale .16s ease-in both}
+::view-transition-new(tel-contenido){animation:tel-entra .26s ease-out both}
+@keyframes tel-sale{to{opacity:0;transform:translateY(-6px)}}
+@keyframes tel-entra{from{opacity:0;transform:translateY(10px)}}
+body.app-tel .tel-detalle-vacio.tel-vacio-ilus{display:none}
+@media (min-width:901px){body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) .tel-detalle-vacio.tel-vacio-ilus{display:grid}}
+
+/* Pausa de la animación del encabezado (idea de Codex, aplicada al encabezado de vidrio). */
+body.app-tel #tel-pausa{order:1;flex:none;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--tinta-2);cursor:pointer;opacity:.55;transition:opacity .15s}
+body.app-tel #tel-pausa:hover,body.app-tel #tel-pausa:focus-visible,body.app-tel #tel-pausa[aria-pressed="true"]{opacity:1;border-color:var(--borde-fuerte)}
+body.app-tel.tel-cab-pausa :is(.tb-flujo,.tb-rotor,.tb-gota,.tb-onda,.glare-hover__band),body.app-tel.tel-cab-pausa header .brand-logo{animation-play-state:paused!important}
+@media (max-width:420px){body.app-tel #tel-pausa{display:none}}
