@@ -60,9 +60,15 @@ for(let i=0;i<4;i++){const a=i*Math.PI/2+.78;const nut=mesh(new T.CylinderGeomet
 mesh(new T.CylinderGeometry(.12,.12,.24,28,1,true),brushed,pump,[.82,1.39,0]);mesh(new T.RingGeometry(.095,.185,32),brushed,pump,[.82,1.515,0]).rotation.x=-Math.PI/2;
 const lampMaterial=new T.MeshStandardMaterial({color:0xb9de8a,emissive:0xa0d068,emissiveIntensity:.1});mesh(new T.SphereGeometry(.033,12,8),lampMaterial,pump,[-.72,1.26,.035]);
 pump.updateMatrixWorld(true);const discharge=pump.localToWorld(new T.Vector3(.82,1.54,0));
-const curve=new T.CatmullRomCurve3([discharge,new T.Vector3(discharge.x,3.57,discharge.z),new T.Vector3(discharge.x+.32,3.95,.24),new T.Vector3(.55,3.95,.04),new T.Vector3(1.05,3.88,0),new T.Vector3(1.1,3.74,0)]);
+const suctionPort=pump.localToWorld(new T.Vector3(1.66,.72,0));
+const suctionAxis=new T.Vector3(1,0,0).transformDirection(pump.matrixWorld);
+const curve=new T.CubicBezierCurve3(new T.Vector3(2.45,4.35,-.2),new T.Vector3(1.1,4.35,-.2),new T.Vector3(1.1,4.1,0),new T.Vector3(1.1,3.74,0));
+const suctionCurve=new T.CurvePath(),suctionBend=new T.Vector3(-.65,1.1,2.0);
+suctionCurve.add(new T.CubicBezierCurve3(new T.Vector3(1.1,1.05,0),new T.Vector3(1.1,.56,.35),new T.Vector3(-.6,.55,1.75),suctionBend));
+suctionCurve.add(new T.CubicBezierCurve3(suctionBend,new T.Vector3(-.72,1.52,2.12),suctionPort.clone().addScaledVector(suctionAxis,.42),suctionPort));
+
 for(const u of[0,1]){const cuff=mesh(new T.CylinderGeometry(.145,.145,.11,28,1,true),brushed,scene);cuff.position.copy(curve.getPointAt(u));cuff.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),curve.getTangentAt(u));}
-root.dataset.introPumpAngle='three-quarter';
+root.dataset.introPumpAngle='three-quarter';root.dataset.introFlowOrder='upper-logo-pump-plant';
 
 mesh(new T.TubeGeometry(curve,80,.12,12,false),new T.MeshPhysicalMaterial({color:0x607374,metalness:.5,roughness:.18,transparent:true,opacity:.24,depthWrite:false}),scene);
 const fluidGeo=new T.TubeGeometry(curve,100,.065,12,false),fluidMat=new T.MeshStandardMaterial({color:0xc38320,metalness:.35,roughness:.1,emissive:0xffad32,emissiveIntensity:.7});const fluid=mesh(fluidGeo,fluidMat,scene);fluid.castShadow=false;
@@ -89,12 +95,16 @@ const logoUniforms={uMap:{value:texture},uReveal:{value:1},uTime:{value:0}};
 const logo=new T.Mesh(new T.PlaneGeometry(2.45,2.45),new T.ShaderMaterial({uniforms:logoUniforms,transparent:true,depthWrite:false,vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform sampler2D uMap;uniform float uReveal,uTime;varying vec2 v;void main(){vec3 raw=texture2D(uMap,v).rgb;float ink=smoothstep(.08,.48,1.-dot(raw,vec3(.299,.587,.114)));float wave=.035*sin(v.x*17.-uTime*2.)+.018*sin(v.x*31.+uTime*3.);float reveal=smoothstep(-.12,.16,uReveal-(1.-v.y)+wave);float gleam=.9+.1*sin(v.x*8.+uTime*.8);gl_FragColor=vec4(vec3(1.,.83,.49)*gleam,ink*reveal);}'}));logo.position.z=.05;logo.renderOrder=3;emblem.add(logo);
 const spiralPoints=[];for(let i=0;i<110;i++){const a=i/109*Math.PI*3.3;const r=1.45-(i/109)*.2;spiralPoints.push(new T.Vector3(Math.cos(a)*r,Math.sin(a)*r,Math.sin(a*1.6)*.2+.08));}
 const spiralMat=new T.MeshPhysicalMaterial({color:0xd69226,metalness:.25,roughness:.12,transparent:true,opacity:.8,emissive:0xd98b22,emissiveIntensity:.35});const spiral=mesh(new T.TubeGeometry(new T.CatmullRomCurve3(spiralPoints),160,.045,8,false),spiralMat,emblem);spiral.castShadow=false;spiral.visible=false;
-// El retorno sale del punto inferior del emblema y se aleja en Z hasta la planta.
-const drainCurve=new T.CubicBezierCurve3(
- new T.Vector3(1.1,1.05,0),new T.Vector3(1.1,.4,-.1),
- new T.Vector3(1.5,-1,-6.8),new T.Vector3(1.5,-1.5,-7.2)
-);
+// La descarga nace de la salida superior de la bomba y se aleja hasta la planta.
+const drainCurve=new T.CurvePath();
+function routeDischarge(end){
+ const mid=new T.Vector3(-3.55,2.45,-2.6);drainCurve.curves=[];
+ drainCurve.add(new T.CubicBezierCurve3(discharge,discharge.clone().add(new T.Vector3(0,.7,0)),new T.Vector3(-3.55,3.6,-.8),mid));
+ drainCurve.add(new T.CubicBezierCurve3(mid,new T.Vector3(-3.55,1.3,-4.3),end.clone().add(new T.Vector3(-.6,.6,.35)),end));drainCurve.updateArcLengths();
+}
+routeDischarge(new T.Vector3(-2,-1.5,-7.2));
 const pipeShell=new T.MeshPhysicalMaterial({color:0xc2c8b2,metalness:.35,roughness:.2,transparent:true,opacity:.25,depthWrite:false});
+mesh(new T.TubeGeometry(suctionCurve,90,.12,12,false),pipeShell,scene);
 const drainShell=mesh(new T.TubeGeometry(drainCurve,96,.125,12,false),pipeShell,scene);
 const nozzle=mesh(new T.CylinderGeometry(.19,.13,.2,24),gold,scene,[1.1,1.02,0]);
 const flowUniforms={uTime:{value:0},uEther:{value:etherTexture}};
@@ -107,6 +117,10 @@ void main(){vec2 p=vec2(v.x*16.-uTime*1.7,v.y*5.);float n=noise(p)+.4*noise(p*2.
 fluid.material.dispose();fluid.material=flowingLiquid();
 let drainGeo=new T.TubeGeometry(drainCurve,110,.075,12,false);
 const drainMesh=mesh(drainGeo,flowingLiquid(),scene);
+const suctionGeo=new T.TubeGeometry(suctionCurve,96,.07,12,false);mesh(suctionGeo,flowingLiquid(),scene);
+const suctionCuff=mesh(new T.CylinderGeometry(.18,.18,.10,28,1,true),brushed,scene);suctionCuff.position.copy(suctionPort);suctionCuff.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),suctionAxis);
+const dischargeCuff=mesh(new T.CylinderGeometry(.145,.145,.12,28,1,true),brushed,scene);dischargeCuff.position.copy(discharge);
+
 // Miniatura del modelo Blender completo; geometría reducida solo para esta vista local.
 const plantUniforms={uTime:{value:0},uLevel:{value:-10},uHeight:{value:1}};
 const plantVertex=`varying vec3 worldP;varying vec3 worldN;void main(){vec4 p=modelMatrix*vec4(position,1.);worldP=p.xyz;worldN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*p;}`;
@@ -123,13 +137,9 @@ try{
  plant.updateMatrixWorld(true);const worldBox=new T.Box3().setFromObject(plant);plantBottom=worldBox.min.y;plantHeight=worldBox.max.y-worldBox.min.y;plantUniforms.uHeight.value=plantHeight;
  root.dataset.introPlant='ready';root.dataset.introPlantStyle='glass';root.dataset.introPlantDepth=String(plant.position.z);root.dataset.introWetStyle='amber-only';const sectors=gltf.parser.json.extras?.sectors||[];root.dataset.introHasTankSector=String(sectors.includes('Sector de tanques'));root.dataset.introSectors=String(sectors.length);
  const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);let contact;
- for(const [x,z] of [[1.5,-7.2],[1,-7.2],[.5,-7.2],[0,-7.2],[1,-7.9],[0,-7.9]]){ray.set(new T.Vector3(x,5,z),down);contact=ray.intersectObject(model,true)[0]?.point;if(contact)break;}
+ for(const [x,z] of [[-2,-7.2],[-1.5,-7.2],[-1,-7.2],[-2,-7.9],[-1.5,-7.9],[0,-7.2]]){ray.set(new T.Vector3(x,5,z),down);contact=ray.intersectObject(model,true)[0]?.point;if(contact)break;}
  if(contact){
-  const end=contact.clone().add(new T.Vector3(0,.015,0)),fall=1.05-end.y;
-  drainCurve.v0.set(1.1,1.05,0);
-  drainCurve.v1.set(1.1,1.05-fall*.32,end.z*.12);
-  drainCurve.v2.set(end.x,end.y+fall*.22,end.z*.82);
-  drainCurve.v3.copy(end);drainCurve.updateArcLengths();
+  routeDischarge(contact.clone().add(new T.Vector3(0,.015,0)));
   drainGeo.dispose();drainGeo=new T.TubeGeometry(drainCurve,110,.075,12,false);drainMesh.geometry=drainGeo;drainShell.geometry.dispose();drainShell.geometry=new T.TubeGeometry(drainCurve,110,.125,12,false);root.dataset.introConnection='surface';
  }
 }catch(error){root.dataset.introPlant='unavailable';dispose();throw error;}
@@ -139,10 +149,10 @@ const jetGeo=new T.TubeGeometry(jetCurve,52,.045,10,false),jet=new T.Mesh(jetGeo
 mesh(new T.CylinderGeometry(.115,.09,.12,24),gold,scene,[1.1,3.78,0]);
 const splash=new T.Mesh(new T.TorusGeometry(.12,.009,8,40),new T.MeshBasicMaterial({color:0xf1bf69,transparent:true,opacity:.65}));scene.add(splash);splash.rotation.x=Math.PI/2;
 if(signal?.aborted){dispose();return null;}
-const beadCount=world.clientWidth<560?32:56;
+const beadCount=world.clientWidth<560?36:60;
 const beads=new T.InstancedMesh(new T.SphereGeometry(1,8,6),new T.MeshBasicMaterial({color:0xffdc9a}),beadCount);
 beads.frustumCulled=false;scene.add(beads);const dummy=new T.Object3D(),up=new T.Vector3(0,1,0);
-let elapsed=reduced?25:0,playing=false,lastTick=0,frameCount=0,maxGap=0,lastPresented=0;let viewWidth=world.clientWidth,viewHeight=world.clientHeight;
+let elapsed=reduced?28:0,playing=false,lastTick=0,frameCount=0,maxGap=0,lastPresented=0;let viewWidth=world.clientWidth,viewHeight=world.clientHeight;
 const clamp=v=>Math.max(0,Math.min(1,v)),ease=v=>{const q=clamp(v);return q*q*(3-2*q);};
 function positionCamera(){
  const aspect=viewWidth/viewHeight;camera.aspect=aspect;
@@ -154,11 +164,11 @@ function positionCamera(){
  camera.updateMatrixWorld();const pb=projectBox(pump),plantB=projectBox(plant);root.dataset.introPlantClear=String(plantB.max<pb.min);
 }
 function render(t){
- const ready=clamp((t-.4)/1.7),pour=clamp((t-2.1)/.9),flood=clamp((t-3.)/4.),drain=clamp((t-6.5)/2.2),plantFill=clamp((t-8.7)/12.);
- const rotation=t<1?t*t*5:5+(t-1)*10;impeller.rotation.z=rotation;coupling.rotation.x=rotation;
+ const ready=clamp((t-.4)/1.7),pour=clamp((t-2.1)/.9),flood=clamp((t-3.)/4.),suction=clamp((t-6.)/1.9),drain=clamp((t-8.1)/3.),plantFill=clamp((t-11.1)/12.);
+ const run=Math.max(0,t-7.2),rotation=run<1?run*run*5:5+(run-1)*10;impeller.rotation.z=rotation;coupling.rotation.x=rotation;
  lampMaterial.emissiveIntensity=.1+ease(t/.7)*1.6;amberLight.intensity=10+Math.sin(t*.7)*1.2;ringMat.emissiveIntensity=.3+flood*.6;
  fluidGeo.setDrawRange(0,Math.floor(ready*fluidGeo.index.count/6)*6);glow.material.opacity=ready*.1;
- drainGeo.setDrawRange(0,Math.floor(drain*drainGeo.index.count/6)*6);flowUniforms.uTime.value=t;
+ suctionGeo.setDrawRange(0,Math.floor(suction*suctionGeo.index.count/6)*6);root.dataset.introSuction=suction.toFixed(3);drainGeo.setDrawRange(0,Math.floor(drain*drainGeo.index.count/6)*6);flowUniforms.uTime.value=t;
  liquidUniforms.uTime.value=t;liquidUniforms.uFill.value=-.03+flood*.65;liquidUniforms.uOpacity.value=t>3?.86:0;
  const surfaceY=1.075+2.65*liquidUniforms.uFill.value;jet.visible=t>2.1;jet.scale.y=(3.74-Math.max(1.075,surfaceY))/2.665;jetGeo.setDrawRange(0,Math.floor(pour*jetGeo.index.count/6)*6);
  splash.visible=t>3;splash.position.set(1.1,Math.max(1.075,surfaceY)+.015,.03);splash.scale.setScalar(.8+.2*Math.sin(t*5.));
@@ -166,8 +176,8 @@ function render(t){
  logoUniforms.uReveal.value=-.2+1.4*ease((t-2.1)/3.5);logoUniforms.uTime.value=t;
  spiral.rotation.z=-t*.35;spiral.scale.setScalar(1);spiralMat.opacity=0;
  for(let i=0;i<beadCount;i++){
-  const returning=i>=beadCount/2,path=returning?drainCurve:curve,phase=((t*(returning?.17:.24))+i/(beadCount/2))%1;
-  const active=phase<=(returning?drain:ready);dummy.position.copy(path.getPointAt(phase));dummy.quaternion.setFromUnitVectors(up,path.getTangentAt(phase));
+  const leg=Math.min(2,Math.floor(i/(beadCount/3))),path=[curve,suctionCurve,drainCurve][leg],phase=(t*[.24,.18,.14][leg]+(i%(beadCount/3))/(beadCount/3))%1;
+  const active=phase<=[ready,suction,drain][leg];dummy.position.copy(path.getPointAt(phase));dummy.quaternion.setFromUnitVectors(up,path.getTangentAt(phase));
   dummy.scale.set(active?.011:0,active?.032:0,active?.011:0);dummy.updateMatrix();beads.setMatrixAt(i,dummy.matrix);
  }beads.instanceMatrix.needsUpdate=true;
  renderer.render(scene,camera);
@@ -195,7 +205,7 @@ if(signal?.aborted){dispose();return null;}
 observer=new ResizeObserver(resize);observer.observe(world);resize();
 root.classList.remove('intro-loading');root.classList.add('scene-ready');
 signal?.addEventListener('abort',dispose,{once:true});document.addEventListener('visibilitychange',onVisibility);
-if(reduced){render(25);root.dataset.introState='finished';}
+if(reduced){render(28);root.dataset.introState='finished';}
 else{root.dataset.introState='playing';playing=true;frameId=requestAnimationFrame(tick);}
 return {dispose};
 }

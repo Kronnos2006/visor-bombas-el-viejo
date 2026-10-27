@@ -35,7 +35,7 @@
   // 45 · Portada (una vez por sesión). Si existe /portada.mp4 se usa de fondo.
   const portada = document.getElementById('portada');
   if (portada) {
-  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-3d-4'); } catch {}
+  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-3d-5'); } catch {}
   if (!vista && body.classList.contains('facil')) {
     portada.hidden = false;
     portada.classList.add('intro-loading');
@@ -53,7 +53,7 @@
     const introController=new AbortController();
     const entrar = () => {
       if(entrando)return;entrando=true;
-      try { sessionStorage.setItem('vocatus-portada-3d-4', '1'); } catch {}
+      try { sessionStorage.setItem('vocatus-portada-3d-5', '1'); } catch {}
 
       const finish=()=>{introController.abort();portada.hidden=true;window.dispatchEvent(new Event('vocatus:entered'));video.pause();body.classList.remove('brand-arriving');body.classList.add('brand-landed');document.querySelector('.logo-transfer')?.remove();document.querySelector('header .brand')?.focus({preventScroll:true});};
       if(sinMovimiento){finish();return;}
