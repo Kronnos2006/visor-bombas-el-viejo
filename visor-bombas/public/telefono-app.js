@@ -53,7 +53,7 @@ function iniciar() {
  const inspector = $('.inspector'); if (inspector) ficha.append(inspector);
  const fab = document.createElement('button'); fab.type = 'button'; fab.className = 'tel-fab';
  fab.innerHTML = icono('<path d="M12 5v14M5 12h14"/>', 22) + '<span>Reportar</span>'; fab.setAttribute('aria-label', 'Reportar un mantenimiento de esta bomba');
- ficha.append(fab);
+ fab.hidden = true; document.body.append(fab);
  fab.onclick = () => { const tag = V()?.pump?.tag; V()?.explode(0); V()?.back(); mostrar('mantenimiento'); if (tag) { $('#mant-bomba').value = tag; pintarElegida('mant-bomba'); } };
 
  // ---------- Áreas ----------
@@ -266,7 +266,7 @@ function iniciar() {
 
  // ---------- Ficha dentro de la app ----------
  function abrirFicha(tag, pestana = 'ficha') {
-  viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha');
+  viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha'); fab.hidden = false;
   Object.values(paneles).forEach(p => p.hidden = true);
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
   if (V()?.pump?.tag !== tag) V()?.select(tag);
@@ -275,7 +275,7 @@ function iniciar() {
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
  ficha.querySelector('.tel-volver').onclick = () => { V()?.explode(0); V()?.back(); cerrarFicha(); };
- function cerrarFicha() { viendoFicha = false; ficha.hidden = true; document.body.classList.remove('tel-con-ficha'); mostrar(seccion); }
+ function cerrarFicha() { viendoFicha = false; ficha.hidden = true; fab.hidden = true; document.body.classList.remove('tel-con-ficha'); mostrar(seccion); }
 
  function elegirBomba(tag) {
   if (eligiendo) {
@@ -296,7 +296,7 @@ function iniciar() {
 
  // ---------- Navegación ----------
  function mostrar(id) {
-  seccion = id; viendoFicha = false; ficha.hidden = true;
+  seccion = id; viendoFicha = false; ficha.hidden = true; fab.hidden = true;
   eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d');
   for (const [k, p] of Object.entries(paneles)) p.hidden = k !== id;
   barra.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.s === id ? 'page' : 'false'));

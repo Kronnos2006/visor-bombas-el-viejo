@@ -148,7 +148,8 @@
  body.app-tel .tel-atajos a{display:flex;align-items:center;justify-content:center;min-height:60px;padding:6px;text-align:center;font-size:13px;font-weight:600;line-height:1.2;color:var(--tinta);text-decoration:none;border:1px solid var(--borde);border-radius:12px;background:var(--superficie)}
 
  /* Botón flotante «Reportar» en la ficha. */
- body.app-tel .tel-fab{position:sticky;bottom:12px;justify-self:end;z-index:40;isolation:isolate;display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 20px 0 16px;border:0;border-radius:16px;background:var(--accent);color:var(--fondo);font:700 15px var(--texto,system-ui);box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
+ body.app-tel .tel-fab[hidden]{display:none}
+ body.app-tel .tel-fab{position:fixed;right:16px;bottom:calc(var(--barra) + 14px);z-index:70;backdrop-filter:none;display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 20px 0 16px;border:0;border-radius:16px;background:var(--accent);color:var(--fondo);font:700 15px var(--texto,system-ui);box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
 
  /* Barra inferior: pastilla detrás del ícono activo y globo con el número de pendientes. */
  body.app-tel .tel-pill{display:flex;align-items:center;justify-content:center;width:52px;height:30px;border-radius:15px}
@@ -260,6 +261,7 @@
  body.app-tel .tel-tarjeta,body.app-tel .tel-chips button,body.app-tel .tel-sec,body.app-tel .tel-primario,body.app-tel .tel-enlaces a{cursor:pointer}
  body.app-tel .tel-tarjeta:hover,body.app-tel .tel-enlaces a:hover{border-color:var(--borde-fuerte)}
  body.app-tel #toast{bottom:20px!important}
+ body.app-tel .tel-fab{right:28px;bottom:24px}
  body.app-tel .tel-accion{bottom:-36px;margin:4px -24px -36px;padding:14px 24px}
 }
 @supports not selector(::-webkit-scrollbar){
