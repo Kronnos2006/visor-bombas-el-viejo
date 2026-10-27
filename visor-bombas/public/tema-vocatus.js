@@ -35,7 +35,7 @@
   // 45 · Portada (una vez por sesión). Si existe /portada.mp4 se usa de fondo.
   const portada = document.getElementById('portada');
   if (portada) {
-  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-identidad-1'); } catch {}
+  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-identidad-2'); } catch {}
   if (!vista && body.classList.contains('facil')) {
     portada.hidden = false;
     const canas = portada.querySelector('.canas');
@@ -51,7 +51,7 @@
     let entrando=false;
     const entrar = () => {
       if(entrando)return;entrando=true;
-      try { sessionStorage.setItem('vocatus-portada-identidad-1', '1'); } catch {}
+      try { sessionStorage.setItem('vocatus-portada-identidad-2', '1'); } catch {}
       const original=portada.querySelector('.portada-logo'),destino=document.querySelector('header .brand-logo');
       const finish=()=>{portada.hidden=true;video.pause();body.classList.remove('brand-arriving');body.classList.add('brand-landed');document.querySelector('.logo-transfer')?.remove();document.querySelector('header .brand')?.focus({preventScroll:true});};
       if(sinMovimiento||!original||!destino||!original.animate){finish();return;}
@@ -63,6 +63,12 @@
       animation.finished.then(finish,finish);
     };
     portada.querySelector('button').onclick = entrar;
+    const replay=portada.querySelector('.intro-replay');
+    if(replay){
+      replay.disabled=sinMovimiento;
+      if(sinMovimiento){replay.textContent='Sin animación: preferencia del dispositivo';}
+      replay.onclick=()=>{portada.querySelector('.brand-stage').getAnimations({subtree:true}).forEach(animation=>{animation.currentTime=0;animation.play();});};
+    }
     addEventListener('keydown', e => { if (!portada.hidden && (e.key === 'Enter' || e.key === 'Escape')) entrar(); });
   }
   }

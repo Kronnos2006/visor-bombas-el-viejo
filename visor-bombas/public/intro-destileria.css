@@ -1,0 +1,43 @@
+/* Secuencia de identidad: bomba, conducción ámbar y aparición del logo. */
+#portada .brand-stage{width:480px;height:390px;max-width:100%}
+#portada .brand-stage::before,#portada .brand-stage::after{display:none}
+#portada .pump-scene{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#portada .portada-logo{position:absolute;left:46%;top:9%;width:48%;height:auto;aspect-ratio:1;animation:rum-logo-reveal 3.2s .4s cubic-bezier(.2,.65,.3,1) both}
+.pump-rotor{transform-box:fill-box;transform-origin:center;animation:pump-start .55s .2s linear 7}
+.pump-led{animation:pump-on .4s .15s both}
+.rum-prime{stroke-dasharray:1;stroke-dashoffset:1;animation:rum-prime 1.1s .45s ease forwards}
+.rum-flow{stroke-dasharray:.025 .065;stroke-dashoffset:1;opacity:0;animation:rum-travel .8s .7s linear 4}
+.rum-pour{opacity:0;animation:rum-pour 2.5s 1.1s both}
+.rum-fill{transform:translateY(250px);opacity:0;animation:rum-rise 2.8s .9s cubic-bezier(.25,.55,.2,1) both}
+.rum-surface{animation:rum-wave .8s .9s ease-in-out 4 alternate}
+.rum-splash{opacity:0;animation:rum-splash .7s var(--delay) ease-out 2}
+#portada .intro-replay{display:block;width:auto;min-height:44px;margin:12px 0 0;padding:8px 0;background:none;border:0;box-shadow:none;color:#c9b687;font-size:14px;text-decoration:underline;text-underline-offset:4px}
+#portada .intro-replay:disabled{opacity:.55;cursor:default}
+@keyframes pump-start{to{transform:rotate(360deg)}}
+@keyframes pump-on{to{fill:#c2db88;filter:drop-shadow(0 0 4px #c2db88)}}
+@keyframes rum-prime{to{stroke-dashoffset:0}}
+@keyframes rum-travel{0%{opacity:0;stroke-dashoffset:1}10%,90%{opacity:.85}100%{opacity:0;stroke-dashoffset:0}}
+@keyframes rum-pour{0%{opacity:0;transform:scaleX(.5);transform-origin:248px 86px}12%,75%{opacity:1;transform:scaleX(1)}100%{opacity:0}}
+@keyframes rum-rise{0%{opacity:0;transform:translateY(250px)}12%{opacity:.8}80%{opacity:.6;transform:translateY(0)}100%{opacity:.1;transform:translateY(0)}}
+@keyframes rum-wave{to{transform:translateX(-14px)}}
+@keyframes rum-splash{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx),-35px)}}
+@keyframes rum-logo-reveal{
+ 0%,25%{opacity:0;clip-path:polygon(0 100%,25% 100%,50% 100%,75% 100%,100% 100%,100% 100%,0 100%);transform:translateY(12px)}
+ 35%{opacity:1;clip-path:polygon(0 90%,25% 94%,50% 89%,75% 94%,100% 90%,100% 100%,0 100%)}
+ 60%{opacity:1;clip-path:polygon(0 49%,25% 54%,50% 49%,75% 54%,100% 49%,100% 100%,0 100%)}
+ 82%,100%{opacity:1;clip-path:polygon(0 0,25% 0,50% 0,75% 0,100% 0,100% 100%,0 100%);transform:translateY(0)}
+}
+@media(max-width:700px){
+ #portada .brand-stage{width:340px;height:275px}
+ #portada .portada-logo{width:48%;height:auto}
+ #portada .intro-replay{margin:8px auto 0;font-size:14px;min-height:44px}
+}
+@media(max-height:650px) and (max-width:700px){#portada .brand-stage{width:260px;height:210px}#portada .portada-logo{width:48%;height:auto}#portada .intro-description{font-size:15px}#portada .intro-replay{margin-top:4px}}
+@media(prefers-reduced-motion:reduce){
+ #portada .pump-scene *,#portada .portada-logo{animation:none!important;transform:none!important}
+ #portada .portada-logo{clip-path:none;opacity:1}
+ .pump-led{fill:#c2db88}
+ .rum-prime{stroke-dashoffset:0}
+ .rum-flow,.rum-pour,.rum-splash{opacity:0}
+ .rum-fill{opacity:.08;transform:none}
+}
