@@ -2,17 +2,17 @@ import * as T from './vendor/three.module.js';
 // Escena de identidad visual: no representa mediciones ni simulación del proceso.
 export async function mountIntro3D(root,{signal,reducedMotion=false}={}){
  if(signal?.aborted||root.hidden)return null;
- const canvas=root.querySelector('.intro-3d-canvas'),world=root.querySelector('.brand-stage'),status=root.querySelector('.intro-3d-status'),startButton=root.querySelector('.intro-replay'),pauseButton=root.querySelector('.intro-pause');
- const reduced=reducedMotion;
+ const canvas=root.querySelector('.intro-3d-canvas'),world=root.querySelector('.brand-stage');
+ const reduced=reducedMotion;root.classList.add('intro-loading');
 
-const renderer=new T.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setClearColor(0x020303,0);renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+const renderer=new T.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,world.clientWidth<560?1.25:1.5));renderer.setClearColor(0x020303,0);renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;renderer.shadowMap.enabled=false;renderer.shadowMap.type=T.PCFSoftShadowMap;
 let disposed=false,observer,frameId=0;
 function dispose(){
  if(disposed)return;disposed=true;if(typeof frameId!=='undefined')cancelAnimationFrame(frameId);observer?.disconnect();
  const geometries=new Set(),materials=new Set();scene.traverse(object=>{if(object.geometry)geometries.add(object.geometry);for(const material of (Array.isArray(object.material)?object.material:[object.material]))if(material)materials.add(material);});
- geometries.forEach(value=>value.dispose());materials.forEach(value=>value.dispose());texture?.dispose();environment.dispose();envScene.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});renderer.dispose();renderer.forceContextLoss();root.classList.remove('scene-ready');
+ geometries.forEach(value=>value.dispose());materials.forEach(value=>value.dispose());texture?.dispose();environment.dispose();envScene.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});renderer.dispose();renderer.forceContextLoss();root.classList.remove('scene-ready','intro-loading');root.dataset.introState='closed';document.removeEventListener('visibilitychange',onVisibility);
 }
-const scene=new T.Scene();scene.fog=new T.FogExp2(0x020303,.035);
+const scene=new T.Scene();scene.fog=new T.FogExp2(0x100d08,.025);
 const camera=new T.PerspectiveCamera(36,1,.1,100);
 scene.add(new T.HemisphereLight(0xbacbcb,0x18140a,1.4));
 const key=new T.DirectionalLight(0xffe6bd,4);key.position.set(0,6,4);key.castShadow=true;key.shadow.mapSize.set(world.clientWidth<560?512:1024,world.clientWidth<560?512:1024);key.shadow.camera.left=-7;key.shadow.camera.right=7;key.shadow.camera.top=6;key.shadow.camera.bottom=-6;scene.add(key);
@@ -26,7 +26,7 @@ const darkMetal=new T.MeshStandardMaterial({color:0x243b3c,metalness:.85,roughne
 const gold=new T.MeshStandardMaterial({color:0xdba848,metalness:.8,roughness:.19});
 const dark=new T.MeshStandardMaterial({color:0x101a18,metalness:.6,roughness:.55});
 function mesh(geo,mat,parent,pos){const m=new T.Mesh(geo,mat);if(pos)m.position.set(...pos);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
-const floor=mesh(new T.PlaneGeometry(50,50),new T.MeshStandardMaterial({color:0x030706,metalness:.5,roughness:.42}),scene,[0,-.02,0]);floor.rotation.x=-Math.PI/2;floor.castShadow=false;
+const floor=mesh(new T.PlaneGeometry(50,50),new T.MeshStandardMaterial({color:0x030706,metalness:.5,roughness:.42}),scene,[0,-.02,0]);floor.rotation.x=-Math.PI/2;floor.castShadow=false;floor.visible=false;
 const pump=new T.Group();pump.position.set(-2,.12,0);scene.add(pump);
 mesh(new T.BoxGeometry(3.05,.16,1.3),darkMetal,pump,[0,.08,0]);
 for(const x of [-1,-.4,.5,1.1])mesh(new T.BoxGeometry(.13,.2,1.02),metal,pump,[x,.2,0]);
@@ -54,44 +54,52 @@ const liquidUniforms={uTime:{value:0},uFill:{value:1},uOpacity:{value:.05}};
 const liquid=new T.Mesh(new T.PlaneGeometry(2.65,2.65),new T.ShaderMaterial({uniforms:liquidUniforms,transparent:true,depthWrite:false,side:T.DoubleSide,vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 v;uniform float uTime,uFill,uOpacity;void main(){vec2 p=v-.5;float r=length(p);if(r>.5)discard;float h=uFill+.026*sin(v.x*24.+uTime*7.)+.013*sin(v.x*41.-uTime*4.);if(v.y>h)discard;float edge=smoothstep(.07,0.,abs(v.y-h));vec3 c=mix(vec3(.31,.09,.006),vec3(1.,.64,.19),v.y*.7+edge*.8);gl_FragColor=vec4(c,uOpacity*(.55+edge*.4));}'}));emblem.add(liquid);
 let texture;try{texture=await new T.TextureLoader().loadAsync(root.querySelector('.portada-logo').src);}catch(error){dispose();throw error;}if(signal?.aborted){dispose();return null;}
 const logoUniforms={uMap:{value:texture},uReveal:{value:1},uTime:{value:0}};
-const logo=new T.Mesh(new T.PlaneGeometry(2.45,2.45),new T.ShaderMaterial({uniforms:logoUniforms,transparent:true,depthWrite:false,vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform sampler2D uMap;uniform float uReveal,uTime;varying vec2 v;void main(){vec3 raw=texture2D(uMap,v).rgb;float ink=smoothstep(.08,.48,1.-dot(raw,vec3(.299,.587,.114)));float reveal=smoothstep(-.01,.055,uReveal-v.y);float gleam=.9+.1*sin(v.x*8.+uTime*.8);gl_FragColor=vec4(vec3(1.,.83,.49)*gleam,ink*reveal);}'}));logo.position.z=.05;emblem.add(logo);
+const logo=new T.Mesh(new T.PlaneGeometry(2.45,2.45),new T.ShaderMaterial({uniforms:logoUniforms,transparent:true,depthWrite:false,vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform sampler2D uMap;uniform float uReveal,uTime;varying vec2 v;void main(){vec3 raw=texture2D(uMap,v).rgb;float ink=smoothstep(.08,.48,1.-dot(raw,vec3(.299,.587,.114)));float wave=.035*sin(v.x*17.-uTime*2.)+.018*sin(v.x*31.+uTime*3.);float reveal=smoothstep(-.12,.16,uReveal-v.y+wave);float gleam=.9+.1*sin(v.x*8.+uTime*.8);gl_FragColor=vec4(vec3(1.,.83,.49)*gleam,ink*reveal);}'}));logo.position.z=.05;emblem.add(logo);
 const spiralPoints=[];for(let i=0;i<110;i++){const a=i/109*Math.PI*3.3;const r=1.45-(i/109)*.2;spiralPoints.push(new T.Vector3(Math.cos(a)*r,Math.sin(a)*r,Math.sin(a*1.6)*.2+.08));}
 const spiralMat=new T.MeshPhysicalMaterial({color:0xd69226,metalness:.25,roughness:.12,transparent:true,opacity:.8,emissive:0xd98b22,emissiveIntensity:.35});const spiral=mesh(new T.TubeGeometry(new T.CatmullRomCurve3(spiralPoints),160,.045,8,false),spiralMat,emblem);spiral.castShadow=false;
-const count=world.clientWidth<560?130:280;const drops=new T.InstancedMesh(new T.SphereGeometry(1,7,5),new T.MeshStandardMaterial({color:0xe8af49,metalness:.45,roughness:.13,emissive:0xc6831b,emissiveIntensity:.35}),count);drops.frustumCulled=false;scene.add(drops);const dummy=new T.Object3D();
+const count=world.clientWidth<560?72:150;const drops=new T.InstancedMesh(new T.SphereGeometry(1,7,5),new T.MeshStandardMaterial({color:0xe8af49,metalness:.45,roughness:.13,emissive:0xc6831b,emissiveIntensity:.35}),count);drops.frustumCulled=false;scene.add(drops);const dummy=new T.Object3D();
 const random=i=>{const v=Math.sin(i*127.1+11.8)*43758.5453;return v-Math.floor(v);};
-let elapsed=reduced?7.5:0,playing=false,startTime=0,lastPhase=-1;
-const clamp=(v)=>Math.max(0,Math.min(1,v));
+let elapsed=reduced?7.5:0,playing=false,lastTick=0,frameCount=0,maxGap=0;let viewWidth=world.clientWidth,viewHeight=world.clientHeight;
+const clamp=(v)=>Math.max(0,Math.min(1,v));const ease=v=>{const q=clamp(v);return q*q*(3-2*q);};
 function render(t){
  const ready=clamp((t-.7)/1.4),flood=clamp((t-2.1)/2.4),final=clamp((t-5.5)/1.7),running=t>0&&t<6.4;
- impeller.rotation.z=running?t*t*4:0;coupling.rotation.x=running?t*17:0;pump.rotation.z=running?Math.sin(t*54)*.002:0;
+ const d=Math.max(0,Math.min(2,t-5.5));const rotation=t<1?t*t*7:t<5.5?7+(t-1)*14:70+14*(d-d*d/4);impeller.rotation.z=rotation;coupling.rotation.x=rotation;pump.rotation.z=0;
  lampMaterial.emissiveIntensity=t>.2?1.7:.08;amberLight.intensity=3+Math.sin(clamp(t/7.5)*Math.PI)*16;ringMat.emissiveIntensity=.3+flood*.7;
  fluidGeo.setDrawRange(0,Math.floor(ready*fluidGeo.index.count/6)*6);glow.material.opacity=ready*.12;
  liquidUniforms.uTime.value=t;liquidUniforms.uFill.value=flood;liquidUniforms.uOpacity.value=(1-final)*.7+.05;
- logoUniforms.uReveal.value=clamp((t-3.05)/2.5);logoUniforms.uTime.value=t;
+ logoUniforms.uReveal.value=-.2+1.4*ease((t-1.8)/3.6);logoUniforms.uTime.value=t;
  spiral.rotation.z=-t*1.2;spiral.scale.setScalar(.8+clamp((t-1.8)/2)*.25);spiralMat.opacity=clamp((t-1.3)/1.8)*(1-final)*.75;
  drops.visible=t>1.25&&t<6.8;
  if(drops.visible)for(let i=0;i<count;i++){
   const seed=random(i),p=(t*.7+seed)%1;
-  if(t<3.1){dummy.position.set(.65+p*1.25,2.8+Math.sin(p*Math.PI)*.5-p*p*1.3,(random(i+400)-.5)*.32);}
-  else{const a=seed*Math.PI*2+t*.65,r=1.2+p*1.8*clamp((t-3)/2);dummy.position.set(1.65+Math.cos(a)*r,1.9+Math.sin(a)*r-p*p*.9,Math.sin(a*2+t)*.45+(random(i+400)-.5)*p);}
+  const blend=ease((t-2.8)/1.2),a=seed*Math.PI*2+t*.65,r=1.2+p*1.8*clamp((t-3)/2);
+  const jetX=.65+p*1.25,jetY=2.8+Math.sin(p*Math.PI)*.5-p*p*1.3,jetZ=(random(i+400)-.5)*.32;
+  dummy.position.set(T.MathUtils.lerp(jetX,1.65+Math.cos(a)*r,blend),T.MathUtils.lerp(jetY,1.9+Math.sin(a)*r-p*p*.9,blend),T.MathUtils.lerp(jetZ,Math.sin(a*2+t)*.45+(random(i+400)-.5)*p,blend));
   const size=(.012+random(i+800)*.033)*(1-p*.55);dummy.scale.setScalar(size);dummy.updateMatrix();drops.setMatrixAt(i,dummy.matrix);
  }drops.instanceMatrix.needsUpdate=true;
- const width=world.clientWidth,aspect=width/world.clientHeight;camera.aspect=aspect;const distance=aspect<1.15?13.8:8.3;const q=clamp(t/3.2),sweep=q*q*(3-2*q),near=aspect<1.15?9.8:4.7;camera.position.set(-2.8+sweep*6.1,1.8+sweep*1.3,near+(distance-near)*sweep);camera.lookAt(-1.4+sweep*1.55,.8+sweep*.85,0);camera.updateProjectionMatrix();
- const phase=t<1.5?0:t<4?1:2;if(phase!==lastPhase){lastPhase=phase;root.querySelectorAll('.intro-phases span').forEach((el,i)=>el.classList.toggle('active',i===phase));if(playing)status.textContent=['El motor arranca…','La corriente se transforma en una ola…','El líquido revela el logo de Vocatus.'][phase];}
+ const width=viewWidth,aspect=width/viewHeight;camera.aspect=aspect;const distance=aspect<1.15?13.8:8.3;const sweep=ease(t/5.2),near=aspect<1.15?12:6.8;camera.position.set(.7+sweep*2.6,2.6+sweep*.5,near+(distance-near)*sweep);camera.lookAt(-.3+sweep*.45,1.3+sweep*.35,0);camera.updateProjectionMatrix();
  renderer.render(scene,camera);
 }
-function resize(){const w=world.clientWidth,h=world.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);render(elapsed);}
-observer=new ResizeObserver(resize);observer.observe(world);resize();
-function tick(now){if(disposed||root.hidden||!playing)return;elapsed=Math.min((now-startTime)/1000,7.5);render(elapsed);if(elapsed<7.5)frameId=requestAnimationFrame(tick);else{playing=false;pauseButton.disabled=true;status.textContent='Logo de Vocatus · presentación finalizada';}}
-startButton.onclick=()=>{cancelAnimationFrame(frameId);elapsed=reduced?7.5:0;lastPhase=-1;startButton.textContent='Repetir presentación';if(reduced){render(elapsed);status.textContent='Escena final · movimiento reducido';return;}playing=true;pauseButton.disabled=false;pauseButton.textContent='Pausar';startTime=performance.now();frameId=requestAnimationFrame(tick);};
-pauseButton.onclick=()=>{if(playing){playing=false;cancelAnimationFrame(frameId);pauseButton.textContent='Continuar';status.textContent='Animación en pausa';}else{playing=true;pauseButton.textContent='Pausar';startTime=performance.now()-elapsed*1000;frameId=requestAnimationFrame(tick);}};
-status.textContent=reduced?'Presentación sin movimiento':'Presentación de Vocatus';
 
- if(signal?.aborted){dispose();return null;}
- root.classList.add('scene-ready');
- pauseButton.hidden=false;
- if(reduced){startButton.disabled=true;pauseButton.disabled=true;startButton.textContent='Movimiento reducido';render(7.5);}
- else{startButton.disabled=false;startButton.onclick();}
- signal?.addEventListener('abort',dispose,{once:true});
- return {dispose,replay:()=>startButton.onclick()};
+function resize(){viewWidth=world.clientWidth;viewHeight=world.clientHeight;if(!viewWidth||!viewHeight)return;renderer.setSize(viewWidth,viewHeight,false);render(elapsed);}
+function tick(now){
+ if(disposed||root.hidden||!playing)return;
+ const gap=lastTick?(now-lastTick)/1000:0;lastTick=now;maxGap=Math.max(maxGap,gap);elapsed=Math.min(elapsed+Math.min(gap,.05),7.5);frameCount++;render(elapsed);
+ if(elapsed<7.5)frameId=requestAnimationFrame(tick);
+ else{playing=false;root.dataset.introState='finished';root.dataset.introFrames=String(frameCount);root.dataset.introMaxGap=String(Math.round(maxGap*1000));}
+}
+function onVisibility(){cancelAnimationFrame(frameId);lastTick=0;if(!document.hidden&&playing&&!disposed)frameId=requestAnimationFrame(tick);}
+// Warm the actual materials before revealing the canvas: no first-use shader stalls.
+renderer.setSize(viewWidth,viewHeight,false);camera.aspect=viewWidth/viewHeight;camera.position.set(3.3,3.1,viewWidth/viewHeight<1.15?13.8:8.3);camera.lookAt(.15,1.65,0);camera.updateProjectionMatrix();
+try{
+ if(renderer.compileAsync)await renderer.compileAsync(scene,camera);else renderer.compile(scene,camera);
+ renderer.render(scene,camera);
+}catch(error){dispose();throw error;}
+if(signal?.aborted){dispose();return null;}
+observer=new ResizeObserver(resize);observer.observe(world);resize();
+root.classList.remove('intro-loading');root.classList.add('scene-ready');
+signal?.addEventListener('abort',dispose,{once:true});document.addEventListener('visibilitychange',onVisibility);
+if(reduced){render(7.5);root.dataset.introState='finished';}
+else{root.dataset.introState='playing';playing=true;frameId=requestAnimationFrame(tick);}
+return {dispose};
 }

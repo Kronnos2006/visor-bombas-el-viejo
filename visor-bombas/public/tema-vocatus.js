@@ -35,9 +35,10 @@
   // 45 · Portada (una vez por sesión). Si existe /portada.mp4 se usa de fondo.
   const portada = document.getElementById('portada');
   if (portada) {
-  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-3d-1'); } catch {}
+  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-3d-2'); } catch {}
   if (!vista && body.classList.contains('facil')) {
     portada.hidden = false;
+    portada.classList.add('intro-loading');
     const canas = portada.querySelector('.canas');
     for (let i = 0; i < 26; i++) {
       const c = document.createElement('i'); c.className = 'cana';
@@ -52,26 +53,16 @@
     const introController=new AbortController();
     const entrar = () => {
       if(entrando)return;entrando=true;
-      try { sessionStorage.setItem('vocatus-portada-3d-1', '1'); } catch {}
-      const original=portada.querySelector('.portada-logo'),destino=document.querySelector('header .brand-logo');
+      try { sessionStorage.setItem('vocatus-portada-3d-2', '1'); } catch {}
+
       const finish=()=>{introController.abort();portada.hidden=true;window.dispatchEvent(new Event('vocatus:entered'));video.pause();body.classList.remove('brand-arriving');body.classList.add('brand-landed');document.querySelector('.logo-transfer')?.remove();document.querySelector('header .brand')?.focus({preventScroll:true});};
-      if(sinMovimiento||!original||!destino||!original.animate){finish();return;}
-      const from=original.getBoundingClientRect(),to=destino.getBoundingClientRect();
-      const flying=original.cloneNode(false);flying.className='logo-transfer';flying.alt='';flying.setAttribute('aria-hidden','true');
-      Object.assign(flying.style,{left:from.left+'px',top:from.top+'px',width:from.width+'px',height:from.height+'px'});
-      body.append(flying);body.classList.add('brand-arriving');original.style.visibility='hidden';portada.classList.add('salir');
-      const animation=flying.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${to.left-from.left}px,${to.top-from.top}px) scale(${to.width/from.width})`,opacity:1}],{duration:650,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'});
-      animation.finished.then(finish,finish);
+      if(sinMovimiento){finish();return;}
+      portada.classList.add('salir');
+      setTimeout(finish,260);
     };
     portada.querySelector('button').onclick = entrar;
-    const replay=portada.querySelector('.intro-replay');
-    if(replay){
-      replay.disabled=sinMovimiento;
-      if(sinMovimiento){replay.textContent='Sin animación: preferencia del dispositivo';}
-      replay.onclick=()=>{portada.querySelector('.brand-stage').getAnimations({subtree:true}).forEach(animation=>{animation.currentTime=0;animation.play();});};
-    }
     addEventListener('keydown', e => { if (!portada.hidden && (e.key === 'Enter' || e.key === 'Escape')) entrar(); });
-    import('./intro-destileria-3d.js').then(({mountIntro3D})=>mountIntro3D(portada,{signal:introController.signal,reducedMotion:sinMovimiento})).catch(error=>{if(!introController.signal.aborted){console.warn('Presentación 3D no disponible; se conserva la versión simple.',error);const status=portada.querySelector('.intro-3d-status');if(status)status.textContent='Presentación simple · podés entrar al catálogo';}});
+    import('./intro-destileria-3d.js').then(({mountIntro3D})=>mountIntro3D(portada,{signal:introController.signal,reducedMotion:sinMovimiento})).catch(error=>{if(!introController.signal.aborted){console.warn('Presentación 3D no disponible; se conserva la versión simple.',error);portada.classList.remove('intro-loading');portada.dataset.introState='fallback';}});
   }
   }
 
