@@ -1,6 +1,7 @@
-// App de teléfono (≤ 900 px): 3D arriba y cinco secciones abajo — Áreas, Reparación, Historial,
-// Bodega y Mantenimiento — según los bocetos del 27-10-2026. Reutiliza el visor (window.vocatus):
-// no duplica la lógica de selección, 3D, ficha ni guardado. En computadora no hace nada.
+// App de cinco secciones — Áreas, Reparación, Historial, Bodega y Mantenimiento — según los bocetos
+// del 27-10-2026. Teléfono: 3D arriba, sección abajo. Computadora: secciones a la izquierda, 3D al
+// centro y la sección a la derecha. Reutiliza el visor (window.vocatus): no duplica la lógica de
+// selección, 3D, ficha ni guardado. Con ?vista=clasica se usa el visor anterior.
 const movil = matchMedia('(max-width:900px)');
 const SECCIONES = [
  {id: 'areas', nombre: 'Áreas', icono: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6"/>'},
@@ -16,12 +17,13 @@ const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 const leer = k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
 const icono = (paths, tam = 22) => `<svg viewBox="0 0 24 24" width="${tam}" height="${tam}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
-if (movil.matches) iniciar();
+const clasica = new URLSearchParams(location.search).get('vista') === 'clasica';
+if (!clasica) iniciar();
 // Cruzar el límite teléfono/computadora rehace la página para no mezclar las dos distribuciones.
-movil.addEventListener('change', () => location.reload());
+if (!clasica) movil.addEventListener('change', () => location.reload());
 
 function iniciar() {
- document.body.classList.add('app-tel');
+ document.body.classList.add('app-tel', movil.matches ? 'app-movil' : 'app-pc');
  const $ = s => document.querySelector(s);
  const V = () => window.vocatus;
  let seccion = new URLSearchParams(location.search).get('s') || 'areas';

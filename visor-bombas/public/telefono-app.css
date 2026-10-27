@@ -1,6 +1,6 @@
-/* App de teléfono (≤ 900 px): encabezado sobrio, 3D arriba, contenido de la sección y barra de
-   cinco secciones abajo. Todo depende de body.app-tel, que solo pone telefono-app.js en teléfono. */
-@media (max-width:900px){
+/* App de cinco secciones. Base (teléfono): encabezado sobrio, 3D arriba, contenido de la sección y
+   barra abajo. Computadora (≥ 901 px): ver el bloque del final. Todo depende de body.app-tel, que
+   pone telefono-app.js (no se pone con ?vista=clasica). */
  body.app-tel{--alto-enc:56px;--escena:clamp(210px,36vh,330px);--barra:calc(66px + env(safe-area-inset-bottom,0px));overflow:hidden;height:100%;padding:0}
 
  /* Encabezado: logo y nombre de la sección; lo demás se mueve a la sección Bodega. */
@@ -17,7 +17,7 @@
  body.app-tel .layout{display:block}
  body.app-tel .sidebar,body.app-tel .scene-top,body.app-tel .controls,body.app-tel #torre-tools,body.app-tel #integrado-tools,body.app-tel #anatomy-tools,body.app-tel #torre-planta-tools,body.app-tel .parts-section,body.app-tel .sheet-bar,body.app-tel .sheet-reopen,body.app-tel .main-nav{display:none!important}
  body.app-tel main{position:fixed;top:var(--alto-enc);left:0;right:0;height:var(--escena);margin:0;padding:0;overflow:hidden;z-index:2;background:var(--fondo-2)}
- body.app-tel #viewport{position:absolute!important;inset:0;height:100%!important;min-height:0!important;border-radius:0;border:0;visibility:visible!important}
+ body.app-tel #viewport{position:absolute!important;inset:0;margin:0!important;height:100%!important;min-height:0!important;border-radius:0;border:0;visibility:visible!important}
  body.app-tel #scene-help,body.app-tel #parts-rail,body.app-tel .compass{display:none}
 
  /* Franja de códigos al costado del 3D (Áreas y cuando se elige una bomba). */
@@ -114,7 +114,26 @@
  body.app-tel #tel-barra button[aria-current="page"]::before{content:'';position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
  body.app-tel #tel-barra button:focus-visible,body.app-tel #tel-contenido :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
  body.app-tel #toast{bottom:calc(var(--barra) + 10px)!important}
+@media (prefers-reduced-motion:no-preference){
+ body.app-tel #tel-barra button{transition:color .15s,background-color .15s}
 }
-@media (max-width:900px) and (prefers-reduced-motion:no-preference){
- body.app-tel #tel-barra button{transition:color .15s}
+
+/* Computadora: misma app, repartida en tres columnas — secciones, 3D y contenido. */
+@media (min-width:901px){
+ body.app-tel{--alto-enc:64px;--riel:118px;--panel:clamp(380px,32vw,480px)}
+ body.app-tel header{height:var(--alto-enc)!important;min-height:0!important}
+ body.app-tel header .brand-logo{width:42px;height:42px}
+ body.app-tel #tel-titulo{font-size:21px}
+ body.app-tel main{top:var(--alto-enc);left:var(--riel);right:var(--panel);bottom:0;height:auto}
+ body.app-tel #tel-contenido{top:var(--alto-enc);bottom:0;left:auto;right:0;width:var(--panel);border-top:0;border-left:1px solid var(--borde);padding:22px 24px 36px;font-size:16px}
+ body.app-tel #tel-barra{top:var(--alto-enc);bottom:0;left:0;right:auto;width:var(--riel);height:auto;display:flex;flex-direction:column;gap:6px;padding:14px 10px;border-top:0;border-right:1px solid var(--borde-fuerte)}
+ body.app-tel #tel-barra button{flex:0 0 78px;gap:6px;font-size:13px;white-space:normal;cursor:pointer}
+ body.app-tel #tel-barra button:hover{color:var(--tinta);background:var(--superficie)}
+ body.app-tel #tel-barra button[aria-current="page"]{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+ body.app-tel #tel-barra button[aria-current="page"]::before{top:16px;bottom:16px;left:-10px;right:auto;width:3px;height:auto;border-radius:0 3px 3px 0}
+ body.app-tel #tel-franja{width:86px;padding:8px}
+ body.app-tel #tel-franja button{flex-basis:42px;font-size:15px;cursor:pointer}
+ body.app-tel .tel-tarjeta,body.app-tel .tel-chips button,body.app-tel .tel-sec,body.app-tel .tel-primario,body.app-tel .tel-enlaces a{cursor:pointer}
+ body.app-tel .tel-tarjeta:hover,body.app-tel .tel-enlaces a:hover{border-color:var(--borde-fuerte)}
+ body.app-tel #toast{bottom:20px!important}
 }
