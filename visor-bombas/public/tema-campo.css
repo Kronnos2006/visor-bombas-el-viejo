@@ -111,3 +111,11 @@ body .pump-pick button{align-content:start}
 }
 
 #component-photos .foto-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}#component-photos .foto-btn{display:block;min-height:44px;padding:12px;cursor:pointer;border:1px solid var(--borde);border-radius:8px}#component-photos .foto-img img{width:100%;max-height:220px;object-fit:contain}#component-photos .foto-slot{margin:0}#component-photos figcaption small{display:block}.campo #replace-orings{width:26px;height:26px}section[id^=editar-]{scroll-margin-top:20px}
+
+/* Barra común de teléfono en páginas de campo (nav-telefono.js). */
+@media(max-width:900px){
+ body .campo-nav.tel-barra-campo{grid-template-columns:1fr 1.15fr 1fr 1fr 1.4fr}
+ body .campo-nav.tel-barra-campo a{font-size:12px;white-space:nowrap;color:var(--tinta-2);background:none}
+ body .campo-nav.tel-barra-campo a[aria-current=page]{color:var(--accent);background:none}
+ body .campo-nav.tel-barra-campo svg{display:block;margin:0 auto 3px}
+}

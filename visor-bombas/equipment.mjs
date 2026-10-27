@@ -223,5 +223,53 @@ export function equipmentStore(vault, basePositions, opciones = {}) {
   await save(tag,front,appendLog(note.body,'Cambios de temperatura de trabajo',log));
   return {tag,min,max,source};
  }
- return {move, swap, replace, temperature, backups, restore};
+ // Reparación: la bomba sale de su lugar para repararse. La ficha queda «En reparación» hasta que
+ // se registre su regreso; motivo, reporte, responsable y fechas quedan en «## Reparaciones».
+ const REPAIR_HEADING = 'Reparaciones';
+ const reportText = value => String(value ?? '').replace(/\r/g, '').slice(0, 3000).trim();
+ const quote = text => text ? '\n  > ' + text.replace(/\n/g, '\n  > ') : '';
+ async function repair(tag, input) {
+  const {date, author, reason} = common(input), report = reportText(input.report);
+  if (!reason) throw new Error('Indicá por qué se llevan la bomba.');
+  const note = await load(tag);
+  if (note.data.estado_operativo === 'en_reparacion') throw new Error(`${tag} ya figura en reparación desde ${note.data.reparacion_desde || 'una fecha anterior'}.`);
+  let front = setKey(note.front, 'estado_operativo', 'estado_operativo: "en_reparacion"');
+  front = setKey(front, 'reparacion_desde', `reparacion_desde: ${JSON.stringify(date)}`);
+  front = setKey(front, 'reparacion_motivo', `reparacion_motivo: ${JSON.stringify(reason)}`);
+  const body = appendLog(note.body, REPAIR_HEADING, `- ${date} · ${cell(author)}: retirada de su lugar para reparación. Motivo: ${cell(reason)}.${quote(report)}`);
+  const copy = await backup(tag);
+  await save(tag, front, body);
+  return {tag, action: 'repair', estado: 'en_reparacion', desde: date, backup: path.relative(vault, copy)};
+ }
+ async function repairReturn(tag, input) {
+  const {date, author, reason} = common(input), report = reportText(input.report);
+  const note = await load(tag);
+  if (note.data.estado_operativo !== 'en_reparacion') throw new Error(`${tag} no figura en reparación.`);
+  const since = String(note.data.reparacion_desde || '');
+  if (since && date < since) throw new Error(`La fecha de regreso no puede ser anterior a la salida (${since}).`);
+  let front = setKey(note.front, 'estado_operativo', 'estado_operativo: "en_servicio"');
+  front = setKey(front, 'reparacion_desde', 'reparacion_desde: ""');
+  front = setKey(front, 'reparacion_motivo', 'reparacion_motivo: ""');
+  front = setKey(front, 'ultima_reparacion', `ultima_reparacion: ${JSON.stringify(`${since || 'sin fecha'} a ${date}`)}`);
+  const body = appendLog(note.body, REPAIR_HEADING, `- ${date} · ${cell(author)}: volvió a su lugar${since ? ` (en reparación desde ${since})` : ''}.${reason ? ` Nota: ${cell(reason)}.` : ''}${quote(report)}`);
+  const copy = await backup(tag);
+  await save(tag, front, body);
+  return {tag, action: 'repair-return', estado: 'en_servicio', backup: path.relative(vault, copy)};
+ }
+ // Bombas que hoy figuran fuera de su lugar.
+ async function repairs() {
+  const out = [];
+  for (const dir of ['equipos', 'bombas']) {
+   let names = [];
+   try { names = await readdir(path.join(vault, '00-Proyecto', dir)); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+   for (const name of names.filter(n => /^(B[1-9]\d{0,3}|P-\d{4}[A-Z]?)\.md$/.test(n))) {
+    try {
+     const d = splitNote(await readFile(path.join(vault, '00-Proyecto', dir, name), 'utf8')).data;
+     if (d.estado_operativo === 'en_reparacion') out.push({tag: name.slice(0, -3), desde: String(d.reparacion_desde || ''), motivo: String(d.reparacion_motivo || '')});
+    } catch {}
+   }
+  }
+  return out.sort((a, b) => a.tag.localeCompare(b.tag, 'es', {numeric: true}));
+ }
+ return {move, swap, replace, temperature, repair, repairReturn, repairs, backups, restore};
 }

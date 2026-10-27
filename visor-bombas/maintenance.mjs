@@ -47,6 +47,8 @@ export function maintenanceStore(vault, demo) {
  async function save(tag, input) {
   const date = field(input.date, 10), title = field(input.title), author = field(input.author);
   const details = text(input.details), parts = text(input.parts), symptoms = text(input.symptoms);
+  // ¿Quedó funcionando? 'si' | 'no' | vacío (no se indicó).
+  const operativo = input.operativo === undefined || input.operativo === '' ? null : input.operativo === 'si' ? true : input.operativo === 'no' ? false : (() => { throw new Error('Indicá si el equipo quedó funcionando: sí o no.'); })();
   if (!validDate(date) || !title || !author || !details && !input.attachment) throw new Error('Completá una fecha válida, intervención, responsable y detalle o PDF.');
   // Mediciones con unidad fija (bar, m³/h) y la fecha del informe; vacías si no se midió.
   const med = measurementInput(input.measurements?.presion_bar, input.measurements?.caudal_m3h);
@@ -65,8 +67,8 @@ export function maintenanceStore(vault, demo) {
   }
   const id = `${tag}_${date}_${sourceId ? createHash('sha256').update(sourceId).digest('hex') : randomUUID()}`;
   const attachmentPath = pdf ? `00-Proyecto/Mantenimiento/Adjuntos/${id}.pdf` : '';
-  const header = ['tipo: informe_mantenimiento', `tag: ${tag}`, `bomba: ${tag}`, `fecha: ${yaml(date)}`, `titulo: ${yaml(title)}`, `responsable: ${yaml(author)}`, `demostracion: ${demo}`, `origen_id: ${yaml(sourceId)}`, `repuesto_usado: ${yaml(field(parts, 4000))}`, `descripcion: ${yaml(field(details, 8000))}`, ...(med.presion_bar !== null ? [`medicion_presion_bar: ${med.presion_bar}`] : []), ...(med.caudal_m3h !== null ? [`medicion_caudal_m3h: ${med.caudal_m3h}`] : []), ...(med.presion_bar !== null || med.caudal_m3h !== null ? [`medicion_fecha: ${yaml(date)}`] : []), ...(pdf ? [`adjunto: ${yaml(attachmentPath)}`, `adjunto_nombre: ${yaml(pdf.name)}`] : [])].join('\n');
-  const doc = `---\n${header}\n---\n\n# ${tag} — ${title}\n\n${demo ? 'DEMOSTRACIÓN: registro de prueba, no corresponde a una intervención real.\n\n' : ''}Responsable: ${author}\n\n## Intervención\n${details}\n\n## Repuestos utilizados\n${parts || 'No registrados.'}\n\n## Síntomas observados\n${symptoms || 'No registrados.'}\n\nFicha: [[00-Proyecto/${tag.startsWith('B') ? 'equipos' : 'bombas'}/${tag}|${tag}]]\n${pdf ? `\nAdjunto: [${pdf.name.replace(/[\[\]]/g, '')}](Adjuntos/${id}.pdf)\n` : ''}`;
+  const header = ['tipo: informe_mantenimiento', `tag: ${tag}`, `bomba: ${tag}`, `fecha: ${yaml(date)}`, `titulo: ${yaml(title)}`, `responsable: ${yaml(author)}`, `demostracion: ${demo}`, `origen_id: ${yaml(sourceId)}`, `repuesto_usado: ${yaml(field(parts, 4000))}`, `descripcion: ${yaml(field(details, 8000))}`, ...(operativo !== null ? [`equipo_funcional: ${operativo}`] : []), ...(med.presion_bar !== null ? [`medicion_presion_bar: ${med.presion_bar}`] : []), ...(med.caudal_m3h !== null ? [`medicion_caudal_m3h: ${med.caudal_m3h}`] : []), ...(med.presion_bar !== null || med.caudal_m3h !== null ? [`medicion_fecha: ${yaml(date)}`] : []), ...(pdf ? [`adjunto: ${yaml(attachmentPath)}`, `adjunto_nombre: ${yaml(pdf.name)}`] : [])].join('\n');
+  const doc = `---\n${header}\n---\n\n# ${tag} — ${title}\n\n${demo ? 'DEMOSTRACIÓN: registro de prueba, no corresponde a una intervención real.\n\n' : ''}Responsable: ${author}\n${operativo !== null ? `Estado al terminar: ${operativo ? 'quedó funcionando' : 'no quedó funcionando'}\n` : ''}\n## Intervención\n${details}\n\n## Repuestos utilizados\n${parts || 'No registrados.'}\n\n## Síntomas observados\n${symptoms || 'No registrados.'}\n\nFicha: [[00-Proyecto/${tag.startsWith('B') ? 'equipos' : 'bombas'}/${tag}|${tag}]]\n${pdf ? `\nAdjunto: [${pdf.name.replace(/[\[\]]/g, '')}](Adjuntos/${id}.pdf)\n` : ''}`;
   await mkdir(logs, {recursive: true});
   if (pdf) {
    await mkdir(path.dirname(safeAttachment(attachmentPath)), {recursive: true});
@@ -91,5 +93,22 @@ export function maintenanceStore(vault, demo) {
   if (!report?.record.pdf) throw new Error('Adjunto no encontrado.');
   return {bytes: await readFile(safeAttachment(report.record.pdf.path)), name: report.record.pdf.name};
  }
- return {list, save, remove, attachment};
+ // Estado con que quedó cada equipo en su último informe (fecha más reciente; mismo día, el último guardado).
+ async function latestStatus() {
+  let names;
+  try { names = await readdir(logs); } catch (e) { if (e.code === 'ENOENT') return []; throw e; }
+  const last = new Map();
+  for (const name of names.filter(n => /^[A-Za-z0-9-]+_\d{4}-\d{2}-\d{2}_.+\.md$/.test(n))) {
+   const [tag, date] = name.split('_'), mtime = (await stat(path.join(logs, name))).mtimeMs, prev = last.get(tag);
+   if (!prev || date > prev.date || date === prev.date && mtime > prev.mtime) last.set(tag, {name, date, mtime});
+  }
+  const out = [];
+  for (const [tag, {name, date}] of last) {
+   const match = (await readFile(path.join(logs, name), 'utf8')).replace(/^\uFEFF/, '').match(/^---\r?\n([\s\S]*?)\r?\n---/);
+   const data = match ? load(match[1], {schema: JSON_SCHEMA}) || {} : {};
+   out.push({tag, date: String(data.fecha || date), title: String(data.titulo || ''), funcional: data.equipo_funcional === true ? true : data.equipo_funcional === false ? false : null});
+  }
+  return out.sort((a, b) => a.tag.localeCompare(b.tag));
+ }
+ return {list, save, remove, attachment, latestStatus};
 }
