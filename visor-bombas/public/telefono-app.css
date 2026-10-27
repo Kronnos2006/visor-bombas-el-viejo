@@ -1,0 +1,120 @@
+/* App de teléfono (≤ 900 px): encabezado sobrio, 3D arriba, contenido de la sección y barra de
+   cinco secciones abajo. Todo depende de body.app-tel, que solo pone telefono-app.js en teléfono. */
+@media (max-width:900px){
+ body.app-tel{--alto-enc:56px;--escena:clamp(210px,36vh,330px);--barra:calc(66px + env(safe-area-inset-bottom,0px));overflow:hidden;height:100%;padding:0}
+
+ /* Encabezado: logo y nombre de la sección; lo demás se mueve a la sección Bodega. */
+ body.app-tel header{position:fixed!important;top:0;left:0;right:0;height:var(--alto-enc);z-index:60;display:flex;align-items:center;gap:12px;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));background:var(--fondo);border-bottom:1px solid var(--borde)}
+ body.app-tel header .brand-caption,body.app-tel header .header-center,body.app-tel header .main-nav,body.app-tel header #vista-toggle,body.app-tel header>button:not(#tema-toggle):not(#settings-open){display:none!important}
+ body.app-tel header .brand-logo{width:38px;height:38px;border-radius:8px}
+ body.app-tel header .brand{order:0}
+ body.app-tel header>button{order:2}
+ body.app-tel #tel-titulo{order:1;flex:1;font:600 19px/1.2 var(--marca,Georgia,serif);color:var(--tinta);letter-spacing:.01em}
+ body.app-tel header #tema-toggle,body.app-tel header #settings-open{min-width:44px;min-height:44px;font-size:15px}
+ body.app-tel header #tema-toggle span{display:none}
+
+ /* 3D: franja fija bajo el encabezado. */
+ body.app-tel .layout{display:block}
+ body.app-tel .sidebar,body.app-tel .scene-top,body.app-tel .controls,body.app-tel #torre-tools,body.app-tel #integrado-tools,body.app-tel #anatomy-tools,body.app-tel #torre-planta-tools,body.app-tel .parts-section,body.app-tel .sheet-bar,body.app-tel .sheet-reopen,body.app-tel .main-nav{display:none!important}
+ body.app-tel main{position:fixed;top:var(--alto-enc);left:0;right:0;height:var(--escena);margin:0;padding:0;overflow:hidden;z-index:2;background:var(--fondo-2)}
+ body.app-tel #viewport{position:absolute!important;inset:0;height:100%!important;min-height:0!important;border-radius:0;border:0;visibility:visible!important}
+ body.app-tel #scene-help,body.app-tel #parts-rail,body.app-tel .compass{display:none}
+
+ /* Franja de códigos al costado del 3D (Áreas y cuando se elige una bomba). */
+ body.app-tel #tel-franja{position:absolute;left:0;top:0;bottom:0;width:70px;z-index:30;display:none;flex-direction:column;gap:4px;padding:6px 6px 10px;overflow-y:auto;background:color-mix(in srgb,var(--fondo) 82%,transparent);border-right:1px solid var(--borde);scrollbar-width:thin}
+ body.app-tel[data-tel-seccion="areas"] #tel-franja,body.app-tel.tel-eligiendo #tel-franja{display:flex}
+ body.app-tel #tel-franja button{flex:0 0 40px;font:600 14px var(--datos,monospace);color:var(--tinta);background:var(--superficie);border:1px solid var(--borde);border-radius:8px;padding:0}
+ body.app-tel #tel-franja button[aria-pressed="true"]{background:var(--accent);color:var(--fondo);border-color:var(--accent)}
+ body.app-tel #tel-franja button.en-rep{border-style:dashed;border-color:#f08a80;color:#f08a80;position:relative}
+ body.app-tel #tel-franja button.en-rep::after{content:'';position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#f08a80}
+ body.app-tel .chip.reparacion{border-color:#f08a80;color:#f08a80}
+ body.app-tel #tel-franja p{font-size:12px;color:var(--tinta-2);text-align:center}
+ body.app-tel.tel-eligiendo main{outline:3px solid var(--accent);outline-offset:-3px}
+
+ /* Contenido de la sección, entre el 3D y la barra. */
+ body.app-tel #tel-contenido{position:fixed;top:calc(var(--alto-enc) + var(--escena));bottom:var(--barra);left:0;right:0;overflow-y:auto;overscroll-behavior:contain;padding:16px max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px));background:var(--fondo);border-top:1px solid var(--borde);font-size:17px;line-height:1.45;color:var(--tinta)}
+ body.app-tel .tel-panel{display:grid;gap:14px}
+ body.app-tel .tel-panel[hidden],body.app-tel .tel-ficha[hidden]{display:none}
+ body.app-tel .tel-intro{margin:0;color:var(--tinta-2);font-size:16px}
+ body.app-tel .tel-sub{margin:6px 0 0;font:600 13px var(--texto,system-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
+ body.app-tel .tel-vacio{margin:0;color:var(--tinta-2);font-size:16px}
+
+ /* Controles: un solo tamaño para todo, 48 px de alto. */
+ body.app-tel .tel-buscar{display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border:1px solid var(--borde-fuerte);border-radius:12px;background:var(--superficie);color:var(--tinta-2)}
+ body.app-tel #tel-contenido .tel-buscar input{flex:1;min-width:0;min-height:46px;padding:0;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--tinta);font-size:17px;outline:none}
+ body.app-tel .tel-buscar:focus-within{border-color:var(--accent)}
+ body.app-tel #tel-contenido form{display:grid;gap:18px}
+ body.app-tel .tel-campo{display:grid;gap:6px;margin:0;border:0;padding:0;min-width:0}
+ body.app-tel .tel-campo>label,body.app-tel .tel-campo legend,body.app-tel .tel-etiqueta{font-size:15px;font-weight:600;color:var(--tinta-2);padding:0}
+ body.app-tel .tel-campo label input{margin-top:6px}
+ body.app-tel #tel-contenido input:not([type=radio]),body.app-tel #tel-contenido select,body.app-tel #tel-contenido textarea{width:100%;min-height:48px;padding:10px 12px;font:17px var(--texto,system-ui);color:var(--tinta);background:var(--superficie);border:1px solid var(--borde-fuerte);border-radius:10px}
+ body.app-tel #tel-contenido textarea{resize:vertical}
+ body.app-tel .tel-fila{display:flex;gap:8px}
+ body.app-tel .tel-fila>*{flex:1;min-width:0}
+ body.app-tel .tel-dos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+ body.app-tel .tel-dos input{min-width:0}
+ body.app-tel .tel-sec{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:8px 12px;font:600 15px var(--texto,system-ui);color:var(--tinta);background:transparent;border:1px solid var(--borde-fuerte);border-radius:10px}
+ body.app-tel .tel-primario{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;font:700 17px var(--texto,system-ui);color:var(--fondo);background:var(--accent);border:0;border-radius:12px}
+ body.app-tel .tel-sino{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ body.app-tel .tel-sino legend{grid-column:1/-1;margin-bottom:6px}
+ body.app-tel .tel-sino label{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;font-size:18px;font-weight:600;border:1px solid var(--borde-fuerte);border-radius:12px;background:var(--superficie)}
+ body.app-tel .tel-sino label:has(input:checked){border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--superficie))}
+ body.app-tel .tel-sino input{width:22px;height:22px;accent-color:var(--accent)}
+ body.app-tel .tel-repuesto{display:grid;grid-template-columns:1fr 44px;gap:6px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--borde)}
+ body.app-tel .tel-repuesto input:first-child{grid-column:1/2}
+ body.app-tel .tel-repuesto input:nth-child(2){grid-column:1/2;grid-row:2}
+ body.app-tel .tel-repuesto button{grid-column:2;grid-row:1/3}
+ body.app-tel .tel-repuesto button{min-height:48px;font-size:22px;color:var(--tinta-2);background:transparent;border:1px solid var(--borde);border-radius:10px}
+ body.app-tel .tel-aviso{margin:0;font-size:16px;min-height:0}
+ body.app-tel .tel-aviso:empty{display:none}
+ body.app-tel .tel-aviso[data-tipo="ok"]{color:#7fcf8c}
+ body.app-tel .tel-aviso[data-tipo="error"]{color:#f08a80}
+ :root[data-theme="light"] body.app-tel .tel-aviso[data-tipo="ok"]{color:#2f7a3e}
+ :root[data-theme="light"] body.app-tel .tel-aviso[data-tipo="error"]{color:#a3322a}
+
+ /* Áreas y herramientas reubicadas desde el visor. */
+ body.app-tel #tel-areas .area-menu,body.app-tel #tel-herramientas #camera-tools{position:static!important;display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;background:none;border:0;box-shadow:none;transform:none;width:auto;overflow:visible}
+ body.app-tel #tel-areas .area-menu button,body.app-tel #tel-herramientas #camera-tools button{min-height:46px;padding:8px 14px;font-size:15px;border-radius:10px;flex:1 1 auto}
+
+ /* Reparación */
+ body.app-tel .tel-rep{display:grid;gap:8px;padding:12px;border:1px solid var(--borde);border-radius:12px;background:var(--superficie)}
+ body.app-tel .tel-rep>div{display:grid;gap:2px}
+ body.app-tel .tel-rep strong{font:600 18px var(--datos,monospace)}
+ body.app-tel .tel-rep span{font-size:15px;color:var(--tinta-2)}
+ body.app-tel .tel-rep details{display:grid;gap:8px}
+ body.app-tel .tel-rep summary{display:flex;align-items:center;justify-content:center;min-height:46px;font-weight:600;font-size:15px;border:1px solid var(--borde-fuerte);border-radius:10px;cursor:pointer;list-style:none}
+ body.app-tel .tel-rep summary::-webkit-details-marker{display:none}
+ body.app-tel .tel-rep details[open]>summary{margin-bottom:8px}
+
+ /* Historial: tarjetas por bomba. */
+ body.app-tel .tel-chips{display:flex;flex-wrap:wrap;gap:8px}
+ body.app-tel .tel-chips button{min-height:42px;padding:6px 14px;font-size:15px;border:1px solid var(--borde-fuerte);border-radius:999px;background:transparent;color:var(--tinta)}
+ body.app-tel .tel-chips button[aria-pressed="true"]{background:var(--accent);color:var(--fondo);border-color:var(--accent)}
+ body.app-tel .tel-tarjetas{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+ body.app-tel .tel-tarjeta{display:grid;gap:4px;align-content:start;min-height:84px;padding:12px;text-align:left;border:1px solid var(--borde);border-radius:12px;background:var(--superficie);color:var(--tinta)}
+ body.app-tel .tel-tarjeta strong{font:600 19px var(--datos,monospace)}
+ body.app-tel .tel-tarjeta span{font-size:14px;line-height:1.3;color:var(--tinta-2)}
+
+ /* Bodega: accesos secundarios. */
+ body.app-tel .tel-enlaces{display:grid;gap:8px}
+ body.app-tel .tel-enlaces a{display:flex;align-items:center;min-height:50px;padding:0 14px;font-size:16px;color:var(--tinta);text-decoration:none;border:1px solid var(--borde);border-radius:12px;background:var(--superficie)}
+
+ /* Ficha de la bomba dentro de la app (como está hoy, debajo del 3D). */
+ body.app-tel .tel-ficha{display:grid;gap:10px}
+ body.app-tel .tel-volver{justify-self:start;min-height:44px;padding:6px 12px;font:600 15px var(--texto,system-ui);color:var(--tinta);background:transparent;border:1px solid var(--borde-fuerte);border-radius:10px}
+ body.app-tel .inspector,body.app-tel.sheet-open .inspector,body.app-tel .inspector.is-fullscreen{position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-height:none!important;transform:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;padding:0!important;margin:0!important;overflow:visible!important;display:block!important;visibility:visible!important}
+ body.app-tel #panel{max-height:none!important;overflow:visible!important;padding:0!important}
+ body.app-tel #tabs{position:static!important;padding:0 0 10px!important}
+
+ /* Barra de secciones. */
+ body.app-tel #tel-barra{position:fixed;left:0;right:0;bottom:0;z-index:60;height:var(--barra);display:grid;grid-template-columns:1fr 1.15fr 1fr 1fr 1.4fr;padding:4px max(4px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(4px,env(safe-area-inset-left,0px));background:var(--fondo);border-top:1px solid var(--borde-fuerte)}
+ body.app-tel #tel-barra button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;padding:4px 2px;font:600 12px/1.15 var(--texto,system-ui);color:var(--tinta-2);background:none;border:0;border-radius:10px;position:relative;white-space:nowrap}
+ body.app-tel #tel-barra button span{max-width:100%;text-align:center}
+ body.app-tel #tel-barra button[aria-current="page"]{color:var(--accent)}
+ body.app-tel #tel-barra button[aria-current="page"]::before{content:'';position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+ body.app-tel #tel-barra button:focus-visible,body.app-tel #tel-contenido :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+ body.app-tel #toast{bottom:calc(var(--barra) + 10px)!important}
+}
+@media (max-width:900px) and (prefers-reduced-motion:no-preference){
+ body.app-tel #tel-barra button{transition:color .15s}
+}
