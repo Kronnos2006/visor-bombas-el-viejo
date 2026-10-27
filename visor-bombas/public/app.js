@@ -1073,7 +1073,7 @@ window.vocatus={
  explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&Number(value)>30&&document.body.classList.contains('app-tel'))fly([15,12,32],[0,0,0],650);},
  locate:()=>locateSelectedPump(),
  back:()=>{if(state.view!=='plant'||state.pump)$('#back').click();},
- area:id=>chooseArea(id),
+ chooseArea:id=>chooseArea(id),
  get area(){return state.area==='integrado'?(state.filtroInt||'planta'):state.area;},
  areaDe:p=>areaOf(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
  ensure3D:ensurePlant,api

@@ -6,6 +6,8 @@ import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
 import {addReport,listReports} from './reportes.js';
+import {crearFlujoCabecera} from './cabecera-flujo.js';
+import {areasHistorial,filtrarHistorial} from './historial-core.js';
 const movil = matchMedia('(max-width:900px)');
 const SECCIONES = [
  {id: 'areas', nombre: 'Áreas', icono: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6"/>'},
@@ -52,9 +54,13 @@ function iniciar() {
  const draftStore=createDraftStore(localStorage);
 
  // ---------- Estructura ----------
+ crearFlujoCabecera($('header'));
  const titulo = document.createElement('div'); titulo.id = 'tel-titulo'; $('header')?.append(titulo);
  const franja = document.createElement('nav'); franja.id = 'tel-franja'; franja.setAttribute('aria-label', 'Bombas por código');
  $('#viewport')?.append(franja);
+ const ampliar=document.createElement('button');ampliar.type='button';ampliar.id='tel-ampliar';
+ const mostrarMapaAmplio=active=>{document.body.classList.toggle('tel-mapa-amplio',active);ampliar.setAttribute('aria-expanded',String(active));ampliar.innerHTML=icono('<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',18)+'<span>'+(active?'Mostrar lista':'Ampliar planta')+'</span>';window.dispatchEvent(new Event('resize'));};
+ ampliar.onclick=()=>mostrarMapaAmplio(!document.body.classList.contains('tel-mapa-amplio'));$('#viewport')?.append(ampliar);mostrarMapaAmplio(false);
  const contenido = document.createElement('section'); contenido.id = 'tel-contenido';
  document.body.append(contenido);
  const barra = document.createElement('nav'); barra.id = 'tel-barra'; barra.setAttribute('aria-label', 'Secciones');
@@ -143,7 +149,8 @@ function iniciar() {
 
  paneles.pendientes.innerHTML = `<div id="pend-lista"><p class="tel-vacio">Cargando…</p></div>`;
 
- paneles.historial.innerHTML = `<p class="tel-intro">Tocá una bomba para ver su historial con la vista explosionada.</p><div id="hist-filtro" class="tel-chips"></div><div id="hist-tarjetas" class="tel-tarjetas"></div>`;
+ paneles.historial.innerHTML = `<p class="tel-intro">Elegí un área o buscá una bomba para ver su historial.</p><label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',20)}<input id="hist-buscar" type="search" placeholder="TAG, marca, modelo o serie" aria-label="Buscar bomba en Historial"></label><div id="hist-filtro" class="tel-chips" role="group" aria-label="Filtrar historial por área"></div><p id="hist-cuenta" class="tel-cuenta" aria-live="polite"></p><div id="hist-tarjetas" class="tel-tarjetas"></div>`;
+ $('#hist-buscar').oninput=()=>pintarTarjetasHistorial();
 
  paneles.bodega.innerHTML = `<div class="tel-campo"><label for="bod-bomba">Bomba</label><select id="bod-bomba"></select></div>
   <h2 class="tel-sub">Repuestos de la ficha</h2><div id="bod-lista"><p class="tel-vacio">Elegí una bomba para ver sus repuestos.</p></div>
@@ -304,16 +311,24 @@ function iniciar() {
 
  // ---------- Historial ----------
  let filtroHist = '';
+ const areaBomba=p=>V()?.areaDe(p)||p.areaId;
  function pintarHistorial() {
-  const areas = [...new Set(bombas().map(p => p.areaId).filter(Boolean))];
-  $('#hist-filtro').innerHTML = ['', ...areas].map(a => `<button type="button" data-a="${esc(a)}" aria-pressed="${a === filtroHist}">${esc(a ? AREAS[a] || a : 'Todas')}</button>`).join('');
-  $('#hist-filtro').querySelectorAll('button').forEach(b => b.onclick = () => { filtroHist = b.dataset.a; pintarHistorial(); });
-  $('#hist-tarjetas').innerHTML = bombas().filter(p => !filtroHist || p.areaId === filtroHist).map(p => `<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><strong>${esc(p.tag)}</strong><span>${esc(p.nombre || p.ubicacion || '')}</span></button>`).join('');
-  $('#hist-tarjetas').querySelectorAll('[data-tag]').forEach(b => b.onclick = () => abrirFicha(b.dataset.tag, 'historial'));
+  const list=bombas(),areas=areasHistorial(list,areaBomba);
+  $('#hist-filtro').innerHTML = [{id:'',nombre:'Todas las áreas',count:list.length},...areas].map(a=>`<button type="button" data-a="${esc(a.id)}" aria-pressed="${a.id===filtroHist}"><span>${esc(a.nombre)}</span><b>${a.count}</b></button>`).join('');
+  $('#hist-filtro').querySelectorAll('button').forEach(b=>b.onclick=()=>{filtroHist=b.dataset.a;pintarHistorial();V()?.chooseArea(filtroHist?'sector:'+filtroHist:'integrado');});
+  pintarTarjetasHistorial();
+ }
+ function pintarTarjetasHistorial(){
+  const list=filtrarHistorial(bombas(),{area:filtroHist,query:$('#hist-buscar').value},areaBomba);
+  const areaName=areasHistorial(bombas(),areaBomba).find(a=>a.id===filtroHist)?.nombre||'toda la planta';
+  $('#hist-cuenta').textContent=`${list.length} ${list.length===1?'bomba':'bombas'} con ficha en ${areaName}.`;
+  $('#hist-tarjetas').innerHTML=list.length?list.map(p=>`<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><strong>${esc(p.tag)}</strong><span>${esc(p.nombre||p.ubicacion||'')}</span></button>`).join(''):`<p class="tel-vacio">${$('#hist-buscar').value.trim()?'Ninguna bomba coincide con la búsqueda.':'Esta área todavía no tiene bombas con TAG y ficha registrados. Podés explorarla en la planta 3D.'}</p>`;
+  $('#hist-tarjetas').querySelectorAll('[data-tag]').forEach(b=>b.onclick=()=>abrirFicha(b.dataset.tag,'historial'));
  }
 
  // ---------- Ficha dentro de la app ----------
  function abrirFicha(tag, pestana = 'ficha') {
+  mostrarMapaAmplio(false);
   viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha'); fab.hidden = false;
   Object.values(paneles).forEach(p => p.hidden = true);
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
@@ -344,6 +359,7 @@ function iniciar() {
 
  // ---------- Navegación ----------
  function mostrar(id) {
+  mostrarMapaAmplio(false);
   seccion = id; viendoFicha = false; ficha.hidden = true; fab.hidden = true;
   eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d');
   for (const [k, p] of Object.entries(paneles)) p.hidden = k !== id;
