@@ -638,6 +638,9 @@ function renderPhotoPanel(){
 
 }
 document.querySelector('.compass').textContent='LADOS FIJOS · Frontal B–C · Izquierdo C–D · Trasero D–A · Derecho A–B';
+// No mantener dos escenas WebGL activas durante la bienvenida.
+const welcome=document.getElementById('portada');
+if(welcome&&!welcome.hidden)await new Promise(resolve=>{window.addEventListener('vocatus:entered',resolve,{once:true});if(welcome.hidden)resolve();});
 initScene();renderPanel();await refresh();
 function selectFromHash(){const tag=location.hash.slice(1).toUpperCase();if(plantPumps.some(p=>p.tag===tag))selectPhotoPump(tag);}
 window.addEventListener('hashchange',selectFromHash);selectFromHash();

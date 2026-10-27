@@ -35,7 +35,7 @@
   // 45 · Portada (una vez por sesión). Si existe /portada.mp4 se usa de fondo.
   const portada = document.getElementById('portada');
   if (portada) {
-  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-identidad-2'); } catch {}
+  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-3d-1'); } catch {}
   if (!vista && body.classList.contains('facil')) {
     portada.hidden = false;
     const canas = portada.querySelector('.canas');
@@ -49,11 +49,12 @@
     const video = portada.querySelector('video');
     fetch('/portada.mp4', { method: 'HEAD' }).then(r => { if (r.ok && (r.headers.get('content-type') || '').startsWith('video')) { video.src = '/portada.mp4'; video.hidden = false; } }).catch(() => {});
     let entrando=false;
+    const introController=new AbortController();
     const entrar = () => {
       if(entrando)return;entrando=true;
-      try { sessionStorage.setItem('vocatus-portada-identidad-2', '1'); } catch {}
+      try { sessionStorage.setItem('vocatus-portada-3d-1', '1'); } catch {}
       const original=portada.querySelector('.portada-logo'),destino=document.querySelector('header .brand-logo');
-      const finish=()=>{portada.hidden=true;video.pause();body.classList.remove('brand-arriving');body.classList.add('brand-landed');document.querySelector('.logo-transfer')?.remove();document.querySelector('header .brand')?.focus({preventScroll:true});};
+      const finish=()=>{introController.abort();portada.hidden=true;window.dispatchEvent(new Event('vocatus:entered'));video.pause();body.classList.remove('brand-arriving');body.classList.add('brand-landed');document.querySelector('.logo-transfer')?.remove();document.querySelector('header .brand')?.focus({preventScroll:true});};
       if(sinMovimiento||!original||!destino||!original.animate){finish();return;}
       const from=original.getBoundingClientRect(),to=destino.getBoundingClientRect();
       const flying=original.cloneNode(false);flying.className='logo-transfer';flying.alt='';flying.setAttribute('aria-hidden','true');
@@ -70,12 +71,13 @@
       replay.onclick=()=>{portada.querySelector('.brand-stage').getAnimations({subtree:true}).forEach(animation=>{animation.currentTime=0;animation.play();});};
     }
     addEventListener('keydown', e => { if (!portada.hidden && (e.key === 'Enter' || e.key === 'Escape')) entrar(); });
+    import('./intro-destileria-3d.js').then(({mountIntro3D})=>mountIntro3D(portada,{signal:introController.signal,reducedMotion:sinMovimiento})).catch(error=>{if(!introController.signal.aborted){console.warn('Presentación 3D no disponible; se conserva la versión simple.',error);const status=portada.querySelector('.intro-3d-status');if(status)status.textContent='Presentación simple · podés entrar al catálogo';}});
   }
   }
 
   // 44 · Burbujas de fondo, lentas y tenues
   const lienzo = document.getElementById('burbujas');
-  if (lienzo && !sinMovimiento && lienzo.getContext) {
+  if (lienzo && !sinMovimiento && lienzo.getContext && !document.querySelector('link[href="/estilo-vocatus.css"]')) {
     const ctx = lienzo.getContext('2d');
     let w, h, dpr; const burbujas = [];
     const medir = () => { dpr = Math.min(devicePixelRatio || 1, 2); w = innerWidth; h = innerHeight; lienzo.width = w * dpr; lienzo.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
