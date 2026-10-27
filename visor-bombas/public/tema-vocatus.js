@@ -36,8 +36,16 @@
   const portada = document.getElementById('portada');
   if (portada) {
   let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-3d-5'); } catch {}
-  if (!vista && body.classList.contains('facil')) {
+  if (!vista && body.classList.contains('facil') && !['mantenimiento','bodega','pendientes'].includes(new URLSearchParams(location.search).get('s'))) {
     portada.hidden = false;
+    portada.setAttribute('aria-modal','true');
+    const previousFocus=document.activeElement,isolated=new Map();
+    const isolate=()=>{for(const el of document.body.children){if(el===portada||el.contains(portada)||isolated.has(el))continue;isolated.set(el,el.inert);el.inert=true;}};
+    isolate();const backgroundObserver=new MutationObserver(isolate);backgroundObserver.observe(document.body,{childList:true});
+    const entryButton=portada.querySelector('button');entryButton.focus({preventScroll:true});
+    const keepFocus=e=>{if(!portada.hidden&&!portada.contains(e.target))entryButton.focus({preventScroll:true});};
+    document.addEventListener('focusin',keepFocus,true);
+    const restoreFocus=()=>{backgroundObserver.disconnect();document.removeEventListener('focusin',keepFocus,true);for(const [el,inert]of isolated)if(el.isConnected)el.inert=inert;portada.removeAttribute('aria-modal');};
     portada.classList.add('intro-loading');
     const canas = portada.querySelector('.canas');
     for (let i = 0; i < 26; i++) {
@@ -55,13 +63,13 @@
       if(entrando)return;entrando=true;
       try { sessionStorage.setItem('vocatus-portada-3d-5', '1'); } catch {}
 
-      const finish=()=>{introController.abort();portada.hidden=true;window.dispatchEvent(new Event('vocatus:entered'));video.pause();body.classList.remove('brand-arriving');body.classList.add('brand-landed');document.querySelector('.logo-transfer')?.remove();document.querySelector('header .brand')?.focus({preventScroll:true});};
+      const finish=()=>{introController.abort();portada.hidden=true;restoreFocus();window.dispatchEvent(new Event('vocatus:entered'));video.pause();body.classList.remove('brand-arriving');body.classList.add('brand-landed');document.querySelector('.logo-transfer')?.remove();(previousFocus instanceof HTMLElement&&previousFocus!==document.body&&previousFocus.isConnected?previousFocus:document.querySelector('header .brand'))?.focus({preventScroll:true});};
       if(sinMovimiento){finish();return;}
       portada.classList.add('salir');
       setTimeout(finish,260);
     };
     portada.querySelector('button').onclick = entrar;
-    addEventListener('keydown', e => { if (!portada.hidden && (e.key === 'Enter' || e.key === 'Escape')) entrar(); });
+    addEventListener('keydown',e=>{if(portada.hidden)return;if(e.key==='Tab'){e.preventDefault();entryButton.focus({preventScroll:true});}else if(e.key==='Enter'||e.key==='Escape'){e.preventDefault();entrar();}},true);
     import('./intro-destileria-3d.js').then(({mountIntro3D})=>mountIntro3D(portada,{signal:introController.signal,reducedMotion:sinMovimiento})).catch(error=>{if(!introController.signal.aborted){console.warn('Presentación 3D no disponible; se conserva la versión simple.',error);portada.classList.remove('intro-loading');portada.dataset.introState='fallback';}});
   }
   }

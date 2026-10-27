@@ -275,3 +275,13 @@ body.app-tel:is([data-tel-seccion="pendientes"],[data-tel-seccion="bodega"],[dat
 @media (min-width:901px){
  body.app-tel:is([data-tel-seccion="pendientes"],[data-tel-seccion="bodega"],[data-tel-seccion="mantenimiento"]):not(.tel-eligiendo):not(.tel-3d) #tel-contenido{left:var(--riel);width:auto;border-left:0;padding-left:max(28px,calc((100% - 760px)/2));padding-right:max(28px,calc((100% - 760px)/2))}
 }
+
+/* Acciones de campo: el texto conserva contraste en todos los estados. */
+body.app-tel button.tel-primario:not(:disabled):hover,body.app-tel button.tel-primario:focus-visible,body.app-tel button.tel-fab:not(:disabled):hover,body.app-tel button.tel-fab:focus-visible{color:var(--fondo);background:var(--accent)}
+body.app-tel .tel-storage-note{margin:0;padding:12px 14px;border:1px solid var(--borde-fuerte);border-radius:12px;background:var(--superficie);font-size:15px;line-height:1.5;color:var(--tinta)}
+body.app-tel .tel-draft-status{margin:0;font-size:13px;color:var(--tinta-2)}
+body.app-tel .tel-local-report{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--borde)}
+body.app-tel .tel-local-report small{display:block;color:var(--tinta-2);line-height:1.5}
+body.app-tel #mant-local,body.app-tel #mant-import{display:grid;gap:12px}
+body.app-tel #mant-import[hidden]{display:none}
+body.app-tel #mant-import-preview{overflow-wrap:anywhere;line-height:1.6}

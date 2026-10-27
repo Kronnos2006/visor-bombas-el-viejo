@@ -90,6 +90,9 @@ const pickables=[],areaPickables=[],markers=[],componentGroups=[];let cameraFlig
 let anatomy=null;
 let simRig=null;const sims={};
 let areaGroups={},torre=null;const pumpObjects={};
+let plantRequested=false;
+function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';return params.get('vista')==='clasica'||['areas','historial'].includes(section)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
+function ensurePlant(){if(!plant||plantRequested)return;plantRequested=true;rebuildPlant();}
 let integrado=null;const pumpObjectsInt={}; // modelo integrado de Revit: bombas con ficha ubicadas sobre él
 const areaOf=p=>p?.areaId||'tanques',AREA=id=>AREAS.find(a=>a.id===id);
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -218,6 +221,7 @@ function initScene(){
   const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant'){if(o.userData.pending)selectPendingPump(o.userData.pending);else if(o.userData.areaId)setArea(o.userData.areaId);else if(o.userData.tag)selectPump(o.userData.tag);}else if(o.userData.part!==undefined)selectPart(o.userData.part,o.userData.subcomponent||null);}
  });
  renderer.setAnimationLoop(()=>{
+  if(document.hidden||!viewport.clientWidth||!viewport.clientHeight)return;
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
   componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x=reducedMotion.matches?x:g.position.x+(x-g.position.x)*.12;});
   controls.update();solSegunVista();renderer.render(scene,camera);
@@ -384,7 +388,7 @@ $('#search').oninput=renderList;$('#area').onchange=()=>chooseArea($('#area').va
 $('#close-settings').onclick=()=>$('#settings').close();$('#close-report').onclick=()=>$('#report-dialog').close();
 $('#config-form').onsubmit=async e=>{e.preventDefault();const form=e.target;try{const r=await api('/api/config',Object.fromEntries(new FormData(form)));state.configured=r.configured;state.model=r.model;form.elements.apiKey.value='';$('#settings').close();renderPanel();toast('Clave guardada solo durante esta sesión.');}catch(e){$('#config-error').textContent=e.message;}};
 $('#report-form').onsubmit=async e=>{e.preventDefault();const tag=state.pump.tag,form=e.target,button=form.querySelector('button.primary');button.disabled=true;try{await api('/api/maintenance',{...Object.fromEntries(new FormData(form)),tag});$('#report-dialog').close();form.reset();if(state.pump?.tag===tag)state.pump=await api('/api/pump?tag='+encodeURIComponent(tag));renderPanel();toast(state.demo?'Informe de prueba guardado en la carpeta de demostración.':'Informe guardado en Obsidian.');}catch(e){$('#report-error').textContent=e.message;}finally{button.disabled=false;}};
-async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?r.sectorPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;state.writable=r.maintenanceWritable;configureReports({writable:r.maintenanceWritable,token:r.token});document.dispatchEvent(new CustomEvent('vocatus:listo'));if(state.pump&&state.sector){const current=state.pumps.find(p=>p.tag===state.pump.tag);if(current)state.pump={...state.pump,data:current};}fillFilters();document.querySelector('.local').textContent=r.maintenanceWritable?'● OBSIDIAN · '+r.vaultName:'● DEMO · REPORTES EN ESTE NAVEGADOR';$('#report-dialog .muted').textContent=r.maintenanceWritable?'Se guardará en la bóveda '+r.vaultName+'.':'Este alojamiento no guarda informes en Obsidian.';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plant)rebuildPlant();if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
+async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?r.sectorPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;state.writable=r.maintenanceWritable;configureReports({writable:r.maintenanceWritable,token:r.token});document.dispatchEvent(new CustomEvent('vocatus:listo'));if(state.pump&&state.sector){const current=state.pumps.find(p=>p.tag===state.pump.tag);if(current)state.pump={...state.pump,data:current};}fillFilters();document.querySelector('.local').textContent=r.maintenanceWritable?'● OBSIDIAN · '+r.vaultName:'● DEMO · REPORTES EN ESTE NAVEGADOR';$('#report-dialog .muted').textContent=r.maintenanceWritable?'Se guardará en la bóveda '+r.vaultName+'.':'Este alojamiento no guarda informes en Obsidian.';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plant){if(plantRequested)rebuildPlant();else if(needsPlant())ensurePlant();}if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
 $('#refresh').onclick=async()=>{await refresh();toast('Expedientes actualizados.');};
 function setPhotoDetail(schematic){
  state.detail=schematic?'schematic':'exterior';state.part=null;state.explode=0;$('#explode').value=0;$('#percent').textContent='0%';
@@ -915,7 +919,7 @@ function cajaEdificio(area){
 }
 function flyArea(id,vista){
  if(id==='planta')id='integrado';
- if(!camera)return;
+ if(!camera||!plantRequested)return;
  const dirLocal=(g,from,to)=>g.localToWorld(new THREE.Vector3(...from)).sub(g.localToWorld(new THREE.Vector3(...to)));
  if(id==='planta'||!areaGroups[id]){
   const b=cajaTorre(null).union(new THREE.Box3().setFromObject(areaGroups.tanques||plant));
@@ -1072,5 +1076,6 @@ window.vocatus={
  area:id=>chooseArea(id),
  get area(){return state.area==='integrado'?(state.filtroInt||'planta'):state.area;},
  areaDe:p=>areaOf(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
- api
+ ensure3D:ensurePlant,api
 };
+document.dispatchEvent(new Event('vocatus:listo'));

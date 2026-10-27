@@ -1,10 +1,10 @@
-import {cleanLegacyCart,partsOf} from './request-core.js';
+import {cleanLegacyCart,partsOf,createRequestGate} from './request-core.js';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store = {get(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}};
 
 const oldCart=store.get('vocatus-solicitud')||[], cleaned=cleanLegacyCart(oldCart);
-let token = '', demo = false, cart = cleaned.items, options = [];
+let token = '', demo = false, cart = cleaned.items, options = [];const choiceGate=createRequestGate();
 if(cleaned.changed){if(!store.get('vocatus-solicitud-antes-limpieza'))store.set('vocatus-solicitud-antes-limpieza',oldCart);store.set('vocatus-solicitud',cart);$('#cart-migration').textContent='Se quitaron '+cleaned.changed+' textos «false» del carrito. Se conservó una copia en este navegador. Revisá los PDF ya emitidos: no se modifican automáticamente.';}
 
 function saveCart() { store.set('vocatus-solicitud', cart); renderCart(); }
@@ -18,16 +18,18 @@ function renderCart() {
  $('#cart').querySelectorAll('[data-del]').forEach(b => b.onclick = () => { cart = cart.filter(x => x.id !== b.dataset.del); saveCart(); });
 }
 async function choose(tag) {
+ const current=choiceGate.begin();options=[];
  $('#suggest').innerHTML = tag ? '<p class="muted">Leyendo ficha…</p>' : '';
  if (!tag) return;
  try {
   const r = await fetch('/api/pump?tag=' + encodeURIComponent(tag)); const p = await r.json(); if (!r.ok) throw new Error(p.error);
+  if(!current()||$('#pump').value!==tag)return;if(p.tag!==tag)throw new Error('La ficha recibida pertenece a otro equipo.');
   options = partsOf(p);
   $('#suggest').innerHTML = options.length ? options.map((o, i) => `<div class="suggest"><p><strong>${esc(o.pieza)}</strong> ${o.cantidad > 1 ? `×${o.cantidad}` : ''}<br><small>${esc(o.detalle || '—')}${o.codigo ? ' · código ' + esc(o.codigo) : ' · sin código en la ficha'}</small></p><button type="button" data-i="${i}">＋ Agregar</button></div>`).join('')
    : `<div class="msg warn">La ficha de ${esc(tag)} todavía no tiene sello, empaque ni o-rings registrados. <a href="/levantamiento.html?tag=${encodeURIComponent(tag)}">Levantarlos →</a></div>`;
-  $('#suggest').querySelectorAll('[data-i]').forEach(b => b.onclick = () => add(options[Number(b.dataset.i)]));
+  $('#suggest').querySelectorAll('[data-i]').forEach(b => b.onclick=()=>{const option=options[Number(b.dataset.i)];if(option?.tag===$('#pump').value)add(option);});
   if (!$('#request [name=area]').value && (p.data.area || p.data.documental?.area)) $('#request [name=area]').value = p.data.area || p.data.documental.area;
- } catch (err) { $('#suggest').innerHTML = `<div class="msg err">${esc(err.message)}</div>`; }
+ } catch (err) { if(!current()||$('#pump').value!==tag)return;$('#suggest').innerHTML = `<div class="msg err">${esc(err.message)}</div>`; }
 }
 $('#pump').onchange = e => choose(e.target.value);
 $('#manual').onsubmit = e => { e.preventDefault(); const f = new FormData(e.target); add({tag: $('#pump').value, pieza: f.get('pieza').trim(), detalle: f.get('detalle').trim(), codigo: f.get('codigo').trim(), cantidad: Number(f.get('cantidad'))}); e.target.reset(); e.target.cantidad.value = 1; };

@@ -3,7 +3,9 @@
 // centro y la sección a la derecha. Reutiliza el visor (window.vocatus): no duplica la lógica de
 // selección, 3D, ficha ni guardado. Con ?vista=clasica se usa el visor anterior.
 import {completeness, verificationOf} from './interfaz-core.js';
-import {partsOf} from './request-core.js';
+import {partsOf,createRequestGate} from './request-core.js';
+import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
+import {addReport,listReports} from './reportes.js';
 const movil = matchMedia('(max-width:900px)');
 const SECCIONES = [
  {id: 'areas', nombre: 'Áreas', icono: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6"/>'},
@@ -21,8 +23,10 @@ const icono = (paths, tam = 22) => `<svg viewBox="0 0 24 24" width="${tam}" heig
 
 const clasica = new URLSearchParams(location.search).get('vista') === 'clasica';
 if (!clasica) iniciar();
-// Cruzar el límite teléfono/computadora rehace la página para no mezclar las dos distribuciones.
-if (!clasica) movil.addEventListener('change', () => location.reload());
+// Cambiar de distribución conserva el formulario y sus borradores.
+if (!clasica) movil.addEventListener('change', () => {
+ document.body.classList.toggle('app-movil',movil.matches);document.body.classList.toggle('app-pc',!movil.matches);window.dispatchEvent(new Event('resize'));
+});
 
 function iniciar() {
  document.body.classList.add('app-tel', movil.matches ? 'app-movil' : 'app-pc');
@@ -34,8 +38,18 @@ function iniciar() {
  let eligiendo = null; // campo que espera una bomba tocada en el 3D o en la franja
  let viendoFicha = false;
  let enReparacion = new Map(); // tag → {desde, motivo}
- let pendientes = {repairs: [], sinFuncionar: [], writable: false};
- const leerPendientes = () => fetch('/api/pending').then(r => r.json()).then(r => { pendientes = r; pintarGlobo(); enReparacion = new Map((r.repairs || []).map(x => [x.tag, x])); pintarFranja(); pintarRegreso(); if (seccion === 'pendientes') pintarPendientes(); }).catch(() => {});
+ let pendientes = {repairs: [], sinFuncionar: [], writable: false, available: false, loading: true};
+ const pendingGate=createRequestGate();
+ const leerPendientes = async () => {
+  const current=pendingGate.begin();
+  try{const response=await fetch('/api/pending');if(!response.ok)throw new Error('No se pudo consultar el estado de planta.');const data=await response.json();if(!current())return;
+   pendientes={...data,available:data.writable===true&&Array.isArray(data.repairs)&&Array.isArray(data.sinFuncionar),loading:false};
+  }catch(error){if(!current())return;pendientes={repairs:[],sinFuncionar:[],writable:false,available:false,loading:false,error:error.message};}
+  pintarGlobo();enReparacion=new Map((pendientes.available?pendientes.repairs:[]).map(x=>[x.tag,x]));pintarFranja();pintarRegreso();if(seccion==='pendientes')pintarPendientes();
+ };
+ let reportTag='',applyingDraft=false,reportBusy=false,storageReady=false,draftRestored=false;
+ const nextReportId=()=>globalThis.crypto?.randomUUID?.()||'reporte-'+Date.now()+'-'+Math.random().toString(36).slice(2);let reportId=nextReportId();
+ const draftStore=createDraftStore(localStorage);
 
  // ---------- Estructura ----------
  const titulo = document.createElement('div'); titulo.id = 'tel-titulo'; $('header')?.append(titulo);
@@ -54,7 +68,7 @@ function iniciar() {
  const fab = document.createElement('button'); fab.type = 'button'; fab.className = 'tel-fab';
  fab.innerHTML = icono('<path d="M12 5v14M5 12h14"/>', 22) + '<span>Reportar</span>'; fab.setAttribute('aria-label', 'Reportar un mantenimiento de esta bomba');
  fab.hidden = true; document.body.append(fab);
- fab.onclick = () => { const tag = V()?.pump?.tag; V()?.explode(0); V()?.back(); mostrar('mantenimiento'); if (tag) { $('#mant-bomba').value = tag; pintarElegida('mant-bomba'); } };
+ fab.onclick = () => { const tag = V()?.pump?.tag; V()?.explode(0); V()?.back(); mostrar('mantenimiento'); if (tag) setReportTag(tag); };
 
  // ---------- Áreas ----------
  paneles.areas.innerHTML = `<label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="tel-buscar" type="search" placeholder="Buscar bomba (ej. B14)" autocomplete="off"></label>
@@ -109,7 +123,7 @@ function iniciar() {
  const pie = id => `<div class="tel-dos"><div class="tel-campo"><label for="${id}-autor">Responsable</label><input id="${id}-autor" required maxlength="100" autocomplete="name"></div>
   <div class="tel-campo"><label for="${id}-fecha">Fecha</label><input id="${id}-fecha" type="date" required></div></div>`;
 
- paneles.mantenimiento.innerHTML = `<form id="tel-mant" novalidate>${campoBomba('mant-bomba')}
+ paneles.mantenimiento.innerHTML = `<p id="mant-storage" class="tel-storage-note" role="status">Consultando dónde se puede guardar…</p><p id="mant-draft-status" class="tel-draft-status" aria-live="polite"></p><form id="tel-mant" novalidate>${campoBomba('mant-bomba')}
   <div class="tel-campo"><label for="mant-problema">Problema</label><textarea id="mant-problema" rows="2" maxlength="600" placeholder="Qué falla o qué se hizo"></textarea></div>
   <div class="tel-campo"><span class="tel-etiqueta">Repuestos usados</span><div id="mant-repuestos"></div>
    <button type="button" class="tel-sec" id="mant-agregar">${icono('<path d="M12 5v14M5 12h14"/>', 18)} Agregar repuesto</button></div>
@@ -121,7 +135,11 @@ function iniciar() {
    <p class="tel-nota">Si se la llevan, la ficha queda «En reparación» hasta que se registre que volvió.</p></fieldset>
   ${pie('mant')}</form>
   <div class="tel-accion"><p class="tel-aviso" role="status" id="mant-aviso"></p>
-   <div class="tel-accion-fila"><span id="mant-resumen"></span><button class="tel-primario" type="submit" form="tel-mant">Enviar reporte</button></div></div>`;
+   <div class="tel-accion-fila"><span id="mant-resumen"></span><button class="tel-primario" type="submit" form="tel-mant" disabled>Consultando…</button></div></div>
+  <button type="button" class="tel-sec" id="mant-export">Descargar este reporte para la computadora de planta</button>
+  <section id="mant-local" aria-label="Reportes guardados en este dispositivo"></section>
+  <section id="mant-import" hidden><h2 class="tel-sub">Importar reportes del teléfono</h2><p class="tel-nota">Elegí el paquete descargado en el teléfono. Revisá los equipos y fechas antes de importarlo a Obsidian.</p>
+   <input id="mant-package" type="file" accept="application/json,.json" aria-label="Paquete de reportes de Vocatus"><div id="mant-import-preview"></div><button type="button" class="tel-sec" id="mant-import-confirm" disabled>Importar los reportes revisados</button></section>`;
 
  paneles.pendientes.innerHTML = `<div id="pend-lista"><p class="tel-vacio">Cargando…</p></div>`;
 
@@ -136,7 +154,7 @@ function iniciar() {
  // Carrito compartido con /solicitud.html (misma clave y formato).
  const carrito = { leer() { try { return JSON.parse(localStorage.getItem('vocatus-solicitud')) || []; } catch { return []; } }, guardar(c) { try { localStorage.setItem('vocatus-solicitud', JSON.stringify(c)); } catch {} } };
  const mismo = (a, b) => a.tag === b.tag && a.pieza === b.pieza && (a.codigo || '') === (b.codigo || '') && (a.detalle || '') === (b.detalle || '');
- let repuestosFicha = [];
+ let repuestosFicha = [];const bodegaGate=createRequestGate();
  function pintarBodega() {
   const tag = $('#bod-bomba').value, c = carrito.leer();
   $('#bod-cuenta').textContent = c.length ? `${c.length} ${c.length === 1 ? 'repuesto' : 'repuestos'} en la solicitud` : 'La solicitud está vacía';
@@ -146,25 +164,28 @@ function iniciar() {
   if (!tag) { lista.innerHTML = '<p class="tel-vacio">Elegí una bomba para ver sus repuestos.</p>'; return; }
   if (!repuestosFicha.length) { lista.innerHTML = `<p class="tel-vacio">La ficha de ${esc(tag)} todavía no tiene sello, rodamientos ni o-rings registrados.</p>`; return; }
   lista.innerHTML = '<div class="tel-repuestos">' + repuestosFicha.map((r, i) => { const en = c.some(x => mismo(x, r));
-   return `<div class="tel-rep-fila"><span><strong>${esc(r.pieza)}${r.cantidad > 1 ? ' ×' + r.cantidad : ''}</strong><small>${esc(r.codigo || r.detalle || 'sin código en la ficha')}</small></span>${en ? `<button type="button" class="tel-en" data-quitar="${i}" aria-label="Quitar ${esc(r.pieza)} de la solicitud">✓ En la solicitud</button>` : `<button type="button" class="tel-sec" data-agregar="${i}">+ Agregar</button>`}</div>`; }).join('') + '</div>';
-  lista.querySelectorAll('[data-agregar]').forEach(b => b.onclick = () => { const r = repuestosFicha[Number(b.dataset.agregar)]; carrito.guardar([...carrito.leer(), {...r, id: crypto.randomUUID?.() || String(Date.now() + Math.random())}]); pintarBodega(); });
+   return `<div class="tel-rep-fila"><span><strong>${esc(r.tag)} · ${esc(r.pieza)}${r.cantidad > 1 ? ' ×' + r.cantidad : ''}</strong><small>${esc(r.codigo || r.detalle || 'sin código en la ficha')}</small></span>${en ? `<button type="button" class="tel-en" data-quitar="${i}" aria-label="Quitar ${esc(r.pieza)} de la solicitud">✓ En la solicitud</button>` : `<button type="button" class="tel-sec" data-agregar="${i}">+ Agregar</button>`}</div>`; }).join('') + '</div>';
+  lista.querySelectorAll('[data-agregar]').forEach(b => b.onclick = () => { const r = repuestosFicha[Number(b.dataset.agregar)]; if(!r||r.tag!==$('#bod-bomba').value){aviso('mant','La ficha cambió; volvé a seleccionar la bomba.','error');return;}carrito.guardar([...carrito.leer(), {...r, id: crypto.randomUUID?.() || String(Date.now() + Math.random())}]); pintarBodega(); });
   lista.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { const r = repuestosFicha[Number(b.dataset.quitar)]; carrito.guardar(carrito.leer().filter(x => !mismo(x, r))); pintarBodega(); });
  }
  async function elegirBodega() {
-  const tag = $('#bod-bomba').value; repuestosFicha = [];
-  if (tag) { $('#bod-lista').innerHTML = '<p class="tel-vacio">Leyendo ficha…</p>'; try { repuestosFicha = partsOf(await V().api('/api/pump?tag=' + encodeURIComponent(tag))); } catch (err) { $('#bod-lista').innerHTML = `<p class="tel-vacio">${esc(err.message)}</p>`; return; } }
-  pintarBodega();
+  const tag=$('#bod-bomba').value,current=bodegaGate.begin();repuestosFicha=[];
+  if(!tag){pintarBodega();return;}
+  $('#bod-lista').innerHTML='<p class="tel-vacio">Leyendo ficha…</p>';
+  try{const pump=await V().api('/api/pump?tag='+encodeURIComponent(tag));if(!current()||tag!==$('#bod-bomba').value)return;
+   if(pump.tag!==tag)throw new Error('La respuesta pertenece a otro equipo.');repuestosFicha=partsOf(pump);pintarBodega();
+  }catch(error){if(current()&&tag===$('#bod-bomba').value)$('#bod-lista').innerHTML=`<p class="tel-vacio">${esc(error.message)}</p>`;}
  }
  $('#bod-bomba').onchange = elegirBodega;
 
  for (const id of ['mant']) { $(`#${id}-autor`).value = leer('vocatus-responsable'); $(`#${id}-fecha`).value = hoy(); $(`#${id}-autor`).onchange = e => guardar('vocatus-responsable', e.target.value.trim()); }
- const repuestoFila = () => { const d = document.createElement('div'); d.className = 'tel-repuesto'; d.innerHTML = '<input placeholder="Código de bodega" maxlength="60" aria-label="Código de bodega"><input placeholder="Nombre del repuesto" maxlength="120" aria-label="Nombre del repuesto"><button type="button" aria-label="Quitar este repuesto">×</button>'; d.querySelector('button').onclick = () => d.remove(); $('#mant-repuestos').append(d); };
- $('#mant-agregar').onclick = repuestoFila; repuestoFila();
+ const repuestoFila = (value={}) => { const d = document.createElement('div'); d.className = 'tel-repuesto'; d.innerHTML = '<input placeholder="Código de bodega" maxlength="60" aria-label="Código de bodega"><input placeholder="Nombre del repuesto" maxlength="120" aria-label="Nombre del repuesto"><button type="button" aria-label="Quitar este repuesto">×</button>'; const inputs=d.querySelectorAll('input');inputs[0].value=value.code||'';inputs[1].value=value.name||'';d.querySelector('button').onclick=()=>{d.remove();saveReportDraft();};$('#mant-repuestos').append(d); };
+ $('#mant-agregar').onclick=()=>{if(document.querySelectorAll('.tel-repuesto').length>=50)return aviso('mant','Máximo 50 líneas de repuestos.','error');repuestoFila();saveReportDraft();};repuestoFila();
 
  contenido.addEventListener('click', e => {
   const elegir = e.target.closest('[data-elegir]'), localizar = e.target.closest('[data-localizar]');
-  if (elegir) { eligiendo = elegir.dataset.elegir; aviso('mant', 'Tocá la bomba en el 3D o en la franja de códigos.'); document.body.classList.add('tel-eligiendo'); }
-  if (localizar) { const tag = $('#' + localizar.dataset.localizar).value; if (tag) { document.body.classList.add('tel-3d'); V()?.select(tag); setTimeout(() => V()?.locate(), 600); } else aviso('mant', 'Elegí primero la bomba.', 'error'); }
+  if (elegir) { V()?.ensure3D?.();eligiendo = elegir.dataset.elegir; aviso('mant', 'Tocá la bomba en el 3D o en la franja de códigos.'); document.body.classList.add('tel-eligiendo'); }
+  if (localizar) { const tag = $('#' + localizar.dataset.localizar).value; if (tag) { document.body.classList.add('tel-3d');V()?.ensure3D?.();V()?.select(tag); setTimeout(() => V()?.locate(), 600); } else aviso('mant', 'Elegí primero la bomba.', 'error'); }
  });
  function pintarElegida(id) {
   const sel = $('#' + id), card = $('#' + id + '-elegida'), fila = $('#' + id + '-fila'), tag = sel.value;
@@ -173,38 +194,65 @@ function iniciar() {
   if (tag) { card.innerHTML = `<strong>${esc(tag)}</strong><span>${esc([p?.marca, p?.modelo].filter(Boolean).join(' ') || '')}${p?.nombre ? ' · ' + esc(p.nombre) : ''}</span><button type="button" class="tel-cambiar">Cambiar</button>`; card.querySelector('button').onclick = () => { card.hidden = true; fila.hidden = false; sel.focus(); }; }
  }
  const resumenMant = () => { const a = $('#mant-autor').value.trim(), f = $('#mant-fecha').value; $('#mant-resumen').textContent = (a || 'Sin responsable') + ' · ' + (f === hoy() ? 'hoy' : f || 'sin fecha'); };
- $('#mant-bomba').onchange = () => pintarElegida('mant-bomba');
+ $('#mant-bomba').onchange=()=>setReportTag($('#mant-bomba').value);
  $('#mant-autor').addEventListener('input', resumenMant); $('#mant-fecha').addEventListener('input', resumenMant); resumenMant();
  function aviso(form, texto, tipo = '') { const el = $(`#${form}-aviso`); el.textContent = texto; el.dataset.tipo = tipo; }
 
- $('#tel-mant').onsubmit = async e => {
-  e.preventDefault();
-  const tag = $('#mant-bomba').value, problema = $('#mant-problema').value.trim(), comentario = $('#mant-comentario').value.trim();
-  const retiro = document.querySelector('[name=mant-retiro]:checked')?.value === 'si';
-  const operativo = document.querySelector('[name=mant-funcional]:checked')?.value || '', author = $('#mant-autor').value.trim(), date = $('#mant-fecha').value;
-  const parts = [...document.querySelectorAll('.tel-repuesto')].map(r => [...r.querySelectorAll('input')].map(i => i.value.trim())).filter(([c, n]) => c || n).map(([c, n]) => [c && 'Código ' + c, n].filter(Boolean).join(' · ')).join('\n');
-  const falta = [!tag && 'el equipo', !problema && 'el problema', !operativo && 'si quedó funcionando', !author && 'el responsable', !date && 'la fecha'].filter(Boolean);
-  if (falta.length) return aviso('mant', 'Falta indicar ' + falta.join(', ') + '.', 'error');
-  if (!V()?.writable) return aviso('mant', 'Este alojamiento no guarda en Obsidian. Usá el visor de la computadora de planta.', 'error');
-  try {
-   aviso('mant', 'Enviando…');
-   await V().api('/api/maintenance', {tag, date, author, title: 'Mantenimiento: ' + problema.split('\n')[0].slice(0, 80), symptoms: problema, details: comentario || problema, parts, operativo});
-   let texto = `Guardado en el historial de ${tag}.`;
-   if (retiro && enReparacion.has(tag)) texto += ' Ya figuraba en reparación.';
-   else if (retiro) {
-    try { await V().api('/api/equipment', {action: 'repair', tag, reason: problema.split('\n')[0].slice(0, 300), report: comentario, author, date}); texto += ' Quedó «En reparación».'; }
-    catch (err) { aviso('mant', texto + ' No se pudo marcar «En reparación»: ' + err.message, 'error'); leerPendientes(); return; }
+ function snapshotReport(){return {id:reportId,problema:$('#mant-problema').value,comentario:$('#mant-comentario').value,author:$('#mant-autor').value,date:$('#mant-fecha').value,operativo:document.querySelector('[name=mant-funcional]:checked')?.value||'',retiro:document.querySelector('[name=mant-retiro]:checked')?.value||'no',parts:[...document.querySelectorAll('.tel-repuesto')].map(r=>({code:r.querySelectorAll('input')[0].value,name:r.querySelectorAll('input')[1].value}))};}
+ function saveReportDraft(){
+  if(applyingDraft)return;try{draftStore.write(reportTag,snapshotReport());const label=reportTag?'Borrador de '+reportTag:'Borrador sin equipo';const el=$('#mant-draft-status');if(el.textContent!==label+' guardado en este dispositivo.')el.textContent=label+' guardado en este dispositivo.';}
+  catch(error){$('#mant-draft-status').textContent='No se pudo conservar el borrador en este navegador. Descargá el reporte antes de salir.';}
+ }
+ function setReportTag(tag,force=false){
+  if(tag===reportTag&&!force){$('#mant-bomba').value=tag;pintarElegida('mant-bomba');return;}
+  if(!force)saveReportDraft();reportTag=tag;let draft=null;
+  try{draft=draftStore.read(tag);}catch(error){aviso('mant','No se pudo recuperar el borrador de '+(tag||'este equipo')+'. '+error.message,'error');}
+  applyingDraft=true;reportId=draft?.id||nextReportId();$('#mant-bomba').value=tag;
+  $('#mant-problema').value=draft?.problema||'';$('#mant-comentario').value=draft?.comentario||'';$('#mant-autor').value=draft?.author??leer('vocatus-responsable');$('#mant-fecha').value=draft?.date??hoy();
+  document.querySelectorAll('[name=mant-funcional]').forEach(r=>r.checked=r.value===(draft?.operativo||''));document.querySelectorAll('[name=mant-retiro]').forEach(r=>r.checked=r.value===(draft?.retiro||'no'));
+  $('#mant-repuestos').innerHTML='';for(const row of draft?.parts?.length?draft.parts:[{}])repuestoFila(row);
+  applyingDraft=false;pintarElegida('mant-bomba');resumenMant();guardar('vocatus-reporte-tag',tag);saveReportDraft();paintLocalReports();
+ }
+ $('#tel-mant').addEventListener('input',saveReportDraft);$('#tel-mant').addEventListener('change',saveReportDraft);window.addEventListener('pagehide',saveReportDraft);
+ function reportInput(){
+  const d=snapshotReport(),tag=$('#mant-bomba').value;
+  if(tag!==reportTag)throw new Error('El equipo cambió. Volvé a seleccionarlo antes de guardar.');
+  return normalizeFieldReport({id:reportId,tag,date:d.date,author:d.author,title:'Mantenimiento: '+d.problema.split('\n')[0].slice(0,80),symptoms:d.problema,text:d.comentario||d.problema,parts:d.parts.filter(r=>r.code.trim()||r.name.trim()).map(r=>[r.code.trim()&&'Código '+r.code.trim(),r.name.trim()].filter(Boolean).join(' · ')).join('\n'),operativo:d.operativo,retirado:d.retiro==='si'});
+ }
+ function downloadReports(records){const pkg=fieldReportPackage(records),blob=new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Reportes_Vocatus_'+records[0].tag+'_'+hoy()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);}
+ $('#mant-export').onclick=()=>{try{downloadReports([reportInput()]);aviso('mant','Paquete descargado. Importalo desde el visor de la computadora de planta.','ok');}catch(error){aviso('mant',error.message,'error');}};
+ let localPaint=0;
+ async function paintLocalReports(){
+  const ticket=++localPaint,tag=reportTag;try{const records=tag?(await listReports(tag)).filter(r=>r.source==='browser'&&r.fieldReport):[];if(ticket!==localPaint||tag!==reportTag)return;
+   $('#mant-local').innerHTML=records.length?'<h2 class="tel-sub">Pendientes de llevar a planta · '+esc(tag)+'</h2>'+records.map((r,i)=>`<div class="tel-local-report"><span>${esc(r.date)} · ${esc(r.title)}<small>Solo en este dispositivo · sin importar a Obsidian</small></span><button type="button" class="tel-sec" data-package="${i}">Descargar paquete</button></div>`).join(''):'';
+   $('#mant-local').querySelectorAll('[data-package]').forEach(b=>b.onclick=()=>{try{downloadReports([records[Number(b.dataset.package)]]);}catch(error){aviso('mant',error.message,'error');}});
+  }catch(error){if(ticket===localPaint)$('#mant-local').textContent='No se pudieron leer los reportes de este dispositivo.';}
+ }
+ function storageMode(){storageReady=true;const connected=V()?.writable===true,button=document.querySelector('button[form=tel-mant]');
+  $('#mant-storage').textContent=connected?'Los reportes se guardan en Obsidian en la computadora de planta. El borrador se conserva en este dispositivo.':'Guardado en este dispositivo: no hay sincronización con Obsidian. Podés guardar el reporte aquí y descargar un paquete para importarlo en la computadora de planta.';
+  button.textContent=connected?'Enviar reporte a Obsidian':'Guardar en este dispositivo';button.disabled=false;$('#mant-import').hidden=!connected;paintLocalReports();
+ }
+ let packageRecords=[];
+ $('#mant-package').onchange=async e=>{packageRecords=[];$('#mant-import-confirm').disabled=true;$('#mant-import-preview').textContent='';try{const file=e.target.files?.[0];if(!file)return;if(file.size>5*1024*1024)throw new Error('Máximo 5 MB.');packageRecords=parseFieldReportPackage(await file.text());$('#mant-import-preview').innerHTML='<p>Revisá estos reportes:</p><ul>'+packageRecords.map(r=>`<li><strong>${esc(r.tag)}</strong> · ${esc(r.date)} · ${esc(r.author)} · ${esc(r.title)}${r.retirado?' · Retirado de su lugar':''}</li>`).join('')+'</ul>';$('#mant-import-confirm').disabled=!V()?.writable;}catch(error){$('#mant-import-preview').textContent=error.message;}};
+ $('#mant-import-confirm').onclick=async()=>{const button=$('#mant-import-confirm');button.disabled=true;try{const n=await importFieldReports(packageRecords,(path,body)=>V().api(path,body));$('#mant-import-preview').textContent=n+' reportes importados a Obsidian. El archivo original se conserva.';packageRecords=[];$('#mant-package').value='';leerPendientes();}catch(error){$('#mant-import-preview').textContent=error.message+' Podés reintentar: los reportes ya importados no se duplican.';button.disabled=!V()?.writable;}};
+ $('#tel-mant').onsubmit=async e=>{
+  e.preventDefault();if(reportBusy||!storageReady)return;let record;try{record=reportInput();}catch(error){return aviso('mant',error.message,'error');}
+  saveReportDraft();const tag=record.tag,button=document.querySelector('button[form=tel-mant]');reportBusy=true;button.disabled=true;
+  try{
+   if(!V()?.writable){await addReport({...record,fieldReport:true});aviso('mant','Reporte de '+tag+' guardado en este dispositivo. Todavía no está en Obsidian: descargá su paquete para llevarlo a planta.','ok');}
+   else{
+    await importFieldReports([record],(path,body)=>V().api(path,body));aviso('mant','Reporte de '+tag+' guardado en Obsidian.','ok');leerPendientes();
    }
-   aviso('mant', texto, 'ok'); leerPendientes(); if (V()?.pump?.tag === tag) V()?.select(tag);
-   $('#mant-problema').value = ''; $('#mant-comentario').value = ''; $('#mant-repuestos').innerHTML = ''; repuestoFila();
-   document.querySelectorAll('[name=mant-funcional]').forEach(r => r.checked = false);
-   document.querySelector('[name=mant-retiro][value=no]').checked = true;
-  } catch (err) { aviso('mant', err.message, 'error'); }
+   draftStore.remove(tag);
+   if(reportTag===tag){applyingDraft=true;reportId=nextReportId();$('#mant-problema').value='';$('#mant-comentario').value='';$('#mant-repuestos').innerHTML='';repuestoFila();document.querySelectorAll('[name=mant-funcional]').forEach(r=>r.checked=false);document.querySelector('[name=mant-retiro][value=no]').checked=true;applyingDraft=false;}
+   await paintLocalReports();
+  }catch(error){aviso('mant',error.message+' El borrador se conserva para reintentar.','error');}
+  finally{reportBusy=false;button.disabled=false;saveReportDraft();}
  };
 
  // ---------- Pendientes ----------
  function pintarGlobo() {
-  const n = (pendientes.repairs || []).length + (pendientes.sinFuncionar || []).length, g = barra.querySelector('.tel-globo');
+  const n = pendientes.available ? (pendientes.repairs || []).length + (pendientes.sinFuncionar || []).length : 0, g = barra.querySelector('.tel-globo');
   if (g) { g.hidden = !n; g.textContent = n > 99 ? '99+' : String(n); g.setAttribute('aria-label', n + ' pendientes'); }
  }
  function pintarPendientes() {
@@ -219,11 +267,11 @@ function iniciar() {
   const atencion = [...repairs.map(r => fila(r.tag, `En reparación desde ${esc(r.desde || '—')} · ${esc(r.motivo)}`, 'rojo')),
    ...sinFun.map(r => fila(r.tag, `Último mantenimiento ${esc(r.date)}: no quedó funcionando`, 'ambar', 'historial'))];
   lista.innerHTML = `<div class="tel-contadores">
-    <div class="tel-contador rojo"><b>${repairs.length}</b><span>Fuera de su lugar</span></div>
-    <div class="tel-contador ambar"><b>${sinFun.length}</b><span>Quedó sin funcionar</span></div>
+    <div class="tel-contador rojo"><b>${pendientes.available?repairs.length:'—'}</b><span>Fuera de su lugar</span></div>
+    <div class="tel-contador ambar"><b>${pendientes.available?sinFun.length:'—'}</b><span>Quedó sin funcionar</span></div>
     <div class="tel-contador"><b>${incompletas.length}</b><span>Fichas por completar</span></div></div>`
-   + (pendientes.writable ? '' : '<p class="tel-vacio">Este alojamiento no guarda reparaciones ni informes; solo se muestran las fichas.</p>')
-   + `<h2 class="tel-sub">Atención ahora</h2>` + (atencion.length ? `<div class="tel-pends">${atencion.join('')}</div>` : '<p class="tel-vacio">Nada urgente: ninguna bomba fuera de su lugar ni sin funcionar.</p>')
+   + (pendientes.available?'':`<p class="tel-storage-note">${pendientes.loading?'Consultando el estado de planta…':pendientes.error?'No se pudo consultar el estado de planta. Reintentá cuando vuelva la conexión.':'Estado de planta no disponible: este alojamiento no está sincronizado con Obsidian.'}</p>`)
+   + `<h2 class="tel-sub">Atención ahora</h2>` + (!pendientes.available?'<p class="tel-vacio">No se puede confirmar si hay equipos fuera de su lugar o sin funcionar.</p>':atencion.length?`<div class="tel-pends">${atencion.join('')}</div>`:'<p class="tel-vacio">Sin equipos fuera de su lugar o sin funcionar en la última consulta a Obsidian.</p>')
    + `<h2 class="tel-sub">Revisión de fichas</h2>`
    + grupo('Fichas incompletas', incompletas.map(([p, c]) => fila(p.tag, `${nombre(p.tag)} · Completa ${c.done}/${c.total}`, 'gris')), 'Todas las fichas están completas.')
    + grupo('Sin verificar en campo', sinVer.map(p => { const v = verificationOf(p); return fila(p.tag, `${nombre(p.tag)} · ${v.legacy ? 'Registro antiguo' : v.partial ? 'Verificación parcial' : 'Sin verificar'}`, 'gris'); }), 'Todas las fichas están verificadas.');
@@ -279,7 +327,7 @@ function iniciar() {
 
  function elegirBomba(tag) {
   if (eligiendo) {
-   const sel = $('#' + eligiendo); sel.value = tag; pintarElegida(eligiendo); aviso('mant', `Equipo elegido: ${tag}.`, 'ok');
+   const sel=$('#'+eligiendo);if(eligiendo==='mant-bomba')setReportTag(tag);else{sel.value=tag;pintarElegida(eligiendo);} aviso('mant', `Equipo elegido: ${tag}.`, 'ok');
    eligiendo = null; document.body.classList.remove('tel-eligiendo'); V()?.select(tag); return;
   }
   if (seccion === 'areas') abrirFicha(tag); else V()?.select(tag);
@@ -287,10 +335,10 @@ function iniciar() {
  // Una bomba tocada en el 3D llega por este aviso del visor.
  document.addEventListener('vocatus:bomba', e => {
   pintarFranja();
-  if (eligiendo) { const tag = e.detail, campo = eligiendo; eligiendo = null; document.body.classList.remove('tel-eligiendo'); $('#' + campo).value = tag; pintarElegida(campo); aviso('mant', `Equipo elegido: ${tag}.`, 'ok'); return; }
+  if (eligiendo) { const tag = e.detail, campo = eligiendo; eligiendo = null; document.body.classList.remove('tel-eligiendo'); if(campo==='mant-bomba')setReportTag(tag);else{$('#'+campo).value=tag;pintarElegida(campo);} aviso('mant', `Equipo elegido: ${tag}.`, 'ok'); return; }
   if (seccion === 'areas' && !viendoFicha) abrirFicha(e.detail);
   pintarRegreso();
-  if (!$('#mant-bomba').value) { $('#mant-bomba').value = e.detail; pintarElegida('mant-bomba'); }
+  if(!$('#mant-bomba').value)setReportTag(e.detail);
   if (!$('#bod-bomba').value) { $('#bod-bomba').value = e.detail; elegirBodega(); }
  });
 
@@ -305,17 +353,20 @@ function iniciar() {
   history.replaceState(null, '', '?s=' + id + location.hash);
   if (id === 'pendientes') { pintarPendientes(); leerPendientes(); }
   if (id === 'bodega') pintarBodega();
-  if (id === 'mantenimiento') resumenMant();
+  if(id==='mantenimiento'){resumenMant();paintLocalReports();}
+  if(['areas','historial'].includes(id))V()?.ensure3D?.();
   if (id === 'historial') pintarHistorial();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
  barra.querySelectorAll('button').forEach(b => b.onclick = () => { if (viendoFicha) { V()?.explode(0); V()?.back(); } mostrar(b.dataset.s); });
 
  function alCargar() {
+  if(!V()?.pumps?.length)return;
   pintarMarcas(); pintarFranja(); leerPendientes();
-  const sel = V()?.pump?.tag || '';
-  for (const id of ['mant-bomba', 'bod-bomba']) $('#' + id).innerHTML = opciones(sel);
-  pintarElegida('mant-bomba'); if (sel) elegirBodega();
+  const sel=V()?.pump?.tag||'',previous=reportTag||leer('vocatus-reporte-tag')||sel;
+  const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(previous);$('#bod-bomba').innerHTML=opciones(bodega||sel);
+  if(!draftRestored){setReportTag($('#mant-bomba').value,true);draftRestored=true;}else if(previous!==reportTag)setReportTag($('#mant-bomba').value);else pintarElegida('mant-bomba');
+  if($('#bod-bomba').value)elegirBodega();storageMode();
   if (seccion === 'historial') pintarHistorial();
   if (seccion === 'pendientes') pintarPendientes();
  }

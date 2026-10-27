@@ -1,6 +1,7 @@
 // En local se guardan en Obsidian. En Vercel se conserva el almacenamiento IndexedDB.
 // Los reportes anteriores del navegador se importan explícitamente, sin borrar antes de guardar.
 import {measurementInput} from './measurements.js';
+import {importFieldReports} from './field-report-core.js';
 const DB='vocatus-reportes',STORE='reportes',MAX_PDF=10*1024*1024;
 let storage={writable:false,token:''};
 export function configureReports(options){storage={writable:options.writable,token:options.token};}
@@ -18,7 +19,7 @@ async function attachment(file){
 async function saveInObsidian(rec){
  const upload=rec.pdf?.blob?await attachment(rec.pdf.blob):null;
  if(upload)upload.name=rec.pdf.name;
- return (await request({tag:rec.tag,date:rec.date,title:rec.title,author:rec.author||'Autor no registrado (importado del navegador)',details:rec.text,parts:rec.parts||'',symptoms:rec.symptoms||'',sourceId:rec.id,attachment:upload,measurements:rec.mediciones||null})).report;
+ return (await request({tag:rec.tag,date:rec.date,title:rec.title,author:rec.author||'Autor no registrado (importado del navegador)',details:rec.text,parts:rec.parts||'',symptoms:rec.symptoms||'',operativo:rec.operativo,sourceId:rec.id,attachment:upload,measurements:rec.mediciones||null})).report;
 }
 let dbp=null;
 function open(){
@@ -45,10 +46,15 @@ export const listReports=async tag=>{
 export async function importReports(tag){
  if(!storage.writable)throw new Error('La importación requiere el visor local conectado a Obsidian.');
  const records=await browserReports(tag);let count=0;
- for(const record of records){await saveInObsidian(record);await tx('readwrite',s=>s.delete(record.id));count++;}
+ for(const record of records){
+  if(record.fieldReport)await importFieldReports([record],async(path,body)=>{
+   const res=await fetch(path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-Local-Token':storage.token},...(body?{body:JSON.stringify(body)}:{})});const data=await res.json();if(!res.ok)throw new Error(data.error||'No se pudo importar el reporte.');return data;
+  });else await saveInObsidian(record);
+  await tx('readwrite',s=>s.delete(record.id));count++;
+ }
  return count;
 }
-export async function addReport({tag,date,title,text,file,author,pressure,flow}){
+export async function addReport({tag,date,title,text,file,author,pressure,flow,id,parts='',symptoms='',operativo,retirado=false,fieldReport=false}){
   const mediciones=measurementInput(pressure,flow);
   if(!title?.trim())throw new Error('Escribí un título.');
   if(!text?.trim()&&!file&&mediciones.presion_bar===null&&mediciones.caudal_m3h===null)throw new Error('Escribí el reporte, anotá una medición o adjuntá un PDF.');
@@ -57,9 +63,9 @@ export async function addReport({tag,date,title,text,file,author,pressure,flow})
     if(file.size>MAX_PDF)throw new Error('El PDF supera 10 MB.');
   }
   if(storage.writable&&!author?.trim())throw new Error('Indicá el responsable de la intervención.');
-  const rec={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),tag,date,title:title.trim(),author:(author||'').trim(),text:(text||'').trim(),created:Date.now(),
-    mediciones,pdf:file?{name:file.name,size:file.size,blob:file}:null};
+  const rec={id:(id||(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random())),tag,date,title:title.trim(),author:(author||'').trim(),text:(text||'').trim(),created:Date.now(),
+    parts,symptoms,operativo,retirado,fieldReport,mediciones,pdf:file?{name:file.name,size:file.size,blob:file}:null};
   if(storage.writable)return saveInObsidian(rec);
-  await tx('readwrite',s=>s.add(rec));return {...rec,source:'browser'};
+  await tx('readwrite',s=>fieldReport?s.put(rec):s.add(rec));return {...rec,source:'browser'};
 }
 export const deleteReport=record=>record.source==='obsidian'?request({tag:record.tag,id:record.id},'DELETE'):tx('readwrite',s=>s.delete(record.id));

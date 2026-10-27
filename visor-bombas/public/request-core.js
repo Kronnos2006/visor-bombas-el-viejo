@@ -1,5 +1,10 @@
 export const known=v=>v!==false&&v!==true&&v!=null&&String(v).trim()!==''&&!/^(por confirmar|sin levantar|sin dato|pendiente)/i.test(String(v).trim());
 export const joinDetails=(...parts)=>parts.filter(known).join(' · ');
+// Una lectura anterior no puede actualizar una selección más reciente.
+export function createRequestGate() {
+ let latest = 0;
+ return {begin() { const ticket = ++latest; return () => ticket === latest; }};
+}
 // Solo elimina el token booleano erróneo, no palabras que contienen "false".
 export const cleanDetail=value=>String(value??'').split(' · ').filter(s=>s.trim()!=='false').join(' · ');
 export function cleanLegacyCart(cart){
