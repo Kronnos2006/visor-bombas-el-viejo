@@ -327,3 +327,9 @@ body.app-tel.tel-mapa-amplio #tel-contenido{display:none}
 body.app-tel header :is(#tema-toggle,#settings-open){order:3}
 
 body.app-tel header #cab-flujo:is(:hover,:active,[aria-pressed="true"]){background:transparent;border:0;box-shadow:none}
+
+/* En claro, el ron conserva tonos ámbar oscuros para mantener legible el texto. */
+body.claro #cab-ron stop:nth-child(1){stop-color:#9c5b10}
+body.claro #cab-ron stop:nth-child(2){stop-color:#995611}
+body.claro #cab-ron stop:nth-child(3){stop-color:#713706}
+body.claro #cab-ron stop:nth-child(4){stop-color:#8e4d0c}
