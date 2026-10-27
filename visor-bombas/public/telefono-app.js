@@ -87,7 +87,7 @@ function iniciar() {
   const cuenta = $('#tel-cuenta'); if (!cuenta) return;
   const nombreArea = area === 'planta' ? 'toda la planta' : (V()?.areaNombre(area) || area);
   const filtrando = q || fluido || marca;
-  cuenta.textContent = !enArea.length ? `No hay bombas registradas en ${nombreArea}.`
+  cuenta.textContent = !enArea.length ? `${nombreArea}: todavía no hay bombas con TAG y ficha. Las que se ven en el 3D están pendientes de identificar.`
    : !lista.length ? 'Ninguna bomba coincide con los filtros.'
    : `${lista.length} ${lista.length === 1 ? 'bomba' : 'bombas'}${filtrando ? ` de ${enArea.length}` : ''} en ${nombreArea}.`;
  }
