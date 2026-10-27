@@ -1066,7 +1066,7 @@ window.vocatus={
  get pumps(){return state.pumps;},get pump(){return state.pump;},get token(){return state.token;},get writable(){return !!state.writable;},get demo(){return !!state.demo;},
  select:tag=>selectPhotoPump(tag),
  tab:name=>{state.tab=name;renderPanel();},
- explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&Number(value)>30&&matchMedia('(max-width:900px)').matches)fly([15,12,32],[0,0,0],650);},
+ explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&Number(value)>30&&document.body.classList.contains('app-tel'))fly([15,12,32],[0,0,0],650);},
  locate:()=>locateSelectedPump(),
  back:()=>{if(state.view!=='plant'||state.pump)$('#back').click();},
  area:id=>chooseArea(id),
