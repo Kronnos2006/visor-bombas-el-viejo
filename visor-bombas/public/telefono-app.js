@@ -1,15 +1,16 @@
-// App de cinco secciones — Áreas, Pendientes, Historial, Bodega y Mantenimiento — según los bocetos
-// del 27-10-2026. Teléfono: 3D arriba, sección abajo. Computadora: secciones a la izquierda, 3D al
+// App de cinco secciones — Áreas, Pendientes, Historial, Bodega y Reportar (mantenimiento) — según
+// los bocetos del 27-10-2026 y la propuesta «App Vocatus · teléfono». Teléfono: 3D arriba, sección abajo. Computadora: secciones a la izquierda, 3D al
 // centro y la sección a la derecha. Reutiliza el visor (window.vocatus): no duplica la lógica de
 // selección, 3D, ficha ni guardado. Con ?vista=clasica se usa el visor anterior.
 import {completeness, verificationOf} from './interfaz-core.js';
+import {partsOf} from './request-core.js';
 const movil = matchMedia('(max-width:900px)');
 const SECCIONES = [
  {id: 'areas', nombre: 'Áreas', icono: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6"/>'},
  {id: 'pendientes', nombre: 'Pendientes', icono: '<path d="M9 3h6v3H9z"/><path d="M9 4.5H6V21h12V4.5h-3"/><path d="M9 12.5l2 2 4-4"/>'},
  {id: 'historial', nombre: 'Historial', icono: '<path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8.5"/>'},
  {id: 'bodega', nombre: 'Bodega', icono: '<path d="M3 8l9-5 9 5v10l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v10"/>'},
- {id: 'mantenimiento', nombre: 'Mantenimiento', icono: '<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>'},
+ {id: 'mantenimiento', nombre: 'Reportar', icono: '<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>'},
 ];
 const AREAS = {tanques: 'Sector de tanques', torre: 'Torre de destilación'};
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
@@ -34,7 +35,7 @@ function iniciar() {
  let viendoFicha = false;
  let enReparacion = new Map(); // tag → {desde, motivo}
  let pendientes = {repairs: [], sinFuncionar: [], writable: false};
- const leerPendientes = () => fetch('/api/pending').then(r => r.json()).then(r => { pendientes = r; enReparacion = new Map((r.repairs || []).map(x => [x.tag, x])); pintarFranja(); pintarRegreso(); if (seccion === 'pendientes') pintarPendientes(); }).catch(() => {});
+ const leerPendientes = () => fetch('/api/pending').then(r => r.json()).then(r => { pendientes = r; pintarGlobo(); enReparacion = new Map((r.repairs || []).map(x => [x.tag, x])); pintarFranja(); pintarRegreso(); if (seccion === 'pendientes') pintarPendientes(); }).catch(() => {});
 
  // ---------- Estructura ----------
  const titulo = document.createElement('div'); titulo.id = 'tel-titulo'; $('header')?.append(titulo);
@@ -43,13 +44,17 @@ function iniciar() {
  const contenido = document.createElement('section'); contenido.id = 'tel-contenido';
  document.body.append(contenido);
  const barra = document.createElement('nav'); barra.id = 'tel-barra'; barra.setAttribute('aria-label', 'Secciones');
- barra.innerHTML = SECCIONES.map(s => `<button type="button" data-s="${s.id}">${icono(s.icono)}<span>${s.nombre}</span></button>`).join('');
+ barra.innerHTML = SECCIONES.map(s => `<button type="button" data-s="${s.id}"><span class="tel-pill">${icono(s.icono)}</span><span>${s.nombre}</span>${s.id === 'pendientes' ? '<b class="tel-globo" hidden></b>' : ''}</button>`).join('');
  document.body.append(barra);
  const paneles = Object.fromEntries(SECCIONES.map(s => { const el = document.createElement('div'); el.className = 'tel-panel'; el.dataset.s = s.id; contenido.append(el); return [s.id, el]; }));
  const ficha = document.createElement('div'); ficha.className = 'tel-ficha'; ficha.hidden = true;
  ficha.innerHTML = '<button type="button" class="tel-volver"></button>';
  contenido.append(ficha);
  const inspector = $('.inspector'); if (inspector) ficha.append(inspector);
+ const fab = document.createElement('button'); fab.type = 'button'; fab.className = 'tel-fab';
+ fab.innerHTML = icono('<path d="M12 5v14M5 12h14"/>', 22) + '<span>Reportar</span>'; fab.setAttribute('aria-label', 'Reportar un mantenimiento de esta bomba');
+ ficha.append(fab);
+ fab.onclick = () => { const tag = V()?.pump?.tag; V()?.explode(0); V()?.back(); mostrar('mantenimiento'); if (tag) { $('#mant-bomba').value = tag; pintarElegida('mant-bomba'); } };
 
  // ---------- Áreas ----------
  paneles.areas.innerHTML = `<label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="tel-buscar" type="search" placeholder="Buscar bomba (ej. B14)" autocomplete="off"></label>
@@ -97,7 +102,8 @@ function iniciar() {
 
  // ---------- Formulario de Mantenimiento (incluye si se llevan la bomba) ----------
  const campoBomba = id => `<div class="tel-campo"><label for="${id}">Equipo</label>
-  <div class="tel-fila"><select id="${id}" required></select></div>
+  <div class="tel-elegida" id="${id}-elegida" hidden></div>
+  <div class="tel-fila" id="${id}-fila"><select id="${id}" required></select></div>
   <div class="tel-fila"><button type="button" class="tel-sec" data-elegir="${id}">${icono('<path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="5"/>', 18)} Elegir en el 3D</button>
   <button type="button" class="tel-sec" data-localizar="${id}">${icono('<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>', 18)} Localizar</button></div></div>`;
  const pie = id => `<div class="tel-dos"><div class="tel-campo"><label for="${id}-autor">Responsable</label><input id="${id}-autor" required maxlength="100" autocomplete="name"></div>
@@ -113,19 +119,43 @@ function iniciar() {
   <fieldset class="tel-campo tel-sino"><legend>¿Se la llevan de su lugar?</legend>
    <label><input type="radio" name="mant-retiro" value="si"> Sí</label><label><input type="radio" name="mant-retiro" value="no" checked> No</label>
    <p class="tel-nota">Si se la llevan, la ficha queda «En reparación» hasta que se registre que volvió.</p></fieldset>
-  ${pie('mant')}<p class="tel-aviso" role="status" id="mant-aviso"></p>
-  <button class="tel-primario" type="submit">Enviar</button></form>`;
+  ${pie('mant')}</form>
+  <div class="tel-accion"><p class="tel-aviso" role="status" id="mant-aviso"></p>
+   <div class="tel-accion-fila"><span id="mant-resumen"></span><button class="tel-primario" type="submit" form="tel-mant">Enviar reporte</button></div></div>`;
 
- paneles.pendientes.innerHTML = `<p class="tel-intro">Lo que necesita atención. Tocá una bomba para abrir su ficha.</p><div id="pend-lista"><p class="tel-vacio">Cargando…</p></div>`;
+ paneles.pendientes.innerHTML = `<div id="pend-lista"><p class="tel-vacio">Cargando…</p></div>`;
 
  paneles.historial.innerHTML = `<p class="tel-intro">Tocá una bomba para ver su historial con la vista explosionada.</p><div id="hist-filtro" class="tel-chips"></div><div id="hist-tarjetas" class="tel-tarjetas"></div>`;
 
- paneles.bodega.innerHTML = `<p class="tel-intro">Elegí la bomba y armá el pedido de repuestos para bodega.</p>
-  <div class="tel-campo"><label for="bod-bomba">Equipo</label><select id="bod-bomba"></select></div>
-  <button type="button" class="tel-primario" id="bod-ir">Armar pedido</button>
+ paneles.bodega.innerHTML = `<div class="tel-campo"><label for="bod-bomba">Bomba</label><select id="bod-bomba"></select></div>
+  <h2 class="tel-sub">Repuestos de la ficha</h2><div id="bod-lista"><p class="tel-vacio">Elegí una bomba para ver sus repuestos.</p></div>
+  <a class="tel-sec tel-manual" id="bod-manual" href="/solicitud.html">+ Otro repuesto a mano</a>
   <h2 class="tel-sub">Otras herramientas</h2>
-  <div class="tel-enlaces"><a href="/levantamiento.html">Actualizar datos de una bomba</a><a href="/avance.html">Avance del levantamiento</a><a href="/equipo.html">Mover o cambiar una bomba</a></div>`;
- $('#bod-ir').onclick = () => { const tag = $('#bod-bomba').value; location.href = '/solicitud.html' + (tag ? '?tag=' + encodeURIComponent(tag) : ''); };
+  <div class="tel-atajos"><a href="/levantamiento.html">Actualizar datos</a><a href="/avance.html">Avance</a><a href="/equipo.html">Mover o cambiar</a></div>
+  <div class="tel-accion"><div class="tel-accion-fila"><span id="bod-cuenta"></span><a class="tel-primario" id="bod-ir" href="/solicitud.html">Completar solicitud</a></div></div>`;
+ // Carrito compartido con /solicitud.html (misma clave y formato).
+ const carrito = { leer() { try { return JSON.parse(localStorage.getItem('vocatus-solicitud')) || []; } catch { return []; } }, guardar(c) { try { localStorage.setItem('vocatus-solicitud', JSON.stringify(c)); } catch {} } };
+ const mismo = (a, b) => a.tag === b.tag && a.pieza === b.pieza && (a.codigo || '') === (b.codigo || '') && (a.detalle || '') === (b.detalle || '');
+ let repuestosFicha = [];
+ function pintarBodega() {
+  const tag = $('#bod-bomba').value, c = carrito.leer();
+  $('#bod-cuenta').textContent = c.length ? `${c.length} ${c.length === 1 ? 'repuesto' : 'repuestos'} en la solicitud` : 'La solicitud está vacía';
+  const q = tag ? '?tag=' + encodeURIComponent(tag) : '';
+  $('#bod-ir').href = '/solicitud.html' + q; $('#bod-manual').href = '/solicitud.html' + q;
+  const lista = $('#bod-lista');
+  if (!tag) { lista.innerHTML = '<p class="tel-vacio">Elegí una bomba para ver sus repuestos.</p>'; return; }
+  if (!repuestosFicha.length) { lista.innerHTML = `<p class="tel-vacio">La ficha de ${esc(tag)} todavía no tiene sello, rodamientos ni o-rings registrados.</p>`; return; }
+  lista.innerHTML = '<div class="tel-repuestos">' + repuestosFicha.map((r, i) => { const en = c.some(x => mismo(x, r));
+   return `<div class="tel-rep-fila"><span><strong>${esc(r.pieza)}${r.cantidad > 1 ? ' ×' + r.cantidad : ''}</strong><small>${esc(r.codigo || r.detalle || 'sin código en la ficha')}</small></span>${en ? `<button type="button" class="tel-en" data-quitar="${i}" aria-label="Quitar ${esc(r.pieza)} de la solicitud">✓ En la solicitud</button>` : `<button type="button" class="tel-sec" data-agregar="${i}">+ Agregar</button>`}</div>`; }).join('') + '</div>';
+  lista.querySelectorAll('[data-agregar]').forEach(b => b.onclick = () => { const r = repuestosFicha[Number(b.dataset.agregar)]; carrito.guardar([...carrito.leer(), {...r, id: crypto.randomUUID?.() || String(Date.now() + Math.random())}]); pintarBodega(); });
+  lista.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { const r = repuestosFicha[Number(b.dataset.quitar)]; carrito.guardar(carrito.leer().filter(x => !mismo(x, r))); pintarBodega(); });
+ }
+ async function elegirBodega() {
+  const tag = $('#bod-bomba').value; repuestosFicha = [];
+  if (tag) { $('#bod-lista').innerHTML = '<p class="tel-vacio">Leyendo ficha…</p>'; try { repuestosFicha = partsOf(await V().api('/api/pump?tag=' + encodeURIComponent(tag))); } catch (err) { $('#bod-lista').innerHTML = `<p class="tel-vacio">${esc(err.message)}</p>`; return; } }
+  pintarBodega();
+ }
+ $('#bod-bomba').onchange = elegirBodega;
 
  for (const id of ['mant']) { $(`#${id}-autor`).value = leer('vocatus-responsable'); $(`#${id}-fecha`).value = hoy(); $(`#${id}-autor`).onchange = e => guardar('vocatus-responsable', e.target.value.trim()); }
  const repuestoFila = () => { const d = document.createElement('div'); d.className = 'tel-repuesto'; d.innerHTML = '<input placeholder="Código de bodega" maxlength="60" aria-label="Código de bodega"><input placeholder="Nombre del repuesto" maxlength="120" aria-label="Nombre del repuesto"><button type="button" aria-label="Quitar este repuesto">×</button>'; d.querySelector('button').onclick = () => d.remove(); $('#mant-repuestos').append(d); };
@@ -136,6 +166,15 @@ function iniciar() {
   if (elegir) { eligiendo = elegir.dataset.elegir; aviso('mant', 'Tocá la bomba en el 3D o en la franja de códigos.'); document.body.classList.add('tel-eligiendo'); }
   if (localizar) { const tag = $('#' + localizar.dataset.localizar).value; if (tag) { document.body.classList.add('tel-3d'); V()?.select(tag); setTimeout(() => V()?.locate(), 600); } else aviso('mant', 'Elegí primero la bomba.', 'error'); }
  });
+ function pintarElegida(id) {
+  const sel = $('#' + id), card = $('#' + id + '-elegida'), fila = $('#' + id + '-fila'), tag = sel.value;
+  const p = bombas().find(x => x.tag === tag);
+  card.hidden = !tag; fila.hidden = !!tag;
+  if (tag) { card.innerHTML = `<strong>${esc(tag)}</strong><span>${esc([p?.marca, p?.modelo].filter(Boolean).join(' ') || '')}${p?.nombre ? ' · ' + esc(p.nombre) : ''}</span><button type="button" class="tel-cambiar">Cambiar</button>`; card.querySelector('button').onclick = () => { card.hidden = true; fila.hidden = false; sel.focus(); }; }
+ }
+ const resumenMant = () => { const a = $('#mant-autor').value.trim(), f = $('#mant-fecha').value; $('#mant-resumen').textContent = (a || 'Sin responsable') + ' · ' + (f === hoy() ? 'hoy' : f || 'sin fecha'); };
+ $('#mant-bomba').onchange = () => pintarElegida('mant-bomba');
+ $('#mant-autor').addEventListener('input', resumenMant); $('#mant-fecha').addEventListener('input', resumenMant); resumenMant();
  function aviso(form, texto, tipo = '') { const el = $(`#${form}-aviso`); el.textContent = texto; el.dataset.tipo = tipo; }
 
  $('#tel-mant').onsubmit = async e => {
@@ -164,20 +203,30 @@ function iniciar() {
  };
 
  // ---------- Pendientes ----------
+ function pintarGlobo() {
+  const n = (pendientes.repairs || []).length + (pendientes.sinFuncionar || []).length, g = barra.querySelector('.tel-globo');
+  if (g) { g.hidden = !n; g.textContent = n > 99 ? '99+' : String(n); g.setAttribute('aria-label', n + ' pendientes'); }
+ }
  function pintarPendientes() {
   const lista = $('#pend-lista'); if (!lista) return;
   const nombre = tag => esc(bombas().find(p => p.tag === tag)?.nombre || '');
-  const item = (tag, linea, tab = 'ficha') => `<button type="button" class="tel-pend" data-tag="${esc(tag)}" data-tab="${tab}"><strong>${esc(tag)}</strong><span>${linea}</span></button>`;
-  const grupo = (titulo, items, vacio, abierto = true) => `<details class="tel-grupo"${abierto ? ' open' : ''}><summary><span>${titulo}</span><b>${items.length}</b></summary>${items.length ? `<div class="tel-pends">${items.join('')}</div>` : `<p class="tel-vacio">${vacio}</p>`}</details>`;
-  const fuera = (pendientes.repairs || []).map(r => item(r.tag, `Desde ${esc(r.desde || '—')} · ${esc(r.motivo)}`));
-  const sinFun = (pendientes.sinFuncionar || []).map(r => item(r.tag, `Último mantenimiento ${esc(r.date)}${r.title ? ' · ' + esc(r.title) : ''}`, 'historial'));
-  const incompletas = bombas().map(p => [p, completeness(p)]).filter(([, c]) => c.done < c.total).sort((a, b) => a[1].done / a[1].total - b[1].done / b[1].total).map(([p, c]) => item(p.tag, `${nombre(p.tag)} · Completos ${c.done}/${c.total}`));
-  const sinVer = bombas().filter(p => !verificationOf(p).verified).map(p => { const v = verificationOf(p); return item(p.tag, `${nombre(p.tag)} · ${v.legacy ? 'Registro antiguo' : v.partial ? 'Verificación parcial' : 'Sin verificar'}`); });
-  lista.innerHTML = (pendientes.writable ? '' : '<p class="tel-vacio">Este alojamiento no guarda reparaciones ni informes; solo se muestran las fichas.</p>')
-   + grupo('Fuera de su lugar', fuera, 'Ninguna bomba figura fuera de su lugar.')
-   + grupo('Quedaron sin funcionar', sinFun, 'Ningún último mantenimiento dice que el equipo quedó sin funcionar.')
-   + grupo('Fichas incompletas', incompletas, 'Todas las fichas están completas.', false)
-   + grupo('Sin verificar en campo', sinVer, 'Todas las fichas están verificadas.', false);
+  const flecha = icono('<path d="M9 6l6 6-6 6"/>', 20);
+  const fila = (tag, linea, tipo, tab = 'ficha') => `<button type="button" class="tel-pend" data-tag="${esc(tag)}" data-tab="${tab}"><i class="tel-punto ${tipo}" aria-hidden="true"></i><span><strong>${esc(tag)}</strong><small>${linea}</small></span>${flecha}</button>`;
+  const grupo = (titulo, items, vacio) => `<details class="tel-grupo"><summary><span>${titulo}</span><b>${items.length}</b></summary>${items.length ? `<div class="tel-pends">${items.join('')}</div>` : `<p class="tel-vacio">${vacio}</p>`}</details>`;
+  const repairs = pendientes.repairs || [], sinFun = pendientes.sinFuncionar || [];
+  const incompletas = bombas().map(p => [p, completeness(p)]).filter(([, c]) => c.done < c.total).sort((a, b) => a[1].done / a[1].total - b[1].done / b[1].total);
+  const sinVer = bombas().filter(p => !verificationOf(p).verified);
+  const atencion = [...repairs.map(r => fila(r.tag, `En reparación desde ${esc(r.desde || '—')} · ${esc(r.motivo)}`, 'rojo')),
+   ...sinFun.map(r => fila(r.tag, `Último mantenimiento ${esc(r.date)}: no quedó funcionando`, 'ambar', 'historial'))];
+  lista.innerHTML = `<div class="tel-contadores">
+    <div class="tel-contador rojo"><b>${repairs.length}</b><span>Fuera de su lugar</span></div>
+    <div class="tel-contador ambar"><b>${sinFun.length}</b><span>Quedó sin funcionar</span></div>
+    <div class="tel-contador"><b>${incompletas.length}</b><span>Fichas por completar</span></div></div>`
+   + (pendientes.writable ? '' : '<p class="tel-vacio">Este alojamiento no guarda reparaciones ni informes; solo se muestran las fichas.</p>')
+   + `<h2 class="tel-sub">Atención ahora</h2>` + (atencion.length ? `<div class="tel-pends">${atencion.join('')}</div>` : '<p class="tel-vacio">Nada urgente: ninguna bomba fuera de su lugar ni sin funcionar.</p>')
+   + `<h2 class="tel-sub">Revisión de fichas</h2>`
+   + grupo('Fichas incompletas', incompletas.map(([p, c]) => fila(p.tag, `${nombre(p.tag)} · Completa ${c.done}/${c.total}`, 'gris')), 'Todas las fichas están completas.')
+   + grupo('Sin verificar en campo', sinVer.map(p => { const v = verificationOf(p); return fila(p.tag, `${nombre(p.tag)} · ${v.legacy ? 'Registro antiguo' : v.partial ? 'Verificación parcial' : 'Sin verificar'}`, 'gris'); }), 'Todas las fichas están verificadas.');
   lista.querySelectorAll('.tel-pend').forEach(b => b.onclick = () => abrirFicha(b.dataset.tag, b.dataset.tab));
  }
 
@@ -230,7 +279,7 @@ function iniciar() {
 
  function elegirBomba(tag) {
   if (eligiendo) {
-   const sel = $('#' + eligiendo); sel.value = tag; aviso('mant', `Equipo elegido: ${tag}.`, 'ok');
+   const sel = $('#' + eligiendo); sel.value = tag; pintarElegida(eligiendo); aviso('mant', `Equipo elegido: ${tag}.`, 'ok');
    eligiendo = null; document.body.classList.remove('tel-eligiendo'); V()?.select(tag); return;
   }
   if (seccion === 'areas') abrirFicha(tag); else V()?.select(tag);
@@ -238,10 +287,11 @@ function iniciar() {
  // Una bomba tocada en el 3D llega por este aviso del visor.
  document.addEventListener('vocatus:bomba', e => {
   pintarFranja();
-  if (eligiendo) { const tag = e.detail, campo = eligiendo; eligiendo = null; document.body.classList.remove('tel-eligiendo'); $('#' + campo).value = tag; aviso('mant', `Equipo elegido: ${tag}.`, 'ok'); return; }
+  if (eligiendo) { const tag = e.detail, campo = eligiendo; eligiendo = null; document.body.classList.remove('tel-eligiendo'); $('#' + campo).value = tag; pintarElegida(campo); aviso('mant', `Equipo elegido: ${tag}.`, 'ok'); return; }
   if (seccion === 'areas' && !viendoFicha) abrirFicha(e.detail);
   pintarRegreso();
-  for (const id of ['mant-bomba', 'bod-bomba']) if (!$('#' + id).value) $('#' + id).value = e.detail;
+  if (!$('#mant-bomba').value) { $('#mant-bomba').value = e.detail; pintarElegida('mant-bomba'); }
+  if (!$('#bod-bomba').value) { $('#bod-bomba').value = e.detail; elegirBodega(); }
  });
 
  // ---------- Navegación ----------
@@ -254,6 +304,8 @@ function iniciar() {
   document.body.dataset.telSeccion = id;
   history.replaceState(null, '', '?s=' + id + location.hash);
   if (id === 'pendientes') { pintarPendientes(); leerPendientes(); }
+  if (id === 'bodega') pintarBodega();
+  if (id === 'mantenimiento') resumenMant();
   if (id === 'historial') pintarHistorial();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
@@ -263,6 +315,7 @@ function iniciar() {
   pintarMarcas(); pintarFranja(); leerPendientes();
   const sel = V()?.pump?.tag || '';
   for (const id of ['mant-bomba', 'bod-bomba']) $('#' + id).innerHTML = opciones(sel);
+  pintarElegida('mant-bomba'); if (sel) elegirBodega();
   if (seccion === 'historial') pintarHistorial();
   if (seccion === 'pendientes') pintarPendientes();
  }

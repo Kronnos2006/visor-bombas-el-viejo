@@ -1,4 +1,4 @@
-import {known,joinDetails as join,cleanLegacyCart} from './request-core.js';
+import {cleanLegacyCart,partsOf} from './request-core.js';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store = {get(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}};
@@ -7,21 +7,6 @@ const oldCart=store.get('vocatus-solicitud')||[], cleaned=cleanLegacyCart(oldCar
 let token = '', demo = false, cart = cleaned.items, options = [];
 if(cleaned.changed){if(!store.get('vocatus-solicitud-antes-limpieza'))store.set('vocatus-solicitud-antes-limpieza',oldCart);store.set('vocatus-solicitud',cart);$('#cart-migration').textContent='Se quitaron '+cleaned.changed+' textos «false» del carrito. Se conservó una copia en este navegador. Revisá los PDF ya emitidos: no se modifican automáticamente.';}
 
-// Convierte la ficha (P-xxxx o Bxx) en líneas de repuesto. Solo lo que está documentado.
-function partsOf(p) {
- const d = p.data, raw = d.documental || d, out = [];
- if (d.seal) { // Bxx: datos normalizados por el servidor
-  const s = d.seal;
-  if (known(s.tipo) || known(s.codigo)) out.push({pieza: 'Sello mecánico', detalle: join(s.tipo, known(s.diametro) && 'eje ' + s.diametro, known(s.caras) && 'caras ' + s.caras, known(s.elastomero) && s.elastomero), codigo: known(s.codigo) ? s.codigo : ''});
-  for (const [lado, cod] of [['delantero', d.rodamientos?.delantero], ['trasero', d.rodamientos?.trasero]]) if (known(cod)) out.push({pieza: 'Rodamiento ' + lado, detalle: join(cod, known(d.rodamientos?.conjunto) && 'pertenece a ' + d.rodamientos.conjunto), codigo: cod});
-  if (known(d.acople)) out.push({pieza: 'Elemento de acople', detalle: d.acople, codigo: ''});
- } else {
-  if (known(d.tipo_sellado) || known(d.sello_modelo)) out.push({pieza: 'Sello mecánico', detalle: join(d.tipo_sellado, d.sello_marca, d.sello_modelo, known(d.sello_diametro_mm) && 'eje ' + d.sello_diametro_mm + ' mm', d.sello_elastomero), codigo: d.sello_codigo || d.codigo_bodega || ''});
- }
- if (known(raw.empaque_seccion_mm) || known(raw.empaque_tipo) || known(raw.empaque_declarado)) out.push({pieza: 'Empaquetadura', detalle: join(raw.empaque_tipo || raw.empaque_declarado, known(raw.empaque_seccion_mm) && 'sección ' + raw.empaque_seccion_mm + ' mm', known(raw.empaque_anillos) && raw.empaque_anillos + ' anillos'), codigo: '', cantidad: Number(raw.empaque_anillos) || 1});
- for (const o of Array.isArray(d.orings) ? d.orings : []) out.push({pieza: 'O-ring', detalle: join(o.posicion, o.medida, o.material), codigo: o.codigo || '', cantidad: Number(o.cantidad) || 1});
- return out.map(i => ({...i, tag: p.tag, cantidad: i.cantidad || 1}));
-}
 function saveCart() { store.set('vocatus-solicitud', cart); renderCart(); }
 function add(item) { cart.push({...item, id: crypto.randomUUID?.() || String(Date.now() + Math.random())}); saveCart(); $('#result').innerHTML = `<div class="msg ok">Agregado: ${esc(item.pieza)} (${esc(item.tag || 'sin equipo')}).</div>`; }
 function renderCart() {
