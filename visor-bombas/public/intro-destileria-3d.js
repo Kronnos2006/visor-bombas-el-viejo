@@ -90,10 +90,10 @@ const logo=new T.Mesh(new T.PlaneGeometry(2.45,2.45),new T.ShaderMaterial({unifo
 const spiralPoints=[];for(let i=0;i<110;i++){const a=i/109*Math.PI*3.3;const r=1.45-(i/109)*.2;spiralPoints.push(new T.Vector3(Math.cos(a)*r,Math.sin(a)*r,Math.sin(a*1.6)*.2+.08));}
 const spiralMat=new T.MeshPhysicalMaterial({color:0xd69226,metalness:.25,roughness:.12,transparent:true,opacity:.8,emissive:0xd98b22,emissiveIntensity:.35});const spiral=mesh(new T.TubeGeometry(new T.CatmullRomCurve3(spiralPoints),160,.045,8,false),spiralMat,emblem);spiral.castShadow=false;spiral.visible=false;
 // El retorno sale del punto inferior del emblema y se aleja en Z hasta la planta.
-const drainCurve=new T.CatmullRomCurve3([
- new T.Vector3(1.1,1.05,0),new T.Vector3(1.1,.62,0),new T.Vector3(1.35,.22,-.3),
- new T.Vector3(1.5,.18,-1.8),new T.Vector3(1.65,.12,-3.3),new T.Vector3(1.7,.12,-4.8)
-]);
+const drainCurve=new T.CubicBezierCurve3(
+ new T.Vector3(1.1,1.05,0),new T.Vector3(1.1,.4,-.1),
+ new T.Vector3(1.5,-1,-6.8),new T.Vector3(1.5,-1.5,-7.2)
+);
 const pipeShell=new T.MeshPhysicalMaterial({color:0xc2c8b2,metalness:.35,roughness:.2,transparent:true,opacity:.25,depthWrite:false});
 const drainShell=mesh(new T.TubeGeometry(drainCurve,96,.125,12,false),pipeShell,scene);
 const nozzle=mesh(new T.CylinderGeometry(.19,.13,.2,24),gold,scene,[1.1,1.02,0]);
@@ -125,8 +125,11 @@ try{
  const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);let contact;
  for(const [x,z] of [[1.5,-7.2],[1,-7.2],[.5,-7.2],[0,-7.2],[1,-7.9],[0,-7.9]]){ray.set(new T.Vector3(x,5,z),down);contact=ray.intersectObject(model,true)[0]?.point;if(contact)break;}
  if(contact){
-  drainCurve.points[3].set(1.4,-.05,-2.3);drainCurve.points[4].set(contact.x,Math.max(.15,contact.y+.45),contact.z+.65);
-  drainCurve.points[5].set(contact.x,contact.y+.3,contact.z+.18);drainCurve.points.push(contact.clone().add(new T.Vector3(0,.015,0)));drainCurve.updateArcLengths();
+  const end=contact.clone().add(new T.Vector3(0,.015,0)),fall=1.05-end.y;
+  drainCurve.v0.set(1.1,1.05,0);
+  drainCurve.v1.set(1.1,1.05-fall*.32,end.z*.12);
+  drainCurve.v2.set(end.x,end.y+fall*.22,end.z*.82);
+  drainCurve.v3.copy(end);drainCurve.updateArcLengths();
   drainGeo.dispose();drainGeo=new T.TubeGeometry(drainCurve,110,.075,12,false);drainMesh.geometry=drainGeo;drainShell.geometry.dispose();drainShell.geometry=new T.TubeGeometry(drainCurve,110,.125,12,false);root.dataset.introConnection='surface';
  }
 }catch(error){root.dataset.introPlant='unavailable';dispose();throw error;}

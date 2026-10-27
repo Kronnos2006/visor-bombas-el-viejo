@@ -18,3 +18,6 @@ No se modifican fichas reales ni datos de campo. Esta animación de identidad no
 Refinamiento solicitado antes de publicar: vista de tres cuartos de la bomba (37 grados), eje del motor alineado con el impulsor, brida de succión con boca abierta y tornillos, manguera acoplada a la descarga y materiales/iluminación con reflejos más suaves. Es un modelo visual de referencia sin cotas de fabricación. Se comprobaron de nuevo las fases de la vista local en PC/teléfono/reducido; integración final comprobada en PC, teléfono y movimiento reducido, sin errores de página.
 
 Se conservaron las actualizaciones concurrentes de la app de cinco secciones mediante integración normal de Git, sin forzar la subida. Se volvió a comprobar la entrada y los recorridos de ficha, Bodega y Mantenimiento en la interfaz actual.
+
+Corrección posterior: se sustituyó el retorno con puntos que cambiaban de altura por una curva Bézier de descenso continuo. Así desaparece el pliegue bajo el logo y se conserva el contacto del tubo con la planta. Revisado visualmente en PC/teléfono/movimiento reducido; 122 pruebas pasan.
+
