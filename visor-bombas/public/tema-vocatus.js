@@ -35,7 +35,7 @@
   // 45 · Portada (una vez por sesión). Si existe /portada.mp4 se usa de fondo.
   const portada = document.getElementById('portada');
   if (portada) {
-  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada'); } catch {}
+  let vista = null; try { vista = sessionStorage.getItem('vocatus-portada-identidad-1'); } catch {}
   if (!vista && body.classList.contains('facil')) {
     portada.hidden = false;
     const canas = portada.querySelector('.canas');
@@ -48,7 +48,20 @@
     }
     const video = portada.querySelector('video');
     fetch('/portada.mp4', { method: 'HEAD' }).then(r => { if (r.ok && (r.headers.get('content-type') || '').startsWith('video')) { video.src = '/portada.mp4'; video.hidden = false; } }).catch(() => {});
-    const entrar = () => { portada.classList.add('salir'); try { sessionStorage.setItem('vocatus-portada', '1'); } catch {} setTimeout(() => { portada.hidden = true; video.pause(); }, 650); };
+    let entrando=false;
+    const entrar = () => {
+      if(entrando)return;entrando=true;
+      try { sessionStorage.setItem('vocatus-portada-identidad-1', '1'); } catch {}
+      const original=portada.querySelector('.portada-logo'),destino=document.querySelector('header .brand-logo');
+      const finish=()=>{portada.hidden=true;video.pause();body.classList.remove('brand-arriving');body.classList.add('brand-landed');document.querySelector('.logo-transfer')?.remove();document.querySelector('header .brand')?.focus({preventScroll:true});};
+      if(sinMovimiento||!original||!destino||!original.animate){finish();return;}
+      const from=original.getBoundingClientRect(),to=destino.getBoundingClientRect();
+      const flying=original.cloneNode(false);flying.className='logo-transfer';flying.alt='';flying.setAttribute('aria-hidden','true');
+      Object.assign(flying.style,{left:from.left+'px',top:from.top+'px',width:from.width+'px',height:from.height+'px'});
+      body.append(flying);body.classList.add('brand-arriving');original.style.visibility='hidden';portada.classList.add('salir');
+      const animation=flying.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${to.left-from.left}px,${to.top-from.top}px) scale(${to.width/from.width})`,opacity:1}],{duration:650,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'});
+      animation.finished.then(finish,finish);
+    };
     portada.querySelector('button').onclick = entrar;
     addEventListener('keydown', e => { if (!portada.hidden && (e.key === 'Enter' || e.key === 'Escape')) entrar(); });
   }

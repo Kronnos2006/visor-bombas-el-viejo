@@ -1,0 +1,56 @@
+/* La identidad se compone con el logo original y efectos del navegador. */
+body .brand .brand-logo{
+ background:transparent;border-radius:0;object-fit:contain;
+ filter:invert(1) sepia(1) saturate(1.2);mix-blend-mode:screen;
+ transition:filter .25s ease,transform .25s ease;
+}
+body .brand{position:relative}
+body .brand::after{content:'';position:absolute;left:0;bottom:-3px;width:100%;height:1px;background:linear-gradient(90deg,var(--accent),transparent);opacity:.35;transform-origin:left}
+body .brand:hover .brand-logo{transform:translateY(-1px)}
+body.claro .brand .brand-logo{filter:none;mix-blend-mode:multiply}
+#portada{background:radial-gradient(ellipse at 75% 28%,#29403b44,transparent 52%),radial-gradient(ellipse at 20% 75%,#b478172b,transparent 55%),#101713;isolation:isolate}
+#portada::before{content:'';position:absolute;inset:0;background-image:linear-gradient(#d9b87909 1px,transparent 1px),linear-gradient(90deg,#d9b87909 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse at center,black,transparent 75%);pointer-events:none}
+#portada .canas{display:none}
+#portada .contenido{width:min(1120px,100%);max-width:1120px;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:64px;text-align:left;padding:40px}
+#portada .brand-stage{position:relative;width:360px;height:360px;display:grid;place-items:center;justify-self:center}
+#portada .brand-stage::before{content:'';position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle,#d7b26720,transparent 70%);filter:blur(10px);animation:brand-breathe 6s ease-in-out infinite}
+#portada .brand-stage::after{content:'';position:absolute;inset:6%;border-radius:50%;border:1px solid #e2c58e18;box-shadow:0 0 80px #e2c58e0c;pointer-events:none}
+#portada .brand-trace{position:absolute;inset:0;width:100%;height:100%;color:#ddbd7d;overflow:visible;pointer-events:none}
+.brand-trace .trace{fill:none;stroke:currentColor;stroke-width:.8;stroke-dasharray:1;stroke-dashoffset:1;animation:brand-draw 1.3s .12s ease forwards;opacity:.4}
+.brand-trace .trace.fine{stroke-width:.5;opacity:.2;animation-delay:.3s}
+#portada .portada-logo{position:relative;display:block;width:252px;height:252px;max-width:none;margin:0;border-radius:0;background:transparent;filter:invert(1) sepia(1) saturate(1.2);mix-blend-mode:screen;animation:brand-reveal .85s cubic-bezier(.2,.65,.3,1) both}
+#portada .intro-kicker{font:600 12px/1.4 var(--texto);letter-spacing:.2em;color:#c9b687;margin:0 0 15px}
+#portada h1{font-size:clamp(32px,4.5vw,54px);line-height:1.08;margin:0 0 18px;letter-spacing:-.02em;text-wrap:balance}
+#portada .intro-description{font-size:18px;line-height:1.65;color:#c3c9ba;margin:0 0 22px;max-width:36ch}
+#portada .intro-features{list-style:none;display:flex;flex-wrap:wrap;gap:8px 18px;padding:0;margin:0 0 30px;color:#c9b687;font-size:13px}
+#portada .intro-features li{display:flex;align-items:center;gap:7px}
+#portada .intro-features li::before{content:'';width:4px;height:4px;border-radius:50%;background:#b5cb87}
+#portada button{animation:none;font-size:18px;min-height:56px;padding:16px 28px;border-radius:10px;box-shadow:0 8px 30px #c8953820}
+#portada .intro-copy{animation:brand-copy .7s .12s ease both}
+#portada.salir{transition:opacity .55s ease,visibility .55s}
+.logo-transfer{position:fixed;z-index:110;pointer-events:none;object-fit:contain;transform-origin:top left;filter:invert(1) sepia(1) saturate(1.2);mix-blend-mode:screen;will-change:transform,opacity}
+body.brand-arriving header .brand-logo{opacity:0}
+body.brand-landed header .brand-logo{animation:brand-settle .6s ease both}
+@keyframes brand-draw{to{stroke-dashoffset:0}}
+@keyframes brand-reveal{from{opacity:0;filter:invert(1) sepia(1) saturate(1.2) blur(5px);transform:translateY(10px) scale(.96)}to{opacity:1;filter:invert(1) sepia(1) saturate(1.2) blur(0);transform:translateY(0) scale(1)}}
+@keyframes brand-copy{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes brand-breathe{50%{opacity:.55;transform:scale(1.08)}}
+@keyframes brand-settle{from{filter:invert(1) sepia(1) saturate(2) brightness(1.5)}to{filter:invert(1) sepia(1) saturate(1.2)}}
+@media(max-width:700px){
+ #portada .contenido{grid-template-columns:1fr;gap:8px;padding:20px 24px;text-align:center;max-height:100dvh;overflow:auto}
+ #portada .brand-stage{width:260px;height:260px}
+ #portada .portada-logo{width:196px;height:196px}
+ #portada .intro-kicker{font-size:11px;margin-bottom:10px}
+ #portada h1{font-size:32px;margin-bottom:12px}
+ #portada .intro-description{font-size:16px;line-height:1.5;margin:0 auto 18px;max-width:30ch}
+ #portada .intro-features{justify-content:center;gap:8px 14px;margin-bottom:22px;font-size:12px}
+ #portada button{width:100%;max-width:320px;font-size:19px}
+}
+@media(max-height:650px) and (max-width:700px){#portada .brand-stage{width:170px;height:170px}#portada .portada-logo{width:140px;height:140px}#portada .contenido{gap:0;padding:12px 20px}#portada .intro-features{margin-bottom:12px}#portada .intro-description{margin-bottom:12px}}
+@media(prefers-reduced-motion:reduce){
+ #portada .brand-stage::before,#portada .portada-logo,#portada .intro-copy,.brand-trace .trace,body.brand-landed header .brand-logo{animation:none!important;transform:none!important;opacity:1}
+ .brand-trace .trace{stroke-dashoffset:0;opacity:.25}
+ #portada,#portada.salir{transition:none!important}
+ body .brand .brand-logo{transition:none}
+}
+body.claro.brand-landed header .brand-logo{animation:none}
