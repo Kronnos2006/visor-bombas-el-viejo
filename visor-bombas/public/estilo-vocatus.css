@@ -1,8 +1,8 @@
-#portada{background:radial-gradient(ellipse at 28% 60%,#8e5b171c,transparent 65%),#100d08}
+#portada{background:radial-gradient(ellipse at 31% 58%,#71400b1a,transparent 58%),#100d08}
 #portada::before{display:none}
 #portada video{display:none}
 #portada .contenido{width:min(1240px,100%);max-width:1240px;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:48px;padding:40px}
-#portada .brand-stage{width:100%;height:460px;position:relative}
+#portada .brand-stage{width:100%;height:490px;position:relative}
 #portada .intro-3d-canvas{display:none;width:100%;height:100%;touch-action:pan-y}
 #portada.scene-ready .intro-3d-canvas{display:block}
 #portada.scene-ready .pump-scene,#portada.scene-ready .portada-logo{visibility:hidden}
@@ -15,19 +15,27 @@
 
 @media(max-width:700px){
  #portada .contenido{display:flex;flex-direction:column;gap:0;padding:16px 22px;width:100%;max-height:100dvh;overflow:auto}
- #portada .brand-stage{width:100%;height:300px;flex:0 0 300px}
+ #portada .brand-stage{width:100%;height:330px;flex:0 0 330px}
  #portada .intro-copy{text-align:center;width:100%}
  #portada h1{font-size:34px;line-height:1.1;margin-bottom:12px}
  #portada .intro-kicker{font-size:12px;margin-bottom:8px}
  #portada .intro-description{font-size:16px;margin:0 auto 18px;max-width:30ch}
  #portada button{width:100%;max-width:none;font-size:18px;min-height:54px}
     }
-@media(max-height:700px) and (max-width:700px){#portada .brand-stage{height:220px;flex-basis:220px}#portada .contenido{padding:10px 20px}#portada h1{font-size:30px}#portada .intro-description{margin-bottom:12px}}
+@media(max-height:700px) and (max-width:700px){#portada .brand-stage{height:230px;flex-basis:230px}#portada .contenido{padding:10px 20px}#portada h1{font-size:30px}#portada .intro-description{margin-bottom:12px}}
 @media(prefers-reduced-motion:reduce){#portada .intro-copy{animation:none!important}#portada .intro-3d-canvas{transition:none}}
 /* La lectura de fichas no depende de animaciones de aparición. */
 body #panel>*{animation:none}
-#portada.scene-ready .intro-3d-canvas{mask-image:linear-gradient(to bottom,transparent,black 5%,black 95%,transparent)}
+#portada.scene-ready .intro-3d-canvas{mask-image:none}
 
 #portada.salir{transition:opacity .26s ease,visibility .26s}
 #portada.intro-loading .pump-scene,#portada.intro-loading .portada-logo{visibility:hidden}
 #portada .intro-3d-canvas{transition:opacity .45s ease}
+
+/* Textura del líquido y acabado aprobado de la entrada. */
+#ether-source{position:fixed;left:0;top:0;width:256px;height:256px;opacity:0;pointer-events:none}
+#ether-source canvas{width:100%;height:100%}
+#portada .intro-description{max-width:34ch;color:#c2b6a1}
+#portada .intro-kicker{font-size:11px;letter-spacing:.19em}
+#portada button{background:linear-gradient(115deg,#f7d493,#dfaa4c);border-color:#e6bd73;box-shadow:0 8px 36px #edb75712}
+#portada button:hover{box-shadow:0 8px 40px #edb75728}
