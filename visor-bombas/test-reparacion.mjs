@@ -67,3 +67,16 @@ test('el reporte de mantenimiento registra si el equipo quedó funcionando', asy
  assert.equal(texts.filter(x => !/equipo_funcional/.test(x)).length, 1);
  await assert.rejects(store.save('B32', {...base, operativo: 'tal vez'}), /quedó funcionando/);
 });
+
+test('pendientes: el último informe de cada equipo dice si quedó sin funcionar', async t => {
+ const v = await vault(t);
+ const store = maintenanceStore(v.dir, false);
+ const base = {title: 'Revisión', author: 'Técnico de prueba', details: 'Revisión general.'};
+ await store.save('B32', {...base, date: '2026-10-20', operativo: 'no'});
+ await store.save('B32', {...base, date: '2026-10-27', operativo: 'si'});
+ await store.save('B33', {...base, date: '2026-10-25', operativo: 'si'});
+ await store.save('B33', {...base, date: '2026-10-26', operativo: 'no'});
+ await store.save('B34', {...base, date: '2026-10-26'});
+ const st = await store.latestStatus();
+ assert.deepEqual(st.map(r => [r.tag, r.date, r.funcional]), [['B32', '2026-10-27', true], ['B33', '2026-10-26', false], ['B34', '2026-10-26', null]]);
+});

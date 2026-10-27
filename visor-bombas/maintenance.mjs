@@ -93,5 +93,22 @@ export function maintenanceStore(vault, demo) {
   if (!report?.record.pdf) throw new Error('Adjunto no encontrado.');
   return {bytes: await readFile(safeAttachment(report.record.pdf.path)), name: report.record.pdf.name};
  }
- return {list, save, remove, attachment};
+ // Estado con que quedó cada equipo en su último informe (fecha más reciente; mismo día, el último guardado).
+ async function latestStatus() {
+  let names;
+  try { names = await readdir(logs); } catch (e) { if (e.code === 'ENOENT') return []; throw e; }
+  const last = new Map();
+  for (const name of names.filter(n => /^[A-Za-z0-9-]+_\d{4}-\d{2}-\d{2}_.+\.md$/.test(n))) {
+   const [tag, date] = name.split('_'), mtime = (await stat(path.join(logs, name))).mtimeMs, prev = last.get(tag);
+   if (!prev || date > prev.date || date === prev.date && mtime > prev.mtime) last.set(tag, {name, date, mtime});
+  }
+  const out = [];
+  for (const [tag, {name, date}] of last) {
+   const match = (await readFile(path.join(logs, name), 'utf8')).replace(/^\uFEFF/, '').match(/^---\r?\n([\s\S]*?)\r?\n---/);
+   const data = match ? load(match[1], {schema: JSON_SCHEMA}) || {} : {};
+   out.push({tag, date: String(data.fecha || date), title: String(data.titulo || ''), funcional: data.equipo_funcional === true ? true : data.equipo_funcional === false ? false : null});
+  }
+  return out.sort((a, b) => a.tag.localeCompare(b.tag));
+ }
+ return {list, save, remove, attachment, latestStatus};
 }

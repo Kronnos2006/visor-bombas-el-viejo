@@ -945,7 +945,7 @@ function setArea(id,volar=true){
 function applyArea(){
  const id=state.area,a=AREA(id);
  for(const [k,g] of Object.entries(areaGroups))g.visible=id==='planta'?!AREA(k)?.aparte:k===id;
- for(const o of plant.children)if(o.userData.sitio)o.visible=!a?.aparte;
+ for(const o of plant?.children||[])if(o.userData.sitio)o.visible=!a?.aparte;
  if(torre){aplicarSeccion(torre.objetos,id==='torre'?state.seccion:null,{existente:id==='torre'&&state.existente,techo:state.techo});
   for(const g of Object.values(pumpObjects))if(g.parent===areaGroups.torre)g.visible=!state.seccion||state.seccion==='n1';}
   renderRail();

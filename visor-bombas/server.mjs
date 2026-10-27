@@ -186,6 +186,10 @@ export async function handler(req,res) {
    res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(document.name)}`,'X-Content-Type-Options':'nosniff'});
    return res.end(document.bytes);
   }
+  if(req.method==='GET' && url.pathname==='/api/pending') {
+   const ok=configuration.writable&&!DEMO;
+   return send(res,200,{repairs:ok?await equipment.repairs():[],sinFuncionar:ok?(await maintenance.latestStatus()).filter(r=>r.funcional===false):[],writable:ok});
+  }
   if(req.method==='GET' && url.pathname==='/api/repairs') return send(res,200,{repairs:configuration.writable&&!DEMO?await equipment.repairs():[],writable:configuration.writable&&!DEMO});
   if(req.method==='GET' && url.pathname==='/api/pump') return send(res,200,await readPump(url.searchParams.get('tag')||''));
   if(req.method==='GET' && url.pathname==='/api/pump-photos') { const tag=url.searchParams.get('tag')||''; await readPump(tag); return send(res,200,{fotos:configuration.writable?await pumpPhotos.list(tag):{},writable:configuration.writable}); }

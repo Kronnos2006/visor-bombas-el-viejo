@@ -76,15 +76,32 @@
  body.app-tel #tel-areas .area-menu,body.app-tel #tel-herramientas #camera-tools{position:static!important;display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;background:none;border:0;box-shadow:none;transform:none;width:auto;overflow:visible}
  body.app-tel #tel-areas .area-menu button,body.app-tel #tel-herramientas #camera-tools button{min-height:46px;padding:8px 14px;font-size:15px;border-radius:10px;flex:1 1 auto}
 
- /* Reparación */
- body.app-tel .tel-rep{display:grid;gap:8px;padding:12px;border:1px solid var(--borde);border-radius:12px;background:var(--superficie)}
- body.app-tel .tel-rep>div{display:grid;gap:2px}
- body.app-tel .tel-rep strong{font:600 18px var(--datos,monospace)}
- body.app-tel .tel-rep span{font-size:15px;color:var(--tinta-2)}
- body.app-tel .tel-rep details{display:grid;gap:8px}
- body.app-tel .tel-rep summary{display:flex;align-items:center;justify-content:center;min-height:46px;font-weight:600;font-size:15px;border:1px solid var(--borde-fuerte);border-radius:10px;cursor:pointer;list-style:none}
- body.app-tel .tel-rep summary::-webkit-details-marker{display:none}
- body.app-tel .tel-rep details[open]>summary{margin-bottom:8px}
+ /* Pendientes: grupos plegables con contador; cada bomba abre su ficha. */
+ body.app-tel .tel-nota{grid-column:1/-1;margin:2px 0 0;font-size:14px;color:var(--tinta-2)}
+ body.app-tel .tel-grupo{border:1px solid var(--borde);border-radius:12px;background:var(--superficie)}
+ body.app-tel .tel-grupo>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:0 14px;font-weight:600;font-size:16px;cursor:pointer;list-style:none}
+ body.app-tel .tel-grupo>summary::-webkit-details-marker{display:none}
+ body.app-tel .tel-grupo>summary::after{content:'';width:8px;height:8px;border-right:2px solid var(--tinta-2);border-bottom:2px solid var(--tinta-2);transform:rotate(45deg);margin-left:4px}
+ body.app-tel .tel-grupo[open]>summary::after{transform:rotate(-135deg)}
+ body.app-tel .tel-grupo>summary span{flex:1}
+ body.app-tel .tel-grupo>summary b{min-width:30px;padding:2px 8px;text-align:center;font:600 14px var(--datos,monospace);border-radius:999px;background:var(--fondo);border:1px solid var(--borde-fuerte)}
+ body.app-tel .tel-grupo>p{margin:0;padding:0 14px 14px}
+ body.app-tel .tel-pends{display:grid;gap:6px;padding:0 10px 10px;max-height:420px;overflow-y:auto}
+ body.app-tel .tel-pend{display:grid;gap:2px;padding:10px 12px;text-align:left;color:var(--tinta);background:var(--fondo);border:1px solid var(--borde);border-radius:10px;cursor:pointer}
+ body.app-tel .tel-pend strong{font:600 17px var(--datos,monospace)}
+ body.app-tel .tel-pend span{font-size:14px;line-height:1.3;color:var(--tinta-2)}
+
+ /* Aviso de reparación en la ficha, con el registro de regreso. */
+ body.app-tel .tel-regreso{display:grid;gap:8px;padding:12px;border:1px dashed #f08a80;border-radius:12px;background:color-mix(in srgb,#f08a80 8%,var(--superficie))}
+ body.app-tel .tel-regreso[hidden]{display:none}
+ body.app-tel .tel-regreso p{margin:0}
+ body.app-tel .tel-regreso strong{color:#f08a80}
+ body.app-tel .tel-regreso details{display:grid;gap:10px}
+ body.app-tel .tel-regreso summary{display:flex;align-items:center;justify-content:center;min-height:46px;font-weight:600;font-size:15px;border:1px solid var(--borde-fuerte);border-radius:10px;cursor:pointer;list-style:none;background:var(--superficie)}
+ body.app-tel .tel-regreso summary::-webkit-details-marker{display:none}
+ body.app-tel .tel-regreso details[open]>summary{margin-bottom:10px}
+ body.app-tel .tel-regreso details>*+*{margin-top:10px}
+ :root[data-theme="light"] body.app-tel .tel-regreso strong{color:#a3322a}
 
  /* Historial: tarjetas por bomba. */
  body.app-tel .tel-chips{display:flex;flex-wrap:wrap;gap:8px}
