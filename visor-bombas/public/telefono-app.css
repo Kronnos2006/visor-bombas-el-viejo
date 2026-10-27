@@ -136,6 +136,7 @@
 
  /* Barra de secciones. */
  body.app-tel #tel-barra{position:fixed;left:0;right:0;bottom:0;z-index:60;height:var(--barra);display:grid;grid-template-columns:1fr 1.15fr 1fr 1fr 1.4fr;padding:4px max(4px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(4px,env(safe-area-inset-left,0px));background:var(--fondo);border-top:1px solid var(--borde-fuerte)}
+ body.app-tel #tel-barra button,body.app-tel #tel-barra button:hover{background:none;border:0}
  body.app-tel #tel-barra button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;padding:4px 2px;font:600 12px/1.15 var(--texto,system-ui);color:var(--tinta-2);background:none;border:0;border-radius:10px;position:relative;white-space:nowrap}
  body.app-tel #tel-barra button span{max-width:100%;text-align:center}
  body.app-tel #tel-barra button[aria-current="page"]{color:var(--accent)}
@@ -144,6 +145,44 @@
  body.app-tel #toast{bottom:calc(var(--barra) + 10px)!important}
 @media (prefers-reduced-motion:no-preference){
  body.app-tel #tel-barra button{transition:color .15s,background-color .15s}
+}
+
+/* Teléfono vertical. El 3D se muestra solo en Áreas, en Historial y en Mantenimiento al elegir o
+   localizar la bomba en el 3D (reglas comunes al final del archivo). */
+@media (max-width:900px){
+ body.app-tel{--alto-enc:54px;--escena:clamp(200px,34vh,290px);--barra:calc(60px + env(safe-area-inset-bottom,0px));--franja:58px}
+ body.app-tel[data-tel-seccion="areas"]:not(.tel-con-ficha){--escena:clamp(220px,42vh,380px)}
+ body.app-tel header{height:var(--alto-enc)!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important}
+ body.app-tel #tel-titulo{font-size:18px}
+ body.app-tel header .brand-logo{width:34px;height:34px}
+
+ /* Contenido: letra cómoda sin ser enorme, más aire entre bloques. */
+ body.app-tel #tel-contenido{font-size:16px;padding:16px 16px 24px}
+ body.app-tel .tel-panel{gap:16px}
+ body.app-tel .tel-intro{font-size:15px;line-height:1.45}
+ body.app-tel .tel-campo>label,body.app-tel .tel-campo legend,body.app-tel .tel-etiqueta{font-size:14px}
+ body.app-tel #tel-contenido input:not([type=radio]),body.app-tel #tel-contenido select,body.app-tel #tel-contenido textarea{min-height:46px;font-size:16px}
+ body.app-tel .tel-buscar{min-height:48px}
+ body.app-tel #tel-contenido .tel-buscar input{font-size:16px;min-height:44px}
+ body.app-tel .tel-cuenta{font-size:14px}
+
+ /* Franja de códigos más angosta. */
+ body.app-tel #tel-franja{gap:4px;padding:6px 5px 8px}
+ body.app-tel #tel-franja button{flex:0 0 36px;font-size:13px;border-radius:8px}
+
+ /* Áreas de la planta: botones compactos en dos columnas parejas. */
+ body.app-tel #tel-areas .area-menu{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+ body.app-tel #tel-areas .area-menu button{min-height:44px;font-size:14px;padding:6px 10px;line-height:1.2}
+ body.app-tel #tel-herramientas #camera-tools{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px}
+ body.app-tel #tel-herramientas #camera-tools button{min-height:42px;font-size:13px;padding:4px 6px}
+
+ /* Barra inferior limpia: icono y texto, la sección activa en dorado con una línea arriba. */
+ body.app-tel #tel-barra{grid-template-columns:1fr 1.25fr 1fr 1fr 1.5fr;padding-top:2px}
+ body.app-tel #tel-barra button{font-size:11px;gap:3px;color:var(--tinta-2);padding:4px 0}
+ body.app-tel #tel-barra button svg{width:22px;height:22px}
+ body.app-tel #tel-barra button[aria-current="page"]::before{left:28%;right:28%}
+ body.app-tel .tel-sec:hover,body.app-tel #tel-franja button:not([aria-pressed="true"]):hover{background:var(--superficie)}
+ body.app-tel .tel-sec:hover{background:transparent}
 }
 
 /* Computadora: misma app, repartida en tres columnas — secciones, 3D y contenido. */
@@ -168,4 +207,12 @@
 }
 @supports not selector(::-webkit-scrollbar){
  body.app-tel :is(#tel-franja,#tel-contenido,.tel-pends){scrollbar-width:thin;scrollbar-color:var(--borde-fuerte) transparent}
+}
+
+/* El 3D solo en Áreas, Historial y Mantenimiento al elegir o localizar la bomba en el 3D.
+   Al volver a mostrarse, el visor reajusta el 3D solo (ResizeObserver). */
+body.app-tel:is([data-tel-seccion="pendientes"],[data-tel-seccion="bodega"],[data-tel-seccion="mantenimiento"]):not(.tel-eligiendo):not(.tel-3d){--escena:0px}
+body.app-tel:is([data-tel-seccion="pendientes"],[data-tel-seccion="bodega"],[data-tel-seccion="mantenimiento"]):not(.tel-eligiendo):not(.tel-3d) main{display:none}
+@media (min-width:901px){
+ body.app-tel:is([data-tel-seccion="pendientes"],[data-tel-seccion="bodega"],[data-tel-seccion="mantenimiento"]):not(.tel-eligiendo):not(.tel-3d) #tel-contenido{left:var(--riel);width:auto;border-left:0;padding-left:max(28px,calc((100% - 760px)/2));padding-right:max(28px,calc((100% - 760px)/2))}
 }

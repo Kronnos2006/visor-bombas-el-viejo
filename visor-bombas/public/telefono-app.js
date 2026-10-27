@@ -134,7 +134,7 @@ function iniciar() {
  contenido.addEventListener('click', e => {
   const elegir = e.target.closest('[data-elegir]'), localizar = e.target.closest('[data-localizar]');
   if (elegir) { eligiendo = elegir.dataset.elegir; aviso('mant', 'Tocá la bomba en el 3D o en la franja de códigos.'); document.body.classList.add('tel-eligiendo'); }
-  if (localizar) { const tag = $('#' + localizar.dataset.localizar).value; if (tag) { V()?.select(tag); setTimeout(() => V()?.locate(), 600); } }
+  if (localizar) { const tag = $('#' + localizar.dataset.localizar).value; if (tag) { document.body.classList.add('tel-3d'); V()?.select(tag); setTimeout(() => V()?.locate(), 600); } else aviso('mant', 'Elegí primero la bomba.', 'error'); }
  });
  function aviso(form, texto, tipo = '') { const el = $(`#${form}-aviso`); el.textContent = texto; el.dataset.tipo = tipo; }
 
@@ -217,7 +217,7 @@ function iniciar() {
 
  // ---------- Ficha dentro de la app ----------
  function abrirFicha(tag, pestana = 'ficha') {
-  viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false;
+  viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha');
   Object.values(paneles).forEach(p => p.hidden = true);
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
   if (V()?.pump?.tag !== tag) V()?.select(tag);
@@ -226,7 +226,7 @@ function iniciar() {
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
  ficha.querySelector('.tel-volver').onclick = () => { V()?.explode(0); V()?.back(); cerrarFicha(); };
- function cerrarFicha() { viendoFicha = false; ficha.hidden = true; mostrar(seccion); }
+ function cerrarFicha() { viendoFicha = false; ficha.hidden = true; document.body.classList.remove('tel-con-ficha'); mostrar(seccion); }
 
  function elegirBomba(tag) {
   if (eligiendo) {
@@ -247,6 +247,7 @@ function iniciar() {
  // ---------- Navegación ----------
  function mostrar(id) {
   seccion = id; viendoFicha = false; ficha.hidden = true;
+  eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d');
   for (const [k, p] of Object.entries(paneles)) p.hidden = k !== id;
   barra.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.s === id ? 'page' : 'false'));
   titulo.textContent = SECCIONES.find(s => s.id === id).nombre;
