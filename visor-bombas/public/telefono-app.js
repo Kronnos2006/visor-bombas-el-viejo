@@ -53,20 +53,43 @@ function iniciar() {
 
  // ---------- Áreas ----------
  paneles.areas.innerHTML = `<label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="tel-buscar" type="search" placeholder="Buscar bomba (ej. B14)" autocomplete="off"></label>
+  <div class="tel-dos"><div class="tel-campo"><label for="tel-fluido">Fluido</label><select id="tel-fluido"><option value="">Todos</option><option value="alcohol">Alcohol</option><option value="agua">Agua</option><option value="mosto">Mosto / vinaza</option><option value="sin-uso">Sin uso</option></select></div>
+  <div class="tel-campo"><label for="tel-marca">Marca</label><select id="tel-marca"><option value="">Todas</option></select></div></div>
+  <p id="tel-cuenta" class="tel-cuenta" aria-live="polite"></p>
   <h2 class="tel-sub">Áreas de la planta</h2><div id="tel-areas"></div>
   <h2 class="tel-sub">Herramientas</h2><div id="tel-herramientas"></div>`;
  const areaMenu = $('#area-menu'), camara = $('#camera-tools');
  if (areaMenu) $('#tel-areas').append(areaMenu);
  if (camara) $('#tel-herramientas').append(camara);
  $('#tel-buscar').oninput = pintarFranja;
+ $('#tel-fluido').onchange = pintarFranja; $('#tel-marca').onchange = pintarFranja;
+ document.addEventListener('vocatus:lista', pintarFranja);
+ function pintarMarcas() {
+  const sel = $('#tel-marca'), actual = sel.value;
+  const marcas = [...new Set(bombas().map(p => String(p.marca || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  sel.innerHTML = '<option value="">Todas</option>' + marcas.map(m => `<option>${esc(m)}</option>`).join('');
+  sel.value = marcas.includes(actual) ? actual : '';
+ }
 
  function bombas() { return (V()?.pumps || []).filter(p => p.tag); }
+ // Franja: con «Toda la planta» se ven todas las bombas; con un área, solo las de esa área.
  function pintarFranja() {
   const q = ($('#tel-buscar')?.value || '').toUpperCase().replace(/[\s-]/g, '');
-  const lista = bombas().filter(p => !q || (p.tag + (p.nombre || '') + (p.marca || '')).toUpperCase().replace(/[\s-]/g, '').includes(q));
+  const fluido = $('#tel-fluido')?.value || '', marca = $('#tel-marca')?.value || '';
+  const area = V()?.area || 'planta';
+  const enArea = bombas().filter(p => area === 'planta' || V()?.areaDe(p) === area);
+  const lista = enArea.filter(p => (!q || (p.tag + (p.nombre || '') + (p.marca || '')).toUpperCase().replace(/[\s-]/g, '').includes(q))
+   && (!fluido || (V()?.tipos(p) || []).includes(fluido)) && (!marca || String(p.marca || '').trim() === marca));
   const actual = V()?.pump?.tag;
-  franja.innerHTML = lista.map(p => `<button type="button" data-tag="${esc(p.tag)}" aria-pressed="${p.tag === actual}" class="${enReparacion.has(p.tag) ? 'en-rep' : ''}" title="${esc(p.nombre || '')}${enReparacion.has(p.tag) ? ' · En reparación' : ''}">${esc(p.tag)}</button>`).join('') || '<p>Sin resultados</p>';
+  franja.innerHTML = lista.map(p => `<button type="button" data-tag="${esc(p.tag)}" aria-pressed="${p.tag === actual}" class="${enReparacion.has(p.tag) ? 'en-rep' : ''}" title="${esc(p.nombre || '')}${enReparacion.has(p.tag) ? ' · En reparación' : ''}">${esc(p.tag)}</button>`).join('');
   franja.querySelectorAll('[data-tag]').forEach(b => b.onclick = () => elegirBomba(b.dataset.tag));
+  document.body.classList.toggle('franja-vacia', !lista.length);
+  const cuenta = $('#tel-cuenta'); if (!cuenta) return;
+  const nombreArea = area === 'planta' ? 'toda la planta' : (V()?.areaNombre(area) || area);
+  const filtrando = q || fluido || marca;
+  cuenta.textContent = !enArea.length ? `No hay bombas registradas en ${nombreArea}.`
+   : !lista.length ? 'Ninguna bomba coincide con los filtros.'
+   : `${lista.length} ${lista.length === 1 ? 'bomba' : 'bombas'}${filtrando ? ` de ${enArea.length}` : ''} en ${nombreArea}.`;
  }
  function opciones(sel = '') {
   return '<option value="">Elegí la bomba…</option>' + bombas().map(p => `<option value="${esc(p.tag)}" ${p.tag === sel ? 'selected' : ''}>${esc(p.tag)} · ${esc(p.nombre || p.ubicacion || '')}</option>`).join('');
@@ -236,7 +259,7 @@ function iniciar() {
  barra.querySelectorAll('button').forEach(b => b.onclick = () => { if (viendoFicha) { V()?.explode(0); V()?.back(); } mostrar(b.dataset.s); });
 
  function alCargar() {
-  pintarFranja(); leerPendientes();
+  pintarMarcas(); pintarFranja(); leerPendientes();
   const sel = V()?.pump?.tag || '';
   for (const id of ['mant-bomba', 'bod-bomba']) $('#' + id).innerHTML = opciones(sel);
   if (seccion === 'historial') pintarHistorial();
