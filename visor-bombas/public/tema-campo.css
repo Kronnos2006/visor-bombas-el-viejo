@@ -89,6 +89,25 @@ body .photos img{border-radius:12px;border-color:var(--borde)}
 body .pump-pick button{align-content:start}
 
 .verification-options{display:grid;gap:12px;margin:14px 0}.verification-options .check{display:flex;align-items:center;gap:12px}.verification-options input[type=checkbox]{width:26px;flex:0 0 26px}
-@media(max-width:900px){body .campo-nav a{font-size:10px;white-space:nowrap;word-break:normal;overflow-wrap:normal;hyphens:none;min-height:52px}}
+/* Teléfono legible: barra inferior con texto de 12,5 px en hasta dos líneas, sin cortar palabras. */
+.solo-telefono{display:none}
+@media(max-width:900px){
+ body .campo-nav{display:grid;grid-template-columns:.9fr 1.3fr .9fr 1fr 1fr;align-items:stretch;gap:2px}
+ body .campo-nav a{min-width:0;font-size:12.5px;white-space:normal;word-break:normal;overflow-wrap:normal;hyphens:none;min-height:60px;line-height:1.15;padding:6px 3px}
+ body .campo-nav a b{font-size:21px}
+ body .solo-telefono{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;margin-top:12px;font-size:16px;font-weight:600;border:1px dashed var(--borde-fuerte);border-radius:10px;background:transparent;color:var(--tinta-2)}
+ body .solo-telefono[aria-pressed="true"]{border-style:solid;border-color:var(--accent);color:var(--accent)}
+ body:not(.modo-corregir) [data-clear-field][aria-pressed="false"]{display:none}
+ body .table,body .progress-table .table{min-width:0;width:100%}
+ body .progress-table{overflow-x:visible}
+ body #rows,body #rows tr,body #rows td{display:block;width:auto;min-width:0}
+ body #rows tr{padding:12px 4px;border-bottom:1px solid var(--borde)}
+ body #rows td{padding:4px 0;border:0}
+ body .table thead{display:none}
+ body .current{font-size:14px}
+ body #rows td a{display:inline-flex;align-items:center;min-height:44px;font-size:16px}
+ body #rows .chips{display:flex;flex-wrap:wrap;gap:6px;max-width:100%}
+ body #rows .chips .chip{font-size:13px;padding:4px 8px}
+}
 
 #component-photos .foto-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}#component-photos .foto-btn{display:block;min-height:44px;padding:12px;cursor:pointer;border:1px solid var(--borde);border-radius:8px}#component-photos .foto-img img{width:100%;max-height:220px;object-fit:contain}#component-photos .foto-slot{margin:0}#component-photos figcaption small{display:block}.campo #replace-orings{width:26px;height:26px}section[id^=editar-]{scroll-margin-top:20px}

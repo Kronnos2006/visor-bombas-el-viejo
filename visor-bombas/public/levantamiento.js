@@ -224,3 +224,7 @@ async function renderPhotoEditor(){
   input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await guardarFoto(tag,input.dataset.slot,file,options);if(activeTag===tag)await renderPhotoEditor();}catch(error){if(activeTag===tag)target.querySelector('#fotos-error').textContent=error.message;input.disabled=false;}};
  });
 }
+
+// Teléfono: los botones «Quitar dato incorrecto» se muestran solo al activar este modo,
+// para que el formulario no duplique cada campo con un botón. Un dato ya marcado sigue visible.
+{const modo=document.getElementById('modo-corregir');if(modo)modo.onclick=()=>{const activo=document.body.classList.toggle('modo-corregir');modo.setAttribute('aria-pressed',String(activo));modo.textContent=activo?'Terminar de corregir datos':'Corregir o quitar datos registrados';};}
