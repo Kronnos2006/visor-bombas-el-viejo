@@ -1,0 +1,7 @@
+# Logo del catálogo — 27 octubre 2026
+
+Encargo: usar la imagen de Destilería Vocatus adjuntada por el usuario en el catálogo de bombas. Responsable: asistente coordinador de este chat. Se reutilizaron las herramientas locales ya probadas; no fue necesaria una convocatoria adicional para esta sustitución visual pequeña, conforme al criterio de Recursos de IA. No hubo intervención en Revit ni en la adaptación Praj.
+
+Implementación en `C:/Users/genes/Documents/visor-bombas-el-viejo`: imagen original, sin recortes ni recoloración, en `visor-bombas/public/marca/vocatus.png`. Sustituye la letra V y el rótulo anterior en las cinco cabeceras principales y en la bienvenida; sirve también como icono de pestaña en seis páginas. CSS específico mantiene las proporciones, el fondo original y la altura de cabecera.
+
+Comprobaciones: igualdad SHA-256 entre imagen aportada y recurso incorporado; suite completa 117/117; carga de la imagen a 1920 px y en teléfonos de 390/360 px, cinco páginas principales sin desbordamiento horizontal. Cabecera de 78 px en los casos comprobados. Capturas en `../outputs/logo-vocatus-pc.png`, `../outputs/logo-vocatus-telefono.png` y `../outputs/logo-vocatus-bienvenida.png`. La prueba visual bloqueó el módulo 3D para aislar la cabecera; no sustituye pruebas funcionales del visor. No se modificaron fichas reales. Este registro complementa la coordinación y no acredita estado vivo del modelo.

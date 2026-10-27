@@ -62,3 +62,7 @@ __pycache__/
 !visor-bombas/public/texturas/
 !visor-bombas/public/texturas/torre/
 !visor-bombas/public/texturas/torre/*.jpg
+
+# Identidad visual aportada para el catálogo
+!visor-bombas/public/marca/
+!visor-bombas/public/marca/vocatus.png

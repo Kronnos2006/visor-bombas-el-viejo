@@ -299,3 +299,19 @@ body.claro .area-menu button[aria-pressed=true],body.claro #parts-rail .rail-ite
  body #pump-links .secondary-menu>summary{min-height:44px}
  body #pump-links .secondary-menu .secondary-actions{left:auto;width:320px;max-width:80vw}
 }
+
+/* Identidad aportada por el usuario: imagen original sin recortes ni recoloración. */
+body .brand{gap:10px;min-width:0;line-height:1.2}
+body header:has(.brand-logo){padding-top:4px;padding-bottom:4px}
+body .brand .brand-logo{display:block;flex:0 0 auto;width:64px;height:64px;object-fit:contain;background:white;border-radius:6px}
+body .brand .brand-caption{font-size:13px;letter-spacing:.02em;line-height:1.25;max-width:130px;white-space:normal}
+body .brand .brand-caption small{font-size:9px;letter-spacing:.04em;margin-top:4px}
+#portada .portada-logo{display:block;margin:0 auto 18px;width:200px;height:200px;max-width:65vw;object-fit:contain;background:white;border-radius:12px}
+#portada h1{letter-spacing:0;font-size:clamp(28px,5vw,42px)}
+@media(max-width:900px){
+ body .brand{gap:8px}
+ body .brand .brand-logo{width:58px;height:58px}
+ body .brand .brand-caption{font-size:12px;max-width:90px;letter-spacing:0}
+ body .brand .brand-caption small{display:none}
+}
+@media(max-width:400px){body .brand .brand-caption{display:none}}
