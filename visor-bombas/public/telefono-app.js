@@ -54,7 +54,7 @@ function iniciar() {
  const draftStore=createDraftStore(localStorage);
 
  // ---------- Estructura ----------
- crearFlujoCabecera($('header'));
+ const cabecera=crearFlujoCabecera($('header'));
  const titulo = document.createElement('div'); titulo.id = 'tel-titulo'; $('header')?.append(titulo);
  const franja = document.createElement('nav'); franja.id = 'tel-franja'; franja.setAttribute('aria-label', 'Bombas por código');
  $('#viewport')?.append(franja);
@@ -365,6 +365,7 @@ function iniciar() {
   for (const [k, p] of Object.entries(paneles)) p.hidden = k !== id;
   barra.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.s === id ? 'page' : 'false'));
   titulo.textContent = SECCIONES.find(s => s.id === id).nombre;
+  cabecera.setSection(titulo.textContent);
   document.body.dataset.telSeccion = id;
   history.replaceState(null, '', '?s=' + id + location.hash);
   if (id === 'pendientes') { pintarPendientes(); leerPendientes(); }

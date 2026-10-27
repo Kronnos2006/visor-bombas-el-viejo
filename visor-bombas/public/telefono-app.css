@@ -286,34 +286,32 @@ body.app-tel #mant-local,body.app-tel #mant-import{display:grid;gap:12px}
 body.app-tel #mant-import[hidden]{display:none}
 body.app-tel #mant-import-preview{overflow-wrap:anywhere;line-height:1.6}
 
-/* Circuito de marca integrado: SVG ligero, sin datos operativos ni otro renderer. */
-body.app-tel #tel-titulo{flex:0 0 auto}
-body.app-tel header #cab-flujo{order:2;flex:1;min-width:44px;height:48px;min-height:44px;margin:0 8px;padding:0;position:relative;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--accent);border-radius:8px;overflow:hidden;cursor:pointer;box-shadow:none}
-body.app-tel #cab-flujo svg{width:100%;max-width:900px;height:100%;pointer-events:none}
-body.app-tel #cab-flujo .cab-tuberia{stroke:url(#cab-ambar);stroke-width:5;stroke-linecap:round;opacity:.4}
-body.app-tel #cab-flujo .cab-corriente{stroke:currentColor;stroke-width:2;stroke-dasharray:3 15;stroke-linecap:round}
-body.app-tel #cab-flujo .cab-bomba{stroke:currentColor;stroke-width:1.5}
-body.app-tel #cab-flujo .cab-impulsor{fill:currentColor;stroke:none;transform-origin:246px 32px}
-body.app-tel #cab-flujo .cab-planta{stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;opacity:.65}
-body.app-tel #cab-flujo .cab-caida{stroke-width:2;stroke-dasharray:3 6;opacity:.65}
-body.app-tel #cab-flujo .cab-pausa{position:absolute;right:2px;top:4px;font-size:11px;opacity:0;transition:opacity .15s}
+/* Letras y mini planta de vidrio: circuito de ron compartido con la identidad de entrada. */
+body.app-tel{--alto-enc:76px}
+body.app-tel header .brand-logo{width:48px;height:48px}
+body.app-tel #tel-titulo{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+body.app-tel header #cab-flujo{order:1;flex:1;min-width:0;height:72px;min-height:44px;margin:0;padding:0;position:relative;display:block;border:0;background:transparent;color:var(--accent);border-radius:8px;overflow:visible;cursor:pointer;box-shadow:none}
+body.app-tel #cab-flujo svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+body.app-tel #cab-flujo .cab-vidrio{stroke:url(#cab-cristal);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+body.app-tel #cab-flujo .cab-interior{stroke:var(--fondo);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+body.app-tel #cab-flujo .cab-liquido{stroke:url(#cab-ron);stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round}
+body.app-tel #cab-flujo .cab-reflejo{stroke:#fff0c4;stroke-width:1.2;stroke-dasharray:12 28;stroke-linecap:round}
+body.app-tel #cab-flujo .cab-chorro{stroke:#eab754;stroke-width:2;stroke-linecap:round}
+body.app-tel #cab-flujo .cab-letra-seca{fill:var(--tinta);fill-opacity:.12;stroke:var(--tinta);stroke-opacity:.7;stroke-width:.55}
+body.app-tel #cab-flujo .cab-letra-borde{fill:none;stroke:var(--tinta);stroke-opacity:.25;stroke-width:.45}
+body.app-tel #cab-flujo .cab-nivel{fill:url(#cab-ron)}
+body.app-tel #cab-flujo .cab-superficie{fill:none;stroke:#fff0bd;stroke-width:.7}
+body.app-tel #cab-flujo .cab-caracol{fill:color-mix(in srgb,var(--tinta) 7%,var(--fondo));stroke:url(#cab-cristal);stroke-width:3}
+body.app-tel #cab-flujo .cab-aro{stroke:currentColor;stroke-width:.7;opacity:.5}
+body.app-tel #cab-flujo .cab-pie{stroke:currentColor;stroke-width:1.5;opacity:.65}
+body.app-tel #cab-flujo .cab-impulsor{fill:#ffe0a0;stroke:#935e22;stroke-width:.4}
+body.app-tel #cab-flujo .cab-edificio-seco{fill:var(--tinta);fill-opacity:.08}
+body.app-tel #cab-flujo .cab-edificio-linea{fill:none;stroke:currentColor;stroke-width:.8;stroke-linejoin:round;opacity:.8}
+body.app-tel #cab-flujo .cab-pausa{position:absolute;right:0;top:0;font-size:11px;color:var(--tinta-2);opacity:0}
 body.app-tel #cab-flujo:is(:hover,:focus-visible) .cab-pausa,body.app-tel #cab-flujo[aria-pressed="true"] .cab-pausa{opacity:.8}
 body.app-tel #cab-flujo:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-body.app-tel #cab-flujo[aria-pressed="true"] :is(.cab-corriente,.cab-caida,.cab-impulsor){animation-play-state:paused}
-@keyframes cab-circula{to{stroke-dashoffset:-36}}
-@keyframes cab-gira{to{transform:rotate(360deg)}}
-@keyframes cab-baja{to{stroke-dashoffset:-18}}
-@media(prefers-reduced-motion:no-preference){
- body.app-tel #cab-flujo .cab-corriente{animation:cab-circula 1.8s linear infinite}
- body.app-tel #cab-flujo .cab-impulsor{animation:cab-gira 2.4s linear infinite}
- body.app-tel #cab-flujo .cab-caida{animation:cab-baja 1.8s linear infinite}
- body.app-tel #tel-barra button{transition:background-color .18s ease,color .18s ease}
-}
-@media(max-width:600px){
- body.app-tel header{gap:8px}
- body.app-tel header #cab-flujo{height:40px;margin:0;justify-content:flex-end}
- body.app-tel #cab-flujo svg{width:260px;min-width:260px;max-width:none;transform:translateX(68px)}
-}
+@media(max-width:900px){body.app-tel{--alto-enc:68px}body.app-tel header{gap:8px}body.app-tel header .brand-logo{width:40px;height:40px}body.app-tel header #cab-flujo{height:64px}}
+@media(prefers-reduced-motion:no-preference){body.app-tel #tel-barra button{transition:background-color .18s ease,color .18s ease}}
 /* Historial completo: áreas visibles, recuentos y búsqueda sin perder el mapa. */
 body.app-tel #hist-filtro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 body.app-tel #hist-filtro button{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;min-height:44px;padding:8px 10px;border-radius:10px;text-align:left;white-space:normal;font-size:13px;line-height:1.25}
@@ -327,3 +325,5 @@ body.app-tel.tel-mapa-amplio #tel-contenido{display:none}
 @media(min-width:901px){body.app-tel.tel-mapa-amplio main{bottom:0}}
 
 body.app-tel header :is(#tema-toggle,#settings-open){order:3}
+
+body.app-tel header #cab-flujo:is(:hover,:active,[aria-pressed="true"]){background:transparent;border:0;box-shadow:none}
