@@ -1,4 +1,6 @@
 import * as T from './vendor/three.module.js';
+import {GLTFLoader} from './vendor/GLTFLoader.js';
+import {MeshoptDecoder} from './vendor/meshopt_decoder.module.js';
 // Escena de identidad visual: no representa mediciones ni simulación del proceso.
 export async function mountIntro3D(root,{signal,reducedMotion=false}={}){
  if(signal?.aborted||root.hidden)return null;
@@ -43,11 +45,11 @@ const hub=mesh(new T.CylinderGeometry(.11,.11,.16,28),gold,impeller,[0,0,.04]);h
 for(let i=0;i<8;i++){const a=i*Math.PI/4;const bolt=mesh(new T.CylinderGeometry(.034,.034,.055,6),metal,pump,[.82+Math.cos(a)*.57,.72+Math.sin(a)*.57,.22]);bolt.rotation.x=Math.PI/2;}
 const inlet=mesh(new T.CylinderGeometry(.18,.18,.6,32),metal,pump,[1.58,.72,0]);inlet.rotation.z=Math.PI/2;const flange=mesh(new T.CylinderGeometry(.27,.27,.08,40),metal,pump,[1.91,.72,0]);flange.rotation.z=Math.PI/2;
 const lampMaterial=new T.MeshStandardMaterial({color:0xb9de8a,emissive:0xa0d068,emissiveIntensity:.1});mesh(new T.SphereGeometry(.045,12,8),lampMaterial,pump,[-.8,1.25,0]);
-const curve=new T.CatmullRomCurve3([new T.Vector3(-1.18,1.42,0),new T.Vector3(-1.18,2.25,0),new T.Vector3(-.98,2.53,0),new T.Vector3(-.25,2.53,0),new T.Vector3(.08,2.8,0),new T.Vector3(.66,2.8,0)]);
+const curve=new T.CatmullRomCurve3([new T.Vector3(-1.18,1.42,0),new T.Vector3(-1.18,2.8,0),new T.Vector3(-.96,3.2,0),new T.Vector3(-.45,3.35,0),new T.Vector3(.15,3.35,0)]);
 mesh(new T.TubeGeometry(curve,80,.12,12,false),new T.MeshPhysicalMaterial({color:0x607374,metalness:.5,roughness:.18,transparent:true,opacity:.24,depthWrite:false}),scene);
 const fluidGeo=new T.TubeGeometry(curve,100,.065,12,false),fluidMat=new T.MeshStandardMaterial({color:0xc38320,metalness:.35,roughness:.1,emissive:0xffad32,emissiveIntensity:.7});const fluid=mesh(fluidGeo,fluidMat,scene);fluid.castShadow=false;
 const glow=mesh(new T.TubeGeometry(curve,80,.095,8,false),new T.MeshBasicMaterial({color:0xffbb45,transparent:true,opacity:.09,blending:T.AdditiveBlending,depthWrite:false}),scene);glow.castShadow=false;
-const emblem=new T.Group();emblem.position.set(1.65,1.9,0);scene.add(emblem);
+const emblem=new T.Group();emblem.position.set(1.1,2.4,0);scene.add(emblem);
 const ringMat=new T.MeshStandardMaterial({color:0xd0b178,metalness:1,roughness:.2,emissive:0xb97b23,emissiveIntensity:.2});mesh(new T.TorusGeometry(1.35,.024,12,120),ringMat,emblem);
 const outer=mesh(new T.TorusGeometry(1.53,.008,8,120),new T.MeshBasicMaterial({color:0x594a2c}),emblem);outer.rotation.x=.12;outer.rotation.y=-.15;
 const liquidUniforms={uTime:{value:0},uFill:{value:1},uOpacity:{value:.05}};
@@ -57,40 +59,91 @@ const logoUniforms={uMap:{value:texture},uReveal:{value:1},uTime:{value:0}};
 const logo=new T.Mesh(new T.PlaneGeometry(2.45,2.45),new T.ShaderMaterial({uniforms:logoUniforms,transparent:true,depthWrite:false,vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform sampler2D uMap;uniform float uReveal,uTime;varying vec2 v;void main(){vec3 raw=texture2D(uMap,v).rgb;float ink=smoothstep(.08,.48,1.-dot(raw,vec3(.299,.587,.114)));float wave=.035*sin(v.x*17.-uTime*2.)+.018*sin(v.x*31.+uTime*3.);float reveal=smoothstep(-.12,.16,uReveal-v.y+wave);float gleam=.9+.1*sin(v.x*8.+uTime*.8);gl_FragColor=vec4(vec3(1.,.83,.49)*gleam,ink*reveal);}'}));logo.position.z=.05;emblem.add(logo);
 const spiralPoints=[];for(let i=0;i<110;i++){const a=i/109*Math.PI*3.3;const r=1.45-(i/109)*.2;spiralPoints.push(new T.Vector3(Math.cos(a)*r,Math.sin(a)*r,Math.sin(a*1.6)*.2+.08));}
 const spiralMat=new T.MeshPhysicalMaterial({color:0xd69226,metalness:.25,roughness:.12,transparent:true,opacity:.8,emissive:0xd98b22,emissiveIntensity:.35});const spiral=mesh(new T.TubeGeometry(new T.CatmullRomCurve3(spiralPoints),160,.045,8,false),spiralMat,emblem);spiral.castShadow=false;
-const count=world.clientWidth<560?72:150;const drops=new T.InstancedMesh(new T.SphereGeometry(1,7,5),new T.MeshStandardMaterial({color:0xe8af49,metalness:.45,roughness:.13,emissive:0xc6831b,emissiveIntensity:.35}),count);drops.frustumCulled=false;scene.add(drops);const dummy=new T.Object3D();
-const random=i=>{const v=Math.sin(i*127.1+11.8)*43758.5453;return v-Math.floor(v);};
-let elapsed=reduced?7.5:0,playing=false,lastTick=0,frameCount=0,maxGap=0;let viewWidth=world.clientWidth,viewHeight=world.clientHeight;
-const clamp=(v)=>Math.max(0,Math.min(1,v));const ease=v=>{const q=clamp(v);return q*q*(3-2*q);};
+// El retorno sale del punto inferior del emblema y se aleja en Z hasta la planta.
+const drainCurve=new T.CatmullRomCurve3([
+ new T.Vector3(1.1,1.05,0),new T.Vector3(1.1,.62,0),new T.Vector3(1.35,.22,-.3),
+ new T.Vector3(1.5,.18,-1.8),new T.Vector3(1.65,.12,-3.3),new T.Vector3(1.7,.12,-4.8)
+]);
+const pipeShell=new T.MeshPhysicalMaterial({color:0xc2c8b2,metalness:.35,roughness:.2,transparent:true,opacity:.25,depthWrite:false});
+const drainShell=mesh(new T.TubeGeometry(drainCurve,96,.125,12,false),pipeShell,scene);
+const nozzle=mesh(new T.CylinderGeometry(.19,.13,.2,24),gold,scene,[1.1,1.02,0]);
+const flowUniforms={uTime:{value:0}};
+function flowingLiquid(){
+ return new T.ShaderMaterial({uniforms:flowUniforms,vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 v;uniform float uTime;void main(){float band=pow(.5+.5*sin((v.x*12.-uTime*.65)*6.283185),5.);vec3 amber=mix(vec3(.38,.13,.012),vec3(1.,.72,.26),.35+band*.65);gl_FragColor=vec4(amber,1.);}'});
+}
+fluid.material.dispose();fluid.material=flowingLiquid();
+let drainGeo=new T.TubeGeometry(drainCurve,110,.075,12,false);
+const drainMesh=mesh(drainGeo,flowingLiquid(),scene);
+// Se reutiliza la planta del catálogo, sin planos de referencia ni cubierta común.
+root.dataset.introPlant='loading';
+const plant=new T.Group();scene.add(plant);
+try{
+ const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/modelos/planta-integrada.glb');
+ const model=gltf.scene,removed=[];
+ model.traverse(object=>{if(/Suelo.?VOCATUS|REF.?Sector$|REF.?Cubierta.?comun/i.test(object.name))removed.push(object);});
+ for(const object of removed){object.removeFromParent();object.traverse(part=>{part.geometry?.dispose();for(const material of(Array.isArray(part.material)?part.material:[part.material]))material?.dispose();});}
+ const plantMaterial=new T.MeshStandardMaterial({color:0xa69a74,metalness:.35,roughness:.65});
+ model.traverse(object=>{if(!object.isMesh)return;for(const material of(Array.isArray(object.material)?object.material:[object.material]))material.dispose();object.material=plantMaterial;object.castShadow=false;object.receiveShadow=false;});
+ const box=new T.Box3().setFromObject(model),size=box.getSize(new T.Vector3()),center=box.getCenter(new T.Vector3());
+ model.position.set(-center.x,-box.min.y,-center.z);plant.add(model);plant.scale.setScalar(5/Math.max(size.x,size.z));plant.position.set(1.5,-1.15,-5.4);plant.rotation.y=-.3;
+ plant.updateMatrixWorld(true);
+ // Terminar el tubo sobre una superficie real de la miniatura, sin dejarlo suspendido.
+ const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);let contact;
+ for(const [x,z] of [[1.7,-4.8],[1.5,-5.4],[2,-5.4],[1,-5.4],[1.5,-4.5]]){
+  ray.set(new T.Vector3(x,4,z),down);contact=ray.intersectObject(plant,true)[0]?.point;if(contact)break;
+ }
+ if(contact){
+  drainCurve.points[5].set(contact.x,Math.max(.12,contact.y+.38),contact.z+.35);
+  drainCurve.points.push(contact.clone().add(new T.Vector3(0,.015,0)));drainCurve.updateArcLengths();
+  drainGeo.dispose();drainGeo=new T.TubeGeometry(drainCurve,110,.075,12,false);drainMesh.geometry=drainGeo;
+  drainShell.geometry.dispose();drainShell.geometry=new T.TubeGeometry(drainCurve,110,.125,12,false);
+  root.dataset.introConnection='surface';
+ }
+ root.dataset.introPlant='ready';
+}catch(error){root.dataset.introPlant='unavailable';console.warn('La miniatura de planta no está disponible.',error);}
+if(signal?.aborted){dispose();return null;}
+const beadCount=world.clientWidth<560?32:56;
+const beads=new T.InstancedMesh(new T.SphereGeometry(1,8,6),new T.MeshBasicMaterial({color:0xffd484}),beadCount);
+beads.frustumCulled=false;scene.add(beads);const dummy=new T.Object3D(),up=new T.Vector3(0,1,0);
+let elapsed=reduced?8:0,playing=false,lastTick=0,frameCount=0,maxGap=0,lastPresented=0;let viewWidth=world.clientWidth,viewHeight=world.clientHeight;
+const clamp=v=>Math.max(0,Math.min(1,v)),ease=v=>{const q=clamp(v);return q*q*(3-2*q);};
+function positionCamera(){
+ const aspect=viewWidth/viewHeight;camera.aspect=aspect;
+ // Cámara perpendicular al logo: ni órbita ni giro durante el arranque.
+ const distance=Math.max(10.5,4.3/(Math.tan(T.MathUtils.degToRad(18))*aspect));
+ camera.position.set(.25,1.4,distance);camera.lookAt(.25,1.4,0);camera.updateProjectionMatrix();
+ root.dataset.introCamera='frontal';
+}
 function render(t){
- const ready=clamp((t-.7)/1.4),flood=clamp((t-2.1)/2.4),final=clamp((t-5.5)/1.7),running=t>0&&t<6.4;
- const d=Math.max(0,Math.min(2,t-5.5));const rotation=t<1?t*t*7:t<5.5?7+(t-1)*14:70+14*(d-d*d/4);impeller.rotation.z=rotation;coupling.rotation.x=rotation;pump.rotation.z=0;
- lampMaterial.emissiveIntensity=t>.2?1.7:.08;amberLight.intensity=3+Math.sin(clamp(t/7.5)*Math.PI)*16;ringMat.emissiveIntensity=.3+flood*.7;
- fluidGeo.setDrawRange(0,Math.floor(ready*fluidGeo.index.count/6)*6);glow.material.opacity=ready*.12;
- liquidUniforms.uTime.value=t;liquidUniforms.uFill.value=flood;liquidUniforms.uOpacity.value=(1-final)*.7+.05;
- logoUniforms.uReveal.value=-.2+1.4*ease((t-1.8)/3.6);logoUniforms.uTime.value=t;
- spiral.rotation.z=-t*1.2;spiral.scale.setScalar(.8+clamp((t-1.8)/2)*.25);spiralMat.opacity=clamp((t-1.3)/1.8)*(1-final)*.75;
- drops.visible=t>1.25&&t<6.8;
- if(drops.visible)for(let i=0;i<count;i++){
-  const seed=random(i),p=(t*.7+seed)%1;
-  const blend=ease((t-2.8)/1.2),a=seed*Math.PI*2+t*.65,r=1.2+p*1.8*clamp((t-3)/2);
-  const jetX=.65+p*1.25,jetY=2.8+Math.sin(p*Math.PI)*.5-p*p*1.3,jetZ=(random(i+400)-.5)*.32;
-  dummy.position.set(T.MathUtils.lerp(jetX,1.65+Math.cos(a)*r,blend),T.MathUtils.lerp(jetY,1.9+Math.sin(a)*r-p*p*.9,blend),T.MathUtils.lerp(jetZ,Math.sin(a*2+t)*.45+(random(i+400)-.5)*p,blend));
-  const size=(.012+random(i+800)*.033)*(1-p*.55);dummy.scale.setScalar(size);dummy.updateMatrix();drops.setMatrixAt(i,dummy.matrix);
- }drops.instanceMatrix.needsUpdate=true;
- const width=viewWidth,aspect=width/viewHeight;camera.aspect=aspect;const distance=aspect<1.15?13.8:8.3;const sweep=ease(t/5.2),near=aspect<1.15?12:6.8;camera.position.set(.7+sweep*2.6,2.6+sweep*.5,near+(distance-near)*sweep);camera.lookAt(-.3+sweep*.45,1.3+sweep*.35,0);camera.updateProjectionMatrix();
+ const ready=clamp((t-.4)/1.6),flood=clamp((t-1.5)/2.6),drain=clamp((t-3.6)/2.4);
+ const rotation=t<1?t*t*5:5+(t-1)*10;impeller.rotation.z=rotation;coupling.rotation.x=rotation;
+ lampMaterial.emissiveIntensity=.1+ease(t/.7)*1.6;amberLight.intensity=10+Math.sin(t*.7)*1.2;ringMat.emissiveIntensity=.3+flood*.6;
+ fluidGeo.setDrawRange(0,Math.floor(ready*fluidGeo.index.count/6)*6);glow.material.opacity=ready*.1;
+ drainGeo.setDrawRange(0,Math.floor(drain*drainGeo.index.count/6)*6);flowUniforms.uTime.value=t;
+ liquidUniforms.uTime.value=t;liquidUniforms.uFill.value=flood*.67;liquidUniforms.uOpacity.value=.22;
+ logoUniforms.uReveal.value=-.2+1.4*ease((t-1.3)/3.4);logoUniforms.uTime.value=t;
+ spiral.rotation.z=-t*.35;spiral.scale.setScalar(1);spiralMat.opacity=ease((t-1)/2)*.09;
+ for(let i=0;i<beadCount;i++){
+  const returning=i>=beadCount/2,path=returning?drainCurve:curve,phase=((t*(returning?.17:.24))+i/(beadCount/2))%1;
+  const active=phase<=(returning?drain:ready);dummy.position.copy(path.getPointAt(phase));dummy.quaternion.setFromUnitVectors(up,path.getTangentAt(phase));
+  dummy.scale.set(active?.026:0,active?.075:0,active?.026:0);dummy.updateMatrix();beads.setMatrixAt(i,dummy.matrix);
+ }beads.instanceMatrix.needsUpdate=true;
  renderer.render(scene,camera);
+ root.dataset.introTime=t.toFixed(2);root.dataset.introFrames=String(frameCount);
 }
 
-function resize(){viewWidth=world.clientWidth;viewHeight=world.clientHeight;if(!viewWidth||!viewHeight)return;renderer.setSize(viewWidth,viewHeight,false);render(elapsed);}
+function resize(){viewWidth=world.clientWidth;viewHeight=world.clientHeight;if(!viewWidth||!viewHeight)return;renderer.setSize(viewWidth,viewHeight,false);positionCamera();render(elapsed);}
 function tick(now){
  if(disposed||root.hidden||!playing)return;
- const gap=lastTick?(now-lastTick)/1000:0;lastTick=now;maxGap=Math.max(maxGap,gap);elapsed=Math.min(elapsed+Math.min(gap,.05),7.5);frameCount++;render(elapsed);
- if(elapsed<7.5)frameId=requestAnimationFrame(tick);
- else{playing=false;root.dataset.introState='finished';root.dataset.introFrames=String(frameCount);root.dataset.introMaxGap=String(Math.round(maxGap*1000));}
+ // Limitar a 45 fps reduce carga sin detener el flujo al terminar el revelado.
+ if(lastPresented&&now-lastPresented<1000/45){frameId=requestAnimationFrame(tick);return;}
+ const gap=lastTick?(now-lastTick)/1000:0;lastTick=now;lastPresented=now;maxGap=Math.max(maxGap,gap);elapsed+=Math.min(gap,.05);frameCount++;render(elapsed);
+ root.dataset.introMaxGap=String(Math.round(maxGap*1000));frameId=requestAnimationFrame(tick);
 }
-function onVisibility(){cancelAnimationFrame(frameId);lastTick=0;if(!document.hidden&&playing&&!disposed)frameId=requestAnimationFrame(tick);}
+
+function onVisibility(){cancelAnimationFrame(frameId);lastTick=0;lastPresented=0;if(!document.hidden&&playing&&!disposed)frameId=requestAnimationFrame(tick);}
 // Warm the actual materials before revealing the canvas: no first-use shader stalls.
-renderer.setSize(viewWidth,viewHeight,false);camera.aspect=viewWidth/viewHeight;camera.position.set(3.3,3.1,viewWidth/viewHeight<1.15?13.8:8.3);camera.lookAt(.15,1.65,0);camera.updateProjectionMatrix();
+renderer.setSize(viewWidth,viewHeight,false);positionCamera();
 try{
  if(renderer.compileAsync)await renderer.compileAsync(scene,camera);else renderer.compile(scene,camera);
  renderer.render(scene,camera);
@@ -99,7 +152,7 @@ if(signal?.aborted){dispose();return null;}
 observer=new ResizeObserver(resize);observer.observe(world);resize();
 root.classList.remove('intro-loading');root.classList.add('scene-ready');
 signal?.addEventListener('abort',dispose,{once:true});document.addEventListener('visibilitychange',onVisibility);
-if(reduced){render(7.5);root.dataset.introState='finished';}
+if(reduced){render(8);root.dataset.introState='finished';}
 else{root.dataset.introState='playing';playing=true;frameId=requestAnimationFrame(tick);}
 return {dispose};
 }

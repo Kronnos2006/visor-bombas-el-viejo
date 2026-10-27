@@ -26,7 +26,7 @@
 @media(prefers-reduced-motion:reduce){#portada .intro-copy{animation:none!important}#portada .intro-3d-canvas{transition:none}}
 /* La lectura de fichas no depende de animaciones de aparición. */
 body #panel>*{animation:none}
-#portada.scene-ready .intro-3d-canvas{mask-image:linear-gradient(to bottom,transparent,black 10%,black 82%,transparent)}
+#portada.scene-ready .intro-3d-canvas{mask-image:linear-gradient(to bottom,transparent,black 5%,black 95%,transparent)}
 
 #portada.salir{transition:opacity .26s ease,visibility .26s}
 #portada.intro-loading .pump-scene,#portada.intro-loading .portada-logo{visibility:hidden}
