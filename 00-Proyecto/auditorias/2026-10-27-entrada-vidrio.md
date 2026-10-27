@@ -11,8 +11,10 @@ Recursos:
 
 La miniatura ocupa 17,32 MB y sustituye en la entrada la carga del modelo anterior de 5,38 MB. No se instala React ni se añaden dependencias: el motor del efecto se adapta al entorno existente. El movimiento reducido presenta el estado final estático. Al entrar se liberan ambos contextos y se retiran los recursos del líquido. Si falla la presentación, sigue disponible la entrada simple.
 
-Validación: 117 pruebas del catálogo pasan. Comprobadas la integración completa en navegador con tamaños PC/teléfono, movimiento reducido, módulo/modelo no disponibles y entrada durante la carga: sin errores y con fichas/resúmenes accesibles. La escena y el contexto del líquido se liberan al entrar. Las revisiones previas de la vista local comprobaron todas las fases de llenado y que la planta queda libre de superposición con la bomba. No se midió rendimiento en un teléfono físico.
+Validación: 122 pruebas del catálogo pasan tras incorporar la app actual de cinco secciones. Comprobadas la integración completa en navegador con tamaños PC/teléfono, movimiento reducido, módulo/modelo no disponibles y entrada durante la carga: sin errores y con fichas/resúmenes accesibles. La escena y el contexto del líquido se liberan al entrar. Las revisiones previas de la vista local comprobaron todas las fases de llenado y que la planta queda libre de superposición con la bomba. No se midió rendimiento en un teléfono físico.
 
 No se modifican fichas reales ni datos de campo. Esta animación de identidad no acredita una conexión hidráulica real ni altera el estado de Revit.
 
 Refinamiento solicitado antes de publicar: vista de tres cuartos de la bomba (37 grados), eje del motor alineado con el impulsor, brida de succión con boca abierta y tornillos, manguera acoplada a la descarga y materiales/iluminación con reflejos más suaves. Es un modelo visual de referencia sin cotas de fabricación. Se comprobaron de nuevo las fases de la vista local en PC/teléfono/reducido; integración final comprobada en PC, teléfono y movimiento reducido, sin errores de página.
+
+Se conservaron las actualizaciones concurrentes de la app de cinco secciones mediante integración normal de Git, sin forzar la subida. Se volvió a comprobar la entrada y los recorridos de ficha, Bodega y Mantenimiento en la interfaz actual.
