@@ -551,7 +551,21 @@ function locateSelectedPump(){
  markers.forEach(m=>m.el.classList.toggle('located',m.kind==='pump'&&m.id===p.tag));
  renderList();renderPanel();toast(p.tag+' ubicada; su ficha permanece abierta.');
 }
-async function mountHistoryChart(pump){
+function showHistoryLoadError(error,tag){
+ if(state.tab!=='historial'||state.pump?.tag!==tag)return;
+ const mount=$('#chart-mount');if(!mount)return;
+ let notice=$('#history-load-error');
+ if(!notice){notice=document.createElement('section');notice.id='history-load-error';notice.className='notice';notice.setAttribute('role','alert');notice.innerHTML='<p class="form-error"></p><button type="button" class="wide">Reintentar cargar historial</button>';mount.before(notice);}
+ notice.querySelector('p').textContent=error.message||'No se pudo leer el historial. Tus reportes se conservan.';
+ notice.querySelector('button').onclick=()=>{notice.remove();const pump=state.pump;if(pump?.tag!==tag||state.tab!=='historial')return;if($('#rep-list'))refreshPhotoHistory(pump);else mountHistoryChart(pump);};
+}
+function refreshPhotoHistory(pump){
+ $('#history-load-error')?.remove();
+ const reports=listReports(pump.tag||pump.data?.tag);
+ return Promise.all([mountHistoryChart(pump,reports),paintReports(pump.tag||pump.data?.tag,reports)]);
+}
+document.addEventListener('vocatus:storage-ready',()=>{if($('#history-load-error')&&state.tab==='historial'&&state.pump){if($('#rep-list'))refreshPhotoHistory(state.pump);else{$('#history-load-error').remove();mountHistoryChart(state.pump);}}});
+async function mountHistoryChart(pump,reports){
  const mount=document.getElementById('chart-mount');
  if(!mount) return;
  const tag=pump.tag||pump.data?.tag||'EQUIPO';
@@ -570,7 +584,7 @@ async function mountHistoryChart(pump){
  const records=state.demo?demoReadings(pData,nominalPressure||2.1,nominalFlow||12.5).map(r=>({...r,demo:true,origen:'demo'})):[];
  let ambiguos=0;
  try{
-  for(const r of await listReports(tag)){
+  for(const r of await (reports||listReports(tag))){
    const m=reportMeasurements(r);
    if(m.origen.pressure==='ambiguo'||m.origen.flow==='ambiguo')ambiguos++;
    if(m.pressure===null&&m.flow===null)continue;
@@ -578,16 +592,16 @@ async function mountHistoryChart(pump){
    records.push({fecha:r.date||'Sin fecha',tipo:r.demonstration?'Informe DEMO':'Informe de mantenimiento',demo:!!r.demonstration,origen,
     presion:m.pressure,caudal:m.flow,detalle:r.title||'Informe sin título',responsable:r.author||''});
   }
- }catch(error){if(mount.isConnected)mount.innerHTML='<p class="form-error">'+esc(error.message)+'</p>';return;}
+ }catch(error){if(mount.isConnected&&state.pump?.tag===tag){mount.replaceChildren();showHistoryLoadError(error,tag);}return;}
  records.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
  if(!mount.isConnected||state.pump?.tag!==tag)return;
  renderRechartsHistory(mount,{pumpTag:tag,records,nominalPressure,nominalFlow,ambiguos});
 }
 
 function reportUI(){return `<div id="rep-list" class="report-history-list"></div><section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Responsable<input name="author" maxlength="200" ${reportsInObsidian()?'required':''}></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label>Presión medida (bar)<input name="pressure" type="number" step="0.1" placeholder="Ej. 2.1"></label><label>Caudal medido (m³/h)<input name="flow" type="number" step="0.1" placeholder="Ej. 18.0"></label></div><label>Reporte<textarea name="text" rows="5" maxlength="7500" placeholder="Observaciones, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">${reportsInObsidian()?'Se guarda en Obsidian, en '+esc(state.vaultName)+'. El PDF queda adjunto al informe.':'Se guarda en este navegador. Los reportes no se comparten entre equipos.'}${state.demo?' Registro marcado DEMO.':''}</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">${reportsInObsidian()?'Guardar en Obsidian':'Guardar en este navegador'}</button></form></section>`;}
-async function paintReports(tag){
+async function paintReports(tag,reports){
  const box=$('#rep-list');if(!box)return;
- let items=[];try{items=await listReports(tag);}catch(e){box.innerHTML=`<p class="form-error">${esc(e.message)}</p>`;return;}
+ let items=[];try{items=await (reports||listReports(tag));}catch(e){if(box.isConnected&&state.pump?.tag===tag){box.replaceChildren();showHistoryLoadError(e,tag);}return;}
  if(!box.isConnected||state.pump?.tag!==tag)return;
  box.innerHTML=(reportsInObsidian()&&items.some(r=>r.source==='browser')?'<button class="wide" id="import-reports">Importar reportes del navegador a Obsidian</button>':'')+(items.length?`<h4>Reportes de campo (${items.length})</h4>`+items.map(r=>`<article class="record" data-id="${esc(r.id)}"><strong>${esc(r.date)} · ${esc(r.title)}</strong><small>${r.source==='obsidian'?'Obsidian':'Solo en este navegador'}${r.demonstration?' · DEMO':''}${r.author?' · '+esc(r.author):''}</small>${r.text?`<p class="report-text">${esc(r.text)}</p>`:''}${evidenceMarkup(r.evidence||[])}${r.pdf?`<p><a class="doc" href="#" data-pdf="${esc(r.id)}">📄 ${esc(r.pdf.name)} · ${(r.pdf.size/1024).toFixed(0)} KB</a></p>`:''}<button type="button" class="link-btn" data-del="${esc(r.id)}">Eliminar reporte</button></article>`).join(''):'<p class="muted">Todavía no hay reportes de campo para esta bomba.</p>');
  const importButton=box.querySelector('#import-reports');if(importButton)importButton.onclick=async()=>{importButton.disabled=true;try{const count=await importReports(tag);toast(count+' reportes importados a Obsidian.');await paintReports(tag);}catch(e){toast(e.message);importButton.disabled=false;}};
@@ -595,7 +609,7 @@ async function paintReports(tag){
  box.querySelectorAll('[data-pdf]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=items.find(x=>x.id===a.dataset.pdf);if(r?.pdf?.url){const link=document.createElement('a');link.href=r.pdf.url;link.download=r.pdf.name;link.click();return;}if(r?.pdf?.blob){const u=URL.createObjectURL(r.pdf.blob);const link=document.createElement('a');link.href=u;link.download=r.pdf.name||'documento.pdf';link.target='_blank';link.rel='noopener';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}});
  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{try{const record=items.find(r=>r.id===b.dataset.del);await deleteReport(record);toast(record.source==='obsidian'?'Informe enviado a la papelera de Obsidian.':'Reporte eliminado del navegador.');await paintReports(tag);if(state.pump?.tag===tag)mountHistoryChart(state.pump);}catch(e){toast(e.message);}});
 }
-function initReports(tag){
+function initReports(tag,load=true){
  const f=$('#rep-form');if(!f)return;const d=new Date();f.date.value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
  f.onsubmit=async e=>{e.preventDefault();const err=$('#rep-error');err.textContent='';const btn=f.querySelector('button');btn.disabled=true;
   const pres=f.pressure?.value?f.pressure.value+' bar':'';
@@ -604,7 +618,7 @@ function initReports(tag){
   const fullText=[f.text.value,extra].filter(Boolean).join('\n\n');
   try{await addReport({tag,date:f.date.value,title:f.title.value,author:f.author.value,text:fullText,file:f.file.files[0]||null,pressure:f.pressure?.value,flow:f.flow?.value});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast(reportsInObsidian()?'Informe guardado en Obsidian.':'Reporte guardado en este navegador.');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
   catch(x){err.textContent=x.message||'No se pudo guardar el reporte.';}finally{btn.disabled=false;}};
- paintReports(tag);
+ if(load)paintReports(tag);
 }
 function representedSubparts(index){
  const names=componentGroups[index]?.userData.subcomponents||[];
@@ -620,7 +634,7 @@ function renderPhotoPanel(){
  const demo=state.demo?'<span class="demo-chip">DEMO · POR CONFIRMAR</span>':'<span class="demo-chip">DATOS DOCUMENTALES / POR CONFIRMAR</span>';
  const fieldRows=rows=>'<dl class="fields">'+rows.map(([key,value])=>`<div class="field"><dt>${esc(key)}</dt><dd>${esc(value)}</dd></div>`).join('')+'</dl>';
  if(state.tab==='historial'){
-  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">${state.demo?'<strong>Lecturas DEMO</strong>: ejemplos, no mediciones de la planta.':'Historial de campo guardado en Obsidian. Los campos sin medición permanecen vacíos.'} Los reportes se grafican únicamente con los valores registrados.</p><div id="chart-mount"></div>${reportUI()}${p.history.map(item=>`<article class="record"><strong>${esc(item.fecha)} · ${esc(item.tipo)}</strong><p>${esc(item.detalle)}</p><small>${esc(item.responsable)}</small></article>`).join('')}<div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag);mountHistoryChart(p);return;
+  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">${state.demo?'<strong>Lecturas DEMO</strong>: ejemplos, no mediciones de la planta.':'Historial de campo guardado en Obsidian. Los campos sin medición permanecen vacíos.'} Los reportes se grafican únicamente con los valores registrados.</p><div id="chart-mount"></div>${reportUI()}${p.history.map(item=>`<article class="record"><strong>${esc(item.fecha)} · ${esc(item.tipo)}</strong><p>${esc(item.detalle)}</p><small>${esc(item.responsable)}</small></article>`).join('')}<div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag,false);refreshPhotoHistory(state.pump);return;
  }
  if(state.tab==='ia'){
   $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Gemini analiza solamente el expediente de esta bomba seleccionada. Distingue los datos aportados de los ejemplos DEMO y de los campos pendientes.</p>${fieldRows([['Fluido registrado',p.servicio],['Sellado',p.seal.tipo],['Elastómero',p.seal.elastomero],['Registros de demo',String(p.history.length)]])}<div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará a Google el expediente de esta bomba, con los ejemplos DEMO identificados.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué sello y o-rings aparecen en este expediente y qué datos faltan confirmar?">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí el historial DEMO de esta bomba, separado por fechas.">Resumir el mantenimiento ↗</button><button data-question="¿Qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;

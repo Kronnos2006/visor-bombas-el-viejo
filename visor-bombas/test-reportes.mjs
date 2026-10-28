@@ -27,3 +27,21 @@ test('eliminar un informe de Obsidian usa DELETE con su equipo e identificador',
  await deleteReport({source:'obsidian',tag:'B33',id:'B33_informe.md'});
  assert.equal(request.method,'DELETE');assert.deepEqual(JSON.parse(request.body),{tag:'B33',id:'B33_informe.md'});
 });
+
+
+test('almacenamiento bloqueado conserva una apertura y permite recuperar informes al liberarse',async t=>{
+ const previousWindow=globalThis.window,previousIDB=globalThis.indexedDB,previousDocument=globalThis.document;
+ t.after(()=>{if(previousWindow===undefined)delete globalThis.window;else globalThis.window=previousWindow;if(previousIDB===undefined)delete globalThis.indexedDB;else globalThis.indexedDB=previousIDB;if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;});
+ let opens=0,recovered=0,request;
+ globalThis.document=new EventTarget();globalThis.document.addEventListener('vocatus:storage-ready',()=>recovered++);
+ globalThis.window={indexedDB:true};
+ globalThis.indexedDB={open(){opens++;request={};return request;}};
+ const client=await import('./public/reportes.js?blocked-regression');
+ const first=client.listReports('B4');request.onblocked();
+ await assert.rejects(client.listReports('B4'),/Cerrá las otras pestañas/);
+ await assert.rejects(first,/Cerrá las otras pestañas/);
+ const saved={id:'anterior',tag:'B4',title:'Informe conservado',date:'2026-10-28',created:1};
+ request.result={transaction(){const tx={objectStore(){return{index(){return{getAll(){queueMicrotask(()=>tx.oncomplete());return{result:[saved]};}};}};}};return tx;},close(){}};
+ request.onsuccess();
+ assert.equal(opens,1);assert.equal(recovered,1);assert.deepEqual((await client.listReports('B4')).map(x=>x.id),['anterior']);
+});
