@@ -101,7 +101,7 @@
 
   // 48 · Onda al tocar botones
   if (!sinMovimiento) document.addEventListener('pointerdown', e => {
-    const el = e.target.closest('button,.main-nav a,.campo-nav a,.pump-row'); if (!el || el.disabled) return;
+    const el = e.target.closest('button,.main-nav a,.campo-nav a,.pump-row'); if (!el || el.disabled || el.id === 'cab-flujo') return;
     const r = el.getBoundingClientRect(), d = Math.max(r.width, r.height);
     const o = document.createElement('span'); o.className = 'toque';
     Object.assign(o.style, { width: d + 'px', height: d + 'px', left: (e.clientX - r.left - d / 2) + 'px', top: (e.clientY - r.top - d / 2) + 'px' });
