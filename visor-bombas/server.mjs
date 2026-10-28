@@ -200,7 +200,7 @@ export async function handler(req,res) {
   if(req.method==='GET' && url.pathname==='/api/pump-photo') {
    const tag=url.searchParams.get('tag')||''; await readPump(tag);
    const photo=await pumpPhotos.read(tag,url.searchParams.get('slot')||'');
-   res.writeHead(200,{'Content-Type':photo.ext==='png'?'image/png':'image/jpeg','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});return res.end(photo.bytes);
+   res.writeHead(200,{'Content-Type':photo.ext==='png'?'image/png':'image/jpeg','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});return res.end(photo.bytes);
   }
   if(req.method==='GET' && url.pathname==='/api/document') {
    const p=await readPump(url.searchParams.get('tag')||''); const rel=url.searchParams.get('path');

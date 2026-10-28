@@ -25,10 +25,25 @@ async function locales(tag){
 }
 // Reduce la foto en el navegador (lado mayor 1800 px, JPEG) antes de guardarla.
 async function reducir(file){
- if(!file||file.size>8*1024*1024)throw new Error('La foto supera 8 MB. Elegí una de menor tamaño.');
- const img=await createImageBitmap(file),k=Math.min(1,1800/Math.max(img.width,img.height)),c=document.createElement('canvas');
- c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);img.close?.();
- return new Promise(ok=>c.toBlob(ok,'image/jpeg',.85));
+ if(!file||file.size>30*1024*1024)throw new Error('La foto supera 30 MB. Elegí una de menor tamaño.');
+ let img,objectURL;
+ try{
+  try{img=await createImageBitmap(file,{imageOrientation:'from-image'});}
+  catch{
+   // Algunos navegadores Android no implementan createImageBitmap para fotos de cámara.
+   objectURL=URL.createObjectURL(file);
+   img=await new Promise((resolve,reject)=>{const el=new Image();el.onload=()=>resolve(el);el.onerror=()=>reject(new Error('No se pudo abrir la foto. Usá JPG, PNG o WebP.'));el.src=objectURL;});
+  }
+  const width=img.width||img.naturalWidth,height=img.height||img.naturalHeight;
+  if(!width||!height||width*height>60000000)throw new Error('La imagen es demasiado grande o está dañada.');
+  const k=Math.min(1,1800/Math.max(width,height)),c=document.createElement('canvas');
+  c.width=Math.max(1,Math.round(width*k));c.height=Math.max(1,Math.round(height*k));
+  const context=c.getContext('2d');if(!context)throw new Error('El teléfono no pudo preparar la foto.');
+  context.drawImage(img,0,0,c.width,c.height);
+  const blob=await new Promise(resolve=>c.toBlob(resolve,'image/jpeg',.82));
+  if(!blob)throw new Error('No se pudo convertir la foto a JPG.');
+  return blob;
+ }finally{img?.close?.();if(objectURL)URL.revokeObjectURL(objectURL);}
 }
 const b64=blob=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>ko(new Error('No se pudo leer la foto para descargarla.'));r.readAsDataURL(blob);});
 
@@ -36,7 +51,7 @@ function withWarning(photos,message){if(message)Object.defineProperty(photos,'wa
 export async function fotosActualizadas(tag,{writable}){
  let loc={},localError;try{loc=await locales(tag);}catch(error){localError=error;}
  if(!writable){if(localError)throw localError;return loc;}
- try{const r=await fetch('/api/pump-photos?tag='+encodeURIComponent(tag));if(!r.ok)throw new Error('No se pudieron consultar las fotos de Obsidian.');const {fotos}=await r.json();return withWarning({...loc,...fotos,...Object.fromEntries(Object.entries(loc).filter(([,v])=>v.pending))},localError?.message);}catch(error){if(localError)throw localError;return withWarning(loc,error.message);}
+ try{const r=await fetch('/api/pump-photos?tag='+encodeURIComponent(tag),{cache:'no-store'});if(!r.ok)throw new Error('No se pudieron consultar las fotos de Obsidian.');const {fotos}=await r.json();return withWarning({...loc,...fotos,...Object.fromEntries(Object.entries(loc).filter(([,v])=>v.pending))},localError?.message);}catch(error){if(localError)throw localError;return withWarning(loc,error.message);}
 }
 const photoQueues=new Map();
 export function guardarFoto(tag,slot,file,options){
@@ -65,7 +80,7 @@ export function originales(p,exp){
 export function htmlFotos(p,orig,act,{writable}){
  const fecha=f=>new Date(f).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'});
  return `<div class="block exp-block" id="fotos-actualizar"><h3>Actualizar fotos</h3><p class="muted">${writable?'La foto nueva sustituye a la anterior en el expediente y se guarda en la bóveda (00-Proyecto/fotos-campo/'+esc(p.tag)+'/expediente). La anterior queda en el historial.':'Guardadas solo en este navegador: no aparecen automáticamente en otro teléfono o PC. Descargá las fotos aquí y cargá ese archivo en el otro equipo. No borres los datos del sitio.'}</p>${photoTransferHTML(p.photoKey||p.tag,{writable,reference:!!p.photoKey,displayName:p.tag})}<div class="foto-grid">${RANURAS.map(([slot,nombre])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src||'';
-  return `<figure class="foto-slot"><div class="foto-img">${src?`<a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(nombre)} de ${esc(p.tag)}" loading="lazy"></a>`:'<span>Sin foto</span>'}</div><figcaption><strong>${esc(nombre)}</strong><small>${a?`Actualizada ${fecha(a.fecha)}${a.local?' · solo en este navegador':''}`:o?esc(o.ref||'Original'):'Pendiente'}</small></figcaption><label class="foto-btn">${src?'Actualizar':'Agregar'} ${esc(nombre.toLowerCase())}<input class="foto-file" type="file" accept="image/*" aria-label="${esc(nombre)} de ${esc(p.tag)}" data-slot="${slot}"></label></figure>`;}).join('')}</div><p class="form-error" id="fotos-error"></p></div>`;
+  return `<figure class="foto-slot"><div class="foto-img">${src?`<a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(nombre)} de ${esc(p.tag)}" loading="lazy"></a>`:'<span>Sin foto</span>'}</div><figcaption><strong>${esc(nombre)}</strong><small>${a?`Actualizada ${fecha(a.fecha)}${a.local?' · solo en este navegador':''}`:o?esc(o.ref||'Original'):'Pendiente'}</small></figcaption><label class="foto-btn">📷 Tomar foto<input class="foto-file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" aria-label="Tomar foto de ${esc(nombre)} de ${esc(p.tag)}" data-slot="${slot}"></label><label class="foto-btn">Galería<input class="foto-file" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Elegir ${esc(nombre)} de galería" data-slot="${slot}"></label></figure>`;}).join('')}</div><p class="form-error" id="fotos-error"></p></div>`;
 }
 
 
