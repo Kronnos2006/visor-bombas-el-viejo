@@ -1,0 +1,32 @@
+name: Regresiones de fotos y cámara
+on:
+  pull_request:
+    paths:
+      - 'visor-bombas/public/fotos-bomba.js'
+      - 'visor-bombas/pump-photos.mjs'
+      - 'visor-bombas/server.mjs'
+      - 'visor-bombas/test-camara-movil.mjs'
+      - '.github/workflows/fotos-camara.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'visor-bombas/public/fotos-bomba.js'
+      - 'visor-bombas/pump-photos.mjs'
+      - 'visor-bombas/server.mjs'
+      - 'visor-bombas/test-camara-movil.mjs'
+  schedule:
+    - cron: '15 12 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check visor-bombas/public/fotos-bomba.js && node --check visor-bombas/pump-photos.mjs && node --check visor-bombas/server.mjs
+      - run: node --test visor-bombas/test-camara-movil.mjs visor-bombas/test-regresion-fotos-verificacion.mjs
