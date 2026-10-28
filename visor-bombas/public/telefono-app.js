@@ -2,6 +2,8 @@
 // los bocetos del 27-10-2026 y la propuesta «App Vocatus · teléfono». Teléfono: 3D arriba, sección abajo. Computadora: secciones a la izquierda, 3D al
 // centro y la sección a la derecha. Reutiliza el visor (window.vocatus): no duplica la lógica de
 // selección, 3D, ficha ni guardado. Con ?vista=clasica se usa el visor anterior.
+import {selectionIdentity} from './selection-core.js';
+import {sectorDe} from './planta-integrada.js';
 import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
@@ -372,43 +374,50 @@ function iniciar() {
  const areasMenu = () => [...document.querySelectorAll('#area-menu [data-area]')].map(b => [b.dataset.area, [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() || b.textContent.trim()]);
  const areaDeMenu = id => !id || id === 'integrado' || id === 'planta' ? '' : id.replace(/^sector:/, '');
  function pintarHistorial() {
-  const areas = areasMenu(), marcaSel = $('#hist-marca'), actual = marcaSel.value;
-  const marcas = [...new Set(bombas().map(p => String(p.marca || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
-  marcaSel.innerHTML = '<option value="">Todas</option>' + marcas.map(m => `<option>${esc(m)}</option>`).join(''); marcaSel.value = marcas.includes(actual) ? actual : '';
-  const cuantas = id => bombas().filter(p => !areaDeMenu(id) || V()?.areaDe(p) === areaDeMenu(id)).length; // conteo por área (idea de Codex)
-  $('#hist-area').innerHTML = (areas.length ? areas : [['', 'Toda la planta']]).map(([id, n]) => `<option value="${esc(id)}"${areaDeMenu(id) === areaDeMenu(filtroHist) ? ' selected' : ''}>${esc(n)} (${cuantas(id)})</option>`).join('');
-  const q = $('#hist-buscar').value.toUpperCase().replace(/[\s-]/g, ''), fluido = $('#hist-fluido').value, marca = marcaSel.value, area = areaDeMenu(filtroHist);
-  const enArea = bombas().filter(p => !area || V()?.areaDe(p) === area);
-  // Búsqueda de Codex (TAG, marca, modelo o serie) + filtros de fluido y marca.
-  const lista = filtrarHistorial(enArea, {query: $('#hist-buscar').value}, p => V()?.areaDe(p)).filter(p => (!fluido || (V()?.tipos(p) || []).includes(fluido)) && (!marca || String(p.marca || '').trim() === marca));
-  const nombreArea = areas.find(([id]) => id === filtroHist)?.[1] || 'toda la planta';
-  $('#hist-cuenta').textContent = !enArea.length ? `${nombreArea}: todavía no hay bombas con TAG y ficha.` : !lista.length ? 'Ninguna bomba coincide con los filtros.' : `${lista.length} ${lista.length === 1 ? 'bomba' : 'bombas'}${lista.length < enArea.length ? ` de ${enArea.length}` : ''} en ${nombreArea === 'toda la planta' ? nombreArea : nombreArea}.`;
-  if (!bombas().length) { $('#hist-tarjetas').innerHTML = '<span class="tel-silueta"></span>'.repeat(6); return; }
-  if (!lista.length) { $('#hist-tarjetas').innerHTML = `<div class="tel-vacio-ilus tt-ancho">${ILUS.buscar}<p>${enArea.length ? 'Ninguna bomba coincide con los filtros.' : 'Esta área todavía no tiene bombas con ficha.'}</p></div>`; return; }
-  $('#hist-tarjetas').innerHTML = lista.map(p => { const c = completeness(p), pct = c.total ? Math.round(c.done / c.total * 100) : 0, marcaP = String(p.marca || '').trim();
-   return `<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><span class="tt-cab"><strong>${esc(p.tag)}</strong>${marcaP && !/por confirmar/i.test(marcaP) ? `<em>${esc(marcaP)}</em>` : ''}</span><span>${esc(p.nombre || p.ubicacion || '')}</span>
-    <span class="tt-medidor" title="Ficha completa ${c.done} de ${c.total}"><i style="width:${pct}%"></i></span><small>Ficha ${c.done}/${c.total}</small></button>`; }).join('');
-  $('#hist-tarjetas').querySelectorAll('[data-tag]').forEach(b => b.onclick = () => abrirFicha(b.dataset.tag, 'historial'));
+  const referencias=(V()?.references||[]).map(reference=>{
+   let local={};try{local=JSON.parse(localStorage.getItem('integrado:'+reference.sector+':'+reference.nombre))||{};}catch{}
+   return {...local,tag:'Sin TAG',nombre:local.nombre||reference.nombre,reference};
+  });
+  const todas=[...bombas(),...referencias],areaDe=p=>p.reference?(p.reference.standalone?'torre':sectorDe(p.reference.sector)):V()?.areaDe(p);
+  const areas=areasMenu(),marcaSel=$('#hist-marca'),actual=marcaSel.value;
+  const marcas=[...new Set(todas.map(p=>String(p.marca||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  marcaSel.innerHTML='<option value="">Todas</option>'+marcas.map(m=>`<option>${esc(m)}</option>`).join('');marcaSel.value=marcas.includes(actual)?actual:'';
+  const cuantas=id=>todas.filter(p=>!areaDeMenu(id)||areaDe(p)===areaDeMenu(id)).length;
+  $('#hist-area').innerHTML=(areas.length?areas:[['','Toda la planta']]).map(([id,n])=>`<option value="${esc(id)}"${areaDeMenu(id)===areaDeMenu(filtroHist)?' selected':''}>${esc(n)} (${cuantas(id)})</option>`).join('');
+  const fluido=$('#hist-fluido').value,marca=marcaSel.value,area=areaDeMenu(filtroHist),enArea=todas.filter(p=>!area||areaDe(p)===area);
+  const lista=filtrarHistorial(enArea,{query:$('#hist-buscar').value},areaDe).filter(p=>(!fluido||(V()?.tipos(p)||[]).includes(fluido))&&(!marca||String(p.marca||'').trim()===marca));
+  $('#hist-cuenta').textContent=lista.length+' fichas y referencias de bomba. Las referencias sin TAG también se pueden abrir y completar.';
+  if(!todas.length){$('#hist-tarjetas').innerHTML='<p class="tel-vacio">Cargando las bombas y referencias del modelo…</p>';return;}
+  if(!lista.length){$('#hist-tarjetas').innerHTML=`<div class="tel-vacio-ilus tt-ancho">${ILUS.buscar}<p>Ninguna ficha o referencia coincide con los filtros.</p></div>`;return;}
+  $('#hist-tarjetas').innerHTML=lista.map(p=>{
+   if(p.reference)return `<button type="button" class="tel-tarjeta" data-reference="${esc(selectionIdentity({pending:p.reference}))}"><span class="tt-cab"><strong>${esc(p.reference.numero?'Bomba '+p.reference.numero:'Sin TAG')}</strong></span><span>${esc(p.nombre)}</span><small>Referencia del modelo · completar ficha</small></button>`;
+   const c=completeness(p),pct=c.total?Math.round(c.done/c.total*100):0,marcaP=String(p.marca||'').trim();
+   return `<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><span class="tt-cab"><strong>${esc(p.tag)}</strong>${marcaP&&!/por confirmar/i.test(marcaP)?`<em>${esc(marcaP)}</em>`:''}</span><span>${esc(p.nombre||p.ubicacion||'')}</span><span class="tt-medidor" title="Ficha completa ${c.done} de ${c.total}"><i style="width:${pct}%"></i></span><small>Ficha ${c.done}/${c.total}</small></button>`;
+  }).join('');
+  $('#hist-tarjetas').querySelectorAll('[data-tag]').forEach(b=>b.onclick=()=>abrirFicha(b.dataset.tag,'historial'));
+  $('#hist-tarjetas').querySelectorAll('[data-reference]').forEach(b=>b.onclick=()=>{const p=referencias.find(p=>selectionIdentity({pending:p.reference})===b.dataset.reference);if(p)abrirFicha('','ficha',p.reference);});
  }
 
  // ---------- Ficha dentro de la app ----------
- function abrirFicha(tag, pestana = 'ficha') {
-  const request=++fichaRequest;ficha.dataset.tag=tag;document.body.classList.remove('hist-model-open');
+ function abrirFicha(tag, pestana = 'ficha', reference = null) {
+  const key=selectionIdentity(reference?{pending:reference}:{tag});if(!key)return;
+  const request=++fichaRequest;ficha.dataset.selection=key;ficha.dataset.tag=reference?'':tag;document.body.classList.remove('hist-model-open');
   mostrarMapaAmplio(false);
-  viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha'); fab.hidden = false;
+  viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha'); fab.hidden = !!reference;
   // En computadora, Pendientes es «lista y detalle»: la lista queda a la izquierda y la ficha a la derecha.
   const ladoALado = !movil.matches && seccion === 'pendientes';
   Object.entries(paneles).forEach(([k, p]) => p.hidden = !(ladoALado && k === 'pendientes'));
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
-  if (V()?.pump?.tag !== tag) V()?.select(tag);
-  const vigente=()=>viendoFicha&&request===fichaRequest&&ficha.dataset.tag===tag;
-  const aplicar=()=>{if(!vigente()||V()?.pump?.tag!==tag)return;V()?.tab(pestana);if(pestana==='historial')V()?.explode(0);pintarRegreso();pintarPiezas();};
+  const elegida=()=>selectionIdentity(V()?.pump)===key;
+  if(!elegida()){if(reference)V()?.selectReference(reference);else V()?.select(tag);}
+  const vigente=()=>viendoFicha&&request===fichaRequest&&ficha.dataset.selection===key;
+  const aplicar=()=>{if(!vigente()||!elegida())return;const tab=reference?'ficha':pestana;if(reference){if(!$('#maquina-pendiente'))V()?.tab(tab);}else V()?.tab(tab);if(tab==='historial')V()?.explode(0);pintarRegreso();pintarPiezas();};
   // Espera a que el visor termine de cargar esa bomba (con el 3D real puede tardar varios segundos);
   // si se aplica antes, al terminar la carga el visor vuelve a juntar las piezas.
   const inicio = Date.now();
   (function esperar() {
    if(!vigente())return;
-   if(V()?.pump?.tag===tag&&V()?.listo){setTimeout(()=>{if(!vigente())return;if(V()?.pump?.tag===tag&&V()?.listo)aplicar();else esperar();},150);return;}
+   if(elegida()&&V()?.listo){setTimeout(()=>{if(!vigente())return;if(elegida()&&V()?.listo)aplicar();else esperar();},150);return;}
    if (Date.now() - inicio < 12000) setTimeout(esperar, 150); else aplicar();
   })();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
@@ -423,6 +432,12 @@ function iniciar() {
   }
   if(seccion==='areas'||seccion==='historial')abrirFicha(tag,seccion==='historial'?'historial':'ficha');else V()?.select(tag);
  }
+ document.addEventListener('vocatus:referencia',event=>{
+  if(!['areas','historial'].includes(seccion))return;
+  const reference=event.detail,key=selectionIdentity({pending:reference});
+  if(key&&(!viendoFicha||ficha.dataset.selection!==key))abrirFicha('', 'ficha',reference);
+ });
+ document.addEventListener('vocatus:referencias',()=>{if(seccion==='historial')pintarHistorial();});
  // Una bomba tocada en el 3D llega por este aviso del visor.
  document.addEventListener('vocatus:bomba', e => {
   pintarFranja();
@@ -456,7 +471,7 @@ function iniciar() {
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
  const transicion = cambio => { if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(cambio); else cambio(); };
- barra.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(b.dataset.s===seccion&&!viendoFicha)return;const selected=V()?.pump?.tag;if(viendoFicha){V()?.explode(0);V()?.back();}transicion(()=>{mostrar(b.dataset.s);if(b.dataset.s==='historial'&&selected)abrirFicha(selected,'historial');});});
+ barra.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(b.dataset.s===seccion&&!viendoFicha)return;const selected=V()?.pump?.pending||V()?.pump?.tag;if(viendoFicha){V()?.explode(0);V()?.back();}transicion(()=>{mostrar(b.dataset.s);if(b.dataset.s==='historial'&&selected){if(typeof selected==='string')abrirFicha(selected,'historial');else abrirFicha('','ficha',selected);}});});
 
  function alCargar() {
   if(!V()?.pumps?.length)return;
@@ -465,7 +480,7 @@ function iniciar() {
   const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(previous);$('#bod-bomba').innerHTML=opciones(bodega||sel);
   if(!draftRestored){setReportTag($('#mant-bomba').value,true);draftRestored=true;}else if(previous!==reportTag)setReportTag($('#mant-bomba').value);else pintarElegida('mant-bomba');
   if($('#bod-bomba').value)elegirBodega();storageMode();
-  if(seccion==='historial'){pintarHistorial();if(V()?.pump?.tag&&!viendoFicha)abrirFicha(V().pump.tag,'historial');}
+  if(seccion==='historial'){pintarHistorial();if(V()?.pump&&!viendoFicha){if(V().pump.pending)abrirFicha('','ficha',V().pump.pending);else if(V().pump.tag)abrirFicha(V().pump.tag,'historial');}}
   if (seccion === 'pendientes') pintarPendientes();
  }
  document.addEventListener('vocatus:listo', alCargar);

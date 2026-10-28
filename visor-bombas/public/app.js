@@ -36,6 +36,7 @@ const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=
 const primeraPlanta=createFirstFloorView(THREE);
 const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
 const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index),onSummary:()=>{state.tab="ficha";renderPanel();},onLayout:()=>renderPanel()});
+const extraReferences=[];
 let detailOrigin=null,detailFlightTicket=null,bombaResaltada=null;
 function transitionToPump(ticket,world,show){
  detailFlightTicket=ticket;
@@ -128,7 +129,8 @@ function rebuildPlant(){
   torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:()=>{performance.mark('torre-cargada');if(typeof applyArea==='function')applyArea();}});tr.add(torre.root);
   for(const k in pumpObjects)delete pumpObjects[k];
   for(const p of placed){const parent=areaGroups[areaOf(p)]||tq;const g=compactar(THREE,exterior(THREE,p.scale,p.variant));g.position.set(p.x,p.y??.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;g.userData.section='n1';parent.add(g);pumpObjects[p.tag]=g;if(areaOf(p)==='torre'){const hit=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.4,3.3),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(0,1,.1);hit.userData.hitProxy=true;g.add(hit);}g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);markers.at(-1).area=areaOf(p);}
-  for(const s of torreSinTag){const g=compactar(THREE,exterior(THREE,.72,'lf'));g.position.set(s.x,.3,s.z);tr.add(g);const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);etiqueta(a,'Sin TAG','corner-label pending-label','torre',s.nota);}
+  extraReferences.length=0;
+  for(const [index,s] of torreSinTag.entries()){const g=compactar(THREE,exterior(THREE,.72,'lf'));g.position.set(s.x,.3,s.z);tr.add(g);g.updateWorldMatrix(true,true);const box=new THREE.Box3().setFromObject(g),reference={sector:'torre',nombre:'Torre · referencia sin TAG '+(index+1),nota:s.nota,min:box.min.toArray(),max:box.max.toArray(),standalone:true};extraReferences.push(reference);g.traverse(o=>{if(o.isMesh){o.userData.pending=reference;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);const el=document.createElement('button');el.className='label pending-label';el.textContent='Sin TAG';el.title=s.nota;el.setAttribute('aria-label','Bomba sin ficha: '+reference.nombre);el.onclick=()=>selectPendingPump(reference);$('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'torre'});}
   for(const corner of sectorCorners){const anchor=new THREE.Object3D();anchor.position.set(corner.x,1.1,corner.z);tq.add(anchor);etiqueta(anchor,corner.name,'corner-label','tanques');}
   for(const [k,x] of Object.entries(EJES_X)){const a=new THREE.Object3D();a.position.set(x,.4,-2.6);tr.add(a);etiqueta(a,k,'axis-label','torre');}
   for(const [k,z] of Object.entries(EJES_Z)){const a=new THREE.Object3D();a.position.set(-3,.4,z);tr.add(a);etiqueta(a,k,'axis-label','torre');}
@@ -841,6 +843,7 @@ function selectPendingPump(reference){
  const ticket=++state.loading;history.replaceState(null,'',location.pathname+location.search);
  state.pump={tag:'Sin TAG',pending:reference,data:{variant:'lf',marca:'',modelo:'',seal:{},orings:[],history:[]}};
  state.part=null;state.tab='ficha';
+ document.dispatchEvent(new CustomEvent('vocatus:referencia',{detail:reference}));
  $('#selected-tag').textContent='Sin TAG';$('#selected-name').textContent=reference.nombre;
  $('#source-status').textContent='IDENTIFICACIÓN PENDIENTE · GEOMETRÍA DE REFERENCIA';
  $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
@@ -848,12 +851,12 @@ function selectPendingPump(reference){
  const show=()=>{if(ticket!==state.loading)return;state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
  if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf');}
  if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}
- photoDetail=integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail)photoDetail=exterior(THREE,1.2,'lf');scene.add(photoDetail);setPhotoDetail(false);
+ photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail)photoDetail=exterior(THREE,1.2,'lf');scene.add(photoDetail);setPhotoDetail(false);
  $('#scene-badge').textContent=state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR';
  $('#scene-help').textContent='Arrastrá para girar · Abrí Piezas de la bomba para ver el despiece';
  setViewButtons(false);renderList();renderPanel();
  };
- const center=new THREE.Vector3(...reference.min).add(new THREE.Vector3(...reference.max)).multiplyScalar(.5);if(integrado?.g){integrado.g.updateMatrixWorld(true);integrado.g.localToWorld(center);}transitionToPump(ticket,center,show);renderList();renderPanel();
+ const center=new THREE.Vector3(...reference.min).add(new THREE.Vector3(...reference.max)).multiplyScalar(.5);if(!reference.standalone&&integrado?.g){integrado.g.updateMatrixWorld(true);integrado.g.localToWorld(center);}transitionToPump(ticket,center,show);renderList();renderPanel();
 }
 function renderPendingPanel(){
  const reference=state.pump.pending;
@@ -913,7 +916,7 @@ function montarIntegrado(g,escena,placed){
    const hit=new THREE.Mesh(new THREE.BoxGeometry(size[0],size[1],size[2]),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
    hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);
   }
-  aplicarFiltroInt();renderList();if(state.area==='integrado'&&state.view==='plant'&&detailFlightTicket!==state.loading)flyIntegrado();
+  document.dispatchEvent(new Event('vocatus:referencias'));aplicarFiltroInt();renderList();if(state.area==='integrado'&&state.view==='plant'&&detailFlightTicket!==state.loading)flyIntegrado();
  }).catch(err=>console.warn('Sin datos del modelo integrado',err));
 }
 function aplicarFiltroInt(){
@@ -1094,8 +1097,10 @@ function renderEditingAccess(){
 
 // Puente para la app de teléfono (telefono-app.js). Solo expone acciones que el visor ya hace.
 window.vocatus={
+ get references(){return [...(integrado?.references||[]),...extraReferences];},
  get pumps(){return state.pumps;},get pump(){return state.pump;},get token(){return state.token;},get writable(){return !!state.writable;},get demo(){return !!state.demo;},
  select:tag=>selectPhotoPump(tag),
+ selectReference:reference=>selectPendingPump(reference),
  tab:name=>{state.tab=name;renderPanel();},
  explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&Number(value)>30&&document.body.classList.contains('app-tel'))fly([15,12,32],[0,0,0],650);},
  locate:()=>locateSelectedPump(),

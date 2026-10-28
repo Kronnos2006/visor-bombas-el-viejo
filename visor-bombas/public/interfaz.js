@@ -20,7 +20,7 @@ export function createInspectorUI({getSelection,onPart,onSummary,onLayout}){
  fichaTab.addEventListener('click',()=>{if(mobile.matches)openSummary();});
  function enhance(){
   if(document.body.classList.contains('app-tel'))setSheet('open');
-  const selection=getSelection(),key=selection?.tag||selection?.pending?.nombre||'';
+  const selection=getSelection(),key=selection?.pending?selection.pending.sector+':'+selection.pending.nombre:selection?.tag||'';
   const changed=key!==lastSelection;
   if(changed){lastSelection=key;setSheet(key?(mobile.matches?'open':'folded'):'closed');panel.scrollTop=0;}
   const tag=selection?.tag||'equipo';
