@@ -6,8 +6,8 @@ import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
 import {addReport,listReports} from './reportes.js';
-import {areasHistorial,filtrarHistorial} from './historial-core.js';
-import {glare, tituloVidrio, tuberia} from './header-fx.js';
+import {filtrarHistorial} from './historial-core.js';
+import {crearFlujoCabecera} from './cabecera-flujo.js';
 const movil = matchMedia('(max-width:900px)');
 const SECCIONES = [
  {id: 'areas', nombre: 'Áreas', icono: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6"/>'},
@@ -23,7 +23,6 @@ const ILUS = {
  buscar: '<svg class="ilus" viewBox="0 0 120 80" aria-hidden="true"><circle cx="54" cy="36" r="20"/><path d="M69 51l18 18"/><path d="M46 36h16"/></svg>',
  caja: '<svg class="ilus" viewBox="0 0 120 80" aria-hidden="true"><path d="M30 26l30-14 30 14v32L60 72 30 58z"/><path d="M30 26l30 14 30-14M60 40v32"/></svg>'
 };
-const AREAS = {tanques: 'Sector de tanques', torre: 'Torre de destilación'};
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const hoy = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
@@ -61,21 +60,9 @@ function iniciar() {
  const draftStore=createDraftStore(localStorage);
 
  // ---------- Estructura ----------
- const titulo = document.createElement('div'); titulo.id = 'tel-titulo'; $('header')?.append(titulo);
- // Encabezado: del logo sale una tubería con líquido ámbar que pasa por una bomba (igual en todas las secciones).
- const tubo = document.createElement('div'); tubo.id = 'tel-tubo'; tubo.setAttribute('aria-hidden', 'true');
- $('header')?.append(tubo);
- // Efectos del encabezado (header-fx.js, React Bits adaptado + estilo de la entrada): título de vidrio
- // que se llena de líquido, tubería de vidrio con curvas que pasa por la bomba y cae en cascada.
- const vidrio = tituloVidrio(titulo), tub = tuberia(tubo);
- // Pausa de la animación del encabezado (idea de Codex); se recuerda en este navegador.
- const pausa = document.createElement('button'); pausa.type = 'button'; pausa.id = 'tel-pausa';
- const pintarPausa = p => { document.body.classList.toggle('tel-cab-pausa', p); pausa.setAttribute('aria-pressed', String(p)); const t = p ? 'Reanudar animación del encabezado' : 'Pausar animación del encabezado'; pausa.title = t; pausa.setAttribute('aria-label', t); pausa.innerHTML = icono(p ? '<path d="M8 5l11 7-11 7z"/>' : '<path d="M9 5v14M15 5v14"/>', 16); };
- pausa.onclick = () => { const p = !document.body.classList.contains('tel-cab-pausa'); pintarPausa(p); guardar('vocatus-cab-pausa', p ? '1' : ''); };
- tubo.after(pausa); pintarPausa(leer('vocatus-cab-pausa') === '1');
- glare($('header .brand-logo'));
- $('header .brand')?.addEventListener('pointerenter', () => vidrio.golpe(0.8));
- document.addEventListener('vocatus:bomba', () => { vidrio.golpe(1); tub.llenar(); });
+ const cabecera=crearFlujoCabecera($('header'),{onPause:p=>guardar('vocatus-cab-pausa',p?'1':'')});
+ cabecera.setPaused(leer('vocatus-cab-pausa')==='1');
+ const titulo=document.createElement('div');titulo.id='tel-titulo';$('header')?.append(titulo);
  const franja = document.createElement('nav'); franja.id = 'tel-franja'; franja.setAttribute('aria-label', 'Bombas por código');
  $('#viewport')?.append(franja);
  const ampliar=document.createElement('button');ampliar.type='button';ampliar.id='tel-ampliar';
@@ -450,7 +437,7 @@ function iniciar() {
   eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d');
   for (const [k, p] of Object.entries(paneles)) p.hidden = k !== id;
   barra.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.s === id ? 'page' : 'false'));
-  vidrio.poner(SECCIONES.find(s => s.id === id).nombre); tub.llenar();
+  titulo.textContent=SECCIONES.find(s=>s.id===id).nombre;cabecera.setSection(titulo.textContent);
   document.body.dataset.telSeccion = id;
   history.replaceState(null, '', '?s=' + id + location.hash);
   if (id === 'pendientes') { pintarPendientes(); leerPendientes(); }

@@ -1,5 +1,5 @@
 // Circuito ilustrativo de marca. No representa niveles ni estado real de la planta.
-export function crearFlujoCabecera(header) {
+export function crearFlujoCabecera(header,{onPause}={}) {
  const button=document.createElement('button');button.type='button';button.id='cab-flujo';button.setAttribute('aria-pressed','false');
  button.innerHTML='<svg preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false"></svg><span class="cab-pausa" aria-hidden="true">Ⅱ</span>';
  header.append(button);const svg=button.querySelector('svg'),motion=matchMedia('(prefers-reduced-motion:reduce)');
@@ -53,10 +53,11 @@ export function crearFlujoCabecera(header) {
  function tick(now){frame=0;if(paused||motion.matches||document.hidden){last=0;return;}if(last)elapsed+=Math.min(.1,(now-last)/1000);last=now;render(elapsed);frame=requestAnimationFrame(tick);}
  const play=()=>{if(!frame&&!paused&&!motion.matches&&!document.hidden)frame=requestAnimationFrame(tick);};
  function restart(name){section=name||section;elapsed=0;last=0;generation++;button.dataset.sequence=String(generation);layout();play();}
- button.onclick=()=>{paused=!paused;button.setAttribute('aria-pressed',String(paused));label();last=0;play();};
+ function setPaused(value){paused=Boolean(value);button.setAttribute('aria-pressed',String(paused));label();last=0;play();}
+ button.onclick=()=>{setPaused(!paused);onPause?.(paused);};
  new ResizeObserver(()=>layout()).observe(button);
  motion.addEventListener('change',()=>{last=0;if(motion.matches)render(6);else play();});document.addEventListener('visibilitychange',()=>{last=0;play();});
  document.fonts?.ready.then(()=>layout());
  const portada=document.getElementById('portada');if(portada)new MutationObserver(()=>{if(portada.hidden)restart(section);}).observe(portada,{attributes:true,attributeFilter:['hidden']});
- return {setSection:restart,button};
+ return {setSection:restart,setPaused,button};
 }
