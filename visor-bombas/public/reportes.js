@@ -22,17 +22,20 @@ async function saveInObsidian(rec){
  if(upload)upload.name=rec.pdf.name;
  return (await request({tag:rec.tag,date:rec.date,title:rec.title,author:rec.author||'Autor no registrado (importado del navegador)',details:rec.text,parts:rec.parts||'',symptoms:rec.symptoms||'',operativo:rec.operativo,sourceId:rec.id,attachment:upload,measurements:rec.mediciones||null,...(rec.evidence?.length?{evidence:normalizeEvidence(rec.evidence)}:{})})).report;
 }
-let dbp=null;
+let dbp=null,openBlocked=false;
+const blockedMessage='Cerrá las otras pestañas del visor y tocá Reintentar para recuperar las fotos. Tus reportes no se borran.';
 function open(){
-  if(dbp)return dbp;
-  dbp=new Promise((ok,fail)=>{
-    if(!window.indexedDB){fail(new Error('Este navegador no permite guardar reportes locales.'));return;}
-    const r=indexedDB.open(DB,2);let blocked=false;
-    r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE)){const s=r.result.createObjectStore(STORE,{keyPath:'id'});s.createIndex('tag','tag');}if(!r.result.objectStoreNames.contains('evidence-drafts'))r.result.createObjectStore('evidence-drafts');};
-    r.onblocked=()=>{blocked=true;dbp=null;fail(new Error('Cerrá las otras pestañas del visor y reintentá para actualizar el guardado local.'));};
-    r.onsuccess=()=>{if(blocked)r.result.close();else{r.result.onversionchange=()=>{r.result.close();dbp=null;};ok(r.result);}};r.onerror=()=>{dbp=null;fail(r.error||new Error('No se pudo abrir el almacenamiento local.'));};
-  });
-  return dbp;
+ if(!dbp){dbp=new Promise((ok,fail)=>{
+  if(!window.indexedDB){fail(new Error('Este navegador no permite guardar reportes locales.'));return;}
+  const r=indexedDB.open(DB,2);
+  r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE)){const s=r.result.createObjectStore(STORE,{keyPath:'id'});s.createIndex('tag','tag');}if(!r.result.objectStoreNames.contains('evidence-drafts'))r.result.createObjectStore('evidence-drafts');};
+  // Conservar una sola solicitud pendiente: abrir otra quedaría en cola detrás de la bloqueada.
+  r.onblocked=()=>{openBlocked=true;};
+  r.onsuccess=()=>{openBlocked=false;r.result.onversionchange=()=>{r.result.close();dbp=null;};ok(r.result);};
+  r.onerror=()=>{openBlocked=false;dbp=null;fail(r.error||new Error('No se pudo abrir el almacenamiento local.'));};
+ });}
+ if(openBlocked)return Promise.reject(new Error(blockedMessage));
+ return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(openBlocked?blockedMessage:'El almacenamiento está tardando. Tocá Reintentar; tus datos se conservan.')),4000);dbp.then(value=>{clearTimeout(timer);resolve(value);},error=>{clearTimeout(timer);reject(error);});});
 }
 const tx=async(mode,fn,storeName=STORE)=>{const db=await open();return new Promise((ok,fail)=>{const t=db.transaction(storeName,mode),out=fn(t.objectStore(storeName));t.oncomplete=()=>ok(out?.result);t.onerror=()=>fail(t.error);t.onabort=()=>fail(t.error);});};
 export const readEvidenceDraft=async tag=>normalizeEvidence((await tx('readonly',s=>s.get(tag||'__sin_tag__'),'evidence-drafts'))||[]);

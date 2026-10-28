@@ -46,6 +46,7 @@ function iniciar() {
  if (!SECCIONES.some(s => s.id === seccion)) seccion = 'areas';
  let eligiendo = null; // campo que espera una bomba tocada en el 3D o en la franja
  let viendoFicha = false;
+ let fichaRequest=0;
  let enReparacion = new Map(); // tag → {desde, motivo}
  let pendientes = {repairs: [], sinFuncionar: [], writable: false, available: false, loading: true};
  const pendingGate=createRequestGate();
@@ -392,6 +393,7 @@ function iniciar() {
 
  // ---------- Ficha dentro de la app ----------
  function abrirFicha(tag, pestana = 'ficha') {
+  const request=++fichaRequest;ficha.dataset.tag=tag;
   mostrarMapaAmplio(false);
   viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha'); fab.hidden = false;
   // En computadora, Pendientes es «lista y detalle»: la lista queda a la izquierda y la ficha a la derecha.
@@ -399,13 +401,14 @@ function iniciar() {
   Object.entries(paneles).forEach(([k, p]) => p.hidden = !(ladoALado && k === 'pendientes'));
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
   if (V()?.pump?.tag !== tag) V()?.select(tag);
-  const aplicar = () => { V()?.tab(pestana); if (pestana === 'historial') V()?.explode(100); pintarRegreso(); pintarPiezas(); };
+  const vigente=()=>viendoFicha&&request===fichaRequest&&ficha.dataset.tag===tag;
+  const aplicar=()=>{if(!vigente()||V()?.pump?.tag!==tag)return;V()?.tab(pestana);if(pestana==='historial'&&V()?.listo)V()?.explode(100);pintarRegreso();pintarPiezas();};
   // Espera a que el visor termine de cargar esa bomba (con el 3D real puede tardar varios segundos);
   // si se aplica antes, al terminar la carga el visor vuelve a juntar las piezas.
   const inicio = Date.now();
   (function esperar() {
-   if (!viendoFicha) return;
-   if (V()?.pump?.tag === tag && V()?.listo) { setTimeout(aplicar, 250); return; }
+   if(!vigente())return;
+   if(V()?.pump?.tag===tag&&V()?.listo){setTimeout(()=>{if(!vigente())return;if(V()?.pump?.tag===tag&&V()?.listo)aplicar();else esperar();},150);return;}
    if (Date.now() - inicio < 12000) setTimeout(esperar, 150); else aplicar();
   })();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
@@ -418,13 +421,13 @@ function iniciar() {
    const sel=$('#'+eligiendo);if(eligiendo==='mant-bomba')setReportTag(tag);else{sel.value=tag;pintarElegida(eligiendo);} aviso('mant', `Equipo elegido: ${tag}.`, 'ok');
    eligiendo = null; document.body.classList.remove('tel-eligiendo'); V()?.select(tag); return;
   }
-  if (seccion === 'areas') abrirFicha(tag); else V()?.select(tag);
+  if(seccion==='areas'||seccion==='historial')abrirFicha(tag,seccion==='historial'?'historial':'ficha');else V()?.select(tag);
  }
  // Una bomba tocada en el 3D llega por este aviso del visor.
  document.addEventListener('vocatus:bomba', e => {
   pintarFranja();
   if (eligiendo) { const tag = e.detail, campo = eligiendo; eligiendo = null; document.body.classList.remove('tel-eligiendo'); if(campo==='mant-bomba')setReportTag(tag);else{$('#'+campo).value=tag;pintarElegida(campo);} aviso('mant', `Equipo elegido: ${tag}.`, 'ok'); return; }
-  if (seccion === 'areas' && !viendoFicha) abrirFicha(e.detail);
+  if(['areas','historial'].includes(seccion)&&(!viendoFicha||ficha.dataset.tag!==e.detail))abrirFicha(e.detail,seccion==='historial'?'historial':'ficha');
   pintarRegreso();
   if(!$('#mant-bomba').value)setReportTag(e.detail);
   if (!$('#bod-bomba').value) { $('#bod-bomba').value = e.detail; elegirBodega(); }
@@ -435,6 +438,7 @@ function iniciar() {
 
  // ---------- Navegación ----------
  function mostrar(id) {
+  ++fichaRequest;
   mostrarMapaAmplio(false);
   seccion = id; viendoFicha = false; ficha.hidden = true; fab.hidden = true;
   eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d');
@@ -452,7 +456,7 @@ function iniciar() {
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
  const transicion = cambio => { if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(cambio); else cambio(); };
- barra.querySelectorAll('button').forEach(b => b.onclick = () => { if (b.dataset.s === seccion && !viendoFicha) return; if (viendoFicha) { V()?.explode(0); V()?.back(); } transicion(() => mostrar(b.dataset.s)); });
+ barra.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(b.dataset.s===seccion&&!viendoFicha)return;const selected=V()?.pump?.tag;if(viendoFicha){V()?.explode(0);V()?.back();}transicion(()=>{mostrar(b.dataset.s);if(b.dataset.s==='historial'&&selected)abrirFicha(selected,'historial');});});
 
  function alCargar() {
   if(!V()?.pumps?.length)return;
@@ -461,7 +465,7 @@ function iniciar() {
   const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(previous);$('#bod-bomba').innerHTML=opciones(bodega||sel);
   if(!draftRestored){setReportTag($('#mant-bomba').value,true);draftRestored=true;}else if(previous!==reportTag)setReportTag($('#mant-bomba').value);else pintarElegida('mant-bomba');
   if($('#bod-bomba').value)elegirBodega();storageMode();
-  if (seccion === 'historial') pintarHistorial();
+  if(seccion==='historial'){pintarHistorial();if(V()?.pump?.tag&&!viendoFicha)abrirFicha(V().pump.tag,'historial');}
   if (seccion === 'pendientes') pintarPendientes();
  }
  document.addEventListener('vocatus:listo', alCargar);

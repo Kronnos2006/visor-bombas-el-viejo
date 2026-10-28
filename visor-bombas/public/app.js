@@ -35,7 +35,7 @@ const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=
 const primeraPlanta=createFirstFloorView(THREE);
 const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
 const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index),onSummary:()=>{state.tab="ficha";renderPanel();},onLayout:()=>renderPanel()});
-let detailOrigin=null,detailFlightTicket=null;
+let detailOrigin=null,detailFlightTicket=null,bombaResaltada=null;
 function transitionToPump(ticket,world,show){
  detailFlightTicket=ticket;
  const finish=()=>{if(ticket!==state.loading)return;show();setTimeout(()=>{if(detailFlightTicket===ticket)detailFlightTicket=null;},reducedMotion.matches?20:1120);};
@@ -441,7 +441,7 @@ function resetAnatomy(){
 $('#anatomy-reset').onclick=resetAnatomy;
 $('#anatomy-assembled').onclick=resetAnatomy;
 function selectPhotoPump(tag){
- const p=state.pumps.find(p=>p.tag===tag);if(!p)return;rememberDetailOrigin();const ticket=++state.loading;
+ const p=state.pumps.find(p=>p.tag===tag);if(!p)return;const tip=$('#part-tip');if(tip)tip.hidden=true;resaltarBomba(null);rememberDetailOrigin();const ticket=++state.loading;
  history.replaceState(null,'','#'+p.tag);
  state.pump={tag,data:p,photo:true};document.dispatchEvent(new CustomEvent('vocatus:bomba',{detail:tag}));
  document.querySelectorAll('#area-menu [data-area]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.area==='sector:'+areaOf(p))));
@@ -1007,7 +1007,6 @@ function renderPumpRail(rail){
  rail.querySelector('.rail-head').onclick=()=>{state.pumpRailCollapsed=!state.pumpRailCollapsed;renderPumpRail(rail);};
  rail.querySelectorAll('[data-pump]').forEach(b=>{b.onmouseenter=()=>resaltarBomba(b.dataset.pump);b.onmouseleave=()=>resaltarBomba(null);b.onclick=()=>{resaltarBomba(null);selectPhotoPump(b.dataset.pump);};});
 }
-let bombaResaltada=null;
 function resaltarBomba(tag){
  if(bombaResaltada===tag)return;
  const set=(t,on)=>pumpObjects[t]?.traverse(o=>{if(o.isMesh&&o.material.emissive){if(on){o.userData.em??=o.material.emissive.getHex();o.material.emissive.setHex(0x8fdc3a);o.material.emissiveIntensity=.6;}else if(o.userData.em!==undefined){o.material.emissive.setHex(o.userData.em);o.material.emissiveIntensity=1;}}});
@@ -1020,8 +1019,9 @@ function resaltarBomba(tag){
 (function pumpHover(){
  const tip=$('#part-tip');if(!renderer||!tip)return;let frame=0;
  renderer.domElement.addEventListener('pointermove',e=>{
-  if(frame||state.view!=='plant'||e.pointerType==='touch')return;
+  if(frame||state.view!=='plant'||state.pump||e.pointerType==='touch')return;
   frame=requestAnimationFrame(()=>{frame=0;
+   if(state.view!=='plant'||state.pump){tip.hidden=true;resaltarBomba(null);return;}
    const r=renderer.domElement.getBoundingClientRect();
    raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
    const hit=raycaster.intersectObjects(pickables,false).find(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return true;});
@@ -1078,7 +1078,7 @@ window.vocatus={
  chooseArea:id=>chooseArea(id),elegirArea:id=>chooseArea(id),
  get area(){return state.area==='integrado'?(state.filtroInt||'planta'):state.area;},
  get explosion(){return state.explode;},
- get listo(){return state.view==='pump';},
+ get listo(){return state.view==='pump'&&detailFlightTicket!==state.loading;},
  corte:()=>$('#anatomy-cut').click(),transparente:()=>$('#anatomy-transparent').click(),get anatomia(){return anatomy?{...anatomy.state}:{};},
  vista:t=>{if(!camera||state.view==='plant')return;const ex=state.explode>30,k=document.body.classList.contains('app-tel')&&ex?1.5:1;const P={tres:[10,8,ex?21:12],frente:[0,1.2,ex?22:13],arriba:[0,ex?30:22,.1]}[t];if(P)fly(P.map(v=>v*k),[0,0,0],650);},
  areaDe:p=>areaOf(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
