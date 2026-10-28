@@ -66,3 +66,6 @@ __pycache__/
 # Identidad visual aportada para el catálogo
 !visor-bombas/public/marca/
 !visor-bombas/public/marca/vocatus.png
+
+# informes generados de auditoría (solo locales)
+informes-auditoria/
