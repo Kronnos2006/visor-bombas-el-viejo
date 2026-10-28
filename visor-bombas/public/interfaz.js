@@ -7,7 +7,7 @@ export function createInspectorUI({getSelection,onPart,onSummary,onLayout}){
  const preview=document.createElement('div');preview.className='sheet-preview';bar.after(preview);
  const reopen=document.createElement('button');reopen.type='button';reopen.className='sheet-reopen';reopen.textContent='Resumen';reopen.hidden=true;document.body.append(reopen);
  const fichaTab=document.querySelector('#tabs [data-tab=ficha]'),originalTab=fichaTab.innerHTML;
- const setSheet=value=>{sheet=value;inspector.dataset.sheet=value;document.body.classList.toggle('sheet-open',mobile.matches&&value==='open');document.body.classList.toggle('sheet-preview-open',mobile.matches&&value==='folded');inspector.inert=mobile.matches&&value==='closed';reopen.hidden=!(mobile.matches&&value==='closed'&&getSelection());bar.querySelector('[data-sheet="open"]').setAttribute('aria-expanded',String(value==='open'));window.dispatchEvent(new Event('resize'));};
+ const setSheet=value=>{if(document.body.classList.contains('app-tel')){sheet='open';inspector.dataset.sheet='open';inspector.inert=false;reopen.hidden=true;document.body.classList.remove('sheet-open','sheet-preview-open');return;}sheet=value;inspector.dataset.sheet=value;document.body.classList.toggle('sheet-open',mobile.matches&&value==='open');document.body.classList.toggle('sheet-preview-open',mobile.matches&&value==='folded');inspector.inert=mobile.matches&&value==='closed';reopen.hidden=!(mobile.matches&&value==='closed'&&getSelection());bar.querySelector('[data-sheet="open"]').setAttribute('aria-expanded',String(value==='open'));window.dispatchEvent(new Event('resize'));};
  function openSummary(){
   onSummary?.();setSheet('open');
   const summary=panel.querySelector('#pump-resumen')||panel.querySelector('.block:not(.edit-equipment)');
@@ -19,6 +19,7 @@ export function createInspectorUI({getSelection,onPart,onSummary,onLayout}){
  mobile.addEventListener('change',()=>{adapt();onLayout?.();});
  fichaTab.addEventListener('click',()=>{if(mobile.matches)openSummary();});
  function enhance(){
+  if(document.body.classList.contains('app-tel'))setSheet('open');
   const selection=getSelection(),key=selection?.tag||selection?.pending?.nombre||'';
   const changed=key!==lastSelection;
   if(changed){lastSelection=key;setSheet(key?(mobile.matches?'open':'folded'):'closed');panel.scrollTop=0;}
@@ -32,7 +33,7 @@ export function createInspectorUI({getSelection,onPart,onSummary,onLayout}){
   const candidates=[...panel.querySelectorAll('.block,.rs-card')].reverse();
   observer.disconnect();
   for(const block of candidates){
-   if(block.dataset.collapsible)continue;
+   if(block.dataset.collapsible||block.id==='fotos-actualizar')continue;
    const heading=[...block.children].find(n=>/^H[34]$/.test(n.tagName));if(!heading)continue;
    block.dataset.collapsible='true';
    const title=heading.textContent.trim(),storageKey='vocatus-seccion:'+key+':'+title;

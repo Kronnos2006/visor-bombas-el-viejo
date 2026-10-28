@@ -110,7 +110,7 @@ function iniciar() {
  const resumen = document.createElement('aside'); resumen.className = 'tel-resumen'; resumen.setAttribute('aria-label', 'Bomba elegida'); contenido.append(resumen);
  const fab = document.createElement('button'); fab.type = 'button'; fab.className = 'tel-fab';
  fab.innerHTML = icono('<path d="M12 5v14M5 12h14"/>', 22) + '<span>Reportar</span>'; fab.setAttribute('aria-label', 'Reportar un mantenimiento de esta bomba');
- fab.hidden = true; document.body.append(fab);
+ fab.hidden = true; ficha.append(fab);
  fab.onclick = () => { const tag = V()?.pump?.tag; V()?.explode(0); V()?.back(); mostrar('mantenimiento'); if (tag) setReportTag(tag); };
 
  // ---------- Áreas ----------

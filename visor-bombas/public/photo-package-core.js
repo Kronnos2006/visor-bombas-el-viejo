@@ -59,3 +59,40 @@ export function readPhotoPackage(data) {
  isoDate(data.creado, 'Fecha del paquete');
  return entriesOf(data.photos);
 }
+
+
+// Las referencias del modelo sin TAG tienen un formato portátil independiente.
+// Se conserva la clave local original; importar no crea una ficha ni asigna un TAG.
+export function isPhotoReference(value) {
+ return typeof value === 'string' && value.length <= 2000 && /^integrado:[^:\u0000-\u001f]+:[^\u0000-\u001f]+$/.test(value);
+}
+export function storagePhotoIdentity(key) {
+ if (typeof key !== 'string' || key.startsWith('history:')) return null;
+ const cut=key.lastIndexOf(':'),identity=key.slice(0,cut),slot=key.slice(cut+1);
+ if(cut<1 || !SLOTS.has(slot))return null;
+ if(TAG.test(identity))return {tag:identity,slot};
+ if(isPhotoReference(identity))return {reference:identity,slot};
+ return null;
+}
+function referenceEntries(entries) {
+ if(!Array.isArray(entries)||!entries.length||entries.length>MAX_PHOTOS)throw new Error('El paquete debe contener entre 1 y 200 fotos.');
+ const seen=new Set();
+ return entries.map(entry=>{
+  if(!entry||!isPhotoReference(entry.reference)||entry.tag!==undefined)throw new Error('Referencia del modelo inválida en el paquete de fotos.');
+  if(!SLOTS.has(entry.slot))throw new Error('Categoría de foto desconocida.');
+  const key=entry.reference+':'+entry.slot;if(seen.has(key))throw new Error('El paquete repite una categoría de foto para la misma referencia.');seen.add(key);
+  return {reference:entry.reference,slot:entry.slot,fecha:isoDate(entry.fecha,'Fecha de la foto'),base64:photoBase64(entry.base64)};
+ });
+}
+export function makeReferencePhotoPackage(entries) {
+ const value={formato:'vocatus-reference-photos',version:1,creado:new Date().toISOString(),photos:referenceEntries(entries)};
+ checkSize(value);return value;
+}
+export function readReferencePhotoPackage(data) {
+ if(typeof data==='string'){
+  if(data.length>MAX_PACKAGE_BYTES||new TextEncoder().encode(data).byteLength>MAX_PACKAGE_BYTES)throw new Error('El paquete supera 50 MB.');
+  try{data=JSON.parse(data);}catch{throw new Error('El archivo no contiene JSON válido.');}
+ }
+ if(!data||data.formato!=='vocatus-reference-photos'||data.version!==1)throw new Error('No es un paquete de fotos de referencias del modelo compatible.');
+ checkSize(data);isoDate(data.creado,'Fecha del paquete');return referenceEntries(data.photos);
+}

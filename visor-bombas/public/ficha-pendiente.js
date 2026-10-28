@@ -1,5 +1,5 @@
 import {SECTORES_INT, sectorDe} from './planta-integrada.js';
-import {htmlFotos, fotosActualizadas, guardarFoto} from './fotos-bomba.js';
+import {htmlFotos, fotosActualizadas, guardarFoto, bindPhotoTransfers} from './fotos-bomba.js';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const CAMPOS_PENDIENTES=[['tag','TAG de la máquina'],['nombre','Nombre de la máquina'],['marca','Marca'],['modelo','Modelo'],['serie','Número de serie'],['servicio','Servicio / fluido'],['potencia','Potencia (kW)'],['rpm','Velocidad (rpm)'],['size','Tamaño'],['caudal','Caudal (GPM)'],['altura','Altura (m)'],['impulsor','Impulsor (mm)'],['temperatura','Temperatura de trabajo'],['motor','Motor'],['acople','Elemento de acople'],['rodamiento_delantero','Rodamiento delantero'],['rodamiento_trasero','Rodamiento trasero'],['sello','Sello mecánico'],['sello_marca','Marca del sello'],['sello_modelo','Modelo del sello'],['sello_codigo','Código del sello'],['sello_diametro','Diámetro del sello (con unidad)'],['sello_material','Materiales del sello'],['motor_marca','Marca del motor'],['motor_modelo','Modelo del motor'],['motor_serie','Serie del motor'],['empaque','Empaque'],['orings','O-rings'],['observaciones','Observaciones']];
 export function clavePendiente(s){return 'integrado:'+s.sector+':'+s.nombre;}
@@ -12,10 +12,11 @@ export async function abrirFichaPendiente(panel,s){
  panel.querySelector('form').onsubmit=e=>{e.preventDefault();try{const data=Object.fromEntries(new FormData(e.currentTarget));localStorage.setItem(key,JSON.stringify(data));abrirFichaPendiente(panel,s).then(()=>{if(panel.querySelector('#maquina-estado'))panel.querySelector('#maquina-estado').textContent='Datos guardados en este navegador.';});}catch{panel.querySelector('#maquina-estado').textContent='No se pudo guardar. Revisá el almacenamiento del navegador.';}};
  const destino=panel.querySelector('#imagenes-pendientes');
  async function pintar(){
-  const act=await fotosActualizadas(key,{writable:false});if(!destino.isConnected)return;
-  destino.innerHTML=htmlFotos({tag:s.nombre},{},act,{writable:false});
-  destino.querySelectorAll('.foto-btn').forEach(label=>label.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();label.querySelector('input').click();}});
-  destino.querySelectorAll('input[data-slot]').forEach(input=>input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await guardarFoto(key,input.dataset.slot,file,{writable:false});await pintar();}catch(e){destino.querySelector('#fotos-error').textContent=e.message;input.disabled=false;}});
+  let act={},photoError='';try{act=await fotosActualizadas(key,{writable:false});}catch(error){photoError=error.message;}if(!destino.isConnected)return;
+  destino.innerHTML=htmlFotos({tag:s.nombre,photoKey:key},{},act,{writable:false});
+  bindPhotoTransfers(destino,key,{writable:false,reference:true},pintar);
+  if(photoError){const error=destino.querySelector('#fotos-error');error.textContent=photoError;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=pintar;error.after(retry);}
+  destino.querySelectorAll('input[data-slot]').forEach(input=>input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await guardarFoto(key,input.dataset.slot,file,{writable:false});await pintar();}catch(e){if(destino.isConnected)destino.querySelector('#fotos-error').textContent=e.message;input.disabled=false;}});
  }
  await pintar();
 }

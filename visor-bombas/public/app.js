@@ -1,3 +1,4 @@
+import {savedSurveyHTML} from './survey-view.js';
 import {evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {normalizeSearch,searchPump,completeness,verificationOf,verificationText,storageDescription} from './interfaz-core.js';
 import {createFirstFloorView} from './primera-planta.js';
@@ -282,6 +283,8 @@ function selectPart(index,subcomponent=null){
  });
 }
 function fields(entries){return '<dl class="fields">'+entries.map(([label,key])=>{const v=state.pump.data[key],missing=v===undefined||v===null||v==='';return `<div class="field"><dt>${esc(label)}</dt><dd class="${missing?'missing':''}">${missing?'Sin levantar':esc(typeof v==='object'?JSON.stringify(v):v)}</dd></div>`;}).join('')+'</dl>';}
+window.addEventListener('pageshow',event=>{if(event.persisted&&state.pump)renderPanel();});
+window.addEventListener('storage',event=>{if(state.pump&&event.key==='vocatus-survey-local-v1:'+state.pump.tag)renderPanel();});
 function renderPanel(){
  const previousLinks=$("#pump-links");if(previousLinks&&$("#panel").contains(previousLinks))$("#source-status").after(previousLinks);
  const requestLink=document.querySelector('header a[href^="/solicitud.html"]');if(requestLink)requestLink.href="/solicitud.html"+(state.pump?.tag?"?tag="+encodeURIComponent(state.pump.tag):"");
@@ -298,6 +301,8 @@ function renderPanel(){
   const heading=document.createElement('h3');heading.textContent='Qué querés hacer con esta bomba';actions.append(heading,$('#pump-links'));
   const summary=$('#pump-resumen .rs-card');if(summary)summary.after(actions);else $('#panel').append(actions);
  }
+ const editAccess=$('#editar-equipo');if(editAccess)$('#panel').prepend(editAccess);
+ if(p&&!state.pump.pending&&['ficha','historial'].includes(state.tab)){const local=savedSurveyHTML(state.pump.tag);if(local){if(editAccess)editAccess.insertAdjacentHTML('afterend',local);else $('#panel').insertAdjacentHTML('afterbegin',local);}}
  inspectorUI.enhance();
 }
 function renderPanelContent(){
@@ -1065,7 +1070,7 @@ async function montarFotos(p,exp){
   document.getElementById('fuentes-'+tag).insertAdjacentHTML('afterend',htmlFotos(p,orig,act,{writable:!!state.writable}));
   const photoRoot=document.getElementById('fotos-actualizar');bindPhotoTransfers(photoRoot,tag,{writable:!!state.writable,token:state.token},pintar);if(photoError){photoRoot.querySelector('#fotos-error').textContent=photoError;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=pintar;photoRoot.querySelector('#fotos-error').after(retry);}
   if(act.posicion){const ref=document.querySelector('#panel .photo-pair img');if(ref)ref.src=act.posicion.url;}
-  document.getElementById('fotos-actualizar').querySelectorAll('.foto-btn').forEach(label=>label.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();label.querySelector('input').click();}});
+
   document.querySelectorAll('#fotos-actualizar input[data-slot]').forEach(input=>input.onchange=async()=>{
    const file=input.files?.[0];if(!file)return;const label=input.closest('label');label.classList.add('saving');
    try{await guardarFoto(tag,input.dataset.slot,file,{writable:!!state.writable,token:state.token});toast(state.writable?'Foto guardada en Obsidian para '+tag+'.':'Foto guardada en este navegador para '+tag+'. Descargala para pasarla a otro equipo.');await pintar();}
@@ -1080,7 +1085,7 @@ function renderEditingAccess(){
  const tag=selection.tag;if(!/^(B[1-9]\d{0,3}|P-\d{4}[A-Z]?)$/.test(tag))return;
  const href=group=>'/levantamiento.html?tag='+encodeURIComponent(tag)+'#editar-'+group;
  const groups=[['general','Datos de la bomba'],['placa','Placa'],['motor','Motor'],['sello','Sello'],['empaque','Empaque'],['componentes','Rodamientos y acople'],['orings','O-rings'],['fotos','Fotos y componentes']];
- $('#panel').insertAdjacentHTML('afterbegin','<section class="block edit-equipment" id="editar-equipo"><h3>Actualizar '+esc(tag)+'</h3><div class="edit-equipment-links">'+groups.map(([group,label])=>'<a href="'+href(group)+'">'+label+'</a>').join('')+'</div><p class="muted">Cada cambio corresponde únicamente a esta bomba y conserva un respaldo.</p></section>');
+ $('#panel').insertAdjacentHTML('afterbegin','<section class="edit-equipment" id="editar-equipo" aria-label="Actualizar '+esc(tag)+'"><h3>Datos y fotos de '+esc(tag)+'</h3><nav class="equipment-primary-actions" aria-label="Editar '+esc(tag)+'"><a href="'+href('general')+'">Editar datos de '+esc(tag)+'</a><a href="'+href('fotos')+'">Editar fotos de '+esc(tag)+'</a></nav><details class="equipment-components"><summary>Ir a un componente</summary><div class="edit-equipment-links">'+groups.filter(([group])=>!['general','fotos'].includes(group)).map(([group,label])=>'<a href="'+href(group)+'">'+label+'</a>').join('')+'</div></details></section>');
  const group={5:'sello',7:'componentes',8:'componentes',9:'motor'}[state.part];
  if(group&&$('#component-detail'))$('#component-detail').insertAdjacentHTML('afterbegin','<a class="button-link" href="'+href(group)+'">Actualizar datos de este componente</a>');
  if(!$('#fuentes-'+tag))$('#panel').insertAdjacentHTML('beforeend','<div class="block" id="fuentes-'+tag+'"><h3>Imágenes del equipo</h3></div>');

@@ -522,3 +522,27 @@ body.app-tel[data-tel-seccion="historial"].tel-con-ficha:not(.hist-model-open) #
 @media(max-width:900px){body.app-tel[data-tel-seccion="historial"].tel-con-ficha:not(.hist-model-open){--escena:0px}}
 
 body.app-tel[data-tel-seccion="historial"] .tel-fab{display:none}
+
+/* Acceso directo a la edición por TAG y cambios locales visibles. */
+.edit-equipment,.local-survey{min-width:0;margin:0 0 16px;padding:16px;border:1px solid var(--borde-fuerte);border-radius:12px;background:var(--superficie)}
+.edit-equipment h3,.local-survey h3{margin:0 0 12px;font-size:18px}
+.equipment-primary-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.equipment-primary-actions a{display:flex;align-items:center;justify-content:center;min-height:48px;padding:10px;border:1px solid var(--borde-fuerte);border-radius:8px;color:var(--tinta);text-decoration:none;text-align:center;font-size:15px;line-height:1.3}
+.equipment-primary-actions a:first-child{background:var(--accent);color:var(--fondo);font-weight:700}
+.equipment-components{margin-top:12px}.equipment-components>summary{min-height:44px;padding:10px 0;cursor:pointer;font-size:15px}.equipment-components .edit-equipment-links{padding-top:8px}
+.local-survey{border-left:3px solid var(--accent)}.local-survey>p{font-size:14px;margin:8px 0;line-height:1.5}.local-survey dl{margin:12px 0}.local-survey dl>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:10px 0;border-top:1px solid var(--borde)}.local-survey dt{font-size:14px;color:var(--tinta-2)}.local-survey dd{margin:0;font-size:15px;overflow-wrap:anywhere;white-space:pre-wrap}.local-survey a{display:inline-flex;align-items:center;min-height:44px;font-size:15px}.local-survey time{font:inherit}
+body.app-tel .tel-fab{position:static;justify-self:stretch;justify-content:center;margin:8px 0 0;box-shadow:none;z-index:auto}
+body.app-tel #panel :is(.equipment-primary-actions a,.local-survey a){min-height:48px}
+@media(max-width:380px){.equipment-primary-actions{grid-template-columns:minmax(0,1fr)}.local-survey dl>div{grid-template-columns:minmax(0,1fr);gap:4px}}
+@media(max-height:620px) and (max-width:900px){body.app-tel.tel-con-ficha:not(.tel-mapa-amplio){--escena:150px}body.app-tel.tel-con-ficha #tel-vistas button{min-height:36px}}
+
+/* La app de cinco secciones controla su ficha; no usa el cajón del visor clásico. */
+body.app-tel .sheet-preview{display:none!important}body.app-tel .inspector[data-sheet] #panel{display:block!important}
+@media(min-width:901px){body.app-tel #tel-vistas{left:calc(var(--franja) + 12px);right:12px;top:12px;bottom:auto;transform:none;width:auto;max-width:calc(100% - var(--franja) - 24px);padding:8px;flex-direction:row;flex-wrap:wrap;gap:8px;border-radius:12px;box-shadow:none}body.app-tel #tel-vistas .tv-grupo{flex-direction:row;flex-wrap:wrap;gap:6px}body.app-tel #tel-vistas .tv-titulo{display:none}body.app-tel #tel-vistas button{width:auto;min-height:42px;padding:8px 10px;font-size:13px;gap:6px}}
+.foto-btn .foto-file{display:block;width:100%;max-width:100%;min-width:0;margin-top:8px;padding:8px;border:1px solid var(--borde-fuerte);border-radius:8px;color:var(--tinta);font-size:14px}.foto-file::file-selector-button{min-height:38px;margin-right:8px;border:1px solid var(--borde-fuerte);border-radius:6px;padding:6px 10px;background:var(--superficie);color:var(--tinta);cursor:pointer}.foto-slot{min-width:0}.foto-slot figcaption{overflow-wrap:anywhere}
+
+@media(max-width:900px){body.app-tel.tel-con-ficha:is([data-tel-seccion="areas"],[data-tel-seccion="pendientes"]):not(.tel-mapa-amplio){--escena:200px}body.app-tel.tel-con-ficha #tel-franja{bottom:54px}body.app-tel #fotos-actualizar .foto-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px}body.app-tel #fotos-actualizar .foto-slot{margin:0;background:var(--superficie);border:1px solid var(--borde)}body.app-tel #fotos-actualizar .foto-img{background:var(--fondo-2)}}
+
+body.app-tel .tel-ficha,body.app-tel .tel-ficha>.inspector,body.app-tel #panel{min-width:0}body.app-tel #tabs{min-width:0;grid-template-columns:repeat(4,minmax(0,1fr))}body.app-tel #tabs button{min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.25}@media(max-width:380px){body.app-tel #tabs{gap:4px}body.app-tel #tabs button{font-size:12px;padding:6px 2px}}
+body.app-tel #pump-resumen{min-width:0;grid-template-columns:minmax(0,1fr)}body.app-tel #pump-resumen .rs-card{min-width:0}body.app-tel #pump-resumen .rs-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}body.app-tel #pump-resumen :is(dt,dd){min-width:0;white-space:normal;overflow-wrap:anywhere}
+@media(min-width:901px){body.app-tel #tabs{gap:4px}body.app-tel #tabs button{flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 2px;font-size:13px;overflow-wrap:normal;word-break:normal}body.app-tel .quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}body.app-tel .quick-actions :is(button,a){overflow-wrap:normal;word-break:normal;font-size:14px}}

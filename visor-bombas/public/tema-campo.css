@@ -121,3 +121,8 @@ body .pump-pick button{align-content:start}
 }
 
 .photo-transfer{display:grid;gap:12px;margin:16px 0;padding:14px;border:1px solid var(--borde);border-radius:10px}.photo-transfer p{margin:0}.photo-transfer button,.photo-transfer .foto-btn{min-height:46px;font-size:16px}.photo-transfer [data-photo-status]:empty{display:none}
+
+/* No cubrir campos al escribir ni desplazar la navegación sobre las acciones. */
+body .campo .grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}body .campo .grid>*,body .campo label,body .campo input{min-width:0}body .campo .sticky-actions{position:static;padding:16px 0;margin:12px 0;background:none}body .campo .sticky-actions button{min-height:52px}body .campo #result{scroll-margin-bottom:100px}body .campo .card:focus-within{animation:none}body .campo .photos figure{min-width:0}body .campo .photos img{max-width:100%}
+
+.campo .foto-btn .foto-file{display:block;width:100%;max-width:100%;min-width:0;margin-top:8px;padding:8px;font-size:14px}.campo .foto-slot{min-width:0}.campo .foto-slot figcaption{overflow-wrap:anywhere}
