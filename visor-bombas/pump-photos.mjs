@@ -18,11 +18,13 @@ const photoDir = (vault, tag) => path.join(vault, '00-Proyecto/fotos-campo', tag
 
 // Foto vigente de una categoría: el primer archivo regular <categoría>.jpg|png (un directorio no cuenta).
 async function currentIn(dir, slot) {
+ const candidates=[];
  for (const ext of EXTS) {
   const file = path.join(dir, `${slot}.${ext}`);
-  try { const info = await stat(file); if (info.isFile()) return {file, ext, info}; } catch {}
+  try { const info = await stat(file); if (info.isFile()) candidates.push({file,ext,info}); } catch {}
  }
- return null;
+ // Si quedaron dos extensiones por una migración incompleta, mostrar la versión más reciente.
+ return candidates.sort((a,b)=>b.info.mtimeMs-a.info.mtimeMs)[0]||null;
 }
 // Categorías con foto vigente para un TAG (usado también por Avance).
 export async function currentPhotoSlots(vault, tag) {
@@ -39,7 +41,7 @@ export function pumpPhotoStore(vault, opciones = {}) {
  const current = (tag, slot) => currentIn(dir(tag), slot);
  async function list(tag) {
   check(tag, 'bomba'); const out = {};
-  for (const slot of Object.keys(SLOTS)) { const c = await current(tag, slot); if (c) out[slot] = {url: `/api/pump-photo?tag=${encodeURIComponent(tag)}&slot=${slot}&v=${Math.round(c.info.mtimeMs)}`, fecha: c.info.mtime.toISOString()}; }
+  for (const slot of Object.keys(SLOTS)) { const c = await current(tag, slot); if (c) out[slot] = {url: `/api/pump-photo?tag=${encodeURIComponent(tag)}&slot=${slot}&v=${encodeURIComponent(c.info.mtimeMs+'-'+c.info.size)}`, fecha: c.info.mtime.toISOString()}; }
   return out;
  }
  async function save(tag, slot, base64) {
