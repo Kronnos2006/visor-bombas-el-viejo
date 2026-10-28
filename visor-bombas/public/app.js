@@ -92,7 +92,7 @@ let anatomy=null;
 let simRig=null;const sims={};
 let areaGroups={},torre=null;const pumpObjects={};
 let plantRequested=false;
-function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';return params.get('vista')==='clasica'||['areas','historial'].includes(section)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
+function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';const directHistory=section==='historial'&&plantPumps.some(p=>p.tag===location.hash.slice(1).toUpperCase());return params.get('vista')==='clasica'||(['areas','historial'].includes(section)&&!directHistory)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
 function ensurePlant(){if(!plant||plantRequested)return;plantRequested=true;rebuildPlant();}
 let integrado=null;const pumpObjectsInt={}; // modelo integrado de Revit: bombas con ficha ubicadas sobre él
 const areaOf=p=>p?.areaId||'tanques',AREA=id=>AREAS.find(a=>a.id===id);

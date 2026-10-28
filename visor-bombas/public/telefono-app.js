@@ -451,7 +451,7 @@ function iniciar() {
   if (id === 'bodega') pintarBodega();
   if (id === 'mantenimiento' || id === 'bodega') pintarResumen();
   if(id==='mantenimiento'){resumenMant();paintLocalReports();}
-  if(['areas','historial'].includes(id))V()?.ensure3D?.();
+  if(id==='areas'||(id==='historial'&&!V()?.pumps?.some(p=>p.tag===location.hash.slice(1).toUpperCase())))V()?.ensure3D?.();
   if (id === 'historial') pintarHistorial();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }

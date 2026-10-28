@@ -37,3 +37,7 @@ Herramientas e Innovación/Recursos de IA realizó una revisión independiente d
 146 pruebas aprobadas, incluidas cinco nuevas del formato portátil. Navegador aislado en teléfono y PC: guardado y recarga, paquete de levantamiento con fotos categorizadas, transferencia de bytes exactos, importación repetida/malformada/corrupta, envío a una bóveda temporal y conservación de casillas ocupadas. Se simularon una actualización durante el POST y un fallo de IndexedDB con fotos válidas de Obsidian. Historial y botón optativo de despiece verificados; sin errores de JavaScript.
 
 El video, las capturas, los paquetes y las fichas temporales no se publican en Git. No se modificaron fichas reales ni Revit. La recuperación de fotos del usuario requiere abrir el mismo teléfono, navegador y dirección donde se guardaron y descargar allí el paquete; no se afirma haber inspeccionado o recuperado esas fotos privadas. La sincronización automática por Internet sigue requiriendo almacenamiento compartido y acceso autenticado, que este cambio no inventa ni habilita.
+
+## Carga directa de una ficha
+
+El enlace directo a Historial de un TAG conocido difiere la descarga de la planta completa: la bomba utiliza su modelo de detalle existente. Al volver a la lista o a Áreas, el mapa vuelve a solicitarse normalmente. Esto evita preparar decenas de MB del modelo del sitio para leer una ficha. La prueba pública inicial tuvo un timeout de navegación; no se atribuye ese timeout exclusivamente al modelo, ya que también intervienen recursos externos y red.
