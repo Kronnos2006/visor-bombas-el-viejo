@@ -1,3 +1,4 @@
+import {normalizeEvidence} from './evidence-core.js';
 // En local se guardan en Obsidian. En Vercel se conserva el almacenamiento IndexedDB.
 // Los reportes anteriores del navegador se importan explícitamente, sin borrar antes de guardar.
 import {measurementInput} from './measurements.js';
@@ -19,20 +20,23 @@ async function attachment(file){
 async function saveInObsidian(rec){
  const upload=rec.pdf?.blob?await attachment(rec.pdf.blob):null;
  if(upload)upload.name=rec.pdf.name;
- return (await request({tag:rec.tag,date:rec.date,title:rec.title,author:rec.author||'Autor no registrado (importado del navegador)',details:rec.text,parts:rec.parts||'',symptoms:rec.symptoms||'',operativo:rec.operativo,sourceId:rec.id,attachment:upload,measurements:rec.mediciones||null})).report;
+ return (await request({tag:rec.tag,date:rec.date,title:rec.title,author:rec.author||'Autor no registrado (importado del navegador)',details:rec.text,parts:rec.parts||'',symptoms:rec.symptoms||'',operativo:rec.operativo,sourceId:rec.id,attachment:upload,measurements:rec.mediciones||null,...(rec.evidence?.length?{evidence:normalizeEvidence(rec.evidence)}:{})})).report;
 }
 let dbp=null;
 function open(){
   if(dbp)return dbp;
   dbp=new Promise((ok,fail)=>{
     if(!window.indexedDB){fail(new Error('Este navegador no permite guardar reportes locales.'));return;}
-    const r=indexedDB.open(DB,1);
-    r.onupgradeneeded=()=>{const s=r.result.createObjectStore(STORE,{keyPath:'id'});s.createIndex('tag','tag');};
-    r.onsuccess=()=>ok(r.result);r.onerror=()=>fail(r.error||new Error('No se pudo abrir el almacenamiento local.'));
+    const r=indexedDB.open(DB,2);let blocked=false;
+    r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE)){const s=r.result.createObjectStore(STORE,{keyPath:'id'});s.createIndex('tag','tag');}if(!r.result.objectStoreNames.contains('evidence-drafts'))r.result.createObjectStore('evidence-drafts');};
+    r.onblocked=()=>{blocked=true;dbp=null;fail(new Error('Cerrá las otras pestañas del visor y reintentá para actualizar el guardado local.'));};
+    r.onsuccess=()=>{if(blocked)r.result.close();else{r.result.onversionchange=()=>{r.result.close();dbp=null;};ok(r.result);}};r.onerror=()=>{dbp=null;fail(r.error||new Error('No se pudo abrir el almacenamiento local.'));};
   });
   return dbp;
 }
-const tx=async(mode,fn)=>{const db=await open();return new Promise((ok,fail)=>{const t=db.transaction(STORE,mode),out=fn(t.objectStore(STORE));t.oncomplete=()=>ok(out?.result);t.onerror=()=>fail(t.error);t.onabort=()=>fail(t.error);});};
+const tx=async(mode,fn,storeName=STORE)=>{const db=await open();return new Promise((ok,fail)=>{const t=db.transaction(storeName,mode),out=fn(t.objectStore(storeName));t.oncomplete=()=>ok(out?.result);t.onerror=()=>fail(t.error);t.onabort=()=>fail(t.error);});};
+export const readEvidenceDraft=async tag=>normalizeEvidence((await tx('readonly',s=>s.get(tag||'__sin_tag__'),'evidence-drafts'))||[]);
+export const writeEvidenceDraft=async(tag,images)=>{const value=normalizeEvidence(images);return tx('readwrite',s=>value.length?s.put(value,tag||'__sin_tag__'):s.delete(tag||'__sin_tag__'),'evidence-drafts');};
 const browserReports=async tag=>(await tx('readonly',s=>s.index('tag').getAll(tag))||[]).map(r=>({...r,source:'browser'}));
 export const listReports=async tag=>{
  let all=[];
@@ -54,7 +58,7 @@ export async function importReports(tag){
  }
  return count;
 }
-export async function addReport({tag,date,title,text,file,author,pressure,flow,id,parts='',symptoms='',operativo,retirado=false,fieldReport=false}){
+export async function addReport({tag,date,title,text,file,author,pressure,flow,id,parts='',symptoms='',operativo,retirado=false,fieldReport=false,evidence=[]}){
   const mediciones=measurementInput(pressure,flow);
   if(!title?.trim())throw new Error('Escribí un título.');
   if(!text?.trim()&&!file&&mediciones.presion_bar===null&&mediciones.caudal_m3h===null)throw new Error('Escribí el reporte, anotá una medición o adjuntá un PDF.');
@@ -64,7 +68,7 @@ export async function addReport({tag,date,title,text,file,author,pressure,flow,i
   }
   if(storage.writable&&!author?.trim())throw new Error('Indicá el responsable de la intervención.');
   const rec={id:(id||(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random())),tag,date,title:title.trim(),author:(author||'').trim(),text:(text||'').trim(),created:Date.now(),
-    parts,symptoms,operativo,retirado,fieldReport,mediciones,pdf:file?{name:file.name,size:file.size,blob:file}:null};
+    parts,symptoms,operativo,retirado,fieldReport,evidence:normalizeEvidence(evidence),mediciones,pdf:file?{name:file.name,size:file.size,blob:file}:null};
   if(storage.writable)return saveInObsidian(rec);
   await tx('readwrite',s=>fieldReport?s.put(rec):s.add(rec));return {...rec,source:'browser'};
 }

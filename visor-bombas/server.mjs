@@ -180,6 +180,10 @@ export async function handler(req,res) {
    const p=await readPump(url.searchParams.get('tag')||'');
    return send(res,200,{reports:p.reports.map(r=>r.record)});
   }
+  if(req.method==='GET' && url.pathname==='/api/report-evidence') {
+   const tag=url.searchParams.get('tag')||'';await readPump(tag);const image=await maintenance.evidence(tag,url.searchParams.get('id')||'',Number(url.searchParams.get('index')));
+   res.writeHead(200,{'Content-Type':image.mime,'Content-Disposition':`inline; filename*=UTF-8''${encodeURIComponent(image.name)}`,'X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});return res.end(image.bytes);
+  }
   if(req.method==='GET' && url.pathname==='/api/report-document') {
    const tag=url.searchParams.get('tag')||''; await readPump(tag);
    const document=await maintenance.attachment(tag,url.searchParams.get('id')||'');

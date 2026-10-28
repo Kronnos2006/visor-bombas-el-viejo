@@ -455,3 +455,51 @@ body.app-tel .cab-vat-outlet{fill:none;stroke:#cad1b9;stroke-width:7;stroke-opac
 body.app-tel .cab-vat-stream{fill:none;stroke:#edba59;stroke-width:3;stroke-dasharray:6 4}
 body.app-tel .cab-vat-foot,body.app-tel .cab-vat-scale{fill:none;stroke:#bca377;stroke-width:.8;opacity:.65}
 @media(max-width:900px){body.app-tel header .brand.con-deposito{flex-basis:58px;width:58px;height:76px}body.app-tel header .brand.con-deposito .brand-logo{left:9px;top:20px;width:40px;height:40px}}
+
+/* Distribución editorial de campo: bloques abiertos, acciones claras y evidencias visibles. */
+body.app-tel .tel-section-head{display:grid;gap:5px;margin:0 0 2px}
+body.app-tel .tel-section-head>span{font:600 10px var(--datos,monospace);letter-spacing:.16em;color:var(--accent)}
+body.app-tel .tel-section-head :is(h1,h2){margin:0;font:600 27px/1.15 var(--marca,Georgia,serif);letter-spacing:-.02em;color:var(--tinta)}
+body.app-tel .tel-section-head p{margin:0;color:var(--tinta-2);font-size:14px;line-height:1.5}
+body.app-tel .report-step{display:grid;gap:18px;min-width:0;padding:20px;border:1px solid var(--borde);border-radius:16px;background:color-mix(in srgb,var(--superficie-solida) 45%,var(--fondo))}
+body.app-tel .report-step-heading{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--borde)}
+body.app-tel .report-step-heading>span{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;font:600 11px var(--datos,monospace);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+body.app-tel .report-step-heading h2{margin:0;font:600 18px var(--texto,system-ui);color:var(--tinta)}
+body.app-tel #tel-mant{gap:14px}
+body.app-tel #mant-storage{font-size:13px;padding:10px 12px;border-radius:10px;border-left:3px solid var(--accent);line-height:1.5}
+body.app-tel #mant-draft-status{font-size:12px}
+body.app-tel #mant-fotos{min-width:0;display:grid;gap:10px;padding:16px;border:1px solid var(--borde-fuerte);border-radius:12px;background:color-mix(in srgb,var(--accent) 3%,var(--fondo))}
+body.app-tel .evidence-heading{display:flex;align-items:start;justify-content:space-between;gap:12px}
+body.app-tel .evidence-heading h3{margin:0 0 4px;font:600 16px var(--texto,system-ui)}
+body.app-tel .evidence-heading p,.evidence-drop p{margin:0;font-size:12px;line-height:1.5;color:var(--tinta-2)}
+body.app-tel .evidence-heading>b{flex:none;font:500 12px var(--datos,monospace);color:var(--accent)}
+body.app-tel .evidence-drop{display:grid;gap:8px;padding:12px;border:1px dashed var(--borde-fuerte);border-radius:10px}
+body.app-tel .evidence-drop.is-dragging{outline:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+body.app-tel .evidence-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+body.app-tel .evidence-buttons .tel-sec{min-height:46px;padding:8px;font-size:14px;background:var(--superficie)}
+body.app-tel .evidence-status{margin:0;font-size:12px;line-height:1.5;color:var(--tinta-2)}
+body.app-tel .evidence-status[data-error=true]{color:#f08a80}
+body.claro.app-tel .evidence-status[data-error=true]{color:#9f2f20}
+.evidence-selected,.evidence-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.evidence-selected figure{display:grid;gap:7px;min-width:0;margin:0;padding:8px;border:1px solid var(--borde);border-radius:10px;background:var(--superficie)}
+.evidence-selected figcaption{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.evidence-selected figcaption small{display:block;color:var(--tinta-2);font-size:11px;margin-top:3px}
+.evidence-thumb{display:grid;gap:6px;min-width:0;padding:0;border:0;border-radius:8px;background:transparent;color:var(--tinta);text-align:left;cursor:pointer;overflow:hidden}
+.evidence-thumb img{display:block;width:100%;height:112px;object-fit:cover;border-radius:8px;background:var(--fondo-2)}
+.evidence-thumb span{font-size:12px;overflow-wrap:anywhere}
+.evidence-remove{width:100%;min-height:40px;font-size:12px;color:var(--tinta);background:transparent;border:1px solid var(--borde-fuerte);border-radius:8px;cursor:pointer}
+.evidence-viewer{width:min(900px,92vw);max-height:90dvh;padding:16px;border:1px solid var(--borde-fuerte);border-radius:16px;background:var(--fondo);color:var(--tinta)}
+.evidence-viewer[open]{display:grid;gap:12px}
+.evidence-viewer::backdrop{background:#000b}
+.evidence-viewer img{display:block;width:100%;max-height:74dvh;object-fit:contain}
+.evidence-viewer button{justify-self:end;min-height:44px;padding:8px 16px}
+@media(max-width:900px){body.app-tel .report-step{padding:14px;gap:16px;border-radius:12px}body.app-tel #mant-fotos{padding:10px}body.app-tel .tel-section-head :is(h1,h2){font-size:24px}}
+@media(prefers-reduced-motion:no-preference){body.app-tel .evidence-selected figure{animation:evidence-appears .18s ease-out}body.app-tel .tel-sec{transition:border-color .15s,background-color .15s}body.app-tel .tel-tarjeta{transition:border-color .15s,transform .15s}}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){body.app-tel .tel-tarjeta:hover{transform:translateY(-1px)}}
+@keyframes evidence-appears{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+body.app-tel #tel-mant label[for="mant-bomba"]{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.report-history-list{display:grid;gap:12px;margin:16px 0}
+.report-history-list h4{margin:0;font-size:17px}
+.report-history-list .record{display:grid;gap:10px}
+@media(max-width:900px){body.app-tel[data-tel-seccion="mantenimiento"] .tel-accion-fila{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}body.app-tel[data-tel-seccion="mantenimiento"] .tel-accion .tel-primario{width:100%;min-height:48px;padding:8px 12px}body.app-tel[data-tel-seccion="mantenimiento"] #mant-resumen{font-size:12px}}

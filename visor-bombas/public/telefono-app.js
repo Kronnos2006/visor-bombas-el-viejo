@@ -6,6 +6,7 @@ import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
 import {addReport,listReports} from './reportes.js';
+import {createEvidencePicker,evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {filtrarHistorial} from './historial-core.js';
 import {crearFlujoCabecera} from './cabecera-flujo.js';
 const movil = matchMedia('(max-width:900px)');
@@ -164,23 +165,21 @@ function iniciar() {
  const pie = id => `<div class="tel-dos"><div class="tel-campo"><label for="${id}-autor">Responsable</label><input id="${id}-autor" required maxlength="100" autocomplete="name"></div>
   <div class="tel-campo"><label for="${id}-fecha">Fecha</label><input id="${id}-fecha" type="date" required></div></div>`;
 
- paneles.mantenimiento.innerHTML = `<p id="mant-storage" class="tel-storage-note" role="status">Consultando dónde se puede guardar…</p><p id="mant-draft-status" class="tel-draft-status" aria-live="polite"></p><form id="tel-mant" novalidate>${campoBomba('mant-bomba')}
-  <div class="tel-campo"><label for="mant-problema">Problema</label><textarea id="mant-problema" rows="2" maxlength="600" placeholder="Qué falla o qué se hizo"></textarea></div>
-  <div class="tel-campo"><span class="tel-etiqueta">Repuestos usados</span><div id="mant-repuestos"></div>
-   <button type="button" class="tel-sec" id="mant-agregar">${icono('<path d="M12 5v14M5 12h14"/>', 18)} Agregar repuesto</button></div>
-  <div class="tel-campo"><label for="mant-comentario">Comentario</label><textarea id="mant-comentario" rows="3" maxlength="3000"></textarea></div>
-  <fieldset class="tel-campo tel-sino"><legend>¿El equipo quedó funcionando?</legend>
-   <label><input type="radio" name="mant-funcional" value="si"> Sí</label><label><input type="radio" name="mant-funcional" value="no"> No</label></fieldset>
-  <fieldset class="tel-campo tel-sino"><legend>¿Se la llevan de su lugar?</legend>
-   <label><input type="radio" name="mant-retiro" value="si"> Sí</label><label><input type="radio" name="mant-retiro" value="no" checked> No</label>
-   <p class="tel-nota">Si se la llevan, la ficha queda «En reparación» hasta que se registre que volvió.</p></fieldset>
-  ${pie('mant')}</form>
-  <div class="tel-accion"><p class="tel-aviso" role="status" id="mant-aviso"></p>
-   <div class="tel-accion-fila"><span id="mant-resumen"></span><button class="tel-primario" type="submit" form="tel-mant" disabled>Consultando…</button></div></div>
-  <button type="button" class="tel-sec" id="mant-export">Descargar este reporte para la computadora de planta</button>
-  <section id="mant-local" aria-label="Reportes guardados en este dispositivo"></section>
-  <section id="mant-import" hidden><h2 class="tel-sub">Importar reportes del teléfono</h2><p class="tel-nota">Elegí el paquete descargado en el teléfono. Revisá los equipos y fechas antes de importarlo a Obsidian.</p>
-   <input id="mant-package" type="file" accept="application/json,.json" aria-label="Paquete de reportes de Vocatus"><div id="mant-import-preview"></div><button type="button" class="tel-sec" id="mant-import-confirm" disabled>Importar los reportes revisados</button></section>`;
+ const step=(number,title)=>`<div class="report-step-heading"><span>${number}</span><h2>${title}</h2></div>`;
+ paneles.mantenimiento.innerHTML = `<div class="tel-section-head"><span>PARTE DE MANTENIMIENTO</span><h1>Registrar trabajo</h1><p>Elegí la bomba, contá qué se hizo y añadí la evidencia.</p></div><p id="mant-storage" class="tel-storage-note" role="status">Consultando dónde se puede guardar…</p><p id="mant-draft-status" class="tel-draft-status" aria-live="polite"></p><form id="tel-mant" novalidate>
+  <section class="report-step">${step('01','Equipo')}${campoBomba('mant-bomba')}</section>
+  <section class="report-step">${step('02','Trabajo y evidencia')}<div class="tel-campo"><label for="mant-problema">¿Qué ocurrió o qué se hizo?</label><textarea id="mant-problema" rows="2" maxlength="600" placeholder="Ej. cambio de sello por fuga"></textarea></div>
+  <section id="mant-fotos" aria-label="Fotos de evidencia"></section>
+  <div class="tel-campo"><label for="mant-comentario">Detalle del trabajo</label><textarea id="mant-comentario" rows="3" maxlength="3000" placeholder="Trabajo realizado, observaciones y pendientes"></textarea></div>
+  <div class="tel-campo"><span class="tel-etiqueta">Repuestos usados</span><div id="mant-repuestos"></div><button type="button" class="tel-sec" id="mant-agregar">${icono('<path d="M12 5v14M5 12h14"/>',18)} Agregar repuesto</button></div></section>
+  <section class="report-step">${step('03','Estado al terminar')}<fieldset class="tel-campo tel-sino"><legend>¿El equipo quedó funcionando?</legend><label><input type="radio" name="mant-funcional" value="si"> Sí</label><label><input type="radio" name="mant-funcional" value="no"> No</label></fieldset>
+  <fieldset class="tel-campo tel-sino"><legend>¿Se la llevan de su lugar?</legend><label><input type="radio" name="mant-retiro" value="si"> Sí</label><label><input type="radio" name="mant-retiro" value="no" checked> No</label><p class="tel-nota">Si se la llevan, queda «En reparación» hasta registrar su regreso.</p></fieldset></section>
+  <section class="report-step">${step('04','Responsable y fecha')}${pie('mant')}</section></form>
+  <p class="tel-aviso" role="status" id="mant-aviso"></p><div class="tel-accion"><div class="tel-accion-fila"><span id="mant-resumen"></span><button class="tel-primario" type="submit" form="tel-mant" disabled>Consultando…</button></div></div>
+  <button type="button" class="tel-sec" id="mant-export">Descargar reporte con sus fotos para la computadora de planta</button><section id="mant-local" aria-label="Reportes guardados en este dispositivo"></section>
+  <section id="mant-import" hidden><h2 class="tel-sub">Importar reportes del teléfono</h2><p class="tel-nota">Elegí el paquete, revisá equipos, fechas y fotos e importalo a Obsidian.</p><input id="mant-package" type="file" accept="application/json,.json" aria-label="Paquete de reportes de Vocatus"><div id="mant-import-preview"></div><button type="button" class="tel-sec" id="mant-import-confirm" disabled>Importar los reportes revisados</button></section>`;
+ function syncReportButton(){const button=document.querySelector('button[form=tel-mant]');if(button)button.disabled=reportBusy||!storageReady||photoPicker.pending;}
+ const photoPicker=createEvidencePicker($('#mant-fotos'),{getTag:()=>reportTag,isLocked:()=>reportBusy,onState:syncReportButton});
 
  paneles.pendientes.innerHTML = `<div id="pend-lista"><p class="tel-vacio">Cargando…</p></div>`;
 
@@ -258,7 +257,7 @@ function iniciar() {
  const resumenMant = () => { const a = $('#mant-autor').value.trim(), f = $('#mant-fecha').value; $('#mant-resumen').textContent = (a || 'Sin responsable') + ' · ' + (f === hoy() ? 'hoy' : f || 'sin fecha'); };
  $('#mant-bomba').onchange=()=>setReportTag($('#mant-bomba').value);
  $('#mant-autor').addEventListener('input', resumenMant); $('#mant-fecha').addEventListener('input', resumenMant); resumenMant();
- function aviso(form, texto, tipo = '') { const el = $(`#${form}-aviso`); el.textContent = texto; el.dataset.tipo = tipo; }
+ function aviso(form, texto, tipo = '') { const el = $(`#${form}-aviso`); el.textContent = texto; el.dataset.tipo = tipo;if(tipo==='ok'&&texto.startsWith('Reporte de '))el.scrollIntoView({block:'nearest',behavior:'auto'}); }
 
  function snapshotReport(){return {id:reportId,problema:$('#mant-problema').value,comentario:$('#mant-comentario').value,author:$('#mant-autor').value,date:$('#mant-fecha').value,operativo:document.querySelector('[name=mant-funcional]:checked')?.value||'',retiro:document.querySelector('[name=mant-retiro]:checked')?.value||'no',parts:[...document.querySelectorAll('.tel-repuesto')].map(r=>({code:r.querySelectorAll('input')[0].value,name:r.querySelectorAll('input')[1].value}))};}
  function saveReportDraft(){
@@ -267,7 +266,7 @@ function iniciar() {
  }
  function setReportTag(tag,force=false){
   if(tag===reportTag&&!force){$('#mant-bomba').value=tag;pintarElegida('mant-bomba');return;}
-  if(!force)saveReportDraft();reportTag=tag;let draft=null;
+  if(!force)saveReportDraft();reportTag=tag;photoPicker.load(tag);let draft=null;
   try{draft=draftStore.read(tag);}catch(error){aviso('mant','No se pudo recuperar el borrador de '+(tag||'este equipo')+'. '+error.message,'error');}
   applyingDraft=true;reportId=draft?.id||nextReportId();$('#mant-bomba').value=tag;
   $('#mant-problema').value=draft?.problema||'';$('#mant-comentario').value=draft?.comentario||'';$('#mant-autor').value=draft?.author??leer('vocatus-responsable');$('#mant-fecha').value=draft?.date??hoy();
@@ -279,37 +278,38 @@ function iniciar() {
  function reportInput(){
   const d=snapshotReport(),tag=$('#mant-bomba').value;
   if(tag!==reportTag)throw new Error('El equipo cambió. Volvé a seleccionarlo antes de guardar.');
-  return normalizeFieldReport({id:reportId,tag,date:d.date,author:d.author,title:'Mantenimiento: '+d.problema.split('\n')[0].slice(0,80),symptoms:d.problema,text:d.comentario||d.problema,parts:d.parts.filter(r=>r.code.trim()||r.name.trim()).map(r=>[r.code.trim()&&'Código '+r.code.trim(),r.name.trim()].filter(Boolean).join(' · ')).join('\n'),operativo:d.operativo,retirado:d.retiro==='si'});
+  return normalizeFieldReport({id:reportId,tag,date:d.date,author:d.author,title:'Mantenimiento: '+d.problema.split('\n')[0].slice(0,80),symptoms:d.problema,text:d.comentario||d.problema,parts:d.parts.filter(r=>r.code.trim()||r.name.trim()).map(r=>[r.code.trim()&&'Código '+r.code.trim(),r.name.trim()].filter(Boolean).join(' · ')).join('\n'),operativo:d.operativo,retirado:d.retiro==='si',evidence:photoPicker.images});
  }
  function downloadReports(records){const pkg=fieldReportPackage(records),blob=new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Reportes_Vocatus_'+records[0].tag+'_'+hoy()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);}
  $('#mant-export').onclick=()=>{try{downloadReports([reportInput()]);aviso('mant','Paquete descargado. Importalo desde el visor de la computadora de planta.','ok');}catch(error){aviso('mant',error.message,'error');}};
  let localPaint=0;
  async function paintLocalReports(){
   const ticket=++localPaint,tag=reportTag;try{const records=tag?(await listReports(tag)).filter(r=>r.source==='browser'&&r.fieldReport):[];if(ticket!==localPaint||tag!==reportTag)return;
-   $('#mant-local').innerHTML=records.length?'<h2 class="tel-sub">Pendientes de llevar a planta · '+esc(tag)+'</h2>'+records.map((r,i)=>`<div class="tel-local-report"><span>${esc(r.date)} · ${esc(r.title)}<small>Solo en este dispositivo · sin importar a Obsidian</small></span><button type="button" class="tel-sec" data-package="${i}">Descargar paquete</button></div>`).join(''):'';
+   $('#mant-local').innerHTML=records.length?'<h2 class="tel-sub">Pendientes de llevar a planta · '+esc(tag)+'</h2>'+records.map((r,i)=>`<div class="tel-local-report"><span>${esc(r.date)} · ${esc(r.title)}<small>Solo en este dispositivo · sin importar a Obsidian${r.evidence?.length?' · '+r.evidence.length+' foto(s)':''}</small></span><button type="button" class="tel-sec" data-package="${i}">Descargar paquete con fotos</button><div data-local-evidence="${i}">${evidenceMarkup(r.evidence||[])}</div></div>`).join(''):'';
+   $('#mant-local').querySelectorAll('[data-local-evidence]').forEach(el=>bindEvidenceGallery(el,records[Number(el.dataset.localEvidence)].evidence||[]));
    $('#mant-local').querySelectorAll('[data-package]').forEach(b=>b.onclick=()=>{try{downloadReports([records[Number(b.dataset.package)]]);}catch(error){aviso('mant',error.message,'error');}});
   }catch(error){if(ticket===localPaint)$('#mant-local').textContent='No se pudieron leer los reportes de este dispositivo.';}
  }
  function storageMode(){storageReady=true;const connected=V()?.writable===true,button=document.querySelector('button[form=tel-mant]');
   $('#mant-storage').textContent=connected?'Los reportes se guardan en Obsidian en la computadora de planta. El borrador se conserva en este dispositivo.':'Guardado en este dispositivo: no hay sincronización con Obsidian. Podés guardar el reporte aquí y descargar un paquete para importarlo en la computadora de planta.';
-  button.textContent=connected?'Enviar reporte a Obsidian':'Guardar en este dispositivo';button.disabled=false;$('#mant-import').hidden=!connected;paintLocalReports();
+  button.textContent=connected?'Enviar reporte a Obsidian':'Guardar en este dispositivo';syncReportButton();$('#mant-import').hidden=!connected;paintLocalReports();
  }
  let packageRecords=[];
- $('#mant-package').onchange=async e=>{packageRecords=[];$('#mant-import-confirm').disabled=true;$('#mant-import-preview').textContent='';try{const file=e.target.files?.[0];if(!file)return;if(file.size>5*1024*1024)throw new Error('Máximo 5 MB.');packageRecords=parseFieldReportPackage(await file.text());$('#mant-import-preview').innerHTML='<p>Revisá estos reportes:</p><ul>'+packageRecords.map(r=>`<li><strong>${esc(r.tag)}</strong> · ${esc(r.date)} · ${esc(r.author)} · ${esc(r.title)}${r.retirado?' · Retirado de su lugar':''}</li>`).join('')+'</ul>';$('#mant-import-confirm').disabled=!V()?.writable;}catch(error){$('#mant-import-preview').textContent=error.message;}};
+ $('#mant-package').onchange=async e=>{packageRecords=[];$('#mant-import-confirm').disabled=true;$('#mant-import-preview').textContent='';try{const file=e.target.files?.[0];if(!file)return;if(file.size>5*1024*1024)throw new Error('Máximo 5 MB.');packageRecords=parseFieldReportPackage(await file.text());$('#mant-import-preview').innerHTML='<p>Revisá estos reportes:</p><ul>'+packageRecords.map(r=>`<li><strong>${esc(r.tag)}</strong> · ${esc(r.date)} · ${esc(r.author)} · ${esc(r.title)}${r.retirado?' · Retirado de su lugar':''} · ${r.evidence?.length||0} foto(s)</li>`).join('')+'</ul>';$('#mant-import-confirm').disabled=!V()?.writable;}catch(error){$('#mant-import-preview').textContent=error.message;}};
  $('#mant-import-confirm').onclick=async()=>{const button=$('#mant-import-confirm');button.disabled=true;try{const n=await importFieldReports(packageRecords,(path,body)=>V().api(path,body));$('#mant-import-preview').textContent=n+' reportes importados a Obsidian. El archivo original se conserva.';packageRecords=[];$('#mant-package').value='';leerPendientes();}catch(error){$('#mant-import-preview').textContent=error.message+' Podés reintentar: los reportes ya importados no se duplican.';button.disabled=!V()?.writable;}};
  $('#tel-mant').onsubmit=async e=>{
   e.preventDefault();if(reportBusy||!storageReady)return;let record;try{record=reportInput();}catch(error){return aviso('mant',error.message,'error');}
-  saveReportDraft();const tag=record.tag,button=document.querySelector('button[form=tel-mant]');reportBusy=true;button.disabled=true;
+  saveReportDraft();const tag=record.tag,button=document.querySelector('button[form=tel-mant]');reportBusy=true;button.disabled=true;photoPicker.refresh();
   try{
    if(!V()?.writable){await addReport({...record,fieldReport:true});aviso('mant','Reporte de '+tag+' guardado en este dispositivo. Todavía no está en Obsidian: descargá su paquete para llevarlo a planta.','ok');}
    else{
     await importFieldReports([record],(path,body)=>V().api(path,body));aviso('mant','Reporte de '+tag+' guardado en Obsidian.','ok');leerPendientes();
    }
-   draftStore.remove(tag);
+   await photoPicker.clear(tag);draftStore.remove(tag);
    if(reportTag===tag){applyingDraft=true;reportId=nextReportId();$('#mant-problema').value='';$('#mant-comentario').value='';$('#mant-repuestos').innerHTML='';repuestoFila();document.querySelectorAll('[name=mant-funcional]').forEach(r=>r.checked=false);document.querySelector('[name=mant-retiro][value=no]').checked=true;applyingDraft=false;}
    await paintLocalReports();
   }catch(error){aviso('mant',error.message+' El borrador se conserva para reintentar.','error');}
-  finally{reportBusy=false;button.disabled=false;saveReportDraft();}
+  finally{reportBusy=false;photoPicker.refresh();syncReportButton();saveReportDraft();}
  };
 
  // ---------- Pendientes ----------
@@ -429,6 +429,9 @@ function iniciar() {
   if(!$('#mant-bomba').value)setReportTag(e.detail);
   if (!$('#bod-bomba').value) { $('#bod-bomba').value = e.detail; elegirBodega(); }
  });
+
+ const sectionCopy={areas:['EXPLORAR','La planta, por áreas','Buscá un equipo o elegí un sector del modelo.'],pendientes:['SEGUIMIENTO','Pendientes de planta','Revisá el estado documentado y las fichas por completar.'],historial:['EQUIPOS','Historial y fichas','Filtrá, elegí una bomba y consultá sus intervenciones.'],bodega:['REPUESTOS','Preparar solicitud','Elegí la bomba y añadí los repuestos que necesitás.']};
+ for(const [id,[kicker,title,description]] of Object.entries(sectionCopy)){const head=document.createElement('div');head.className='tel-section-head';head.innerHTML=`<span>${kicker}</span><h2>${title}</h2><p>${description}</p>`;paneles[id].prepend(head);}
 
  // ---------- Navegación ----------
  function mostrar(id) {
