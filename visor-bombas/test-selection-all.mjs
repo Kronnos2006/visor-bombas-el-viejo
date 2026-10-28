@@ -46,3 +46,14 @@ test('selección real anuncia cada referencia y transforma centro integrado una 
  for(const reference of allReferences){select(reference);const event=events.at(-1);assert.equal(event.type,'vocatus:referencia');assert.equal(event.detail,reference);assert.equal(context.state.pump.pending,reference);const center=centers.at(-1);assert.equal(center.x,(reference.min[0]+reference.max[0])/2+(reference.standalone?0:100));}
  assert.equal(transformed,references.length);assert.equal(events.length,allReferences.length);
 });
+
+test('evento real del 3D abre automáticamente cada ficha sin TAG en Historial',()=>{
+ const start=phoneSource.indexOf(" document.addEventListener('vocatus:referencia',");
+ const end=phoneSource.indexOf(" document.addEventListener('vocatus:referencias'",start);
+ assert.ok(start>=0&&end>start,'falta conectar el evento de selección sin TAG');
+ const fixture=phone(),handlers=new Map();fixture.context.document.addEventListener=(type,fn)=>handlers.set(type,fn);fixture.context.abrirFicha=fixture.open;
+ vm.runInContext(phoneSource.slice(start,end),fixture.context);
+ assert.equal(typeof handlers.get('vocatus:referencia'),'function');
+ for(const reference of allReferences){fixture.api.pump={tag:'Sin TAG',pending:reference};handlers.get('vocatus:referencia')({detail:reference});fixture.flush();assert.equal(fixture.context.ficha.hidden,false);assert.equal(fixture.context.ficha.dataset.selection,selectionIdentity({pending:reference}));}
+ fixture.context.seccion='bodega';fixture.context.viendoFicha=false;fixture.context.ficha.hidden=true;handlers.get('vocatus:referencia')({detail:references[0]});assert.equal(fixture.context.ficha.hidden,true,'no cambiar a ficha cuando se trabaja en Bodega');
+});

@@ -69,3 +69,6 @@ __pycache__/
 
 # informes generados de auditoría (solo locales)
 informes-auditoria/
+
+# resultados de la barrera de regresión
+visor-bombas/.auditoria-regresion/
