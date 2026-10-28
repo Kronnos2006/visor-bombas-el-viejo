@@ -393,7 +393,7 @@ function iniciar() {
 
  // ---------- Ficha dentro de la app ----------
  function abrirFicha(tag, pestana = 'ficha') {
-  const request=++fichaRequest;ficha.dataset.tag=tag;
+  const request=++fichaRequest;ficha.dataset.tag=tag;document.body.classList.remove('hist-model-open');
   mostrarMapaAmplio(false);
   viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha'); fab.hidden = false;
   // En computadora, Pendientes es «lista y detalle»: la lista queda a la izquierda y la ficha a la derecha.
@@ -402,7 +402,7 @@ function iniciar() {
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
   if (V()?.pump?.tag !== tag) V()?.select(tag);
   const vigente=()=>viendoFicha&&request===fichaRequest&&ficha.dataset.tag===tag;
-  const aplicar=()=>{if(!vigente()||V()?.pump?.tag!==tag)return;V()?.tab(pestana);if(pestana==='historial'&&V()?.listo)V()?.explode(100);pintarRegreso();pintarPiezas();};
+  const aplicar=()=>{if(!vigente()||V()?.pump?.tag!==tag)return;V()?.tab(pestana);if(pestana==='historial')V()?.explode(0);pintarRegreso();pintarPiezas();};
   // Espera a que el visor termine de cargar esa bomba (con el 3D real puede tardar varios segundos);
   // si se aplica antes, al terminar la carga el visor vuelve a juntar las piezas.
   const inicio = Date.now();

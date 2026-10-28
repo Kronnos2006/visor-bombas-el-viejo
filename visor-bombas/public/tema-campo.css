@@ -119,3 +119,5 @@ body .pump-pick button{align-content:start}
  body .campo-nav.tel-barra-campo a[aria-current=page]{color:var(--accent);background:none}
  body .campo-nav.tel-barra-campo svg{display:block;margin:0 auto 3px}
 }
+
+.photo-transfer{display:grid;gap:12px;margin:16px 0;padding:14px;border:1px solid var(--borde);border-radius:10px}.photo-transfer p{margin:0}.photo-transfer button,.photo-transfer .foto-btn{min-height:46px;font-size:16px}.photo-transfer [data-photo-status]:empty{display:none}

@@ -1,4 +1,5 @@
-import {fotosActualizadas,guardarFoto,htmlFotos,originales} from './fotos-bomba.js';
+import {makePhotoPackage,readPhotoPackage} from './photo-package-core.js';
+import {fotosActualizadas,guardarFoto,htmlFotos,originales,bindPhotoTransfers,exportPhotoPackage,importPhotoPackage,saveLocalPhotos} from './fotos-bomba.js';
 import {expedienteDe} from './expediente.js';
 import {validateSurveyInput,NUMERIC_RULES} from './survey-validation.js';
 import {verificationText} from './verification-core.js';
@@ -141,8 +142,9 @@ function renderPhotos() {
 }
 function message(target, kind, text) { $(target).innerHTML = `<div class="msg ${kind}">${text}</div>`; }
 function packageOf(data) { return {formato: 'levantamiento-vocatus', version: 2, creado: new Date().toISOString(), ...data, photos: photos.map(p => ({name: p.name, base64: p.base64}))}; }
-function download(data) {
- const blob = new Blob([JSON.stringify(packageOf(data))], {type: 'application/json'});
+async function download(data) {
+ const pkg=packageOf(data);try{const all=await exportPhotoPackage(data.tag,{writable:!!info.writable,tagOnly:true});const photos=readPhotoPackage(all).filter(p=>p.tag===data.tag);if(photos.length)pkg.expedientePhotos=makePhotoPackage(photos);}catch(error){if(!/No hay fotos actualizadas/.test(error.message))throw error;}
+ const blob = new Blob([JSON.stringify(pkg)], {type: 'application/json'});
  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: `levantamiento_${data.tag}_${data.date}_${Date.now().toString(36)}.json`});
  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
@@ -161,7 +163,7 @@ function validate(data) {
 $('#form').onsubmit = async e => {
  e.preventDefault(); const data = collect();
  try { validate(data); } catch (err) { return message('#result', 'err', esc(err.message)); }
- if (!info.writable) { download(data); return message('#result', 'warn', 'Este sitio no escribe en Obsidian. Se descargó el paquete: cargalo luego desde el visor en la computadora.'); }
+ if (!info.writable) { try{await download(data);}catch(error){return message('#result','err',esc(error.message));} return message('#result', 'warn', 'Este sitio no escribe en Obsidian. Se descargó el paquete: cargalo luego desde el visor en la computadora.'); }
  $('#save').disabled = true; $('#save').textContent = 'Guardando…';
  try {
   const out = await send({...packageOf(data)});
@@ -170,11 +172,10 @@ $('#form').onsubmit = async e => {
   const i = info.rows.findIndex(r => r.tag === data.tag); if (i >= 0) info.rows[i] = out.progress; else info.rows.push(out.progress);
   $('#form').reset(); $('#tag').value = data.tag; $('#form [name=date]').value = data.date; $('#form [name=author]').value = data.author; activeTag = ''; await selectTag();
  } catch (err) {
-  download(data);
-  message('#result', 'err', `${esc(err.message)}<br>Para no perder el trabajo, se descargó el paquete.`);
+  try{await download(data);message('#result','err',`${esc(err.message)}<br>Se descargó el paquete para conservar el trabajo.`);}catch(backupError){message('#result','err',`${esc(err.message)}<br>No se pudo descargar el respaldo: ${esc(backupError.message)}. El borrador se conserva en este navegador.`);}
  } finally { $('#save').disabled = false; $('#save').textContent = 'Guardar en la ficha'; }
 };
-$('#export').onclick = () => { const data = collect(); try { validate(data); download(data); message('#result', 'ok', 'Paquete descargado. Podés enviarlo a la computadora y cargarlo abajo.'); } catch (err) { message('#result', 'err', esc(err.message)); } };
+$('#export').onclick = async () => { const data = collect(); try { validate(data); await download(data); message('#result', 'ok', 'Paquete descargado. Podés enviarlo a la computadora y cargarlo abajo.'); } catch (err) { message('#result', 'err', esc(err.message)); } };
 $('#import').onchange = async e => {
  const lines = [];
  for (const file of e.target.files) {
@@ -182,7 +183,8 @@ $('#import').onchange = async e => {
    const data = JSON.parse(await file.text());
    if (data.formato !== 'levantamiento-vocatus') throw new Error('no es un paquete de levantamiento');
    if (!info.writable) throw new Error('este sitio no escribe en Obsidian; abrí el visor en la computadora');
-   const out = await send(data); lines.push(`<div class="msg ok">${esc(file.name)} → ${esc(out.file)}</div>`);
+   if(data.expedientePhotos&&readPhotoPackage(data.expedientePhotos).some(photo=>photo.tag!==data.tag))throw new Error('Las fotos del paquete no corresponden al TAG del levantamiento.');
+   const out = await send(data);let photoNote='';if(data.expedientePhotos){const imported=await importPhotoPackage(data.expedientePhotos);const result=await saveLocalPhotos(data.tag,{writable:info.writable,token:info.token,allowKeys:imported.addedKeys});photoNote=' · '+result.added+' fotos guardadas; '+(result.preserved+imported.preserved)+' casillas anteriores conservadas. El archivo original permite revisar las fotos omitidas.';}lines.push(`<div class="msg ok">${esc(file.name)} → ${esc(out.file)}${esc(photoNote)}</div>`);
   } catch (err) { lines.push(`<div class="msg err">${esc(file.name)}: ${esc(err.message)}</div>`); }
  }
  $('#import-result').innerHTML = lines.join(''); e.target.value = '';
@@ -217,8 +219,9 @@ async function renderPhotoEditor(){
  const tag=activeTag,target=$('#component-photos');if(!tag||!current)return;
  const p={...current.data,tag},options={writable:!!info.writable,token:info.token};
  const original=originales(p,expedienteDe(p));
- const act=await fotosActualizadas(tag,options);if(activeTag!==tag||!target.isConnected)return;
+ let act={},photoError='';try{act=await fotosActualizadas(tag,options);photoError=act.warning||'';}catch(error){photoError=error.message;}if(activeTag!==tag||!target.isConnected)return;
  target.innerHTML=htmlFotos(p,original,act,options);
+ bindPhotoTransfers(target,tag,options,renderPhotoEditor);if(photoError){target.querySelector('#fotos-error').textContent=photoError;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=renderPhotoEditor;target.querySelector('#fotos-error').after(retry);}
  target.querySelectorAll('input[data-slot]').forEach(input=>{
   const label=input.closest('label');label.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();input.click();}};
   input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await guardarFoto(tag,input.dataset.slot,file,options);if(activeTag===tag)await renderPhotoEditor();}catch(error){if(activeTag===tag)target.querySelector('#fotos-error').textContent=error.message;input.disabled=false;}};

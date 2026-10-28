@@ -503,3 +503,22 @@ body.app-tel #tel-mant label[for="mant-bomba"]{position:absolute;width:1px;heigh
 .report-history-list h4{margin:0;font-size:17px}
 .report-history-list .record{display:grid;gap:10px}
 @media(max-width:900px){body.app-tel[data-tel-seccion="mantenimiento"] .tel-accion-fila{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}body.app-tel[data-tel-seccion="mantenimiento"] .tel-accion .tel-primario{width:100%;min-height:48px;padding:8px 12px}body.app-tel[data-tel-seccion="mantenimiento"] #mant-resumen{font-size:12px}}
+
+/* Historial da prioridad a la ficha y los registros; el 3D conserva sus controles optativos. */
+body.app-tel[data-tel-seccion="historial"].tel-con-ficha{--escena:160px}
+.history-equipment,.history-photos{display:grid;gap:14px;margin:18px 0;padding:16px;border:1px solid var(--borde);border-radius:12px;background:var(--superficie)}
+.history-equipment h3,.history-photos h3{margin:0;font-size:21px}
+.history-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.history-photo-grid figure{margin:0;min-width:0}.history-photo-grid img{width:100%;height:150px;object-fit:contain;background:var(--fondo-2);border-radius:8px}.history-photo-grid figcaption{font-size:15px}.history-photo-grid small{display:block;color:var(--tinta-2);font-size:12px}
+.history-measurements{margin:20px 0}.history-measurements>summary{min-height:48px;padding:12px;cursor:pointer;border:1px solid var(--borde);border-radius:8px}
+.photo-transfer{display:grid;gap:10px;margin:14px 0;padding:14px;border:1px solid var(--borde-fuerte);border-radius:10px}.photo-transfer p{margin:0;font-size:14px;line-height:1.5}.photo-transfer .foto-btn{display:block;font-size:15px;min-height:46px;margin:0;padding:12px}.photo-transfer button{min-height:46px;cursor:pointer}.photo-transfer [data-photo-status]:empty{display:none}
+@media(min-width:901px){body.app-tel[data-tel-seccion="historial"].tel-con-ficha{--panel:clamp(560px,57vw,980px)}body.app-tel[data-tel-seccion="historial"].tel-con-ficha .tel-ficha{max-width:none}body.app-tel[data-tel-seccion="historial"] .history-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}body.app-tel[data-tel-seccion="historial"] #panel{font-size:16px}}
+@media(max-width:900px){body.app-tel[data-tel-seccion="historial"].tel-con-ficha #tel-vistas{display:none}.history-equipment,.history-photos{padding:12px}.history-photo-grid img{height:120px}}
+
+body.app-tel[data-tel-seccion="historial"].tel-con-ficha:not(.hist-model-open) #tel-vistas{display:none}
+@media(max-width:900px){body.app-tel[data-tel-seccion="historial"].tel-con-ficha.hist-model-open{--escena:300px}body.app-tel[data-tel-seccion="historial"].tel-con-ficha.hist-model-open #tel-vistas{display:flex}}
+
+.history-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}.history-nav button{min-height:46px;font-size:16px;cursor:pointer}.history-note{padding:16px;margin:16px 0;border:1px solid var(--borde);border-radius:10px}.history-note pre{white-space:pre-wrap;overflow-wrap:anywhere}.history-note h3{margin-top:0}
+@media(max-width:900px){body.app-tel[data-tel-seccion="historial"].tel-con-ficha:not(.hist-model-open){--escena:0px}}
+
+body.app-tel[data-tel-seccion="historial"] .tel-fab{display:none}
