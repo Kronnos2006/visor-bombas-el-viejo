@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile,rm,readFile} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,rm,utimes} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {pumpPhotoStore} from './pump-photos.mjs';
@@ -24,6 +24,7 @@ test('recargar la ficha devuelve la foto nueva y no la antigua aun con extension
  assert.deepEqual((await s.read('B1','bomba')).bytes,PNG);
  const dir=path.join(vault,'00-Proyecto/fotos-campo/B1/expediente');
  await writeFile(path.join(dir,'bomba.jpg'),JPG);
+ await utimes(path.join(dir,'bomba.jpg'),new Date('2020-01-01'),new Date('2020-01-01'));
  assert.deepEqual((await s.read('B1','bomba')).bytes,PNG,'no dar prioridad al JPG viejo');
  assert.match((await s.list('B1')).bomba.url,/v=/);
 });
