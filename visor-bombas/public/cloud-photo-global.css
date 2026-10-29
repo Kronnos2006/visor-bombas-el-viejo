@@ -1,0 +1,10 @@
+.cloud-global-control{position:relative;flex:0 0 auto;order:2}
+#cloud-photos-all{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;max-width:244px;font-size:12px;line-height:1.3;text-align:left;border-color:var(--borde-fuerte,#9e813d);color:var(--tinta,#f4ead8);background:var(--superficie,#211c14)}
+#cloud-photos-all svg{flex:0 0 auto}
+.cloud-global-short{display:none}
+#cloud-photos-all-result{position:fixed;right:12px;top:calc(var(--alto-enc,78px) + 8px);width:min(360px,calc(100vw - 24px));max-height:65dvh;overflow:auto;padding:16px;z-index:85;border:1px solid var(--borde-fuerte,#9e813d);border-radius:10px;background:var(--fondo,#17150e);color:var(--tinta,#f4ead8);box-shadow:0 8px 24px #0004;font-size:14px;line-height:1.5}
+#cloud-photos-all-result p{margin:8px 0 12px;overflow-wrap:anywhere}
+#cloud-photos-all-result button{min-height:44px;font-size:14px}
+.cloud-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+@media(max-width:900px){#cloud-photos-all{flex-direction:column;gap:1px;width:48px;min-height:48px;padding:4px;font-size:10px}.cloud-global-label{display:none}.cloud-global-short{display:block}body.app-tel header .cloud-global-control{order:2}body.app-tel header{column-gap:6px}}
+@media(prefers-reduced-motion:no-preference){#cloud-photos-all[aria-busy=true] svg{animation:cloud-photos-spin 1.2s linear infinite}@keyframes cloud-photos-spin{to{transform:rotate(360deg)}}}

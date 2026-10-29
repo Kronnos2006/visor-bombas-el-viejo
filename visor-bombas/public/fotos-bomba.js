@@ -1,7 +1,8 @@
 // «Actualizar fotos» del expediente: dos placas, la bomba y su posición.
 // Obsidian conserva su guardado local. La web comparte fotos con Auth y RLS, con respaldo local.
 import {PHOTO_SLOTS} from './photo-slots.js';
-import {cloudEnabled,sharedPhotos,cloudRevision,cloudTransport,cloudPhotoControls,bindCloudPhotoControls} from './cloud-photos.js';
+import {cloudEnabled,cloudSession,sharedPhotos,refreshAllSharedPhotos,cloudRevision,cloudTransport,cloudPhotoControls,bindCloudPhotoControls} from './cloud-photos.js';
+import {synchronizeAllPhotos} from './cloud-photo-batch.js';
 import {syncPhoto,loadPhotoView,photoBaseRevision} from './cloud-photo-core.js';
 import {decodePhoto,isHeicPhoto} from './photo-image.js';
 import {makePhotoPackage,readPhotoPackage,makeReferencePhotoPackage,readReferencePhotoPackage,storagePhotoIdentity,isPhotoReference,MAX_PACKAGE_BYTES} from './photo-package-core.js';
@@ -115,6 +116,17 @@ export function bindPhotoTransfers(root,tag,options,onChange){
  const sync=box.querySelector('[data-photo-sync]');if(sync)sync.onclick=async()=>{sync.disabled=true;try{const result=await saveLocalPhotos(tag,options);if(root.isConnected)await onChange?.();const target=currentStatus();if(target)target.textContent=result.added+' fotos guardadas en Obsidian. '+result.preserved+' casillas con foto anterior conservadas; comparalas antes de actualizar. El respaldo del navegador se conserva.';}catch(error){const target=currentStatus();if(target)target.textContent=error.message;}finally{sync.disabled=false;}};
 }
 const cloudJobs=new Map();
+let allPhotosJob;
+export async function actualizarTodasFotos({onProgress}={}){
+ if(allPhotosJob)return allPhotosJob;
+ const job=(async()=>{
+  const account=await cloudSession();
+  if(!account)throw Object.assign(Error('Conectá tu cuenta y volvé a pulsar Actualizar todas las fotos en línea.'),{code:'CLOUD_LOGIN_REQUIRED'});
+  const checkAccount=async()=>{if((await cloudSession())?.user.id!==account.user.id)throw Error('La cuenta cambió. Volvé a actualizar todas las fotos.');};
+  return synchronizeAllPhotos({localEntries,syncEntity:async entity=>{await checkAccount();return flushCloudPhotos(entity,true);},loadShared:async options=>{await checkAccount();const result=await refreshAllSharedPhotos(options);await checkAccount();return result;},onProgress});
+ })();
+ allPhotosJob=job;try{return await job;}finally{if(allPhotosJob===job)allPhotosJob=null;}
+}
 function cloudRefresh(entity){if(typeof document!=='undefined')document.dispatchEvent(new CustomEvent('vocatus:cloud-photos',{detail:{entity}}));}
 async function compareLocal(key,revision,patch){
  return idb('readwrite',store=>{let changed=false;const request=store.get(key);request.onsuccess=()=>{const current=request.result;if(current?.revision!==revision)return;const {pending,...metadata}=patch;store.put({...current,...metadata,...(pending===undefined?{}:{cloudPending:pending})},key);changed=true;};return{get result(){return changed;}};});

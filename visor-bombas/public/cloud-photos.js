@@ -46,12 +46,36 @@ async function rows(entity){
 export async function sharedPhotos(entity,{strict=false}={}){
  if(!await cloudSession())return Object.defineProperty({},'warning',{value:'Conectá tu cuenta autorizada en este navegador para ver las fotos que compartiste desde el teléfono.',enumerable:false});
  const owner=session?.user?.id,supabase=await client();
- return loadSharedPhotoRows({rows:await rows(entity),strict,isCurrent:()=>session?.user?.id===owner,download:async row=>{
+ return downloadRows(await rows(entity),supabase,owner,strict);
+}
+function downloadRows(photoRows,supabase,owner,strict=false){
+ return loadSharedPhotoRows({rows:photoRows,strict,isCurrent:()=>session?.user?.id===owner,download:async row=>{
   let url=downloads.get(row.object_path);
   if(!url){const result=await supabase.storage.from('vocatus-photos').download(row.object_path);if(result.error)throw result.error;if(session?.user?.id!==owner)throw Error('La cuenta cambió. Volvé a abrir las fotos.');url=URL.createObjectURL(result.data);downloads.set(row.object_path,url);}
   return {url,fecha:row.updated_at,cloud:true,revision:row.revision,path:row.object_path,local:false};
  }});
 }
+export async function refreshAllSharedPhotos({onProgress=()=>{}}={}){
+ if(!await cloudSession())throw Error('Conectá tu cuenta para actualizar todas las fotos en línea.');
+ const owner=session.user.id,supabase=await client(),groups=new Map();
+ const check=()=>{if(session?.user?.id!==owner)throw Error('La cuenta cambió. Volvé a actualizar las fotos.');};
+ for(let offset=0;;offset+=200){
+  const result=await supabase.from('vocatus_photos').select('*').order('entity_key').order('slot').range(offset,offset+199);
+  check();if(result.error)throw result.error;
+  for(const row of result.data||[]){if(!groups.has(row.entity_key))groups.set(row.entity_key,[]);groups.get(row.entity_key).push(row);}
+  if((result.data||[]).length<200)break;
+ }
+ check();snapshots.clear();for(const [entity,photoRows]of groups)snapshots.set(entity,photoRows);
+ let photos=0,failed=0,done=0;
+ for(const photoRows of groups.values()){
+  const loaded=await downloadRows(photoRows,supabase,owner);
+  photos+=Object.keys(loaded).length;failed+=photoRows.length-Object.keys(loaded).length;
+  onProgress({phase:'reading',done:++done,total:groups.size});
+ }
+ check();for(const entity of watchers.keys())notify(entity);
+ return {photos,equipment:groups.size,failed};
+}
+export async function connectCloudPhotos(){await openAccount();}
 export async function cloudTransport(){
  const current=await cloudSession();if(!current)return null;if(!permissions.write)throw Error('Tu cuenta tiene permiso de consulta, no de actualización.');
  const supabase=await client();
@@ -75,8 +99,9 @@ export function bindCloudPhotoControls(root,entity,{refresh,flush,resolve,detail
  document.addEventListener('vocatus:cloud-photos',event=>{if(event.detail.entity===entity)update();},{signal:controller.signal});
  document.addEventListener('vocatus:cloud-auth',authenticate,{signal:controller.signal});
  box.querySelector('[data-cloud-connect]').onclick=()=>openAccount();
- box.querySelector('[data-cloud-refresh]').onclick=update;
- box.querySelector('[data-cloud-pending]').onclick=async()=>{const button=box.querySelector('[data-cloud-pending]');button.disabled=true;try{const result=await flush?.(entity);await update();if(live())root.querySelector('[data-cloud-result]').textContent=result||'Fotos comprobadas.';}catch(error){if(live())root.querySelector('[data-cloud-result]').textContent=error.message;}finally{button.disabled=false;}};
+ const syncAndRefresh=async event=>{const button=event?.currentTarget||box.querySelector('[data-cloud-pending]');button.disabled=true;try{const result=await flush?.(entity);await update();if(live())root.querySelector('[data-cloud-result]').textContent=result||'Fotos comprobadas.';}catch(error){if(live())root.querySelector('[data-cloud-result]').textContent=error.message;}finally{button.disabled=false;}};
+ box.querySelector('[data-cloud-refresh]').onclick=syncAndRefresh;
+ box.querySelector('[data-cloud-pending]').onclick=syncAndRefresh;
  const detailBox=document.createElement('div');box.append(detailBox);
  details?.().then(items=>{if(!live())return;detailBox.innerHTML=items.map(item=>`<p><strong>${esc(item.name)}:</strong> ${esc(item.error)} ${item.online?`<a href="${esc(item.online)}" target="_blank" rel="noopener">Ver foto en línea</a>`:''}</p>${item.conflict?`<button type="button" data-cloud-resolve="${esc(item.slot)}" data-choice="online">Conservar foto en línea</button><button type="button" data-cloud-resolve="${esc(item.slot)}" data-choice="local">Reemplazar en línea con mi foto local</button>`:''}`).join('');detailBox.querySelectorAll('[data-cloud-resolve]').forEach(button=>button.onclick=async()=>{button.disabled=true;try{await resolve?.(entity,button.dataset.cloudResolve,button.dataset.choice);await update();}catch(error){box.querySelector('[data-cloud-result]').textContent=error.message;}finally{button.disabled=false;}});}).catch(()=>{});
  startCloudPhotos().then(async()=>{if(session)await checkPermissions();if(live()){box.querySelector('[data-cloud-state]').textContent=statusText(entity);box.querySelector('[data-cloud-pending]').hidden=!session;}}).catch(error=>{if(live())box.querySelector('[data-cloud-result]').textContent=error.message;});
