@@ -18,6 +18,7 @@ import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
 import {INFO_URL,SECTORES_INT,visibleCon,torreAIntegrado,cajaSector,sectorDe,ubicarTanques} from './planta-integrada.js';
 import {fotosActualizadas, guardarFoto, originales, htmlFotos, bindPhotoTransfers, photoTransferHTML} from './fotos-bomba.js';
+import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
 import {expediente, expedienteDe, enlaces, linksBomba, linkPieza} from './expediente.js';
@@ -629,7 +630,7 @@ function initReports(tag,load=true){
 }
 async function renderHistoryPhotos(p){
  const root=$('#history-photos');if(!root)return;const target=root.querySelector('[data-history-images]'),tag=p.tag;
- const paint=async()=>{try{const act=await fotosActualizadas(tag,{writable:!!state.writable});if(!root.isConnected||state.pump?.tag!==tag)return;const orig=originales(p,expedienteDe(p));const labels={placa1:'Placa de la bomba',placa2:'Placa del motor',bomba:'Foto de la bomba',posicion:'Posición',motor:'Motor',sello:'Sello mecánico',empaque:'Empaque',orings:'O-rings',rodamientos:'Rodamientos',acople:'Acople'};const entries=Object.entries(labels).flatMap(([slot,label])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src;if(!src)return[];return`<figure><a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(label)} de ${esc(tag)}" loading="lazy"></a><figcaption>${esc(label)}<small>${a?(a.local?'Solo en este navegador':'Obsidian'):'Original del expediente · asociación por revisar'}</small></figcaption></figure>`;});target.innerHTML=entries.length?'<div class="history-photo-grid">'+entries.join('')+'</div>':'<p>No hay fotos asociadas en este navegador. Si las tomaste en el teléfono, descargalas allí y cargá el archivo aquí.</p>';if(act.warning){const warning=document.createElement('p');warning.className='form-error';warning.textContent=act.warning;target.prepend(warning);}}catch(error){if(root.isConnected){target.replaceChildren();const text=document.createElement('p');text.className='form-error';text.textContent=error.message;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=paint;target.append(text,retry);}}};
+ const paint=async()=>{try{const act=await fotosActualizadas(tag,{writable:!!state.writable});if(!root.isConnected||state.pump?.tag!==tag)return;const orig=originales(p,expedienteDe(p));const labels={placa1:'Placa de la bomba',placa2:'Placa del motor',bomba:'Foto de la bomba',posicion:'Posición',motor:'Motor',sello:'Sello mecánico',empaque:'Empaque',orings:'O-rings',rodamientos:'Rodamientos',acople:'Acople'};const entries=Object.entries(labels).flatMap(([slot,label])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src;if(!src)return[];return`<figure><a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(label)} de ${esc(tag)}" loading="lazy"></a><figcaption>${esc(label)}<small>${a?(a.cloud?'Compartida en línea':a.local?'Guardada en este navegador':'Obsidian'):'Original del expediente · asociación por revisar'}</small></figcaption></figure>`;});target.innerHTML=entries.length?'<div class="history-photo-grid">'+entries.join('')+'</div>':'<p>No hay fotos asociadas en este navegador. Si las tomaste en el teléfono, descargalas allí y cargá el archivo aquí.</p>';if(act.warning){const warning=document.createElement('p');warning.className='form-error';warning.textContent=act.warning;target.prepend(warning);}}catch(error){if(root.isConnected){target.replaceChildren();const text=document.createElement('p');text.className='form-error';text.textContent=error.message;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=paint;target.append(text,retry);}}};
  bindPhotoTransfers(root,tag,{writable:!!state.writable,token:state.token},paint);await paint();
 }
 function representedSubparts(index){
@@ -1076,8 +1077,8 @@ async function montarFotos(p,exp){
 
   document.querySelectorAll('#fotos-actualizar input[data-slot]').forEach(input=>input.onchange=async()=>{
    const file=input.files?.[0];if(!file)return;const label=input.closest('label');label.classList.add('saving');
-   try{await guardarFoto(tag,input.dataset.slot,file,{writable:!!state.writable,token:state.token});toast(state.writable?'Foto guardada en Obsidian para '+tag+'.':'Foto guardada en este navegador para '+tag+'. Descargala para pasarla a otro equipo.');await pintar();}
-   catch(e){const err=document.getElementById('fotos-error');if(err)err.textContent=e.message;label.classList.remove('saving');}
+   try{input.disabled=true;await photoInputStarted(input);await guardarFoto(tag,input.dataset.slot,file,{writable:!!state.writable,token:state.token});toast(state.writable?'Foto guardada en Obsidian para '+tag+'.':'Foto guardada en este dispositivo para '+tag+'. Revisá su confirmación en línea.');await pintar();}
+   catch(e){setPhotoInputStatus(input,e.message,true);const err=document.getElementById('fotos-error');if(err)err.textContent=e.message;}finally{input.disabled=false;input.value='';label.classList.remove('saving');}
   });
  };
  await pintar();
