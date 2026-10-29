@@ -3,6 +3,7 @@
 import {PHOTO_SLOTS} from './photo-slots.js';
 import {cloudEnabled,sharedPhotos,cloudRevision,cloudTransport,cloudPhotoControls,bindCloudPhotoControls} from './cloud-photos.js';
 import {syncPhoto,loadPhotoView,photoBaseRevision} from './cloud-photo-core.js';
+import {decodePhoto,isHeicPhoto} from './photo-image.js';
 import {makePhotoPackage,readPhotoPackage,makeReferencePhotoPackage,readReferencePhotoPackage,storagePhotoIdentity,isPhotoReference,MAX_PACKAGE_BYTES} from './photo-package-core.js';
 export const RANURAS=PHOTO_SLOTS;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -27,10 +28,17 @@ async function locales(tag){
 }
 // Reduce la foto en el navegador (lado mayor 1800 px, JPEG) antes de guardarla.
 async function reducir(file){
- if(!file||file.size>8*1024*1024)throw new Error('La foto supera 8 MB. Elegí una de menor tamaño.');
- const img=await createImageBitmap(file),k=Math.min(1,1800/Math.max(img.width,img.height)),c=document.createElement('canvas');
+ const img=await decodePhoto(file),k=Math.min(1,1800/Math.max(img.width,img.height)),c=document.createElement('canvas');
  c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);img.close?.();
  return new Promise(ok=>c.toBlob(ok,'image/jpeg',.85));
+}
+export async function photoInputStarted(input){
+ const heic=await isHeicPhoto(input.files?.[0]);setPhotoInputStatus(input,heic?'Convirtiendo foto HEIC a JPEG… La primera vez puede tardar unos segundos.':'Preparando foto…');
+}
+export function setPhotoInputStatus(input,message,error=false){
+ const slot=input.closest('figure');if(!slot)return;let status=slot.querySelector('[data-photo-input-status]');
+ if(!status){status=document.createElement('p');status.dataset.photoInputStatus='';status.setAttribute('role','status');status.setAttribute('aria-live','polite');slot.append(status);}
+ status.className=error?'form-error':'muted';status.textContent=message;
 }
 const b64=blob=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>ko(new Error('No se pudo leer la foto para descargarla.'));r.readAsDataURL(blob);});
 
@@ -96,7 +104,8 @@ export async function importPhotoPackage(data){
  return idb('readwrite',store=>{const result={added:0,preserved:0,addedKeys:[]};for(const photo of photos){const key=(photo.reference||photo.tag)+':'+photo.slot,r=store.get(key);r.onsuccess=()=>{if(r.result?.blob)result.preserved++;else{store.put({blob:photo.blob,fecha:photo.fecha,pending:true,revision:crypto.randomUUID()},key);result.added++;result.addedKeys.push(key);}};}return{get result(){return result;}};});
 }
 export function bindPhotoTransfers(root,tag,options,onChange){
- if(!options.writable)bindCloudPhotoControls(root,tag,{refresh:async()=>{try{await flushCloudPhotos(tag);}catch{}await onChange?.();},flush:()=>flushCloudPhotos(tag,true),resolve:resolveCloudPhoto,details:()=>cloudDetails(tag)});
+ if(!options.writable)bindCloudPhotoControls(root,tag,{refresh:async()=>{if(root.dataset.photoPicking||root.querySelector('input[type=file]:disabled'))return;try{await flushCloudPhotos(tag);}catch{}await onChange?.();},flush:()=>flushCloudPhotos(tag,true),resolve:resolveCloudPhoto,details:()=>cloudDetails(tag)});
+ for(const input of root.querySelectorAll('input[type=file]')){input.addEventListener('click',()=>{root.dataset.photoPicking='1';});for(const event of ['change','cancel'])input.addEventListener(event,()=>{delete root.dataset.photoPicking;});}
  const box=root.querySelector('.photo-transfer');if(!box)return;
  const status=box.querySelector('[data-photo-status]');
  const message=text=>{const target=currentStatus();if(target)target.textContent=text;};

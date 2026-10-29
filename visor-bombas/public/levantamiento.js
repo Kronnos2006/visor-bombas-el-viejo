@@ -1,6 +1,7 @@
 import {readSavedSurvey,writeSavedSurvey,savedSurveyKey,readSurveyPhotos,writeSurveyPhotos,updateSurveyPhotos} from './survey-drafts.js';
 import {makePhotoPackage,readPhotoPackage} from './photo-package-core.js';
 import {fotosActualizadas,guardarFoto,htmlFotos,originales,bindPhotoTransfers,exportPhotoPackage,importPhotoPackage,saveLocalPhotos} from './fotos-bomba.js';
+import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js';
 import {expedienteDe} from './expediente.js';
 import {validateSurveyInput,NUMERIC_RULES} from './survey-validation.js';
 import {verificationText} from './verification-core.js';
@@ -269,7 +270,7 @@ async function renderPhotoEditor(){
  bindPhotoTransfers(target,tag,options,renderPhotoEditor);if(photoError){target.querySelector('#fotos-error').textContent=photoError;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=renderPhotoEditor;target.querySelector('#fotos-error').after(retry);}
  target.querySelectorAll('input[data-slot]').forEach(input=>{
 
-  input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await guardarFoto(tag,input.dataset.slot,file,options);if(activeTag===tag)await renderPhotoEditor();}catch(error){if(activeTag===tag)target.querySelector('#fotos-error').textContent=error.message;input.disabled=false;}};
+  input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await photoInputStarted(input);await guardarFoto(tag,input.dataset.slot,file,options);if(activeTag===tag)await renderPhotoEditor();}catch(error){setPhotoInputStatus(input,error.message,true);if(activeTag===tag)target.querySelector('#fotos-error').textContent=error.message;}finally{input.disabled=false;input.value='';}};
  });
 }
 

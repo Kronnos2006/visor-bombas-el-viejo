@@ -43,7 +43,7 @@ test('selecciones consecutivas de una categoría se guardan en orden y una falla
  assert.deepEqual(posted,['primera','segunda']);
  const bad=guardarFoto('B30','sello',{size:1,delay:1,fail:true},options);
  const good=guardarFoto('B30','sello',{id:'tercera',size:1,delay:0},options);
- await assert.rejects(bad,/imagen dañada/);await good;assert.equal(posted.at(-1),'tercera');
+ await assert.rejects(bad,/No se pudo abrir esta imagen/);await good;assert.equal(posted.at(-1),'tercera');
 });
 
 

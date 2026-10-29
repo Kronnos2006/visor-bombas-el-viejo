@@ -38,3 +38,13 @@ Reconstruir el SDK público con npm run build:photos después de npm ci. El arch
 Se corrigieron fallos reproducidos mediante pruebas: un error de IndexedDB podía bloquear la consulta de fotos compartidas; los errores de inicio de subida quedaban ocultos; al reemplazar una foto con la caché invalidada podía perderse la revisión anterior y producir un conflicto innecesario. Ahora los errores y las fotos pendientes son visibles, se conserva la revisión confirmada y se consulta Supabase aunque falle el almacenamiento del dispositivo. Se añadió el botón Actualizar fotos en línea y el número de fotos confirmadas de la bomba abierta.
 
 181 pruebas y barrera Historial aprobadas. La consulta real mostró una cuenta confirmada, dos sesiones y una foto de referencia sin TAG con archivo almacenado y permisos de lectura efectivos. Esto no demuestra por sí solo que la visualización funcione en el teléfono del usuario. La automatización visual continuó fallando al inicializar el runtime, por lo que esa comprobación sigue pendiente.
+
+## Fotos HEIC del teléfono — 2026-10-29
+
+En el video del usuario, alrededor del segundo 28, el selector de Placa de la bomba contiene un archivo .heic y la foto anterior sigue visible. La preparación solo usaba createImageBitmap, sin conversión para navegadores que no abren HEIC. Se añadió conversión local dinámica con heic-to 1.6.7, variante CSP, ejecutada en worker, y posterior reducción a JPEG de lado máximo 1800 px. Solo se sube el JPEG al bucket privado. El conversor se descarga al necesitarlo por primera vez, después de intentar la apertura nativa.
+
+Se admiten originales de hasta 32 MB para comprimirlos; el límite remoto de 8 MB permanece. Los errores y el progreso se muestran junto al selector. Se libera el selector para reintentar el mismo archivo y se pausa el refresco automático mientras está abierto o preparando una imagen. La cancelación nativa libera la pausa.
+
+Prueba del decodificador real con HEIC sintético de 64×48 píxeles: dimensiones, cantidad de píxeles, opacidad y variación de color comprobadas en worker. No se usaron fotos privadas como fixture. La automatización visual del teléfono no está disponible; queda pendiente repetir la selección del usuario en su dispositivo.
+
+Resultado final de esta corrección: npm test, 187/187 aprobadas; guard:historial aprobado. SDK HEIC reconstruido con npm run build:heic, sin cambios en credenciales ni políticas de Supabase.

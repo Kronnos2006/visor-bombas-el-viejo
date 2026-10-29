@@ -18,6 +18,7 @@ import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
 import {INFO_URL,SECTORES_INT,visibleCon,torreAIntegrado,cajaSector,sectorDe,ubicarTanques} from './planta-integrada.js';
 import {fotosActualizadas, guardarFoto, originales, htmlFotos, bindPhotoTransfers, photoTransferHTML} from './fotos-bomba.js';
+import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
 import {expediente, expedienteDe, enlaces, linksBomba, linkPieza} from './expediente.js';
@@ -1076,8 +1077,8 @@ async function montarFotos(p,exp){
 
   document.querySelectorAll('#fotos-actualizar input[data-slot]').forEach(input=>input.onchange=async()=>{
    const file=input.files?.[0];if(!file)return;const label=input.closest('label');label.classList.add('saving');
-   try{await guardarFoto(tag,input.dataset.slot,file,{writable:!!state.writable,token:state.token});toast(state.writable?'Foto guardada en Obsidian para '+tag+'.':'Foto guardada en este navegador para '+tag+'. Descargala para pasarla a otro equipo.');await pintar();}
-   catch(e){const err=document.getElementById('fotos-error');if(err)err.textContent=e.message;label.classList.remove('saving');}
+   try{input.disabled=true;await photoInputStarted(input);await guardarFoto(tag,input.dataset.slot,file,{writable:!!state.writable,token:state.token});toast(state.writable?'Foto guardada en Obsidian para '+tag+'.':'Foto guardada en este dispositivo para '+tag+'. Revisá su confirmación en línea.');await pintar();}
+   catch(e){setPhotoInputStatus(input,e.message,true);const err=document.getElementById('fotos-error');if(err)err.textContent=e.message;}finally{input.disabled=false;input.value='';label.classList.remove('saving');}
   });
  };
  await pintar();
