@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {syncPhoto,loadPhotoView,photoBaseRevision,loadSharedPhotoRows} from './public/cloud-photo-core.js';
 function fixture(extra={}){
  let record={blob:new Blob(['synthetic'],{type:'image/jpeg'}),revision:'local-a',pending:true,cloudBase:0,...extra};
@@ -10,6 +11,16 @@ function fixture(extra={}){
 test('foto en línea confirma la revisión después de subir y publicar',async()=>{const f=fixture();const result=await syncPhoto(f.args);assert.equal(result.marked,true);assert.equal(f.record.pending,false);assert.equal(f.record.cloudRevision,1);assert.deepEqual(f.calls[1],['B30','sello',0,'vocatus/user-a/unique.jpg']);});
 test('sin internet conserva foto y estado pendiente',async()=>{const f=fixture();f.args.transport.upload=async()=>{throw Error('sin conexión');};const r=await syncPhoto(f.args);assert.equal(r.pending,true);assert.equal(f.record.pending,true);assert.equal(f.record.blob.size,9);assert.equal(f.record.cloudError,'sin conexión');});
 test('conflicto entre dispositivos conserva la selección local sin sobrescribir',async()=>{const f=fixture();f.args.transport.publish=async()=>{throw Object.assign(Error('PHOTO_CONFLICT'),{code:'40001'});};const r=await syncPhoto(f.args);assert.equal(r.conflict,true);assert.equal(f.record.cloudConflict,true);assert.equal(f.record.pending,true);});
+
+test('HTTP 409 de revisión se detiene conservando la foto pendiente y la versión remota',async()=>{const f=fixture();f.args.transport.publish=async()=>{f.calls.push(['publish']);throw Object.assign(Error('PHOTO_CONFLICT'),{code:'PT409'});};f.args.transport.readOne=async()=>({revision:2,object_path:'another-photo.jpg'});const r=await syncPhoto(f.args);assert.equal(r.conflict,true);assert.equal(f.record.cloudConflict,true);assert.equal(f.record.pending,true);assert.equal(f.calls.filter(call=>call[0]==='publish').length,1);assert.equal(f.record.blob.size,9);});
+
+test('scripts de instalación y reparación no emiten el código transitorio para conflictos de fotos',async()=>{
+ for(const file of ['fotos-compartidas.sql','fotos-compartidas-proteger.sql','fotos-compartidas-evitar-reintentos.sql']){
+  const sql=await readFile(new URL('../00-Proyecto/scripts/'+file,import.meta.url),'utf8');
+  assert.match(sql,/raise exception 'PHOTO_CONFLICT' using errcode='PT409'/,file);
+  assert.doesNotMatch(sql,/errcode\s*=\s*'40001'/,file);
+ }
+});
 test('respuesta perdida reconoce el mismo archivo confirmado sin republicar',async()=>{const f=fixture();f.args.transport.publish=async()=>{throw Error('timeout');};f.args.transport.readOne=async()=>({revision:3,object_path:'vocatus/user-a/unique.jpg'});const r=await syncPhoto(f.args);assert.equal(r.published.revision,3);assert.equal(f.record.pending,false);});
 test('pestaña o selección más nueva impide publicar la foto anterior',async()=>{const f=fixture();f.args.transport.upload=async()=>f.replace();const r=await syncPhoto(f.args);assert.equal(r.superseded,true);assert.equal(f.record.revision,'local-b');assert.equal(f.record.pending,true);assert.equal(f.calls.length,0);});
 test('confirmación atrasada nunca limpia otra revisión local',async()=>{const f=fixture();f.args.transport.publish=async(_e,_s,_v,path)=>{f.replace();return {revision:1,object_path:path};};const r=await syncPhoto(f.args);assert.equal(r.marked,false);assert.equal(f.record.pending,true);});

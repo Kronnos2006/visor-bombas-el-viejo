@@ -17,7 +17,7 @@ do $$ begin
  begin
  perform public.vocatus_publish_photo('B30','bomba',0,'vocatus/00000000-0000-4000-8000-000000000101/test-b.jpg');
  raise exception 'stale revision accepted';
- exception when serialization_failure then null; end;
+ exception when sqlstate 'PT409' then null; end;
  perform public.vocatus_publish_photo('B30','bomba',1,'vocatus/00000000-0000-4000-8000-000000000101/test-b.jpg');
  if (select count(*) from public.vocatus_photo_versions where entity_key='B30')<>2 then raise exception 'versions lost';end if;
  if exists(select 1 from public.vocatus_photos where entity_key='B31') then raise exception 'cross entity leak';end if;

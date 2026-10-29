@@ -91,7 +91,7 @@ begin
      updated_at=now(),updated_by=auth.uid()
    where entity_key=p_entity and slot=p_slot and revision=p_expected returning * into photo;
  end if;
- if photo.entity_key is null then raise exception 'PHOTO_CONFLICT' using errcode='40001'; end if;
+ if photo.entity_key is null then raise exception 'PHOTO_CONFLICT' using errcode='PT409'; end if;
  insert into public.vocatus_photo_versions select photo.*;
  return next photo;
 end;

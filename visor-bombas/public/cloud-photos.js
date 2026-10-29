@@ -1,6 +1,7 @@
 import {cloudPhotoConfig} from './cloud-photos-config.js';
 import {loadSharedPhotoRows} from './cloud-photo-core.js';
 let clientPromise,session=null,permissions=null,initPromise;
+let permissionGeneration=0,permissionRequest=null,permissionOwner=null,permissionUntil=0;
 const snapshots=new Map(),downloads=new Map(),watchers=new Map();
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const notify=entity=>document.dispatchEvent(new CustomEvent('vocatus:cloud-photos',{detail:{entity}}));
@@ -10,19 +11,30 @@ async function client(){
  if(!clientPromise)clientPromise=import('./vendor/supabase.js').then(({createClient})=>createClient(cloudPhotoConfig.url,cloudPhotoConfig.key,{auth:{storageKey:'vocatus-photo-session',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));
  return clientPromise;
 }
+function invalidatePermissions(){permissionGeneration++;permissions=null;permissionOwner=null;permissionUntil=0;permissionRequest=null;}
 async function checkPermissions(){
- if(!session){permissions=null;return false;}
- const supabase=await client(),result=await supabase.rpc('vocatus_photo_permissions');
- if(result.error)throw result.error;permissions=result.data;
- if(!permissions?.read)throw Error('Esta cuenta todavía no está autorizada para las fotos de VOCATUS.');
- return true;
+ const owner=session?.user?.id;if(!owner){invalidatePermissions();return false;}
+ if(permissions?.read&&permissionOwner===owner&&Date.now()<permissionUntil)return true;
+ const generation=permissionGeneration,current=permissionRequest;
+ if(current?.owner===owner&&current.generation===generation)return current.promise;
+ permissions=null;permissionOwner=null;permissionUntil=0;
+ const job=(async()=>{
+  const supabase=await client(),result=await supabase.rpc('vocatus_photo_permissions');
+  if(generation!==permissionGeneration||session?.user?.id!==owner)throw Error('La cuenta cambió. Volvé a abrir las fotos.');
+  if(result.error)throw result.error;
+  if(!result.data?.read)throw Error('Esta cuenta todavía no está autorizada para las fotos de VOCATUS.');
+  permissions=result.data;permissionOwner=owner;permissionUntil=Date.now()+30000;
+  return true;
+ })();
+ const queued={owner,generation,promise:job};permissionRequest=queued;
+ try{return await job;}finally{if(permissionRequest===queued)permissionRequest=null;}
 }
 export async function startCloudPhotos(){
  if(!cloudEnabled())return false;
  if(!initPromise)initPromise=(async()=>{
   const supabase=await client();const initial=await supabase.auth.getSession();session=initial.data.session;
   supabase.auth.onAuthStateChange((_event,next)=>{
-   const previous=session?.user?.id;session=next;permissions=null;
+   const previous=session?.user?.id;session=next;invalidatePermissions();
    if(previous!==next?.user?.id){snapshots.clear();for(const url of downloads.values())URL.revokeObjectURL(url);downloads.clear();}
    // Fuera del callback de Auth para no bloquear la renovación de la sesión.
    setTimeout(()=>{changed();for(const entity of watchers.keys())notify(entity);},0);

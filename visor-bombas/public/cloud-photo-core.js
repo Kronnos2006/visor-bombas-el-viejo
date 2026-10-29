@@ -50,7 +50,7 @@ export async function syncPhoto({entity,slot,entry,transport,updateLocal,isCurre
   let remote;try{remote=await transport.readOne(entity,slot);}catch{}
   if(remote?.object_path===path)published=remote;
   else {
-   const conflict=error.code==='40001'||String(error.message).includes('PHOTO_CONFLICT');
+   const conflict=error.code==='PT409'||error.code==='40001'||String(error.message).includes('PHOTO_CONFLICT');
    await updateLocal(entry.revision,{cloudError:conflict?'Hay otra foto en línea. Revisá ambas antes de reemplazarla.':error.message,cloudConflict:conflict});
    return {pending:true,conflict,error:error.message};
   }
