@@ -1,4 +1,19 @@
 // Coordinación por revisión. No contiene almacenamiento, red ni credenciales.
+export function photoBaseRevision(snapshot,previous){return snapshot??previous?.cloudRevision??0;}
+export async function loadPhotoView({loadLocal,loadShared,enabled}){
+ let local={},localError;
+ try{local=await loadLocal();}catch(error){localError=error;}
+ if(!enabled){if(localError)throw localError;return local;}
+ const warnings=[];if(localError)warnings.push(localError.message+' Se muestran las fotos disponibles en línea.');
+ let shared={};try{shared=await loadShared();}catch(error){warnings.push('No se pudieron consultar las fotos en línea: '+error.message);}
+ const photos={...local,...shared};
+ for(const[slot,photo]of Object.entries(local)){
+  if(photo.cloudPending===true||(!photo.cloudRevision&&photo.cloudPending!==false))photos[slot]={...photo,online:shared[slot]};
+  if(photo.cloudPending===true)warnings.push(photo.cloudError||'Hay una foto guardada en este dispositivo, pendiente de confirmar en línea.');
+ }
+ if(warnings.length)Object.defineProperty(photos,'warning',{value:[...new Set(warnings)].join(' '),enumerable:false});
+ return photos;
+}
 export async function syncPhoto({entity,slot,entry,transport,updateLocal,isCurrent,uuid}) {
  if(!entry?.blob||!entry.pending)return {skipped:true};
  if(!await isCurrent(entry.revision))return {superseded:true};

@@ -61,8 +61,8 @@ export async function cloudTransport(){
   async readOne(entity,slot){return (await rows(entity)).find(row=>row.slot===slot);}
  };
 }
-function statusText(){if(session&&!permissions)return 'Cuenta conectada: '+session.user.email+'. Comprobando autorización…';return session?(permissions?.read===false?'Cuenta no autorizada':`Cuenta conectada: ${session.user.email}. Fotos compartidas con miembros autorizados.`):'Conectá tu cuenta para compartir fotos automáticamente entre dispositivos autorizados.';}
-export function cloudPhotoControls(entity){return !cloudEnabled()?'':`<section class="cloud-photo-controls" data-cloud-entity="${esc(entity)}"><strong>Fotos compartidas en línea</strong><p data-cloud-state role="status">${esc(statusText())}</p><button type="button" data-cloud-connect>${session?'Cambiar o cerrar cuenta':'Conectar mi cuenta'}</button><button type="button" data-cloud-pending ${session?'':'hidden'}>Compartir fotos locales pendientes</button><p data-cloud-result role="status"></p></section>`;}
+function statusText(entity){const known=snapshots.get(entity);const count=known?' Fotos confirmadas para esta bomba: '+known.length+'.':'';if(session&&!permissions)return 'Cuenta conectada: '+session.user.email+'. Comprobando autorización…';return session?(permissions?.read===false?'Cuenta no autorizada':`Cuenta conectada: ${session.user.email}. Fotos compartidas con miembros autorizados.${count}`):'Conectá tu cuenta para compartir fotos automáticamente entre dispositivos autorizados.';}
+export function cloudPhotoControls(entity){return !cloudEnabled()?'':`<section class="cloud-photo-controls" data-cloud-entity="${esc(entity)}"><strong>Fotos compartidas en línea</strong><p data-cloud-state role="status">${esc(statusText(entity))}</p><button type="button" data-cloud-connect>${session?'Cambiar o cerrar cuenta':'Conectar mi cuenta'}</button><button type="button" data-cloud-refresh>Actualizar fotos en línea</button><button type="button" data-cloud-pending ${session?'':'hidden'}>Compartir fotos locales pendientes</button><p data-cloud-result role="status"></p></section>`;}
 const bindings=new WeakMap();
 export function bindCloudPhotoControls(root,entity,{refresh,flush,resolve,details}={}){
  if(!cloudEnabled())return;const box=root.querySelector('.cloud-photo-controls');if(!box)return;
@@ -70,15 +70,16 @@ export function bindCloudPhotoControls(root,entity,{refresh,flush,resolve,detail
  watchers.set(entity,(watchers.get(entity)||0)+1);
  controller.signal.addEventListener('abort',()=>{const n=watchers.get(entity)-1;n>0?watchers.set(entity,n):watchers.delete(entity);});
  const live=()=>root.isConnected&&root.querySelector('.cloud-photo-controls')?.dataset.cloudEntity===entity;
- const update=async()=>{if(!live()){controller.abort();return;}try{await refresh?.();}catch{}};
- const authenticate=()=>{if(!live()){controller.abort();return;}const active=root.querySelector('.cloud-photo-controls');active.querySelector('[data-cloud-state]').textContent=statusText();active.querySelector('[data-cloud-pending]').hidden=!session;update();};
+ let updating=false;const update=async()=>{if(!live()){controller.abort();return;}if(updating)return;updating=true;try{await refresh?.();if(live())root.querySelector('[data-cloud-state]').textContent=statusText(entity);}catch(error){if(live())root.querySelector('[data-cloud-result]').textContent=error.message;}finally{updating=false;}};
+ const authenticate=()=>{if(!live()){controller.abort();return;}const active=root.querySelector('.cloud-photo-controls');active.querySelector('[data-cloud-state]').textContent=statusText(entity);active.querySelector('[data-cloud-pending]').hidden=!session;update();};
  document.addEventListener('vocatus:cloud-photos',event=>{if(event.detail.entity===entity)update();},{signal:controller.signal});
  document.addEventListener('vocatus:cloud-auth',authenticate,{signal:controller.signal});
  box.querySelector('[data-cloud-connect]').onclick=()=>openAccount();
+ box.querySelector('[data-cloud-refresh]').onclick=update;
  box.querySelector('[data-cloud-pending]').onclick=async()=>{const button=box.querySelector('[data-cloud-pending]');button.disabled=true;try{const result=await flush?.(entity);if(live())box.querySelector('[data-cloud-result]').textContent=result||'Fotos comprobadas.';await update();}catch(error){if(live())box.querySelector('[data-cloud-result]').textContent=error.message;}finally{button.disabled=false;}};
  const detailBox=document.createElement('div');box.append(detailBox);
  details?.().then(items=>{if(!live())return;detailBox.innerHTML=items.map(item=>`<p><strong>${esc(item.name)}:</strong> ${esc(item.error)} ${item.online?`<a href="${esc(item.online)}" target="_blank" rel="noopener">Ver foto en línea</a>`:''}</p>${item.conflict?`<button type="button" data-cloud-resolve="${esc(item.slot)}" data-choice="online">Conservar foto en línea</button><button type="button" data-cloud-resolve="${esc(item.slot)}" data-choice="local">Reemplazar en línea con mi foto local</button>`:''}`).join('');detailBox.querySelectorAll('[data-cloud-resolve]').forEach(button=>button.onclick=async()=>{button.disabled=true;try{await resolve?.(entity,button.dataset.cloudResolve,button.dataset.choice);await update();}catch(error){box.querySelector('[data-cloud-result]').textContent=error.message;}finally{button.disabled=false;}});}).catch(()=>{});
- startCloudPhotos().then(async()=>{if(session)await checkPermissions();if(live()){box.querySelector('[data-cloud-state]').textContent=statusText();box.querySelector('[data-cloud-pending]').hidden=!session;}}).catch(error=>{if(live())box.querySelector('[data-cloud-result]').textContent=error.message;});
+ startCloudPhotos().then(async()=>{if(session)await checkPermissions();if(live()){box.querySelector('[data-cloud-state]').textContent=statusText(entity);box.querySelector('[data-cloud-pending]').hidden=!session;}}).catch(error=>{if(live())box.querySelector('[data-cloud-result]').textContent=error.message;});
  addStyles();
 }
 async function openAccount(){

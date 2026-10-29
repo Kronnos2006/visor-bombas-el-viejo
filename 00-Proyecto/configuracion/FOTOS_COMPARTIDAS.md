@@ -32,3 +32,9 @@ Reconstruir el SDK público con npm run build:photos después de npm ci. El arch
 - HTTP real con clave publicable sin sesión: tabla y RPC de permisos devuelven 401 / 42501.
 - Asesor de seguridad: solo avisos informativos de RLS sin políticas en dos tablas privadas que deben negar acceso directo (members y project_info).
 - Pendiente validación visual y prueba de dos dispositivos con la cuenta real. La automatización del navegador falló al inicializar; no se presenta como realizada.
+
+## Recuperación de guardado y lectura — 2026-10-29
+
+Se corrigieron fallos reproducidos mediante pruebas: un error de IndexedDB podía bloquear la consulta de fotos compartidas; los errores de inicio de subida quedaban ocultos; al reemplazar una foto con la caché invalidada podía perderse la revisión anterior y producir un conflicto innecesario. Ahora los errores y las fotos pendientes son visibles, se conserva la revisión confirmada y se consulta Supabase aunque falle el almacenamiento del dispositivo. Se añadió el botón Actualizar fotos en línea y el número de fotos confirmadas de la bomba abierta.
+
+181 pruebas y barrera Historial aprobadas. La consulta real mostró una cuenta confirmada, dos sesiones y una foto de referencia sin TAG con archivo almacenado y permisos de lectura efectivos. Esto no demuestra por sí solo que la visualización funcione en el teléfono del usuario. La automatización visual continuó fallando al inicializar el runtime, por lo que esa comprobación sigue pendiente.

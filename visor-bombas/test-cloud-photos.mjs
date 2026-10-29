@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {syncPhoto} from './public/cloud-photo-core.js';
+import {syncPhoto,loadPhotoView,photoBaseRevision} from './public/cloud-photo-core.js';
 function fixture(extra={}){
  let record={blob:new Blob(['synthetic'],{type:'image/jpeg'}),revision:'local-a',pending:true,cloudBase:0,...extra};
  const calls=[];const transport={userId:'user-a',upload:async path=>calls.push(['upload',path]),publish:async(entity,slot,expected,path)=>{calls.push([entity,slot,expected,path]);return {revision:expected+1,object_path:path};},readOne:async()=>null};
@@ -16,3 +16,9 @@ test('confirmación atrasada nunca limpia otra revisión local',async()=>{const 
 test('B30, B31 y referencia sin TAG conservan identidad y revisión independiente',async()=>{for(const entity of ['B30','B31','integrado:torre:Bomba sin TAG']){const f=fixture({cloudBase:8});f.args.entity=entity;await syncPhoto(f.args);assert.equal(f.calls[1][0],entity);assert.equal(f.calls[1][2],8);}});
 test('cambiar cuenta no reutiliza una ruta de subida del usuario anterior',async()=>{const f=fixture({cloudUploadPath:'vocatus/another-user/old.jpg'});await syncPhoto(f.args);assert.equal(f.calls[0][1],'vocatus/user-a/unique.jpg');});
 test('el servidor debe confirmar la misma identidad de archivo',async()=>{const f=fixture();f.args.transport.publish=async()=>({revision:1,object_path:'wrong'});await assert.rejects(syncPhoto(f.args),/foto correcta/);assert.equal(f.record.pending,true);});
+
+test('teléfono sin IndexedDB sigue leyendo fotos privadas en línea',async()=>{const remote={placa1:{url:'blob:shared',cloud:true,revision:1}};const result=await loadPhotoView({enabled:true,loadLocal:async()=>{throw Error('almacenamiento no disponible');},loadShared:async()=>remote});assert.equal(result.placa1.url,'blob:shared');assert.match(result.warning,/almacenamiento/);assert.deepEqual(Object.keys(result),['placa1']);});
+test('foto pendiente nunca se presenta como confirmada cuando falla internet',async()=>{const local={bomba:{url:'blob:local',cloudPending:true}};const result=await loadPhotoView({enabled:true,loadLocal:async()=>local,loadShared:async()=>{throw Error('sin red');}});assert.equal(result.bomba.url,'blob:local');assert.equal(result.bomba.cloud,undefined);assert.match(result.warning,/pendiente de confirmar/);assert.match(result.warning,/sin red/);});
+test('foto confirmada nueva de otro dispositivo prevalece sobre respaldo local antiguo',async()=>{const result=await loadPhotoView({enabled:true,loadLocal:async()=>({bomba:{url:'blob:old',cloudRevision:1,cloudPending:false}}),loadShared:async()=>({bomba:{url:'blob:new',cloud:true,revision:2}})});assert.equal(result.bomba.url,'blob:new');assert.equal(result.bomba.revision,2);});
+test('foto local pendiente se conserva para comparación con otra foto en línea',async()=>{const result=await loadPhotoView({enabled:true,loadLocal:async()=>({bomba:{url:'blob:mine',cloudPending:true}}),loadShared:async()=>({bomba:{url:'blob:theirs',cloud:true,revision:2}})});assert.equal(result.bomba.url,'blob:mine');assert.equal(result.bomba.online.url,'blob:theirs');});
+test('reemplazar una foto tras invalidar caché conserva la revisión confirmada',()=>{assert.equal(photoBaseRevision(undefined,{cloudRevision:4}),4);assert.equal(photoBaseRevision(5,{cloudRevision:4}),5);assert.equal(photoBaseRevision(0,{cloudRevision:4}),0);assert.equal(photoBaseRevision(undefined,{}),0);});

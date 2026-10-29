@@ -2,7 +2,7 @@
 // Obsidian conserva su guardado local. La web comparte fotos con Auth y RLS, con respaldo local.
 import {PHOTO_SLOTS} from './photo-slots.js';
 import {cloudEnabled,sharedPhotos,cloudRevision,cloudTransport,cloudPhotoControls,bindCloudPhotoControls} from './cloud-photos.js';
-import {syncPhoto} from './cloud-photo-core.js';
+import {syncPhoto,loadPhotoView,photoBaseRevision} from './cloud-photo-core.js';
 import {makePhotoPackage,readPhotoPackage,makeReferencePhotoPackage,readReferencePhotoPackage,storagePhotoIdentity,isPhotoReference,MAX_PACKAGE_BYTES} from './photo-package-core.js';
 export const RANURAS=PHOTO_SLOTS;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -36,8 +36,8 @@ const b64=blob=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(S
 
 function withWarning(photos,message){if(message)Object.defineProperty(photos,'warning',{value:message,enumerable:false});return photos;}
 export async function fotosActualizadas(tag,{writable}){
+ if(!writable)return loadPhotoView({loadLocal:()=>locales(tag),loadShared:()=>sharedPhotos(tag),enabled:cloudEnabled()});
  let loc={},localError;try{loc=await locales(tag);}catch(error){localError=error;}
- if(!writable){if(localError)throw localError;if(!cloudEnabled())return loc;try{const remote=await sharedPhotos(tag);const merged={...loc,...remote};for(const[slot,photo]of Object.entries(loc)){if(photo.cloudPending===true||(!photo.cloudRevision&&photo.cloudPending!==false))merged[slot]={...photo,online:remote[slot]};}return merged;}catch(error){return withWarning(loc,'Fotos locales conservadas. No se pudo consultar el equipo en línea: '+error.message);}}
  try{const r=await fetch('/api/pump-photos?tag='+encodeURIComponent(tag));if(!r.ok)throw new Error('No se pudieron consultar las fotos de Obsidian.');const {fotos}=await r.json();return withWarning({...loc,...fotos,...Object.fromEntries(Object.entries(loc).filter(([,v])=>v.pending))},localError?.message);}catch(error){if(localError)throw localError;return withWarning(loc,error.message);}
 }
 const photoQueues=new Map();
@@ -57,9 +57,9 @@ async function savePhoto(tag,slot,file,{writable,token}){
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'No se pudo guardar la foto.');
   await idb('readwrite',s=>s.delete(`${tag}:${slot}`)).catch(()=>{});return data.foto;
  }
- const base=cloudRevision(tag,slot);
- await idb('readwrite',s=>{const result=s.get(`${tag}:${slot}`);result.onsuccess=()=>{if(result.result?.blob)s.put(result.result,`history:${tag}:${slot}:${Date.now()}:${crypto.randomUUID()}`);s.put({blob,fecha,pending:true,cloudPending:cloudEnabled(),cloudBase:base??0,revision:crypto.randomUUID()},`${tag}:${slot}`);};return result;});
- if(cloudEnabled())void flushCloudPhotos(tag).then(()=>cloudRefresh(tag)).catch(()=>{});
+ const base=cloudRevision(tag,slot),revision=crypto.randomUUID(),key=`${tag}:${slot}`;
+ await idb('readwrite',s=>{const result=s.get(key);result.onsuccess=()=>{if(result.result?.blob)s.put(result.result,`history:${tag}:${slot}:${Date.now()}:${crypto.randomUUID()}`);s.put({blob,fecha,pending:true,cloudPending:cloudEnabled(),cloudBase:photoBaseRevision(base,result.result),revision},key);};return result;});
+ if(cloudEnabled())void flushCloudPhotos(tag).catch(async error=>{await compareLocal(key,revision,{cloudError:error.message});}).finally(()=>cloudRefresh(tag));
  return (await locales(tag))[slot];
 }
 // Fotos originales del expediente (Excel / PDF) para cada ranura.
@@ -70,7 +70,7 @@ export function originales(p,exp){
 export function htmlFotos(p,orig,act,{writable}){
  const fecha=f=>new Date(f).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'});
  return `<div class="block exp-block" id="fotos-actualizar"><h3>Actualizar fotos</h3><p class="muted">${writable?'La foto nueva sustituye a la anterior en el expediente y se guarda en la bóveda (00-Proyecto/fotos-campo/'+esc(p.tag)+'/expediente). La anterior queda en el historial.':(cloudEnabled()?'Con tu cuenta autorizada, las fotos nuevas se comparten automáticamente. Sin conexión quedan pendientes en este navegador. Las fotos antiguas se comparten con el botón correspondiente.':'Guardadas solo en este navegador: no aparecen automáticamente en otro teléfono o PC. Descargá las fotos aquí y cargá ese archivo en el otro equipo. No borres los datos del sitio.')}</p>${photoTransferHTML(p.photoKey||p.tag,{writable,reference:!!p.photoKey,displayName:p.tag})}<div class="foto-grid">${RANURAS.map(([slot,nombre])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src||'';
-  return `<figure class="foto-slot"><div class="foto-img">${src?`<a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(nombre)} de ${esc(p.tag)}" loading="lazy"></a>`:'<span>Sin foto</span>'}</div><figcaption><strong>${esc(nombre)}</strong><small>${a?`Actualizada ${fecha(a.fecha)}${a.cloud?' · compartida en línea':a.local?' · guardada en este navegador':''}${a.cloudPending?' · pendiente de compartir':''}`:o?esc(o.ref||'Original'):'Pendiente'}</small></figcaption><label class="foto-btn">${src?'Actualizar':'Agregar'} ${esc(nombre.toLowerCase())}<input class="foto-file" type="file" accept="image/*" aria-label="${esc(nombre)} de ${esc(p.tag)}" data-slot="${slot}"></label></figure>`;}).join('')}</div><p class="form-error" id="fotos-error"></p></div>`;
+  return `<figure class="foto-slot"><div class="foto-img">${src?`<a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(nombre)} de ${esc(p.tag)}" loading="lazy"></a>`:'<span>Sin foto</span>'}</div><figcaption><strong>${esc(nombre)}</strong><small>${a?`Actualizada ${fecha(a.fecha)}${a.cloud||a.cloudRevision?' · confirmada en línea':a.local?' · guardada en este navegador':''}${a.cloudPending?' · pendiente de compartir':''}`:o?esc(o.ref||'Original'):'Pendiente'}</small></figcaption><label class="foto-btn">${src?'Actualizar':'Agregar'} ${esc(nombre.toLowerCase())}<input class="foto-file" type="file" accept="image/*" aria-label="${esc(nombre)} de ${esc(p.tag)}" data-slot="${slot}"></label></figure>`;}).join('')}</div><p class="form-error" id="fotos-error"></p></div>`;
 }
 
 
@@ -138,8 +138,8 @@ export async function saveLocalPhotos(tag,options){
 }
 
 async function cloudDetails(entity){
- const entries=(await localEntries()).filter(p=>(p.reference||p.tag)===entity&&(p.cloudError||p.cloudConflict));
+ const entries=(await localEntries()).filter(p=>(p.reference||p.tag)===entity&&(p.cloudPending===true||p.cloudError||p.cloudConflict));
  if(!entries.length)return [];
  let remote={};try{remote=await sharedPhotos(entity);}catch{}
- return entries.map(p=>({slot:p.slot,name:RANURAS.find(([slot])=>slot===p.slot)?.[1]||p.slot,error:p.cloudError,conflict:p.cloudConflict,online:remote[p.slot]?.url}));
+ return entries.map(p=>({slot:p.slot,name:RANURAS.find(([slot])=>slot===p.slot)?.[1]||p.slot,error:p.cloudError||'Guardada en este dispositivo; pendiente de confirmar en línea.',conflict:p.cloudConflict,online:remote[p.slot]?.url}));
 }
