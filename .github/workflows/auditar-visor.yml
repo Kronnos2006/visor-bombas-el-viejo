@@ -1,0 +1,36 @@
+name: Proteger visor e Historial
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: visor-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regresion:
+    name: Fichas y persistencia
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Barrera de Historial
+        run: npm run guard:historial -- --out informes-auditoria/ci/historial
+      - name: Auditoria completa aislada sin IA
+        run: npm run audit:visor -- --max-ia 0 --out informes-auditoria/ci/completa
+      - name: Conservar resultados
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: auditoria-visor
+          path: informes-auditoria/ci/
+          retention-days: 7
+          if-no-files-found: warn

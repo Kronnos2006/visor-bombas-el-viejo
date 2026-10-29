@@ -8,7 +8,7 @@ Cubre identidades de bombas con y sin TAG, selección vigente, apertura de ficha
 
 Verificación del 28 octubre de 2026: 35 pruebas críticas aprobadas y auditoría completa con 167 pruebas aprobadas. En una copia aislada se eliminó el manejador que abre la ficha al seleccionar una referencia en el 3D: la barrera devolvió código 1 y dos pruebas fallaron. No se alteró el programa original para esta comprobación.
 
-La protección local ya está implementada. La propuesta de integración automática consiste en ejecutar este control antes de la construcción de Vercel y ejecutar además la auditoría completa en GitHub para cada push y pull request. Esa integración quedó pendiente de autorización explícita tras el bloqueo de la revisión automática de permisos. Los borradores están preparados en el espacio local de coordinación, sin modificar todavía los workflows o el build de producción.
+Con autorización explícita del usuario del 28 octubre, la integración automática está configurada: GitHub ejecuta la barrera y la auditoría completa en cada push y pull request, y conserva los informes siete días. Vercel ejecuta `node tools/proteger-historial.mjs` como buildCommand; un código de salida distinto de cero detiene la construcción. No cambia las reglas de protección de ramas de GitHub. La comprobación remota del primer commit se registra en el estado local de coordinación.
 
 Estas pruebas detectan regresiones conocidas; no garantizan que nunca pueda aparecer otro defecto ni sustituyen los clics y la revisión visual en el navegador.
 

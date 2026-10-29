@@ -13,5 +13,6 @@
       "includeFiles": "demo-vault/**",
       "maxDuration": 60
     }
-  }
+  },
+  "buildCommand": "node tools/proteger-historial.mjs"
 }
