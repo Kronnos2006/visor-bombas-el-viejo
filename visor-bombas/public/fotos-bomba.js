@@ -121,7 +121,13 @@ async function compareLocal(key,revision,patch){
 }
 export async function flushCloudPhotos(entity,includeLegacy=false){
  if(!cloudEnabled())return 'Fotos locales conservadas.';
- if(cloudJobs.has(entity))return cloudJobs.get(entity);
+ const current=cloudJobs.get(entity);
+ if(current){
+  if(!includeLegacy||current.includeLegacy)return current.promise;
+  // El botón también debe enviar fotos antiguas aunque llegue durante el sondeo.
+  try{await current.promise;}catch{}
+  return flushCloudPhotos(entity,true);
+ }
  const job=(async()=>{
   const transport=await cloudTransport();if(!transport)return 'Conectá tu cuenta para compartir las fotos.';
   const entries=(await localEntries()).filter(p=>(p.reference||p.tag)===entity&&(p.cloudPending===true||(includeLegacy&&p.cloudPending===undefined&&!p.cloudRevision))&&!p.cloudConflict);
@@ -131,7 +137,7 @@ export async function flushCloudPhotos(entity,includeLegacy=false){
    if(result.published)published++;if(result.pending)pending++;
   }
   return `${published} fotos confirmadas en línea.${pending?' '+pending+' pendientes; revisá el aviso junto a la foto.':''}`;
- })();cloudJobs.set(entity,job);try{return await job;}finally{cloudJobs.delete(entity);}
+ })();const queued={promise:job,includeLegacy};cloudJobs.set(entity,queued);try{return await job;}finally{if(cloudJobs.get(entity)===queued)cloudJobs.delete(entity);}
 }
 async function resolveCloudPhoto(entity,slot,choice){
  const key=entity+':'+slot,entry=await idb('readonly',store=>store.get(key));if(!entry?.blob)return;
