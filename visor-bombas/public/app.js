@@ -1,4 +1,4 @@
-import {aplicarCambiosCampo,cubiertaFotografica} from './cambios-campo.js';
+import {aplicarCambiosCampo,cubiertaFotografica} from './cambios-campo.js?v=calderas-20261029b';
 import {savedSurveyHTML} from './survey-view.js';
 import {evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {normalizeSearch,searchPump,completeness,verificationOf,verificationText,storageDescription} from './interfaz-core.js';

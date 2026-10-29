@@ -1,3 +1,4 @@
+import {retirarAuxiliaresCalderas} from './retirar-auxiliares-calderas.js';
 import {compactar} from './compactar.js';
 // Correcciones visuales según Notes_261029_092331.pdf y confirmación del usuario.
 // Proporciones de presentación: no son cotas de levantamiento ni diseño hidráulico.
@@ -48,8 +49,7 @@ export function aplicarCambiosCampo(T,{scene,grupos,tankBodies,desplazamiento=[0
  model.position.set(target.x-center.x,old.min.y-bounds.min.y,target.z-center.z);
  model.traverse(o=>{if(o.isMesh){o.userData.tag=tag;o.userData.sector='Sector de tanques';}});body.add(model);result.cubiertas++;
  }
- const candidates=[];scene.traverse(o=>{const n=o.userData.original_name||o.name;if(o.isMesh&&o.userData.sector==='REF Detalle'&&/Deposito vertical azul auxiliar|Caldera [12] - panel local de control/.test(n))candidates.push(o);});
- for(const o of candidates){result.retirados.push(o.userData.original_name||o.name);o.removeFromParent();}
+ const limpieza=retirarAuxiliaresCalderas(T,scene);result.retirados=limpieza.removed.map(x=>x.nombre);result.auxiliaresRetirados=limpieza.removed.map(x=>x.id);
  const data=grupos.find(g=>g.nombre==='Conjunto compartido de bombas verticales de calderas');
  if(data){const {root,pumps}=conjuntoVertical(T);root.userData.sector='REF Detalle';root.userData.bomba=data.nombre;
  const center=data.bombas[1].min.map((v,i)=>(v+data.bombas[1].max[i])/2);root.position.set(center[0],data.bombas[1].min[1]-.14,center[2]);root.traverse(o=>{if(o.isMesh)Object.assign(o.userData,{sector:data.sector,bomba:data.nombre});});scene.add(root);scene.updateWorldMatrix(true,true);
@@ -62,6 +62,6 @@ export function aplicarCambiosCampo(T,{scene,grupos,tankBodies,desplazamiento=[0
  for(const g of grupos)if(moved.length&&g.sector==='REF Agua y enfriamiento'&&/Tres bombas de circulacion|Canaleta con rejilla/.test(g.nombre))for(const b of g.bombas)for(const k of ['min','max'])b[k][0]+=3;
  result.separacionVisualAdicional=moved.length?3:0;result.desplazamiento=desplazamiento;
  scene.updateWorldMatrix(true,true);const inv=new T.Matrix4().copy(scene.matrixWorld).invert();
- for(const sector of ['REF Detalle','REF Agua y enfriamiento']){const box=new T.Box3();scene.traverse(o=>{if(o.isMesh&&o.userData.sector===sector)box.union(new T.Box3().setFromObject(o).applyMatrix4(inv));});if(!box.isEmpty())info.sectores[sector]={min:box.min.toArray(),max:box.max.toArray()};}
+ for(const sector of ['REF Detalle','REF Plano ampliacion','REF Agua y enfriamiento']){const box=new T.Box3();scene.traverse(o=>{if(o.isMesh&&o.userData.sector===sector)box.union(new T.Box3().setFromObject(o).applyMatrix4(inv));});if(!box.isEmpty())info.sectores[sector]={min:box.min.toArray(),max:box.max.toArray()};}
  scene.userData.cambiosCampo={...result,removedMeshes:undefined};return result;
 }

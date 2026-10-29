@@ -73,7 +73,7 @@ test('correcciones de campo preservan TAG y claves, cajas de selección y extrac
  const scene=new T.Group();scene.userData.blenderLocal=true;
  const data=structuredClone(groups),names=data.map(g=>[g.sector,g.nombre]);
  const material=new T.MeshStandardMaterial(),cube=name=>{const o=new T.Mesh(new T.BoxGeometry(1,1,1),material);o.userData={sector:'REF Detalle',original_name:name};scene.add(o);return o;};
- const old=[cube('Caldera 1 - panel local de control'),cube('Caldera 2 - panel local de control'),cube('Deposito vertical azul auxiliar')],keep=cube('Cuadro electrico general con botoneras');
+ const old=[cube('Cuadro electrico general con botoneras'),cube('Deposito auxiliar rectangular'),cube('Deposito vertical azul auxiliar')],keep=cube('Caldera 1 - panel local de control');old[1].userData.sector='REF Plano ampliacion';
  const cooling=cube('Equipo unico grande de enfriamiento');cooling.userData.sector='REF Agua y enfriamiento';const fixed=cube('Tuberias exteriores conectadas a tanques');fixed.userData.sector='REF Agua y enfriamiento';
  const pump=photoPumps.find(p=>p.tag==='B30'),body=exterior(T,pump.scale,pump.variant);body.userData.tag=pump.tag;body.position.set(7,1,3);scene.add(body);scene.updateMatrixWorld(true);
  const before=new T.Box3().setFromObject(body),info={torre:{giro:0},sectores:{}},report=aplicarCambiosCampo(T,{scene,grupos:data,tankBodies:{B30:body},info,exterior,photoPumps});
@@ -88,4 +88,26 @@ test('correcciones de campo preservan TAG y claves, cajas de selección y extrac
  const dimensions=new T.Box3().setFromObject(extracted).getSize(new T.Vector3());assert.ok(dimensions.x>0&&dimensions.y>.5&&dimensions.z>0);
  }
  const n=scene.children.length;aplicarCambiosCampo(T,{scene,grupos:data,tankBodies:{B30:body},info,exterior,photoPumps});assert.equal(scene.children.length,n,'no duplicar el conjunto al repetir');
+});
+
+test('los tres objetos reales desaparecen en Blender y en el GLB original fusionado, conservando paneles locales',async()=>{
+ const T=await import('./public/vendor/three.module.js'),{AUXILIARES_CALDERAS,retirarAuxiliaresCalderas}=await import('./public/retirar-auxiliares-calderas.js'),{leerCajasGLB}=await import('./tools/cajas-glb.mjs');
+ const blender=new T.Group();blender.userData.blenderLocal=true;
+ const nodes=leerCajasGLB(new URL('./public/modelos/blender-local/planta-blender-local.glb',import.meta.url)).nodos;
+ for(const n of nodes.filter(n=>['REF Detalle','REF Plano ampliacion'].includes(n.sector))){const mesh=new T.Mesh(new T.BoxGeometry(...n.max.map((v,i)=>v-n.min[i])),new T.MeshBasicMaterial());mesh.position.set(...n.min.map((v,i)=>(v+n.max[i])/2));mesh.userData={sector:n.sector,original_name:n.nombre};blender.add(mesh);}
+ const removed=retirarAuxiliaresCalderas(T,blender);
+ assert.deepEqual(removed.removed.map(x=>x.id).sort(),['1240581','1240636','1240637']);
+ assert.equal(blender.children.filter(o=>/Caldera [12] - panel local/.test(o.userData.original_name)).length,2);
+ for(const x of AUXILIARES_CALDERAS)assert.ok(!blender.children.some(o=>o.userData.original_name.includes('['+x.id+']')));
+ const buffer=await readFile(new URL('./public/modelos/planta-integrada.glb',import.meta.url)),length=buffer.readUInt32LE(12),json=JSON.parse(buffer.subarray(20,20+length)),binary=buffer.subarray(28+length);
+ const {MeshoptDecoder}=await import('./public/vendor/meshopt_decoder.module.js');await MeshoptDecoder.ready;
+ const cache=new Map();function view(index){if(cache.has(index))return cache.get(index);const v=json.bufferViews[index],e=v.extensions?.EXT_meshopt_compression;let bytes;
+ if(e){bytes=new Uint8Array(e.count*e.byteStride);MeshoptDecoder.decodeGltfBuffer(bytes,e.count,e.byteStride,binary.subarray(e.byteOffset,e.byteOffset+e.byteLength),e.mode,e.filter);}else bytes=binary.subarray(v.byteOffset||0,(v.byteOffset||0)+v.byteLength);cache.set(index,bytes);return bytes;}
+ function accessor(index){const a=json.accessors[index],v=json.bufferViews[a.bufferView],bytes=view(a.bufferView),d=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),components=a.type==='VEC3'?3:1,size={5122:2,5123:2,5125:4,5126:4}[a.componentType],stride=v.byteStride||components*size,out=[];
+ for(let i=0;i<a.count;i++)for(let k=0;k<components;k++){const offset=(a.byteOffset||0)+i*stride+k*size;let value=a.componentType===5122?d.getInt16(offset,true):a.componentType===5123?d.getUint16(offset,true):a.componentType===5125?d.getUint32(offset,true):d.getFloat32(offset,true);if(a.normalized)value=Math.max(-1,value/(a.componentType===5122?32767:65535));out.push(value);}return out;}
+ const original=new T.Group();
+ for(const n of json.nodes.filter(n=>n.mesh!==undefined&&['REF Detalle','REF Plano ampliacion'].includes(n.extras?.sector)))for(const primitive of json.meshes[n.mesh].primitives){const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(accessor(primitive.attributes.POSITION),3));if(primitive.indices!==undefined)geometry.setIndex(accessor(primitive.indices));const mesh=new T.Mesh(geometry,new T.MeshBasicMaterial());mesh.userData={...n.extras};if(n.matrix){mesh.matrix.fromArray(n.matrix);mesh.matrix.decompose(mesh.position,mesh.quaternion,mesh.scale);}else{mesh.position.fromArray(n.translation||[0,0,0]);mesh.quaternion.fromArray(n.rotation||[0,0,0,1]);mesh.scale.fromArray(n.scale||[1,1,1]);}original.add(mesh);}
+ const report=retirarAuxiliaresCalderas(T,original);assert.deepEqual(report.removed.map(x=>x.id).sort(),['1240581','1240636','1240637']);for(const x of AUXILIARES_CALDERAS)assert.ok(report.triangles[x.id]>10,'debe quitar geometría real de '+x.id);
+ assert.ok(original.children.every(o=>o.geometry.getAttribute('position').count>0),'conservar la nave y calderas');
+ assert.equal(retirarAuxiliaresCalderas(T,original).removed.length,0,'no quedan triángulos de los tres equipos tras releer');
 });
