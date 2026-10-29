@@ -1,4 +1,4 @@
-import {aplicarCambiosCampo,cubiertaFotografica} from './cambios-campo.js?v=calderas-pared-20261029c';
+import {aplicarCambiosCampo,cubiertaFotografica} from './cambios-campo.js?v=frente-tanques-20261029d';
 import {savedSurveyHTML} from './survey-view.js';
 import {evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {normalizeSearch,searchPump,completeness,verificationOf,verificationText,storageDescription} from './interfaz-core.js';

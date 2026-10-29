@@ -1,3 +1,4 @@
+import {completarFrenteTanques} from './completar-frente-tanques.js';
 import {retirarAuxiliaresCalderas} from './retirar-auxiliares-calderas.js';
 import {compactar} from './compactar.js';
 // Correcciones visuales según Notes_261029_092331.pdf y confirmación del usuario.
@@ -43,12 +44,13 @@ export function aplicarCambiosCampo(T,{scene,grupos,tankBodies,desplazamiento=[0
  const p=photoPumps.find(p=>p.tag===tag);if(!p)continue;
  body.updateWorldMatrix(true,true);const inv=new T.Matrix4().copy(body.matrixWorld).invert(),old=new T.Box3().setFromObject(body).applyMatrix4(inv);
  const removed=[];body.traverse(o=>{if(o.isMesh)removed.push(o);});for(const o of removed){result.removedMeshes.push(o);o.removeFromParent();}
- const model=exterior(T,scene.userData.blenderLocal?p.scale:1,p.variant);cubiertaFotografica(T,model);compactar(T,model);
+ const model=exterior(T,scene.userData.blenderLocal?p.scale:1,p.variant);model.userData.exteriorCampo=true;cubiertaFotografica(T,model);compactar(T,model);
  if(scene.userData.blenderLocal)model.rotation.y=p.rotation+info.torre.giro;
  model.updateWorldMatrix(true,true);const bounds=new T.Box3().setFromObject(model),center=bounds.getCenter(new T.Vector3()),target=old.getCenter(new T.Vector3());
  model.position.set(target.x-center.x,old.min.y-bounds.min.y,target.z-center.z);
  model.traverse(o=>{if(o.isMesh){o.userData.tag=tag;o.userData.sector='Sector de tanques';}});body.add(model);result.cubiertas++;
  }
+ result.bombasFrontalesAnadidas=completarFrenteTanques(T,{scene,grupos,tankBodies,exterior,cubiertaFotografica}).length;
  const limpieza=retirarAuxiliaresCalderas(T,scene);result.retirados=limpieza.removed.map(x=>x.nombre);result.auxiliaresRetirados=limpieza.removed.map(x=>x.id);
  const data=grupos.find(g=>g.nombre==='Conjunto compartido de bombas verticales de calderas');
  if(data){const {root,pumps}=conjuntoVertical(T);root.userData.sector='REF Detalle';root.userData.bomba=data.nombre;root.rotation.y=data.giro||0;
@@ -62,6 +64,6 @@ export function aplicarCambiosCampo(T,{scene,grupos,tankBodies,desplazamiento=[0
  for(const g of grupos)if(moved.length&&g.sector==='REF Agua y enfriamiento'&&/Tres bombas de circulacion|Canaleta con rejilla/.test(g.nombre))for(const b of g.bombas)for(const k of ['min','max'])b[k][0]+=3;
  result.separacionVisualAdicional=moved.length?3:0;result.desplazamiento=desplazamiento;
  scene.updateWorldMatrix(true,true);const inv=new T.Matrix4().copy(scene.matrixWorld).invert();
- for(const sector of ['REF Detalle','REF Plano ampliacion','REF Agua y enfriamiento']){const box=new T.Box3();scene.traverse(o=>{if(o.isMesh&&o.userData.sector===sector)box.union(new T.Box3().setFromObject(o).applyMatrix4(inv));});if(!box.isEmpty())info.sectores[sector]={min:box.min.toArray(),max:box.max.toArray()};}
+ for(const sector of ['REF Detalle','REF Plano ampliacion','REF Agua y enfriamiento','Sector de tanques']){const box=new T.Box3();if(sector==='Sector de tanques'&&info.sectores[sector])box.union(new T.Box3(new T.Vector3(...info.sectores[sector].min),new T.Vector3(...info.sectores[sector].max)));scene.traverse(o=>{if(o.isMesh&&o.userData.sector===sector)box.union(new T.Box3().setFromObject(o).applyMatrix4(inv));});if(!box.isEmpty())info.sectores[sector]={min:box.min.toArray(),max:box.max.toArray()};}
  scene.userData.cambiosCampo={...result,removedMeshes:undefined};return result;
 }

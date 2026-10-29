@@ -589,5 +589,67 @@
    }
   ],
   "nota": "Dos posiciones indicadas por el usuario en el PDF del 29 de octubre. Geometría y ubicación aproximadas; TAG y datos técnicos pendientes."
+ },
+ {
+  "nombre": "Bombas faltantes del frente de tanques",
+  "sector": "Sector de tanques",
+  "entre": [
+   [
+    "B22",
+    "B30"
+   ],
+   [
+    "B30",
+    "B31"
+   ],
+   [
+    "B30",
+    "B31"
+   ]
+  ],
+  "nota": "Tres bombas añadidas para completar la fila de seis confirmada expresamente por el usuario. Posición aproximada; identificación y datos técnicos pendientes.",
+  "bombas": [
+   {
+    "min": [
+     -36.92824307884534,
+     1.1106799996089933,
+     32.57845497692796
+    ],
+    "max": [
+     -35.904439136063914,
+     2.457744154851979,
+     35.16119262153907
+    ]
+   },
+   {
+    "min": [
+     -30.97828830685107,
+     1.1106799996089933,
+     32.60171986252925
+    ],
+    "max": [
+     -29.954484364069643,
+     2.457744154851979,
+     35.184457507140365
+    ]
+   },
+   {
+    "min": [
+     -25.878327073713123,
+     1.1106799996089933,
+     32.621661193044645
+    ],
+    "max": [
+     -24.854523130931696,
+     2.457744154851979,
+     35.20439883765576
+    ]
+   }
+  ],
+  "fracciones": [
+   0.5,
+   0.5,
+   1.5
+  ]
  }
 ]

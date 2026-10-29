@@ -37,3 +37,9 @@ Prueba adicional dentro de la barrera: lee nombres/cajas del GLB Blender real y 
 ## Ubicación corregida según captura posterior
 
 El usuario indicó que el conjunto debe quedar pegado a la pared derecha desde la vista aportada. Se trasladó junto a la cara interior de esa pared y se giró la fila para dejar bombas y colectores paralelos al cerramiento. Se mantiene el mismo conjunto de tres selecciones, nombres y sectores; solo cambian posición, orientación y cajas. Una prueba geométrica incluida en Historial contrasta la bancada con la pared del GLB real para evitar cruce y retorno al centro. Ubicación de presentación, sin cota de campo.
+
+## Fila del frente de tanques: seis bombas
+
+El usuario aclaró expresamente que la fila frontal tiene seis bombas. La interpretación inicial de solo cambiar cubiertas dejaba incompleto este frente. Se conservan B22/B30/B31 y se agregan tres referencias sin TAG con su bancada y ficha individual. La fila suma seis y no se atribuyen TAG, fabricante ni medidas a los equipos todavía sin identificar. Nombres y sectores anteriores permanecen; catálogo total:28TAG+42referencias integradas+1representación de torre=71selecciones.
+
+Las nuevas geometrías se colocan después de asociar los índices exportados, respetando posiciones existentes. Prueba de regresión acredita seis cuerpos, tres claves nuevas, extracción geométrica y apertura de cada ficha, sin superposición. Navegador local confirma seis cuerpos y tres fichas editables, con captura a390px. El contador de Áreas distingue equipos con TAG y referencias para no omitir los nuevos al mostrar el total. La cifra de seis procede de la confirmación del usuario, no del conteo inicial incompleto de la foto.

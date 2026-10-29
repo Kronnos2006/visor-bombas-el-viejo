@@ -151,9 +151,11 @@ function iniciar() {
   const cuenta = $('#tel-cuenta'); if (!cuenta) return;
   const nombreArea = area === 'planta' ? 'toda la planta' : (V()?.areaNombre(area) || area);
   const filtrando = q || fluido || marca;
+  const sinTag=(V()?.references||[]).filter(r=>area==='planta'||(r.standalone?'torre':sectorDe(r.sector))===area).length;
   cuenta.textContent = !enArea.length ? `${nombreArea}: todavía no hay bombas con TAG y ficha. Las que se ven en el 3D están pendientes de identificar.`
    : !lista.length ? 'Ninguna bomba coincide con los filtros.'
    : `${lista.length} ${lista.length === 1 ? 'bomba' : 'bombas'}${filtrando ? ` de ${enArea.length}` : ''} en ${nombreArea}.`;
+  if(!filtrando&&sinTag)cuenta.textContent=`${enArea.length} con TAG + ${sinTag} referencias sin TAG en ${nombreArea}. Tocá una bomba del 3D para completar su ficha.`;
  }
  function opciones(sel = '') {
   return '<option value="">Elegí la bomba…</option>' + bombas().map(p => `<option value="${esc(p.tag)}" ${p.tag === sel ? 'selected' : ''}>${esc(p.tag)} · ${esc(p.nombre || p.ubicacion || '')}</option>`).join('');
@@ -437,7 +439,7 @@ function iniciar() {
   const reference=event.detail,key=selectionIdentity({pending:reference});
   if(key&&(!viendoFicha||ficha.dataset.selection!==key))abrirFicha('', 'ficha',reference);
  });
- document.addEventListener('vocatus:referencias',()=>{if(seccion==='historial')pintarHistorial();});
+ document.addEventListener('vocatus:referencias',()=>{pintarFranja();if(seccion==='historial')pintarHistorial();});
  // Una bomba tocada en el 3D llega por este aviso del visor.
  document.addEventListener('vocatus:bomba', e => {
   pintarFranja();
