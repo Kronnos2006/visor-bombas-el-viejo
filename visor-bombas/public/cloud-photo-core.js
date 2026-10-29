@@ -1,4 +1,22 @@
 // Coordinación por revisión. No contiene almacenamiento, red ni credenciales.
+import {PHOTO_SLOTS} from './photo-slots.js';
+export async function loadSharedPhotoRows({rows,download,isCurrent,strict=false}){
+ const photos={},warnings=[];
+ const check=()=>{if(!isCurrent())throw Error('La cuenta cambió. Volvé a abrir las fotos.');};
+ check();
+ for(const row of rows){
+  check();
+  try{const photo=await download(row);check();photos[row.slot]=photo;}
+  catch(error){check();const name=PHOTO_SLOTS.find(([slot])=>slot===row.slot)?.[1]||row.slot;warnings.push(name+': '+(error.message||'No se pudo descargar la foto.'));}
+ }
+ check();
+ if(warnings.length){
+  const warning='No se pudieron descargar algunas fotos en línea. '+warnings.join(' ');
+  if(strict)throw Error(warning+' Reintentá antes de descargar el respaldo.');
+  Object.defineProperty(photos,'warning',{value:warning,enumerable:false});
+ }
+ return photos;
+}
 export function photoBaseRevision(snapshot,previous){return snapshot??previous?.cloudRevision??0;}
 export async function loadPhotoView({loadLocal,loadShared,enabled}){
  let local={},localError;
@@ -6,6 +24,7 @@ export async function loadPhotoView({loadLocal,loadShared,enabled}){
  if(!enabled){if(localError)throw localError;return local;}
  const warnings=[];if(localError)warnings.push(localError.message+' Se muestran las fotos disponibles en línea.');
  let shared={};try{shared=await loadShared();}catch(error){warnings.push('No se pudieron consultar las fotos en línea: '+error.message);}
+ if(shared.warning)warnings.push(shared.warning);
  const photos={...local,...shared};
  for(const[slot,photo]of Object.entries(local)){
   if(photo.cloudPending===true||(!photo.cloudRevision&&photo.cloudPending!==false))photos[slot]={...photo,online:shared[slot]};

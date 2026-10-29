@@ -1,4 +1,5 @@
 import {cloudPhotoConfig} from './cloud-photos-config.js';
+import {loadSharedPhotoRows} from './cloud-photo-core.js';
 let clientPromise,session=null,permissions=null,initPromise;
 const snapshots=new Map(),downloads=new Map(),watchers=new Map();
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -42,15 +43,14 @@ async function rows(entity){
  const owner=session?.user?.id,supabase=await client(),result=await supabase.from('vocatus_photos').select('*').eq('entity_key',entity);
  if(result.error)throw result.error;if(!owner||session?.user?.id!==owner)throw Error('La cuenta cambió. Volvé a abrir las fotos.');snapshots.set(entity,result.data||[]);return result.data||[];
 }
-export async function sharedPhotos(entity){
- if(!await cloudSession())return {};
- const owner=session?.user?.id,supabase=await client(),photos={};
- for(const row of await rows(entity)){
+export async function sharedPhotos(entity,{strict=false}={}){
+ if(!await cloudSession())return Object.defineProperty({},'warning',{value:'Conectá tu cuenta autorizada en este navegador para ver las fotos que compartiste desde el teléfono.',enumerable:false});
+ const owner=session?.user?.id,supabase=await client();
+ return loadSharedPhotoRows({rows:await rows(entity),strict,isCurrent:()=>session?.user?.id===owner,download:async row=>{
   let url=downloads.get(row.object_path);
   if(!url){const result=await supabase.storage.from('vocatus-photos').download(row.object_path);if(result.error)throw result.error;if(session?.user?.id!==owner)throw Error('La cuenta cambió. Volvé a abrir las fotos.');url=URL.createObjectURL(result.data);downloads.set(row.object_path,url);}
-  photos[row.slot]={url,fecha:row.updated_at,cloud:true,revision:row.revision,path:row.object_path,local:false};
- }
- if(session?.user?.id!==owner)throw Error('La cuenta cambió. Volvé a abrir las fotos.');return photos;
+  return {url,fecha:row.updated_at,cloud:true,revision:row.revision,path:row.object_path,local:false};
+ }});
 }
 export async function cloudTransport(){
  const current=await cloudSession();if(!current)return null;if(!permissions.write)throw Error('Tu cuenta tiene permiso de consulta, no de actualización.');

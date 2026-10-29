@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {syncPhoto,loadPhotoView,photoBaseRevision} from './public/cloud-photo-core.js';
+import {syncPhoto,loadPhotoView,photoBaseRevision,loadSharedPhotoRows} from './public/cloud-photo-core.js';
 function fixture(extra={}){
  let record={blob:new Blob(['synthetic'],{type:'image/jpeg'}),revision:'local-a',pending:true,cloudBase:0,...extra};
  const calls=[];const transport={userId:'user-a',upload:async path=>calls.push(['upload',path]),publish:async(entity,slot,expected,path)=>{calls.push([entity,slot,expected,path]);return {revision:expected+1,object_path:path};},readOne:async()=>null};
@@ -22,3 +22,30 @@ test('foto pendiente nunca se presenta como confirmada cuando falla internet',as
 test('foto confirmada nueva de otro dispositivo prevalece sobre respaldo local antiguo',async()=>{const result=await loadPhotoView({enabled:true,loadLocal:async()=>({bomba:{url:'blob:old',cloudRevision:1,cloudPending:false}}),loadShared:async()=>({bomba:{url:'blob:new',cloud:true,revision:2}})});assert.equal(result.bomba.url,'blob:new');assert.equal(result.bomba.revision,2);});
 test('foto local pendiente se conserva para comparación con otra foto en línea',async()=>{const result=await loadPhotoView({enabled:true,loadLocal:async()=>({bomba:{url:'blob:mine',cloudPending:true}}),loadShared:async()=>({bomba:{url:'blob:theirs',cloud:true,revision:2}})});assert.equal(result.bomba.url,'blob:mine');assert.equal(result.bomba.online.url,'blob:theirs');});
 test('reemplazar una foto tras invalidar caché conserva la revisión confirmada',()=>{assert.equal(photoBaseRevision(undefined,{cloudRevision:4}),4);assert.equal(photoBaseRevision(5,{cloudRevision:4}),5);assert.equal(photoBaseRevision(0,{cloudRevision:4}),0);assert.equal(photoBaseRevision(undefined,{}),0);});
+
+test('PC conserva tres categorías en línea aunque falle la cuarta y permite reintentar',async()=>{
+ const rows=['placa1','placa2','bomba','posicion'].map(slot=>({slot}));
+ let failed=true;const calls=[];
+ const loadShared=()=>loadSharedPhotoRows({rows,isCurrent:()=>true,download:async row=>{calls.push(row.slot);if(failed&&row.slot==='placa2')throw Error('fallo temporal');return {url:'blob:'+row.slot,cloud:true};}});
+ const result=await loadPhotoView({enabled:true,loadLocal:async()=>({}),loadShared});
+ assert.deepEqual(Object.keys(result),['placa1','bomba','posicion']);assert.match(result.warning,/Placa del motor: fallo temporal/);assert.deepEqual(calls,['placa1','placa2','bomba','posicion']);
+ failed=false;const retried=await loadPhotoView({enabled:true,loadLocal:async()=>({}),loadShared});
+ assert.equal(Object.keys(retried).length,4);assert.equal(retried.warning,undefined);
+});
+test('fallo remoto parcial conserva también el respaldo local de la categoría fallida',async()=>{
+ const result=await loadPhotoView({enabled:true,loadLocal:async()=>({placa2:{url:'blob:backup',cloudRevision:1,cloudPending:false}}),loadShared:()=>loadSharedPhotoRows({rows:[{slot:'placa1'},{slot:'placa2'}],isCurrent:()=>true,download:async row=>{if(row.slot==='placa2')throw Error('sin red');return {url:'blob:shared'};}})});
+ assert.equal(result.placa2.url,'blob:backup');assert.equal(result.placa1.url,'blob:shared');assert.match(result.warning,/sin red/);
+});
+test('sin sesión en PC se conserva la indicación de conectar cuenta sin inventar fotos',async()=>{
+ const result=await loadPhotoView({enabled:true,loadLocal:async()=>({}),loadShared:async()=>Object.defineProperty({},'warning',{value:'Conectá tu cuenta autorizada en este navegador.'})});
+ assert.deepEqual(Object.keys(result),[]);assert.match(result.warning,/Conectá tu cuenta/);
+});
+test('cambiar cuenta durante una descarga parcial descarta el conjunto completo',async()=>{
+ let current=true;
+ await assert.rejects(loadSharedPhotoRows({rows:[{slot:'placa1'},{slot:'placa2'}],isCurrent:()=>current,download:async row=>{if(row.slot==='placa2'){current=false;throw Error('sin permiso');}return {url:'blob:private'};}}),/cuenta cambió/);
+});
+test('respaldo completo rechaza descargas parciales y funciona al reintentar',async()=>{
+ let failed=true;const args={strict:true,rows:[{slot:'placa1'},{slot:'placa2'}],isCurrent:()=>true,download:async row=>{if(failed&&row.slot==='placa2')throw Error('sin red');return {url:'blob:'+row.slot};}};
+ await assert.rejects(loadSharedPhotoRows(args),/Reintentá antes de descargar el respaldo/);
+ failed=false;assert.equal(Object.keys(await loadSharedPhotoRows(args)).length,2);
+});
