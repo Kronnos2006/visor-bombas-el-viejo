@@ -33,3 +33,7 @@ La revisión no mide el sitio ni acredita conexiones funcionales, diseño hidrá
 La eliminación inicial apuntaba a dos paneles locales en vez del gabinete alto y el depósito rectangular. Se corrigieron los tres IDs y se restauraron los paneles locales. La variante original fusionada también elimina esos tres equipos. El HTML y el módulo tienen versión nueva para renovar su carga.
 
 Prueba adicional dentro de la barrera: lee nombres/cajas del GLB Blender real y decodifica posiciones e índices Meshopt del GLB original. Comprueba eliminación de los tres IDs, conservación de los paneles y de la nave y ausencia de geometría pendiente al repetir. Auditoría completa190/190; pruebas afectadas8/8. Navegador real: ambas variantes informan los tres IDs retirados, sin errores JavaScript.
+
+## Ubicación corregida según captura posterior
+
+El usuario indicó que el conjunto debe quedar pegado a la pared derecha desde la vista aportada. Se trasladó junto a la cara interior de esa pared y se giró la fila para dejar bombas y colectores paralelos al cerramiento. Se mantiene el mismo conjunto de tres selecciones, nombres y sectores; solo cambian posición, orientación y cajas. Una prueba geométrica incluida en Historial contrasta la bancada con la pared del GLB real para evitar cruce y retorno al centro. Ubicación de presentación, sin cota de campo.

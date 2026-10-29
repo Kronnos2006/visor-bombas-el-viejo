@@ -111,3 +111,15 @@ test('los tres objetos reales desaparecen en Blender y en el GLB original fusion
  assert.ok(original.children.every(o=>o.geometry.getAttribute('position').count>0),'conservar la nave y calderas');
  assert.equal(retirarAuxiliaresCalderas(T,original).removed.length,0,'no quedan triángulos de los tres equipos tras releer');
 });
+
+test('el conjunto compartido queda paralelo y próximo a la pared derecha, fuera del frente de las calderas',async()=>{
+ const T=await import('./public/vendor/three.module.js'),{aplicarCambiosCampo}=await import('./public/cambios-campo.js'),{exterior,photoPumps}=await import('./public/sector-fotos.js'),{leerCajasGLB}=await import('./tools/cajas-glb.mjs');
+ const data=structuredClone(groups),scene=new T.Group();scene.userData.blenderLocal=true;
+ aplicarCambiosCampo(T,{scene,grupos:data,tankBodies:{},info:{torre:{giro:0},sectores:{}},exterior,photoPumps});
+ const set=scene.children.find(o=>o.name==='Conjunto compartido de alimentación de calderas'),box=new T.Box3().setFromObject(set),size=box.getSize(new T.Vector3());
+ const wall=leerCajasGLB(new URL('./public/modelos/blender-local/planta-blender-local.glb',import.meta.url)).nodos.find(o=>/cerramiento lateral 630/.test(o.nombre));assert.ok(wall);
+ // +4.75 convierte la posición Blender a la coordenada canónica usada por el catálogo.
+ const gap=box.min.x-(wall.max[0]+4.75);assert.ok(gap>.05&&gap<.3,'bancada junto a la cara interior, sin atravesar la pared');
+ assert.ok(size.z>size.x*2,'fila y colectores paralelos a la pared');
+ assert.ok(box.min.z>=wall.min[2]-21.95&&box.max.z<=wall.max[2]-21.95,'dentro de la longitud de la nave');
+});

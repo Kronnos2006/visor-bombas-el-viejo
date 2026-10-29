@@ -51,7 +51,7 @@ export function aplicarCambiosCampo(T,{scene,grupos,tankBodies,desplazamiento=[0
  }
  const limpieza=retirarAuxiliaresCalderas(T,scene);result.retirados=limpieza.removed.map(x=>x.nombre);result.auxiliaresRetirados=limpieza.removed.map(x=>x.id);
  const data=grupos.find(g=>g.nombre==='Conjunto compartido de bombas verticales de calderas');
- if(data){const {root,pumps}=conjuntoVertical(T);root.userData.sector='REF Detalle';root.userData.bomba=data.nombre;
+ if(data){const {root,pumps}=conjuntoVertical(T);root.userData.sector='REF Detalle';root.userData.bomba=data.nombre;root.rotation.y=data.giro||0;
  const center=data.bombas[1].min.map((v,i)=>(v+data.bombas[1].max[i])/2);root.position.set(center[0],data.bombas[1].min[1]-.14,center[2]);root.traverse(o=>{if(o.isMesh)Object.assign(o.userData,{sector:data.sector,bomba:data.nombre});});scene.add(root);scene.updateWorldMatrix(true,true);
  const inverse=new T.Matrix4().copy(scene.matrixWorld).invert();pumps.forEach((p,i)=>{const b=new T.Box3().setFromObject(p).applyMatrix4(inverse);data.bombas[i]={min:b.min.toArray(),max:b.max.toArray()};});compactar(T,root);root.traverse(o=>{if(o.isMesh)Object.assign(o.userData,{sector:data.sector,bomba:data.nombre});});}
  const water=grupos.find(g=>g.nombre==='Bombas adicionales de tanques de agua');

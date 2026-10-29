@@ -521,42 +521,43 @@
   "bombas": [
    {
     "min": [
-     17.919999999999998,
-     0.44,
-     -30.65
+     11.64999998807907,
+     0.43999999925494193,
+     -30.275000005960464
     ],
     "max": [
-     18.48,
-     1.9,
-     -30.05
+     12.250000011920928,
+     1.9174999998509885,
+     -29.724999994039536
     ]
    },
    {
     "min": [
-     18.97,
-     0.44,
-     -30.65
+     11.64999998807907,
+     0.43999999925494193,
+     -29.225000005960464
     ],
     "max": [
-     19.53,
-     1.9,
-     -30.05
+     12.250000011920928,
+     1.9174999998509885,
+     -28.674999994039535
     ]
    },
    {
     "min": [
-     20.02,
-     0.44,
-     -30.65
+     11.64999998807907,
+     0.43999999925494193,
+     -28.175000005960463
     ],
     "max": [
-     20.580000000000002,
-     1.9,
-     -30.05
+     12.250000011920928,
+     1.9174999998509885,
+     -27.624999994039534
     ]
    }
   ],
-  "nota": "Un solo conjunto compartido, confirmado por el usuario. Tres bombas verticales según fotografías; dimensiones y TAG pendientes."
+  "nota": "Un solo conjunto compartido junto a la pared lateral derecha de la nave, según captura del usuario. Tres bombas verticales; dimensiones y TAG pendientes.",
+  "giro": -1.5707963267948966
  },
  {
   "nombre": "Bombas adicionales de tanques de agua",
