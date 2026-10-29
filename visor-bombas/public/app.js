@@ -1,3 +1,4 @@
+import {aplicarCambiosCampo,cubiertaFotografica} from './cambios-campo.js';
 import {savedSurveyHTML} from './survey-view.js';
 import {evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {normalizeSearch,searchPump,completeness,verificationOf,verificationText,storageDescription} from './interfaz-core.js';
@@ -129,7 +130,7 @@ function rebuildPlant(){
   tq.add(sector(THREE,placed.filter(p=>areaOf(p)==='tanques')));
   torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:()=>{performance.mark('torre-cargada');if(typeof applyArea==='function')applyArea();}});tr.add(torre.root);
   for(const k in pumpObjects)delete pumpObjects[k];
-  for(const p of placed){const parent=areaGroups[areaOf(p)]||tq;const g=compactar(THREE,exterior(THREE,p.scale,p.variant));g.position.set(p.x,p.y??.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;g.userData.section='n1';parent.add(g);pumpObjects[p.tag]=g;if(areaOf(p)==='torre'){const hit=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.4,3.3),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(0,1,.1);hit.userData.hitProxy=true;g.add(hit);}g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);markers.at(-1).area=areaOf(p);}
+  for(const p of placed){const parent=areaGroups[areaOf(p)]||tq;const ext=exterior(THREE,p.scale,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,ext);const g=compactar(THREE,ext);g.position.set(p.x,p.y??.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;g.userData.section='n1';parent.add(g);pumpObjects[p.tag]=g;if(areaOf(p)==='torre'){const hit=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.4,3.3),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(0,1,.1);hit.userData.hitProxy=true;g.add(hit);}g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);markers.at(-1).area=areaOf(p);}
   extraReferences.length=0;
   for(const [index,s] of torreSinTag.entries()){const g=compactar(THREE,exterior(THREE,.72,'lf'));g.position.set(s.x,.3,s.z);tr.add(g);g.updateWorldMatrix(true,true);const box=new THREE.Box3().setFromObject(g),reference={sector:'torre',nombre:'Torre · referencia sin TAG '+(index+1),nota:s.nota,min:box.min.toArray(),max:box.max.toArray(),standalone:true};extraReferences.push(reference);g.traverse(o=>{if(o.isMesh){o.userData.pending=reference;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);const el=document.createElement('button');el.className='label pending-label';el.textContent='Sin TAG';el.title=s.nota;el.setAttribute('aria-label','Bomba sin ficha: '+reference.nombre);el.onclick=()=>selectPendingPump(reference);$('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'torre'});}
   for(const corner of sectorCorners){const anchor=new THREE.Object3D();anchor.position.set(corner.x,1.1,corner.z);tq.add(anchor);etiqueta(anchor,corner.name,'corner-label','tanques');}
@@ -458,7 +459,7 @@ function selectPhotoPump(tag){
  $('#selected-tag').textContent=tag;$('#selected-name').textContent=`${p.marca} ${p.modelo} · ${p.nombre}`;$('#source-status').textContent=p.inactive?'SIN USO · SIN DATOS TÉCNICOS':'DATOS APORTADOS · GEOMETRÍA APROXIMADA';
  $('#scene-title').textContent=tag+' · Exterior';$('#breadcrumb').textContent='PLANTA / '+areaName(state.area==='integrado'?(state.filtroInt||areaOf(p)):areaOf(p)).toUpperCase()+' / '+tag;$('#back').hidden=false;
  $('#scene-help').textContent='Arrastrá para girar · Rueda para acercarte';
- const show=()=>{if(ticket!==state.loading)return;state.view='pump';if($('#torre-planta-tools'))$('#torre-planta-tools').hidden=true;if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=exterior(THREE,p.scale*1.7,p.variant);scene.add(photoDetail);}setPhotoDetail(false);renderPanel();};
+ const show=()=>{if(ticket!==state.loading)return;state.view='pump';if($('#torre-planta-tools'))$('#torre-planta-tools').hidden=true;if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=exterior(THREE,p.scale*1.7,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,photoDetail);scene.add(photoDetail);}setPhotoDetail(false);renderPanel();};
  if(plant?.visible&&areaOf(p)!==state.area&&state.area!=='planta'&&state.area!=='integrado')setArea(areaOf(p),false);transitionToPump(ticket,pumpWorld(p.tag)||new THREE.Vector3(p.x,0,p.z),show);renderList();renderPanel();setViewButtons(false);
 
 }
@@ -904,9 +905,14 @@ function montarIntegrado(g,escena,placed){
   label.onclick=()=>{state.filtroInt='tanques';aplicarFiltroInt();applyArea();if($('#area'))$('#area').value=state.filtroInt?'sector:'+state.filtroInt:'integrado';renderList();flyIntegrado();};$('#labels').append(label);markers.push({obj:labelAnchor,el:label,kind:'corner',area:'integrado',sectorInt:'tanques'});
 
   }
+  const tankBodies=Object.fromEntries(Object.entries(pumpObjectsInt).filter(([,body])=>body.userData.sectorInt==='tanques'));
+  const cambios=aplicarCambiosCampo(THREE,{scene:escena,grupos,tankBodies,desplazamiento:alineado?.d,info,exterior,photoPumps});
+  const retirados=new Set(cambios.removedMeshes);for(let i=pickables.length-1;i>=0;i--)if(retirados.has(pickables[i]))pickables.splice(i,1);
+  for(const body of Object.values(tankBodies))body.traverse(o=>{if(o.isMesh&&!pickables.includes(o))pickables.push(o);});
+  window.__cambiosCampo={...cambios,removedMeshes:undefined};
   const numeracion={};
   for(const grupo of grupos)for(const [indice,caja] of grupo.bombas.entries()){
-   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1}`:grupo.nombre,grupo:grupo.nombre,indice:indice+1};
+   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1};
    s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
    const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
    const el=document.createElement('button');el.className='label pending-label sin-ficha';el.textContent=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;el.title=s.nombre;

@@ -58,7 +58,7 @@ test('encuadrar una raíz girada y trasladada conserva la escala métrica y su p
  assert.deepEqual(root.position.toArray(),before.position);assert.deepEqual(root.rotation.toArray(),before.rotation);assert.deepEqual(root.scale.toArray(),before.scale);
 });
 test('los conjuntos del modelo conservan cada bomba con caja individual en su sector',()=>{
- const expected=[1,1,1,1,3,2,2,2,3,1,1,4,1,1,5,1,1,3];
+ const expected=[1,1,1,1,3,2,2,2,3,1,1,4,1,1,5,1,1,3,3,2];
  assert.equal(groups.length,source.bombas.length);
  assert.deepEqual(groups.map(g=>g.bombas.length),expected);
  const keys=[];
@@ -72,7 +72,7 @@ test('los conjuntos del modelo conservan cada bomba con caja individual en su se
    for(const other of g.bombas.slice(j+1))assert.ok(box.max[0]<other.min[0]||other.max[0]<box.min[0]||box.max[2]<other.min[2]||other.max[2]<box.min[2],'dos bombas no deben compartir el mismo espacio');
   });
  });
- assert.equal(keys.length,34);assert.equal(new Set(keys).size,34);
+ assert.equal(keys.length,39);assert.equal(new Set(keys).size,39);
 });
 
 test('la alineación de torre conserva distancias en metros sin cambiar la escala',()=>{

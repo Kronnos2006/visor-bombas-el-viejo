@@ -514,5 +514,79 @@
     ]
    }
   ]
+ },
+ {
+  "nombre": "Conjunto compartido de bombas verticales de calderas",
+  "sector": "REF Detalle",
+  "bombas": [
+   {
+    "min": [
+     17.919999999999998,
+     0.44,
+     -30.65
+    ],
+    "max": [
+     18.48,
+     1.9,
+     -30.05
+    ]
+   },
+   {
+    "min": [
+     18.97,
+     0.44,
+     -30.65
+    ],
+    "max": [
+     19.53,
+     1.9,
+     -30.05
+    ]
+   },
+   {
+    "min": [
+     20.02,
+     0.44,
+     -30.65
+    ],
+    "max": [
+     20.580000000000002,
+     1.9,
+     -30.05
+    ]
+   }
+  ],
+  "nota": "Un solo conjunto compartido, confirmado por el usuario. Tres bombas verticales según fotografías; dimensiones y TAG pendientes."
+ },
+ {
+  "nombre": "Bombas adicionales de tanques de agua",
+  "sector": "REF Agua y enfriamiento",
+  "bombas": [
+   {
+    "min": [
+     16.9,
+     0.3,
+     0
+    ],
+    "max": [
+     17.6,
+     1.25,
+     1.7
+    ]
+   },
+   {
+    "min": [
+     16.9,
+     0.3,
+     3.85
+    ],
+    "max": [
+     17.6,
+     1.25,
+     5.55
+    ]
+   }
+  ],
+  "nota": "Dos posiciones indicadas por el usuario en el PDF del 29 de octubre. Geometría y ubicación aproximadas; TAG y datos técnicos pendientes."
  }
 ]
