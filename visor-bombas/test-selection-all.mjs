@@ -127,7 +127,7 @@ test('el conjunto compartido queda paralelo y próximo a la pared derecha, fuera
 test('el frente de tanques muestra seis bombas y las tres añadidas tienen geometría y ficha independientes',async()=>{
  const T=await import('./public/vendor/three.module.js'),{aplicarCambiosCampo}=await import('./public/cambios-campo.js'),{exterior,photoPumps}=await import('./public/sector-fotos.js'),{extraerBomba}=await import('./public/planta-encuadre.js');
  const scene=new T.Group();scene.userData.blenderLocal=true;const tankBodies={};
- for(const tag of ['B22','B30','B31']){const p=photoPumps.find(p=>p.tag===tag),body=exterior(T,p.scale,p.variant);body.position.set(p.x,.3,p.z);body.userData.tag=tag;scene.add(body);tankBodies[tag]=body;}
+ for(const tag of ['B23','B25','B24']){const p=photoPumps.find(p=>p.tag===tag),body=exterior(T,p.scale,p.variant);body.position.set(p.x,.3,p.z);body.userData.tag=tag;scene.add(body);tankBodies[tag]=body;}
  const before=Object.fromEntries(Object.entries(tankBodies).map(([tag,body])=>[tag,{position:body.position.toArray(),identity:selectionIdentity({tag})}])),data=structuredClone(groups);
  const report=aplicarCambiosCampo(T,{scene,grupos:data,tankBodies,info:{torre:{giro:0},sectores:{}},exterior,photoPumps});
  assert.equal(report.bombasFrontalesAnadidas,3);assert.equal(Object.keys(tankBodies).length+report.bombasFrontalesAnadidas,6);
@@ -135,9 +135,9 @@ test('el frente de tanques muestra seis bombas y las tres añadidas tienen geome
  const group=data.find(g=>g.nombre==='Bombas faltantes del frente de tanques'),centers=[];
  for(const [index,box] of group.bombas.entries()){
  const reference={...box,nombre:group.nombre+' · Bomba '+(index+1),grupo:group.nombre,sector:group.sector},geometry=extraerBomba(T,scene,reference);assert.ok(geometry);assert.ok(!('tag' in reference));
- centers.push((box.min[0]+box.max[0])/2);
+ centers.push((box.min[2]+box.max[2])/2);
  const fixture=phone();fixture.open('','ficha',reference);fixture.flush();assert.equal(fixture.context.ficha.hidden,false);assert.equal(fixture.context.ficha.dataset.selection,selectionIdentity({pending:reference}));
  }
- assert.ok(centers[0]>-8&&centers[0]<0&&centers[1]>0&&centers[1]<6,'agregadas entre las posiciones existentes');assert.ok(centers[2]>6&&centers[2]<12,'sexta posición al extremo de la misma fila');
- for(const [index,box] of group.bombas.entries())for(const other of group.bombas.slice(index+1))assert.ok(box.max[0]<other.min[0]||other.max[0]<box.min[0],'no superponer las bombas añadidas');
+ assert.deepEqual(group.entre,[['B23','B25'],['B25','B24'],['B23','B25']],'usar el borde marcado, no la fila contigua B22/B30/B31');assert.ok(centers[0]<.4&&centers[0]>-3.7&&centers[1]<-3.4&&centers[1]>-7.6&&centers[2]>.4,'seis juntas en el borde lateral del PDF');for(const box of group.bombas)assert.ok(Math.abs((box.min[0]+box.max[0])/2+13.8)<.05,'mantenerse en el borde de la calle');
+ for(const [index,box] of group.bombas.entries())for(const other of group.bombas.slice(index+1))assert.ok(box.max[2]<other.min[2]||other.max[2]<box.min[2],'no superponer las bombas añadidas');
 });

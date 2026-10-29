@@ -595,61 +595,61 @@
   "sector": "Sector de tanques",
   "entre": [
    [
-    "B22",
-    "B30"
+    "B23",
+    "B25"
    ],
    [
-    "B30",
-    "B31"
+    "B25",
+    "B24"
    ],
    [
-    "B30",
-    "B31"
+    "B23",
+    "B25"
    ]
   ],
-  "nota": "Tres bombas añadidas para completar la fila de seis confirmada expresamente por el usuario. Posición aproximada; identificación y datos técnicos pendientes.",
+  "nota": "Tres bombas añadidas para completar seis en el borde junto a la calle encerrado en rojo en el PDF, confirmado por el usuario. Posición aproximada; TAG y datos técnicos pendientes.",
   "bombas": [
    {
     "min": [
-     -36.92824307884534,
+     -45.97802657179931,
      1.1106799996089933,
-     32.57845497692796
+     27.36907578698681
     ],
     "max": [
-     -35.904439136063914,
+     -43.39528892719159,
      2.457744154851979,
-     35.16119262153907
+     28.392879729756967
     ]
    },
    {
     "min": [
-     -30.97828830685107,
+     -45.965054168862814,
      1.1106799996089933,
-     32.60171986252925
+     24.054101958194973
     ],
     "max": [
-     -29.954484364069643,
+     -43.38231652425509,
      2.457744154851979,
-     35.184457507140365
+     25.07790590096513
     ]
    },
    {
     "min": [
-     -25.878327073713123,
+     -45.9910095128373,
      1.1106799996089933,
-     32.621661193044645
+     30.684049615778644
     ],
     "max": [
-     -24.854523130931696,
+     -43.408271868229576,
      2.457744154851979,
-     35.20439883765576
+     31.707853558548802
     ]
    }
   ],
   "fracciones": [
    0.5,
    0.5,
-   1.5
+   -0.5
   ]
  }
 ]
