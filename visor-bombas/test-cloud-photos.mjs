@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {syncPhoto} from './public/cloud-photo-core.js';
+function fixture(extra={}){
+ let record={blob:new Blob(['synthetic'],{type:'image/jpeg'}),revision:'local-a',pending:true,cloudBase:0,...extra};
+ const calls=[];const transport={userId:'user-a',upload:async path=>calls.push(['upload',path]),publish:async(entity,slot,expected,path)=>{calls.push([entity,slot,expected,path]);return {revision:expected+1,object_path:path};},readOne:async()=>null};
+ const args={entity:'B30',slot:'sello',entry:{...record},transport,uuid:()=> 'unique',isCurrent:async rev=>record.revision===rev,updateLocal:async(rev,patch)=>{if(record.revision!==rev)return false;record={...record,...patch};return true;}};
+ return {args,calls,get record(){return record;},replace(){record={...record,revision:'local-b'};}};
+}
+test('foto en línea confirma la revisión después de subir y publicar',async()=>{const f=fixture();const result=await syncPhoto(f.args);assert.equal(result.marked,true);assert.equal(f.record.pending,false);assert.equal(f.record.cloudRevision,1);assert.deepEqual(f.calls[1],['B30','sello',0,'vocatus/user-a/unique.jpg']);});
+test('sin internet conserva foto y estado pendiente',async()=>{const f=fixture();f.args.transport.upload=async()=>{throw Error('sin conexión');};const r=await syncPhoto(f.args);assert.equal(r.pending,true);assert.equal(f.record.pending,true);assert.equal(f.record.blob.size,9);assert.equal(f.record.cloudError,'sin conexión');});
+test('conflicto entre dispositivos conserva la selección local sin sobrescribir',async()=>{const f=fixture();f.args.transport.publish=async()=>{throw Object.assign(Error('PHOTO_CONFLICT'),{code:'40001'});};const r=await syncPhoto(f.args);assert.equal(r.conflict,true);assert.equal(f.record.cloudConflict,true);assert.equal(f.record.pending,true);});
+test('respuesta perdida reconoce el mismo archivo confirmado sin republicar',async()=>{const f=fixture();f.args.transport.publish=async()=>{throw Error('timeout');};f.args.transport.readOne=async()=>({revision:3,object_path:'vocatus/user-a/unique.jpg'});const r=await syncPhoto(f.args);assert.equal(r.published.revision,3);assert.equal(f.record.pending,false);});
+test('pestaña o selección más nueva impide publicar la foto anterior',async()=>{const f=fixture();f.args.transport.upload=async()=>f.replace();const r=await syncPhoto(f.args);assert.equal(r.superseded,true);assert.equal(f.record.revision,'local-b');assert.equal(f.record.pending,true);assert.equal(f.calls.length,0);});
+test('confirmación atrasada nunca limpia otra revisión local',async()=>{const f=fixture();f.args.transport.publish=async(_e,_s,_v,path)=>{f.replace();return {revision:1,object_path:path};};const r=await syncPhoto(f.args);assert.equal(r.marked,false);assert.equal(f.record.pending,true);});
+test('B30, B31 y referencia sin TAG conservan identidad y revisión independiente',async()=>{for(const entity of ['B30','B31','integrado:torre:Bomba sin TAG']){const f=fixture({cloudBase:8});f.args.entity=entity;await syncPhoto(f.args);assert.equal(f.calls[1][0],entity);assert.equal(f.calls[1][2],8);}});
+test('cambiar cuenta no reutiliza una ruta de subida del usuario anterior',async()=>{const f=fixture({cloudUploadPath:'vocatus/another-user/old.jpg'});await syncPhoto(f.args);assert.equal(f.calls[0][1],'vocatus/user-a/unique.jpg');});
+test('el servidor debe confirmar la misma identidad de archivo',async()=>{const f=fixture();f.args.transport.publish=async()=>({revision:1,object_path:'wrong'});await assert.rejects(syncPhoto(f.args),/foto correcta/);assert.equal(f.record.pending,true);});

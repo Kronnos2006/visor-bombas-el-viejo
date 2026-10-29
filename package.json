@@ -7,11 +7,13 @@
     "dev": "node visor-bombas/server.mjs",
     "start": "node visor-bombas/server.mjs",
     "build": "esbuild src/recharts-history-view.jsx --bundle --format=esm --minify --target=es2022 --define:process.env.NODE_ENV='\"production\"' --outfile=visor-bombas/public/vendor/history-chart.js",
-    "test": "node --test visor-bombas/test-photo-package.mjs visor-bombas/test-auditoria-web.mjs visor-bombas/test-quitar-datos.mjs visor-bombas/test-reparacion.mjs visor-bombas/test.mjs visor-bombas/test-layout.mjs visor-bombas/test-sector.mjs visor-bombas/test-despiece.mjs visor-bombas/test-demo.mjs visor-bombas/test-integration.mjs visor-bombas/test-config.mjs visor-bombas/test-reportes.mjs visor-bombas/test-anatomy.mjs visor-bombas/test-pump-model.mjs visor-bombas/test-planta-individual.mjs visor-bombas/test-documentacion.mjs visor-bombas/test-ubicacion-torre.mjs visor-bombas/test-reemplazo.mjs visor-bombas/test-pdf.mjs visor-bombas/test-campo.mjs visor-bombas/test-sector-confirmado.mjs visor-bombas/test-simulador.mjs visor-bombas/test-terreno.mjs visor-bombas/test-torre.mjs visor-bombas/test-interfaz.mjs visor-bombas/test-correcciones-auditoria.mjs visor-bombas/test-regresion-fotos-verificacion.mjs visor-bombas/test-editor-universal.mjs visor-bombas/test-survey-drafts.mjs visor-bombas/test-photo-references.mjs visor-bombas/test-survey-view.mjs visor-bombas/test-selection-all.mjs visor-bombas/test-auditor.mjs",
+    "test": "node --test visor-bombas/test-photo-package.mjs visor-bombas/test-auditoria-web.mjs visor-bombas/test-quitar-datos.mjs visor-bombas/test-reparacion.mjs visor-bombas/test.mjs visor-bombas/test-layout.mjs visor-bombas/test-sector.mjs visor-bombas/test-despiece.mjs visor-bombas/test-demo.mjs visor-bombas/test-integration.mjs visor-bombas/test-config.mjs visor-bombas/test-reportes.mjs visor-bombas/test-anatomy.mjs visor-bombas/test-pump-model.mjs visor-bombas/test-planta-individual.mjs visor-bombas/test-documentacion.mjs visor-bombas/test-ubicacion-torre.mjs visor-bombas/test-reemplazo.mjs visor-bombas/test-pdf.mjs visor-bombas/test-campo.mjs visor-bombas/test-sector-confirmado.mjs visor-bombas/test-simulador.mjs visor-bombas/test-terreno.mjs visor-bombas/test-torre.mjs visor-bombas/test-interfaz.mjs visor-bombas/test-correcciones-auditoria.mjs visor-bombas/test-regresion-fotos-verificacion.mjs visor-bombas/test-editor-universal.mjs visor-bombas/test-survey-drafts.mjs visor-bombas/test-photo-references.mjs visor-bombas/test-survey-view.mjs visor-bombas/test-selection-all.mjs visor-bombas/test-auditor.mjs visor-bombas/test-cloud-photos.mjs",
     "audit:visor": "node 00-Proyecto/scripts/auditar-visor.mjs",
-    "guard:historial": "node visor-bombas/tools/proteger-historial.mjs"
+    "guard:historial": "node visor-bombas/tools/proteger-historial.mjs",
+    "build:photos": "esbuild src/supabase-browser.js --bundle --format=esm --minify --platform=browser --target=es2022 --outfile=visor-bombas/public/vendor/supabase.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
     "esbuild": "^0.28.2",
     "pdf-lib": "^1.17.1",
     "react": "^19.3.0",
