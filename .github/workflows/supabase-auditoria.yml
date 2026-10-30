@@ -1,0 +1,34 @@
+name: Comprobar Supabase
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: supabase-audit
+  cancel-in-progress: false
+jobs:
+  integridad:
+    if: github.event_name == 'workflow_dispatch' || vars.SUPABASE_AUDIT_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Revisar integridad y permisos, solo lectura
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_AUDIT_TOKEN }}
+        run: node 00-Proyecto/scripts/supabase-operaciones.mjs audit --out informes-auditoria/supabase-ci
+      - name: Guardar resumen sin fotos ni identidades
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: integridad-supabase
+          path: informes-auditoria/supabase-ci/
+          retention-days: 7
+          if-no-files-found: ignore
