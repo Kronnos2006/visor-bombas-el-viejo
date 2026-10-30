@@ -10,6 +10,7 @@ import { photoPumps, plantPumps } from './public/sector-fotos.js';
 import { generatePumpPDF } from './pdf-generator.mjs';
 import { vaultConfiguration, equipmentData } from './vault.mjs';
 import { maintenanceStore } from './maintenance.mjs';
+import {workOrderStore} from './work-orders.mjs';
 import { surveyStore, FIELDS, fileOf } from './survey.mjs';
 import { generatePartsRequestPDF } from './parts-request.mjs';
 import { equipmentStore, REPLACE_FIELDS } from './equipment.mjs';
@@ -22,6 +23,7 @@ const CLOUD_DEV = configuration.cloud;
 export const DEMO = configuration.demo;
 export const VAULT = configuration.vault;
 const maintenance = maintenanceStore(VAULT, DEMO);
+const workOrders = workOrderStore(VAULT);
 const survey = surveyStore(VAULT);
 const equipment = equipmentStore(VAULT, plantPumps);
 const pumpPhotos = pumpPhotoStore(VAULT);
@@ -152,6 +154,15 @@ export async function handler(req,res) {
   // En Vercel, con VISOR_PASSWORD definida, la API también exige la contraseña (las páginas las protege middleware.js).
   if (ON_VERCEL && !passwordOk(req.headers.authorization, process.env.VISOR_PASSWORD)) { res.writeHead(401,{'WWW-Authenticate':'Basic realm="Visor Vocatus", charset="UTF-8"','Content-Type':'application/json; charset=utf-8'}); return res.end(JSON.stringify({error:'Acceso restringido.'})); }
   const url=new URL(req.url,`http://127.0.0.1:${PORT}`);
+  if(url.pathname==='/api/work-orders'){
+   if(req.method==='GET')return send(res,200,{orders:await workOrders.list(),writable:configuration.writable});
+   if(req.method!=='POST')return send(res,405,{error:'Método no permitido.'});
+   if(!verify(req)||!isAllowedOrigin(req.headers.origin))return send(res,403,{error:'Sesión u origen inválido.'});
+   if(!configuration.writable)return send(res,403,{error:'Las órdenes requieren almacenamiento local persistente.'});
+   const body=await payload(req),pump=await readPump(body.tag);
+   if(pump.data.inactive||pump.data.enUso===false)throw Error('Este equipo está marcado sin uso.');
+   return send(res,body.id?200:201,{order:await workOrders.save(body)});
+  }
   if(req.method==='GET' && url.pathname==='/api/bootstrap') {
    const pumps=[],errors=[];
    for(const name of (await readdir(NOTES)).filter(n=>/^P-\d{4}[A-Z]?\.md$/.test(n)).sort()) {
@@ -282,7 +293,9 @@ export async function handler(req,res) {
    }
    if(url.pathname==='/api/maintenance') {
     const p=await readPump(body.tag);
+    if(body.workOrderId){const order=await workOrders.find(body.workOrderId,p.tag);if(order.status==='completada'&&order.reportId!==(await maintenance.list(p.tag)).find(r=>r.record.sourceId===body.sourceId)?.record.id)throw Error('Esta orden ya está cerrada con otro informe.');}
     const report=await maintenance.save(p.tag,body);
+    if(body.workOrderId){if(report.workOrderId!==body.workOrderId)throw Error('El informe de origen ya existe con otro vínculo de orden.');await workOrders.complete(body.workOrderId,p.tag,report);}
     return send(res,201,{file:report.file,report});
    }
    if(url.pathname==='/api/ask') {

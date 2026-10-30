@@ -42,10 +42,11 @@ export function normalizeFieldReport(input) {
   const details = text(input.text || input.details || symptoms, 8000, 'Detalle');
   const parts = input.parts || '';
   if (typeof parts !== 'string' || parts.length > 4000) throw new Error('La lista de repuestos supera 4000 caracteres.');
+  if(input.workOrderId&&!/^[a-f0-9-]{36}$/.test(input.workOrderId))throw Error('Orden de trabajo inválida.');
   const evidence=normalizeEvidence(input.evidence||[]);
   return {id, tag: input.tag, date: input.date, author: text(input.author, 100, 'Responsable'),
     title: text(input.title, 200, 'Título'), symptoms, text: details, parts,
-    operativo: input.operativo, retirado: input.retirado,...(evidence.length?{evidence}:{})};
+    operativo: input.operativo, retirado: input.retirado,...(input.workOrderId?{workOrderId:input.workOrderId}:{}),...(evidence.length?{evidence}:{})};
 }
 export function fieldReportPackage(records) {
   if (!Array.isArray(records) || !records.length || records.length > 50) throw new Error('El paquete debe contener entre 1 y 50 reportes.');
@@ -71,7 +72,7 @@ export async function importFieldReports(records, api) {
   let count = 0;
   for (const r of reports) {
     await api('/api/maintenance', {tag: r.tag, sourceId: r.id, date: r.date, author: r.author,
-      title: r.title, details: r.text, symptoms: r.symptoms, parts: r.parts, operativo: r.operativo,...(r.evidence?.length?{evidence:r.evidence}:{})});
+      title: r.title, details: r.text, symptoms: r.symptoms, parts: r.parts, operativo: r.operativo,...(r.workOrderId?{workOrderId:r.workOrderId}:{}),...(r.evidence?.length?{evidence:r.evidence}:{})});
     if (r.retirado && !repairs.has(r.tag)) {
       await api('/api/equipment', {action: 'repair', tag: r.tag, reason: r.symptoms.split('\n')[0].slice(0, 300), report: r.text, date: r.date, author: r.author});
       repairs.add(r.tag);

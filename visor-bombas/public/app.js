@@ -25,7 +25,7 @@ import { plantLayout } from './plant-layout.js';
 import {expediente, expedienteDe, enlaces, linksBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
-import {listReports, addReport, deleteReport, configureReports, reportsInObsidian, importReports} from './reportes.js';
+import {listReports, addReport, deleteReport, configureReports, reportsInObsidian, reportsInCloud, importReports} from './reportes.js';
 import {reportMeasurements} from './measurements.js';
 import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
@@ -267,6 +267,7 @@ function selectPart(index,subcomponent=null){
  }
  if(anatomy&&!anatomy.set({selected:index,subcomponent})){toast('Esa pieza no está representada para esta familia.');return;}
  state.part=index;syncAnatomyTools();
+ if(index!==null)document.dispatchEvent(new CustomEvent('vocatus:pieza',{detail:{tag:state.pump?.tag,index}}));
  markers.forEach(m=>{
   if(m.kind==='part'){
    m.el.classList.toggle('selected-marker',m.id===index);
@@ -280,10 +281,13 @@ function selectPart(index,subcomponent=null){
  if(index!==null)state.tab='ficha';
  renderRail();
  renderPanel();
- if(state.sector&&index!==null)requestAnimationFrame(()=>{
-  const panel=$('#panel'),detail=$('#component-detail');
-  panel?.scrollTo({top:0,behavior:'smooth'});
-  detail?.focus({preventScroll:true});
+ if(index!==null)requestAnimationFrame(()=>{
+  const detail=$('#component-detail');
+  if(!detail)return;
+  // En la app móvil desplaza #tel-contenido; en el visor clásico, el panel.
+  // La información de la pieza tiene prioridad sobre el resumen general.
+  detail.focus({preventScroll:true});
+  detail.scrollIntoView({block:'start',behavior:reducedMotion.matches?'auto':'smooth'});
  });
 }
 function fields(entries){return '<dl class="fields">'+entries.map(([label,key])=>{const v=state.pump.data[key],missing=v===undefined||v===null||v==='';return `<div class="field"><dt>${esc(label)}</dt><dd class="${missing?'missing':''}">${missing?'Sin levantar':esc(typeof v==='object'?JSON.stringify(v):v)}</dd></div>`;}).join('')+'</dl>';}
@@ -614,20 +618,20 @@ async function paintReports(tag,reports){
  const box=$('#rep-list');if(!box)return;
  let items=[];try{items=await (reports||listReports(tag));}catch(e){if(box.isConnected&&state.pump?.tag===tag){box.replaceChildren();showHistoryLoadError(e,tag);}return;}
  if(!box.isConnected||state.pump?.tag!==tag)return;
- box.innerHTML=(reportsInObsidian()&&items.some(r=>r.source==='browser')?'<button class="wide" id="import-reports">Importar reportes del navegador a Obsidian</button>':'')+(items.length?`<h4>Reportes de campo (${items.length})</h4>`+items.map(r=>`<article class="record" data-id="${esc(r.id)}"><strong>${esc(r.date)} · ${esc(r.title)}</strong><small>${r.source==='obsidian'?'Obsidian':'Solo en este navegador'}${r.demonstration?' · DEMO':''}${r.author?' · '+esc(r.author):''}</small>${r.text?`<p class="report-text">${esc(r.text)}</p>`:''}${evidenceMarkup(r.evidence||[])}${r.pdf?`<p><a class="doc" href="#" data-pdf="${esc(r.id)}">📄 ${esc(r.pdf.name)} · ${(r.pdf.size/1024).toFixed(0)} KB</a></p>`:''}<button type="button" class="link-btn" data-del="${esc(r.id)}">Eliminar reporte</button></article>`).join(''):'<p class="muted">Todavía no hay reportes de campo para esta bomba.</p>');
- const importButton=box.querySelector('#import-reports');if(importButton)importButton.onclick=async()=>{importButton.disabled=true;try{const count=await importReports(tag);toast(count+' reportes importados a Obsidian.');await paintReports(tag);}catch(e){toast(e.message);importButton.disabled=false;}};
+ box.innerHTML=((reportsInObsidian()||await reportsInCloud())&&items.some(r=>r.source==='browser')?'<button class="wide" id="import-reports">Compartir o importar reportes anteriores</button>':'')+(items.length?`<h4>Reportes de campo (${items.length})</h4>`+items.map(r=>`<article class="record" data-id="${esc(r.id)}"><strong>${esc(r.date)} · ${esc(r.title)}</strong><small>${r.source==='obsidian'?'Obsidian':r.source==='supabase'?'Compartido en Vocatus':'Solo en este navegador'}${r.demonstration?' · DEMO':''}${r.author?' · '+esc(r.author):''}</small>${r.text?`<p class="report-text">${esc(r.text)}</p>`:''}${evidenceMarkup(r.evidence||[])}${r.pdf?`<p><a class="doc" href="#" data-pdf="${esc(r.id)}">📄 ${esc(r.pdf.name)} · ${(r.pdf.size/1024).toFixed(0)} KB</a></p>`:''}<button type="button" class="link-btn" data-del="${esc(r.id)}">${r.source==='supabase'?'Archivar reporte':'Eliminar reporte'}</button></article>`).join(''):'<p class="muted">Todavía no hay reportes de campo para esta bomba.</p>');
+ const importButton=box.querySelector('#import-reports');if(importButton)importButton.onclick=async()=>{importButton.disabled=true;try{const count=await importReports(tag);toast(count+(reportsInObsidian()?' reportes importados a Obsidian.':' reportes compartidos. Las copias del navegador se conservan.'));await paintReports(tag);}catch(e){toast(e.message);importButton.disabled=false;}};
  box.querySelectorAll('.record[data-id]').forEach(el=>bindEvidenceGallery(el,items.find(r=>r.id===el.dataset.id)?.evidence||[]));
  box.querySelectorAll('[data-pdf]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=items.find(x=>x.id===a.dataset.pdf);if(r?.pdf?.url){const link=document.createElement('a');link.href=r.pdf.url;link.download=r.pdf.name;link.click();return;}if(r?.pdf?.blob){const u=URL.createObjectURL(r.pdf.blob);const link=document.createElement('a');link.href=u;link.download=r.pdf.name||'documento.pdf';link.target='_blank';link.rel='noopener';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}});
- box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{try{const record=items.find(r=>r.id===b.dataset.del);await deleteReport(record);toast(record.source==='obsidian'?'Informe enviado a la papelera de Obsidian.':'Reporte eliminado del navegador.');await paintReports(tag);if(state.pump?.tag===tag)mountHistoryChart(state.pump);}catch(e){toast(e.message);}});
+ box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{try{const record=items.find(r=>r.id===b.dataset.del);await deleteReport(record);toast(record.source==='obsidian'?'Informe enviado a la papelera de Obsidian.':record.source==='supabase'?'Informe archivado; sus datos se conservan.':'Reporte eliminado del navegador.');await paintReports(tag);if(state.pump?.tag===tag)mountHistoryChart(state.pump);}catch(e){toast(e.message);}});
 }
 function initReports(tag,load=true){
- const f=$('#rep-form');if(!f)return;const d=new Date();f.date.value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+ const f=$('#rep-form');if(!f)return;reportsInCloud().then(ready=>{if(ready&&f.isConnected){f.author.required=true;f.querySelector('p.muted').textContent='Se comparte con tu cuenta de Vocatus. Los reportes anteriores de este navegador se conservan.';f.querySelector('button').textContent='Guardar y compartir reporte';}}).catch(()=>{});const d=new Date();f.date.value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
  f.onsubmit=async e=>{e.preventDefault();const err=$('#rep-error');err.textContent='';const btn=f.querySelector('button');btn.disabled=true;
   const pres=f.pressure?.value?f.pressure.value+' bar':'';
   const flow=f.flow?.value?f.flow.value+' m3/h':'';
   const extra=[pres&&`Presión: ${pres}`,flow&&`Caudal: ${flow}`].filter(Boolean).join(' · ');
   const fullText=[f.text.value,extra].filter(Boolean).join('\n\n');
-  try{await addReport({tag,date:f.date.value,title:f.title.value,author:f.author.value,text:fullText,file:f.file.files[0]||null,pressure:f.pressure?.value,flow:f.flow?.value});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast(reportsInObsidian()?'Informe guardado en Obsidian.':'Reporte guardado en este navegador.');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
+  try{const saved=await addReport({tag,date:f.date.value,title:f.title.value,author:f.author.value,text:fullText,file:f.file.files[0]||null,pressure:f.pressure?.value,flow:f.flow?.value});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast(saved.source==='supabase'?'Reporte compartido en Vocatus.':reportsInObsidian()?'Informe guardado en Obsidian.':'Reporte guardado en este navegador.');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
   catch(x){err.textContent=x.message||'No se pudo guardar el reporte.';}finally{btn.disabled=false;}};
  if(load)paintReports(tag);
 }

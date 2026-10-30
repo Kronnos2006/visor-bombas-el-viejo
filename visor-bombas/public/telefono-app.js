@@ -7,7 +7,7 @@ import {sectorDe} from './planta-integrada.js';
 import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
-import {addReport,listReports} from './reportes.js';
+import {addReport,listReports,reportsInCloud} from './reportes.js';
 import {createEvidencePicker,evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {filtrarHistorial} from './historial-core.js';
 import {crearFlujoCabecera} from './cabecera-flujo.js';
@@ -277,7 +277,7 @@ function iniciar() {
   }else if(tipo==='ok'&&texto.startsWith('Reporte de '))el.scrollIntoView({block:'nearest',behavior:'auto'});
  }
 
- function snapshotReport(){return {id:reportId,problema:$('#mant-problema').value,comentario:$('#mant-comentario').value,author:$('#mant-autor').value,date:$('#mant-fecha').value,operativo:document.querySelector('[name=mant-funcional]:checked')?.value||'',retiro:document.querySelector('[name=mant-retiro]:checked')?.value||'no',parts:[...document.querySelectorAll('.tel-repuesto')].map(r=>({code:r.querySelectorAll('input')[0].value,name:r.querySelectorAll('input')[1].value}))};}
+ function snapshotReport(){return {id:reportId,workOrderId:$('#tel-mant').dataset.workOrderId||'',problema:$('#mant-problema').value,comentario:$('#mant-comentario').value,author:$('#mant-autor').value,date:$('#mant-fecha').value,operativo:document.querySelector('[name=mant-funcional]:checked')?.value||'',retiro:document.querySelector('[name=mant-retiro]:checked')?.value||'no',parts:[...document.querySelectorAll('.tel-repuesto')].map(r=>({code:r.querySelectorAll('input')[0].value,name:r.querySelectorAll('input')[1].value}))};}
  function saveReportDraft(){
   if(applyingDraft)return;try{draftStore.write(reportTag,snapshotReport());const label=reportTag?'Borrador de '+reportTag:'Borrador sin equipo';const el=$('#mant-draft-status');if(el.textContent!==label+' guardado en este dispositivo.')el.textContent=label+' guardado en este dispositivo.';}
   catch(error){$('#mant-draft-status').textContent='No se pudo conservar el borrador en este navegador. Descargá el reporte antes de salir.';}
@@ -286,7 +286,7 @@ function iniciar() {
   if(tag===reportTag&&!force){$('#mant-bomba').value=tag;pintarElegida('mant-bomba');return;}
   if(!force)saveReportDraft();reportTag=tag;photoPicker.load(tag);let draft=null;
   try{draft=draftStore.read(tag);}catch(error){aviso('mant','No se pudo recuperar el borrador de '+(tag||'este equipo')+'. '+error.message,'error');}
-  applyingDraft=true;reportId=draft?.id||nextReportId();$('#mant-bomba').value=tag;
+  applyingDraft=true;$('#tel-mant').dataset.workOrderId=draft?.workOrderId||'';reportId=draft?.id||nextReportId();$('#mant-bomba').value=tag;
   $('#mant-problema').value=draft?.problema||'';$('#mant-comentario').value=draft?.comentario||'';$('#mant-autor').value=draft?.author??leer('vocatus-responsable');$('#mant-fecha').value=draft?.date??hoy();
   document.querySelectorAll('[name=mant-funcional]').forEach(r=>r.checked=r.value===(draft?.operativo||''));document.querySelectorAll('[name=mant-retiro]').forEach(r=>r.checked=r.value===(draft?.retiro||'no'));
   $('#mant-repuestos').innerHTML='';for(const row of draft?.parts?.length?draft.parts:[{}])repuestoFila(row);
@@ -296,7 +296,7 @@ function iniciar() {
  function reportInput(){
   const d=snapshotReport(),tag=$('#mant-bomba').value;
   if(tag!==reportTag)throw new Error('El equipo cambió. Volvé a seleccionarlo antes de guardar.');
-  return normalizeFieldReport({id:reportId,tag,date:d.date,author:d.author,title:'Mantenimiento: '+d.problema.split('\n')[0].slice(0,80),symptoms:d.problema,text:d.comentario||d.problema,parts:d.parts.filter(r=>r.code.trim()||r.name.trim()).map(r=>[r.code.trim()&&'Código '+r.code.trim(),r.name.trim()].filter(Boolean).join(' · ')).join('\n'),operativo:d.operativo,retirado:d.retiro==='si',evidence:photoPicker.images});
+  return normalizeFieldReport({id:reportId,tag,...(d.workOrderId?{workOrderId:d.workOrderId}:{}),date:d.date,author:d.author,title:'Mantenimiento: '+d.problema.split('\n')[0].slice(0,80),symptoms:d.problema,text:d.comentario||d.problema,parts:d.parts.filter(r=>r.code.trim()||r.name.trim()).map(r=>[r.code.trim()&&'Código '+r.code.trim(),r.name.trim()].filter(Boolean).join(' · ')).join('\n'),operativo:d.operativo,retirado:d.retiro==='si',evidence:photoPicker.images});
  }
  function downloadReports(records){const pkg=fieldReportPackage(records),blob=new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Reportes_Vocatus_'+records[0].tag+'_'+hoy()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);}
  $('#mant-export').onclick=()=>{try{downloadReports([reportInput()]);aviso('mant','Paquete descargado. Importalo desde el visor de la computadora de planta.','ok');}catch(error){aviso('mant',error.message,'error');}};
@@ -308,9 +308,12 @@ function iniciar() {
    $('#mant-local').querySelectorAll('[data-package]').forEach(b=>b.onclick=()=>{try{downloadReports([records[Number(b.dataset.package)]]);}catch(error){aviso('mant',error.message,'error');}});
   }catch(error){if(ticket===localPaint)$('#mant-local').textContent='No se pudieron leer los reportes de este dispositivo.';}
  }
+ let cloudStatusTicket=0;
+ function updateCloudStorage(){const ticket=++cloudStatusTicket;if(V()?.writable)return;reportsInCloud().then(ready=>{if(ticket!==cloudStatusTicket)return;if(ready){$('#mant-storage').textContent='Los informes se comparten con la misma cuenta de Vocatus. Los borradores y los reportes anteriores del dispositivo se conservan.';document.querySelector('button[form=tel-mant]').textContent='Guardar y compartir reporte';}}).catch(()=>{});}
+ document.addEventListener('vocatus:cloud-auth',()=>{storageMode();});
  function storageMode(){storageReady=true;const connected=V()?.writable===true,button=document.querySelector('button[form=tel-mant]');
   $('#mant-storage').textContent=connected?'Los reportes se guardan en Obsidian en la computadora de planta. El borrador se conserva en este dispositivo.':'Guardado en este dispositivo: no hay sincronización con Obsidian. Podés guardar el reporte aquí y descargar un paquete para importarlo en la computadora de planta.';
-  button.textContent=connected?'Enviar reporte a Obsidian':'Guardar en este dispositivo';syncReportButton();$('#mant-import').hidden=!connected;paintLocalReports();
+  button.textContent=connected?'Enviar reporte a Obsidian':'Guardar en este dispositivo';syncReportButton();$('#mant-import').hidden=!connected;paintLocalReports();updateCloudStorage();
  }
  let packageRecords=[];
  $('#mant-package').onchange=async e=>{packageRecords=[];$('#mant-import-confirm').disabled=true;$('#mant-import-preview').textContent='';try{const file=e.target.files?.[0];if(!file)return;if(file.size>5*1024*1024)throw new Error('Máximo 5 MB.');packageRecords=parseFieldReportPackage(await file.text());$('#mant-import-preview').innerHTML='<p>Revisá estos reportes:</p><ul>'+packageRecords.map(r=>`<li><strong>${esc(r.tag)}</strong> · ${esc(r.date)} · ${esc(r.author)} · ${esc(r.title)}${r.retirado?' · Retirado de su lugar':''} · ${r.evidence?.length||0} foto(s)</li>`).join('')+'</ul>';$('#mant-import-confirm').disabled=!V()?.writable;}catch(error){$('#mant-import-preview').textContent=error.message;}};
@@ -319,12 +322,13 @@ function iniciar() {
   e.preventDefault();if(reportBusy||!storageReady)return;let record;try{record=reportInput();}catch(error){return aviso('mant',error.message,'error');}
   saveReportDraft();const tag=record.tag,button=document.querySelector('button[form=tel-mant]');reportBusy=true;button.disabled=true;photoPicker.refresh();
   try{
-   if(!V()?.writable){await addReport({...record,fieldReport:true});aviso('mant','Reporte de '+tag+' guardado en este dispositivo. Todavía no está en Obsidian: descargá su paquete para llevarlo a planta.','ok');}
+   if(!V()?.writable){const saved=await addReport({...record,fieldReport:true});aviso('mant',saved.source==='supabase'?'Reporte de '+tag+' compartido en Vocatus.':'Reporte de '+tag+' guardado en este dispositivo. Todavía no está en Obsidian: descargá su paquete para llevarlo a planta.','ok');}
    else{
     await importFieldReports([record],(path,body)=>V().api(path,body));aviso('mant','Reporte de '+tag+' guardado en Obsidian.','ok');leerPendientes();
    }
+   document.dispatchEvent(new CustomEvent('vocatus:informe-guardado',{detail:{tag,workOrderId:record.workOrderId||''}}));
    await photoPicker.clear(tag);draftStore.remove(tag);
-   if(reportTag===tag){applyingDraft=true;reportId=nextReportId();$('#mant-problema').value='';$('#mant-comentario').value='';$('#mant-repuestos').innerHTML='';repuestoFila();document.querySelectorAll('[name=mant-funcional]').forEach(r=>r.checked=false);document.querySelector('[name=mant-retiro][value=no]').checked=true;applyingDraft=false;}
+   if(reportTag===tag){applyingDraft=true;$('#tel-mant').dataset.workOrderId='';reportId=nextReportId();$('#mant-problema').value='';$('#mant-comentario').value='';$('#mant-repuestos').innerHTML='';repuestoFila();document.querySelectorAll('[name=mant-funcional]').forEach(r=>r.checked=false);document.querySelector('[name=mant-retiro][value=no]').checked=true;applyingDraft=false;}
    await paintLocalReports();
   }catch(error){aviso('mant',error.message+' El borrador se conserva para reintentar.','error');}
   finally{reportBusy=false;photoPicker.refresh();syncReportButton();saveReportDraft();}
@@ -447,6 +451,7 @@ function iniciar() {
   }
   if(seccion==='areas'||seccion==='historial')abrirFicha(tag,seccion==='historial'?'historial':'ficha');else V()?.select(tag);
  }
+ document.addEventListener('vocatus:pieza',()=>{if(viendoFicha)++fichaRequest;});
  document.addEventListener('vocatus:referencia',event=>{
   if(!['areas','historial'].includes(seccion))return;
   const reference=event.detail,key=selectionIdentity({pending:reference});
@@ -499,6 +504,13 @@ function iniciar() {
   if(seccion==='historial'){pintarHistorial();if(V()?.pump&&!viendoFicha){if(V().pump.pending)abrirFicha('','ficha',V().pump.pending);else if(V().pump.tag)abrirFicha(V().pump.tag,'historial');}}
   if (seccion === 'pendientes') pintarPendientes();
  }
+ // Puente adicional: mantiene las cinco secciones y el formulario existentes.
+ window.vocatusApp={show:mostrar,openEquipment:abrirFicha,reportOrder:async order=>{
+  mostrar('mantenimiento');await setReportTag(order.tag);if($('#tel-mant').dataset.workOrderId&&$('#tel-mant').dataset.workOrderId!==order.id)throw Error('Este equipo tiene un borrador vinculado a otra orden. Guardalo o desvinculalo antes de continuar.');$('#tel-mant').dataset.workOrderId=order.id;
+  if(!$('#mant-problema').value)$('#mant-problema').value=order.title;if(!$('#mant-comentario').value)$('#mant-comentario').value=order.details||'';
+  if(!$('#mant-autor').value)$('#mant-autor').value=order.assignee;saveReportDraft();resumenMant();
+ },bodegaOrder:order=>{mostrar('bodega');$('#bod-bomba').value=order.tag;elegirBodega();},get section(){return seccion;}};
+ document.dispatchEvent(new Event('vocatus:app-lista'));
  document.addEventListener('vocatus:listo', alCargar);
  // El visor puede terminar de cargar antes o después que este módulo: se espera a tener bombas.
  (function esperar(intentos = 0) { if (window.vocatus?.pumps?.length) alCargar(); else if (intentos < 80) setTimeout(() => esperar(intentos + 1), 250); })();

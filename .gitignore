@@ -72,3 +72,9 @@ informes-auditoria/
 
 # resultados de la barrera de regresión
 visor-bombas/.auditoria-regresion/
+
+# Datos de órdenes locales y configuración de despliegue
+00-Proyecto/Ordenes/
+.vercel/
+.vercel
+.env*
