@@ -43,7 +43,8 @@ function iniciar() {
  document.body.classList.add('app-tel', movil.matches ? 'app-movil' : 'app-pc');
  const $ = s => document.querySelector(s);
  const V = () => window.vocatus;
- let seccion = new URLSearchParams(location.search).get('s') || 'areas';
+ const requestedSection = new URLSearchParams(location.search).get('s');
+ let seccion = SECCIONES.some(s=>s.id===requestedSection) ? requestedSection : 'areas';
  if (seccion === 'reparacion') seccion = 'pendientes';
  if (!SECCIONES.some(s => s.id === seccion)) seccion = 'areas';
  let eligiendo = null; // campo que espera una bomba tocada en el 3D o en la franja
@@ -166,7 +167,8 @@ function iniciar() {
   <div class="tel-elegida" id="${id}-elegida" hidden></div>
   <div class="tel-fila" id="${id}-fila"><select id="${id}" required></select></div>
   <div class="tel-fila"><button type="button" class="tel-sec" data-elegir="${id}">${icono('<path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="5"/>', 18)} Elegir en el 3D</button>
-  <button type="button" class="tel-sec" data-localizar="${id}">${icono('<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>', 18)} Localizar</button></div></div>`;
+  <button type="button" class="tel-sec" data-localizar="${id}">${icono('<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>', 18)} Localizar</button></div>
+  <button type="button" class="tel-sec tel-cerrar-mapa" data-cerrar-mapa aria-controls="viewport">Ocultar 3D y seguir con el formulario</button></div>`;
  const pie = id => `<div class="tel-dos"><div class="tel-campo"><label for="${id}-autor">Responsable</label><input id="${id}-autor" required maxlength="100" autocomplete="name"></div>
   <div class="tel-campo"><label for="${id}-fecha">Fecha</label><input id="${id}-fecha" type="date" required></div></div>`;
 
@@ -235,6 +237,12 @@ function iniciar() {
  $('#mant-agregar').onclick=()=>{if(document.querySelectorAll('.tel-repuesto').length>=50)return aviso('mant','Máximo 50 líneas de repuestos.','error');repuestoFila();saveReportDraft();};repuestoFila();
 
  contenido.addEventListener('click', e => {
+  if(e.target.closest('[data-cerrar-mapa]')){
+   eligiendo=null;document.body.classList.remove('tel-3d','tel-eligiendo');
+   const field=seccion==='bodega'?$('#bod-bomba'):$('#mant-bomba');
+   const active=field?.closest('.tel-campo')?.querySelector('.tel-cambiar')||field;
+   active?.focus();window.dispatchEvent(new Event('resize'));return;
+  }
   const elegir = e.target.closest('[data-elegir]'), localizar = e.target.closest('[data-localizar]');
   if (elegir) { V()?.ensure3D?.();eligiendo = elegir.dataset.elegir; aviso('mant', 'Tocá la bomba en el 3D o en la franja de códigos.'); document.body.classList.add('tel-eligiendo'); }
   if (localizar) { const tag = $('#' + localizar.dataset.localizar).value; if (tag) { document.body.classList.add('tel-3d');V()?.ensure3D?.();V()?.select(tag); setTimeout(() => V()?.locate(), 600); } else aviso('mant', 'Elegí primero la bomba.', 'error'); }
@@ -262,7 +270,12 @@ function iniciar() {
  const resumenMant = () => { const a = $('#mant-autor').value.trim(), f = $('#mant-fecha').value; $('#mant-resumen').textContent = (a || 'Sin responsable') + ' · ' + (f === hoy() ? 'hoy' : f || 'sin fecha'); };
  $('#mant-bomba').onchange=()=>setReportTag($('#mant-bomba').value);
  $('#mant-autor').addEventListener('input', resumenMant); $('#mant-fecha').addEventListener('input', resumenMant); resumenMant();
- function aviso(form, texto, tipo = '') { const el = $(`#${form}-aviso`); el.textContent = texto; el.dataset.tipo = tipo;if(tipo==='ok'&&texto.startsWith('Reporte de '))el.scrollIntoView({block:'nearest',behavior:'auto'}); }
+ function aviso(form, texto, tipo = '') {
+  const el = $(`#${form}-aviso`);el.setAttribute('role',tipo==='error'?'alert':'status');el.textContent=texto;el.dataset.tipo=tipo;
+  if(tipo==='error'){
+   el.tabIndex=-1;el.scrollIntoView({block:'center',behavior:'auto'});el.focus({preventScroll:true});
+  }else if(tipo==='ok'&&texto.startsWith('Reporte de '))el.scrollIntoView({block:'nearest',behavior:'auto'});
+ }
 
  function snapshotReport(){return {id:reportId,problema:$('#mant-problema').value,comentario:$('#mant-comentario').value,author:$('#mant-autor').value,date:$('#mant-fecha').value,operativo:document.querySelector('[name=mant-funcional]:checked')?.value||'',retiro:document.querySelector('[name=mant-retiro]:checked')?.value||'no',parts:[...document.querySelectorAll('.tel-repuesto')].map(r=>({code:r.querySelectorAll('input')[0].value,name:r.querySelectorAll('input')[1].value}))};}
  function saveReportDraft(){
@@ -456,6 +469,7 @@ function iniciar() {
  // ---------- Navegación ----------
  function mostrar(id) {
   ++fichaRequest;
+  if(inspector?.classList.contains('is-fullscreen'))$('#expand-inspector')?.click();
   mostrarMapaAmplio(false);
   seccion = id; viendoFicha = false; ficha.hidden = true; fab.hidden = true;
   eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d');

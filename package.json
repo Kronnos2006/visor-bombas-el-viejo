@@ -14,7 +14,8 @@
     "build:heic": "esbuild src/heic-browser.js --bundle --format=esm --minify --platform=browser --target=es2022 --outfile=visor-bombas/public/vendor/heic-to.js",
     "audit:supabase": "node --env-file-if-exists=.env 00-Proyecto/scripts/supabase-operaciones.mjs audit",
     "backup:supabase": "node --env-file-if-exists=.env 00-Proyecto/scripts/supabase-operaciones.mjs backup",
-    "verify:supabase": "node 00-Proyecto/scripts/supabase-operaciones.mjs verify"
+    "verify:supabase": "node 00-Proyecto/scripts/supabase-operaciones.mjs verify",
+    "test:ui": "node visor-bombas/tools/e2e-app.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",

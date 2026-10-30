@@ -347,6 +347,8 @@ function toggleFullscreenInspector(force){
  if(btn){
   btn.textContent=isFull?'✕ Salir':'⛶ Pantalla completa';
   btn.title=isFull?'Salir de pantalla completa (Esc)':'Ver ficha en pantalla completa';
+  btn.setAttribute('aria-label',isFull?'Salir de pantalla completa':'Pantalla completa');
+  btn.setAttribute('aria-pressed',String(isFull));
   btn.classList.toggle('active',isFull);
  }
 }
