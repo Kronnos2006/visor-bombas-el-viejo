@@ -81,3 +81,9 @@ visor-bombas/.auditoria-regresion/
 
 # Estado de herramientas de Supabase (sin credenciales en Git)
 supabase/.temp/
+
+# Credenciales QA y respaldos privados: nunca incluirlos aunque se copien al árbol.
+**/private-cuentas-qa/
+**/Respaldos-supabase/
+**/VocatusBackups/
+/work/

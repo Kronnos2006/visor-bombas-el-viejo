@@ -1,0 +1,14 @@
+{
+  "at": "2026-11-02T21:03:21.009Z",
+  "branch": "codex/cuentas-vercel",
+  "head": "8af924c6caa2c37fe33ffaf26435a1a1432358f0",
+  "scope": "todos los commits alcanzables por refs y reflogs locales",
+  "commits": 149,
+  "uniqueObjects": 2104,
+  "blobs": 1292,
+  "privateFileFingerprints": 6,
+  "testCredentialValues": 29,
+  "suspiciousPaths": [],
+  "findings": [],
+  "passed": true
+}

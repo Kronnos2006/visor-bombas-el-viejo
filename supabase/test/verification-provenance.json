@@ -1,0 +1,41 @@
+{
+  "projectRef": "rbiuaucawhmiqvqomqec",
+  "syntheticDataOnly": true,
+  "sqlFile": "supabase/migrations/20261102193600_vocatus_cloud_accounts.sql",
+  "sqlSha256": "50b0263cf0ac6b735ac3d5a85ef988645be44905eefd088be0ea6ef57448a851",
+  "appliedMigrationHistory": [
+    {"version":"20261102200550","name":"isolated_candidate_access_first"},
+    {"version":"20261102200637","name":"isolated_candidate_access_second"}
+  ],
+  "databaseCanonicalSqlSha256Matches": true,
+  "canonicalization": "CRLF to LF and exactly one terminal newline; the migration log contained one extra terminal blank line. No statement differences.",
+  "completeRun": "68a6fbd0-3e2f-4864-9173-26830d0f90d9",
+  "completeRunPassed": 12,
+  "completeRunFailed": 0,
+  "sharedDatabaseWritePerformed": false,
+  "sharedReadOnlySnapshot": {
+    "capturedAt": "2026-11-02T21:00:34.351648+00:00",
+    "counts":{"photos":114,"versions":118,"objects":119,"members":1,"orders":0,"reports":0},
+    "metadataMd5":{"photos":"5f2d731d63ad1b9ab957b4e68e8cce47","versions":"a7fc6227dfbb7174b287bd8aeaab264c","objects":"83437f1231d627807ed4125ae1bcc7cc","members":"c293a100984673852f1d4577910f6b3a"},
+    "accessSchemaAbsent": true
+  },
+  "storageTimeout": {
+    "httpStatus":504,
+    "gatewayOriginMilliseconds":60042,
+    "storageEvent":"ABORTED RES",
+    "storageResponseMilliseconds":60000.326832000166,
+    "internalCauseKnown":false,
+    "migrationRelationshipEstablished":false,
+    "sameObjectLaterDownloadHttpStatus":200
+  },
+  "concurrency": {
+    "completeRunObservedHttpStatuses":[200,403],
+    "loserMessageRechecked":"QA_ADMIN_ONLY",
+    "directSqlLoserState":"42501",
+    "directSqlLoserMessage":"ADMIN_ONLY",
+    "finalAdminA":{"role":"admin","status":"approved","active":true,"mustChange":false},
+    "finalAdminB":{"role":"usuario","status":"approved","active":true,"mustChange":false},
+    "activeUsableAdministrators":1,
+    "generic401AcceptedAsProof":false
+  }
+}

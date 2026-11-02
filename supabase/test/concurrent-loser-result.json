@@ -1,0 +1,8 @@
+{
+  "at": "2026-11-02T21:01:11.567Z",
+  "projectRef": "rbiuaucawhmiqvqomqec",
+  "check": "administrador degradado rechaza gestión",
+  "httpStatus": 403,
+  "message": "QA_ADMIN_ONLY",
+  "passed": true
+}
