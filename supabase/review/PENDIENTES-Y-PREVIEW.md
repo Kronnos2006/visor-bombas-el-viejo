@@ -5,13 +5,21 @@ No se aplicó SQL en `gtfqhljbxyanfyrarykw`. No se subió la rama. No se modific
 ## Respaldo privado
 
 Destino preparado fuera del repositorio y de Documentos/OneDrive:
-`C:\Users\josem\AppData\Local\VocatusBackups\Supabase`.
+`C:\Users\josem\VocatusBackups\Supabase`.
 
-La captura lógica existente se copió como `captura-previa.json` y se volvió a comprobar su SHA-256: `d986aab764543a7a60c7e930d7199769b77aed34eda13d8aa7cb55006ac32c38`. La ruta es una carpeta local, sin enlace/junction observado. **Todavía no están descargados/verificados los 119 binarios.**
+La escritura anterior en AppData quedó redirigida por la aplicación empaquetada a `C:\Users\josem\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\VocatusBackups\Supabase\captura-previa.json`. Se localizó esa copia y se copió al destino nuevo, fuera de AppData y de Documentos/OneDrive. Se volvió a comprobar su SHA-256: `d986aab764543a7a60c7e930d7199769b77aed34eda13d8aa7cb55006ac32c38`; tamaño 298919 bytes. La ruta nueva es una carpeta local, sin enlace/junction observado. **Todavía no están descargados/verificados los 119 binarios.**
 
 El conector MCP permite consultar SQL pero no exporta una credencial de descarga; no hay una credencial disponible en el entorno de Node. El control de Edge se detuvo por no poder determinar con suficiente confianza la URL actual y no se continuó por esa vía.
 
-Para terminar, ejecutar en PowerShell:
+El lanzador busca Node 22 o superior en PATH, en la caché de Codex del perfil del usuario y en Program Files. No requiere modificar PATH. Antes de pedir una clave siempre comprueba la captura y su huella. Para comprobar solamente, sin clave ni red:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\josem\Documents\ChatGPT\vocatos\cuentas-vercel\00-Proyecto\scripts\Completar-respaldo-cuentas.ps1" -CheckOnly
+```
+
+Se ejecutó esa comprobación con Node ausente de PATH, credenciales retiradas del entorno y `fetch` bloqueado: encontró Node en `.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`, leyó la ruta nueva y devolvió `credentialsUsed:false`, `downloads:0`, `objects:119`. Una carpeta inexistente falla antes de pedir clave. Puede elegirse otra ruta explícita con `-BackupDirectory`, siempre fuera de Git y OneDrive y con la captura verificada.
+
+Para terminar las descargas cuando corresponda, ejecutar en PowerShell el mismo comando sin `-CheckOnly`:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\josem\Documents\ChatGPT\vocatos\cuentas-vercel\00-Proyecto\scripts\Completar-respaldo-cuentas.ps1"
@@ -25,7 +33,7 @@ El script crea una subcarpeta fechada con JSON y los 119 archivos, verifica tama
 
 `audit-private-history.mjs` revisó refs y reflogs locales: **149 commits, 2.104 objetos únicos, 1.292 blobs**, no solo `git status`. Comparó las huellas de los 6 archivos privados presentes y 29 valores de contraseñas/tokens y contraseñas/hashes de las semillas privadas, y buscó rutas privadas y patrones de claves secretas/service_role. **Cero coincidencias.** Evidencia: `supabase/test/private-history-results.json`.
 
-`work/private-cuentas-qa` y `Respaldos-supabase` están como carpetas hermanas del worktree, fuera de su raíz Git. Se añadieron reglas explícitas para excluirlas incluso si se copian accidentalmente dentro del árbol, además de `/work/` y `VocatusBackups`. El nuevo respaldo está en AppData Local y no es parte de ningún repositorio del proyecto. No se subieron estos datos ni se hará push mientras no se confirme la protección.
+`work/private-cuentas-qa` y `Respaldos-supabase` están como carpetas hermanas del worktree, fuera de su raíz Git. Se añadieron reglas explícitas para excluirlas incluso si se copian accidentalmente dentro del árbol, además de `/work/` y `VocatusBackups`. El nuevo respaldo está en la carpeta privada `VocatusBackups` del perfil y no es parte de ningún repositorio del proyecto. No se subieron estos datos ni se hará push mientras no se confirme la protección.
 
 ## Configuración exacta que debe hacer el propietario en Vercel
 
