@@ -72,3 +72,11 @@ Verificación de preparación: npm test ejecutado con npm 12.2.1 oficial: 262/26
 El SQL revisado consulta auth.sessions (solo lectura) para que un JWT cerrado por Supabase no conserve permisos hasta su expiración. El cierre de sesión del servidor usa Auth Admin signOut con el token verificado, y el navegador elimina después su sesión local. No se borran filas de negocio. Se corrigió la pantalla de entrada para cuentas inactivas/sesiones revocadas y para completar solicitudes con identidades Auth existentes sin inventar usuario ni crear duplicados. Un conflicto de nombre permite completar el perfil con otro nombre, conservando la identidad.
 
 Verificación actual: npm test, 266/266 pruebas aprobadas. Las cuatro pruebas nuevas adicionales son simuladas (logout/revocación, sync revocado, identidad sin perfil y conflicto de nombre). La ejecución y pruebas de RLS en Supabase continúan pendientes de aprobación del SQL completo actualizado. No se ha aplicado ninguna migración.
+
+## Validación local del SQL (sin base de datos)
+
+La revisión detectó y corrigió seis delimitadores de función inválidos en el borrador anterior. La versión actual se analizó con libpg-query 17.7.3 (parser PostgreSQL 17): migración y rollback tienen sintaxis válida y se analizaron también los cuerpos LANGUAGE SQL. Esto no comprueba los cuerpos PL/pgSQL ni sus consultas contra el catálogo real; esas verificaciones siguen pendientes de aprobación y ejecución transaccional controlada.
+
+La guardia de sesión también compara created_at de auth.sessions con revoked_before: renovar el JWT de una sesión anterior no evita el corte de acceso. No se escribe ni borra en auth.sessions desde el SQL; la comprobación es de lectura. Todo cambio de base continúa sin ejecutar y requiere aprobación de esta versión revisada.
+
+Verificación de esta revisión: npm ci --ignore-scripts completado en dependencias aisladas de la rama; npm test: 269/269 aprobadas. Migración: 75 sentencias; rollback: 17; parser PostgreSQL 170004. SHA-256 del SQL normalizado a LF: 5d1be7065a6ea4af55772e932b70fbe102f01958baf965cb3a3f19bf048d92ca. Sin ejecución de DDL/DML en Supabase; las pruebas reales de RLS, concurrencia, usuarios y Preview siguen pendientes.

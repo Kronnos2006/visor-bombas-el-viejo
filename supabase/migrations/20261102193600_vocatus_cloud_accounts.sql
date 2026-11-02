@@ -44,17 +44,27 @@ do $$ begin
  then raise exception 'No hay administrador confirmado existente. No aplicar sin plan de bootstrap aprobado.'; end if;
 end $$;
 
+-- Una renovación del JWT conserva session_id/created_at: no puede reabrir una sesión revocada.
+create function vocatus_access.session_allowed(p_revoked_before timestamptz)
+returns boolean language sql stable security definer set search_path='' as $$
+ select auth.uid() is not null and exists(
+  select 1 from auth.sessions sess where sess.id::text=auth.jwt()->>'session_id' and sess.user_id=auth.uid()
+  and (p_revoked_before is null or (sess.created_at>p_revoked_before
+   and to_timestamp(coalesce((auth.jwt()->>'iat')::double precision,0))>p_revoked_before))
+ );
+$$;
+revoke all on function vocatus_access.session_allowed(timestamptz) from public,anon;
+grant execute on function vocatus_access.session_allowed(timestamptz) to authenticated;
+
 create function vocatus_access.allowed(p_write boolean default false)
 returns boolean language sql stable security definer set search_path='' as $$
- select auth.uid() is not null
- and exists(select 1 from auth.sessions sess where sess.id::text=auth.jwt()->>'session_id' and sess.user_id=auth.uid())
- and exists (
+ select auth.uid() is not null and exists (
   select 1 from auth.users u join vocatus_auth.members m on m.email=lower(u.email)
   left join vocatus_access.accounts a on a.id=u.id
   where u.id=auth.uid() and u.email_confirmed_at is not null and m.active
+   and vocatus_access.session_allowed(a.revoked_before)
    and (not p_write or m.role in ('admin','editor'))
-   and (a.id is null or (a.status='approved' and a.active and not a.must_change
-    and (a.revoked_before is null or to_timestamp(coalesce((auth.jwt()->>'iat')::double precision,0))>a.revoked_before)))
+   and (a.id is null or (a.status='approved' and a.active and not a.must_change))
  );
 $$;
 revoke all on function vocatus_access.allowed(boolean) from public,anon;
@@ -75,9 +85,7 @@ create function vocatus_access.self_account()
 returns jsonb language sql stable security definer set search_path='' as $$
  select jsonb_build_object('id',a.id,'username',a.username,'name',a.name,'email',u.email,
  'role',a.role,'status',a.status,'active',a.active,'mustChange',a.must_change,
- 'createdAt',a.created_at,'sessionValid',
- exists(select 1 from auth.sessions sess where sess.id::text=auth.jwt()->>'session_id' and sess.user_id=auth.uid())
- and (a.revoked_before is null or to_timestamp(coalesce((auth.jwt()->>'iat')::double precision,0))>a.revoked_before))
+ 'createdAt',a.created_at,'sessionValid',vocatus_access.session_allowed(a.revoked_before))
  from vocatus_access.accounts a join auth.users u on u.id=a.id where a.id=auth.uid();
 $$;
 revoke all on function vocatus_access.self_account() from public,anon;
@@ -194,50 +202,50 @@ revoke all on function public.vocatus_account_email(text) from public,anon,authe
 grant execute on function public.vocatus_account_email(text) to service_role;
 
 create function vocatus_access.register_managed(p_actor uuid,p_target uuid,p_username text,p_name text)
-returns void language plpgsql security definer set search_path='' as $
+returns void language plpgsql security definer set search_path='' as $$
 begin
  perform pg_catalog.pg_advisory_xact_lock(18033,20261102);
  if not vocatus_access.is_admin(p_actor) or p_actor=p_target then raise exception 'ADMIN_ONLY' using errcode='42501'; end if;
  insert into vocatus_access.accounts(id,username,name) values(p_target,lower(trim(p_username)),trim(p_name));
  insert into vocatus_access.audit(actor,action,target) values(p_actor,'account_created',p_target);
 end;
-$;
+$$;
 revoke all on function vocatus_access.register_managed(uuid,uuid,text,text) from public,anon,authenticated;
 grant execute on function vocatus_access.register_managed(uuid,uuid,text,text) to service_role;
 create function public.vocatus_register_managed(p_actor uuid,p_target uuid,p_username text,p_name text)
-returns void language sql security invoker set search_path='' as $ select vocatus_access.register_managed(p_actor,p_target,p_username,p_name); $;
+returns void language sql security invoker set search_path='' as $$ select vocatus_access.register_managed(p_actor,p_target,p_username,p_name); $$;
 revoke all on function public.vocatus_register_managed(uuid,uuid,text,text) from public,anon,authenticated;
 grant execute on function public.vocatus_register_managed(uuid,uuid,text,text) to service_role;
 
 -- Registro de acciones delicadas del servidor; exige administrador actual.
 create function vocatus_access.record_action(p_actor uuid,p_action text,p_detail jsonb)
-returns void language plpgsql security definer set search_path='' as $
+returns void language plpgsql security definer set search_path='' as $$
 begin
  if not vocatus_access.is_admin(p_actor) then raise exception 'ADMIN_ONLY' using errcode='42501'; end if;
  if length(p_action) not between 1 and 300 or pg_column_size(p_detail)>4096 then raise exception 'Entrada de bitácora inválida'; end if;
  insert into vocatus_access.audit(actor,action,detail) values(p_actor,p_action,p_detail);
 end;
-$;
+$$;
 revoke all on function vocatus_access.record_action(uuid,text,jsonb) from public,anon,authenticated;
 grant execute on function vocatus_access.record_action(uuid,text,jsonb) to service_role;
 create function public.vocatus_record_action(p_actor uuid,p_action text,p_detail jsonb default '{}'::jsonb)
-returns void language sql security invoker set search_path='' as $ select vocatus_access.record_action(p_actor,p_action,p_detail); $;
+returns void language sql security invoker set search_path='' as $$ select vocatus_access.record_action(p_actor,p_action,p_detail); $$;
 revoke all on function public.vocatus_record_action(uuid,text,jsonb) from public,anon,authenticated;
 grant execute on function public.vocatus_record_action(uuid,text,jsonb) to service_role;
 
 -- Solo después de verificar contraseña actual y actualización en Auth desde el servidor.
 create function vocatus_access.password_changed(p_actor uuid)
-returns void language plpgsql security definer set search_path='' as $
+returns void language plpgsql security definer set search_path='' as $$
 begin
  update vocatus_access.accounts set must_change=false,revoked_before=now() where id=p_actor;
  if not found then raise exception 'Cuenta no encontrada'; end if;
  insert into vocatus_access.audit(actor,action,target) values(p_actor,'password_changed',p_actor);
 end;
-$;
+$$;
 revoke all on function vocatus_access.password_changed(uuid) from public,anon,authenticated;
 grant execute on function vocatus_access.password_changed(uuid) to service_role;
 create function public.vocatus_password_changed(p_actor uuid)
-returns void language sql security invoker set search_path='' as $ select vocatus_access.password_changed(p_actor); $;
+returns void language sql security invoker set search_path='' as $$ select vocatus_access.password_changed(p_actor); $$;
 revoke all on function public.vocatus_password_changed(uuid) from public,anon,authenticated;
 grant execute on function public.vocatus_password_changed(uuid) to service_role;
 
