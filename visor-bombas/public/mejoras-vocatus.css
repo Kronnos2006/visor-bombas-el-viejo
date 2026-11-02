@@ -52,3 +52,6 @@ body.app-tel[data-tel-seccion="historial"] .mejora-model-access [data-model-stat
 }
 body.app-tel #hist-ver-3d{display:block;width:auto;min-height:44px;margin:0 0 16px;padding:10px 18px;border:1px solid var(--borde-fuerte);border-radius:10px;background:var(--superficie);color:var(--tinta);cursor:pointer}
 body.app-tel #hist-ver-3d[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+
+/* Sin modelo visible no hay columnas que redimensionar. */
+body.app-tel[data-tel-seccion=historial]:not(.hist-model-open) #panel-ajuste{display:none!important}
