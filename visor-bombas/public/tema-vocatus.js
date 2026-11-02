@@ -69,7 +69,19 @@
       setTimeout(finish,260);
     };
     portada.querySelector('button').onclick = entrar;
-    addEventListener('keydown',e=>{if(portada.hidden)return;if(e.key==='Tab'){e.preventDefault();entryButton.focus({preventScroll:true});}else if(e.key==='Enter'||e.key==='Escape'){e.preventDefault();entrar();}},true);
+    addEventListener('keydown', e => {
+      if (portada.hidden) return;
+      if (e.key === 'Tab') {
+        const controls = [...portada.querySelectorAll('button:not(:disabled),a[href]')].filter(el => el.getClientRects().length);
+        const current = controls.indexOf(document.activeElement);
+        if (current < 0 || (!e.shiftKey && current === controls.length - 1) || (e.shiftKey && current === 0)) {
+          e.preventDefault();
+          (e.shiftKey ? controls.at(-1) : controls[0])?.focus({preventScroll:true});
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault(); entrar();
+      }
+    }, true);
     import('./intro-destileria-3d.js').then(({mountIntro3D})=>mountIntro3D(portada,{signal:introController.signal,reducedMotion:sinMovimiento})).catch(error=>{if(!introController.signal.aborted){console.warn('Presentación 3D no disponible; se conserva la versión simple.',error);portada.classList.remove('intro-loading');portada.dataset.introState='fallback';}});
   }
   }
