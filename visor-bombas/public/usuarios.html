@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/marca/vocatus.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="/acceso.css"><title>Usuarios · Vocatus</title></head>
+<body>
+<main class="admin">
+ <div class="admin-top"><h1>Usuarios</h1><a class="boton" href="/">Volver al visor</a></div>
+ <p id="aviso" class="aviso" role="alert" hidden></p>
+ <div id="nueva-clave" class="exito" role="status" hidden></div>
+ <section class="tarjeta">
+  <h2>Crear una cuenta</h2>
+  <form id="crear">
+   <div class="campos">
+    <label>Nombre<input name="name" maxlength="80" required></label>
+    <label>Usuario<input name="username" maxlength="40" autocapitalize="none" spellcheck="false" autocomplete="off" required></label>
+    <label>Correo <small>(opcional)</small><input name="email" type="email" autocomplete="off"></label>
+    <label>Permiso<select name="role"><option value="usuario">Usuario: trabajo normal</option><option value="admin">Administrador: cambios delicados</option></select></label>
+   </div>
+   <button class="principal" type="submit">Crear cuenta</button>
+  </form>
+ </section>
+ <section class="tarjeta"><h2>Cuentas</h2><div id="lista"></div></section>
+ <section class="tarjeta"><h2>Bitácora</h2><ul id="bitacora" class="bitacora"></ul></section>
+</main>
+<script type="module" src="/usuarios.js"></script>
+</body></html>

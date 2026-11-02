@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><link rel="icon" type="image/png" href="/marca/vocatus.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="/acceso.css"><title>Entrar · Vocatus</title></head>
+<body class="pantalla-entrada">
+<div class="burbujas" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<button type="button" id="tema" class="tema" aria-label="Cambiar entre modo claro y oscuro"><span aria-hidden="true">☀️</span></button>
+<main class="acceso">
+ <section class="marca-panel">
+  <span class="acceso-sello"><img class="acceso-logo" src="/marca/vocatus.png" width="200" height="200" alt="Destilería Vocatus"></span>
+  <p class="marca-pre">Planta El Viejo</p>
+  <p class="marca-titulo">Catálogo de bombas</p>
+  <ul class="marca-lista">
+   <li>Buscá una bomba por nombre o por área</li>
+   <li>Consultá su sello, empaque y o-rings</li>
+   <li>Registrá el trabajo hecho en planta</li>
+  </ul>
+ </section>
+ <section class="tarjeta">
+  <h1 id="titulo">Entrar</h1>
+  <p id="ayuda" class="ayuda">Escribí tu usuario o correo y tu contraseña.</p>
+  <p id="aviso" class="aviso" role="alert" hidden></p>
+
+  <form id="f-login" novalidate hidden>
+   <label class="campo"><input name="identifier" placeholder=" " autocomplete="username" autocapitalize="none" spellcheck="false" required><span>Usuario o correo</span></label>
+   <label class="campo clave"><input name="password" placeholder=" " type="password" autocomplete="current-password" required><span>Contraseña</span><button type="button" class="ver" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><path class="tachado" d="M4 4l16 16"/></svg></button></label>
+   <p class="mayus" role="status" hidden>Las mayúsculas están activadas.</p>
+   <label class="recordar"><input type="checkbox" id="recordar"> Recordar mi usuario en esta computadora</label>
+   <button class="principal" type="submit"><span>Entrar</span></button>
+   <p class="nota">¿Olvidaste la contraseña? Pedile a un administrador que te dé una nueva.</p>
+  </form>
+
+  <form id="f-setup" novalidate hidden>
+   <label class="campo"><input name="name" placeholder=" " autocomplete="name" maxlength="80" required><span>Tu nombre</span></label>
+   <label class="campo"><input name="username" placeholder=" " autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40" required><span>Usuario</span></label>
+   <label class="campo"><input name="email" placeholder=" " type="email" autocomplete="email"><span>Correo (opcional)</span></label>
+   <label class="campo clave"><input name="password" placeholder=" " type="password" autocomplete="new-password" minlength="8" required data-fuerza><span>Contraseña</span><button type="button" class="ver" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><path class="tachado" d="M4 4l16 16"/></svg></button></label>
+   <p class="mayus" role="status" hidden>Las mayúsculas están activadas.</p>
+   <div class="fuerza" hidden><i></i><small role="status"></small></div>
+   <button class="principal" type="submit"><span>Crear administrador</span></button>
+  </form>
+
+  <form id="f-cambiar" novalidate hidden>
+   <label class="campo clave"><input name="current" placeholder=" " type="password" autocomplete="current-password" required><span>Contraseña actual</span><button type="button" class="ver" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><path class="tachado" d="M4 4l16 16"/></svg></button></label>
+   <label class="campo clave"><input name="next" placeholder=" " type="password" autocomplete="new-password" minlength="8" required data-fuerza><span>Contraseña nueva</span><button type="button" class="ver" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><path class="tachado" d="M4 4l16 16"/></svg></button></label>
+   <p class="mayus" role="status" hidden>Las mayúsculas están activadas.</p>
+   <div class="fuerza" hidden><i></i><small role="status"></small></div>
+   <button class="principal" type="submit"><span>Guardar contraseña</span></button>
+  </form>
+
+  <div id="sin-permiso" hidden><a class="boton" href="/">Volver al visor</a></div>
+ </section>
+</main>
+<script type="module" src="/acceso.js"></script>
+</body></html>

@@ -1,5 +1,14 @@
 # Visor de bombas · Planta El Viejo
 
+## Cuentas en el visor local
+
+Al arrancar el visor en la computadora se pide entrar con usuario o correo y contraseña. La primera vez se crea el administrador, solo desde esa misma computadora. Cuentas y bitácora quedan en `.vocatus-visor`, en la carpeta personal: fuera del repositorio y de la bóveda, con contraseñas cifradas (scrypt). No aplica a Vercel ni a Codespaces.
+
+- **Usuario:** consulta, levantamiento, informes, órdenes, fotos, pedidos y reparaciones.
+- **Administrador:** además, cuentas y bitácora (`/usuarios.html`), mover o reemplazar bombas, quitar datos de una ficha, eliminar informes, rangos de temperatura y Gemini.
+
+Si se olvida la clave de administrador, `Restablecer administrador.cmd` genera una temporal.
+
 ## Edición de todas las bombas
 
 Editor común de datos, componentes y diez categorías de fotos para las 77 fichas B y 15 fichas P. Incluye edición de o-rings y acceso a fichas fuera del mapa. Ver [editor universal](00-Proyecto/Documentacion-visor/17-Editor-universal-bombas.md).

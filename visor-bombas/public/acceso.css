@@ -1,0 +1,121 @@
+/* Entrada y administración de usuarios: misma identidad ámbar y caña del visor. */
+:root{--fondo:#120f0b;--superficie:#221c14;--borde:rgba(242,184,75,.28);--tinta:#f4ead8;--tinta-2:#cdbfa6;--accent:#f2b84b;--sobre-accent:#1d1408;--cana:#a9d46f;--error:#ffb4a0;--error-fondo:rgba(240,90,60,.14)}
+body.claro{--fondo:#f7f1e6;--superficie:#fffaf1;--borde:rgba(150,104,24,.3);--tinta:#2a2116;--tinta-2:#5a4a33;--accent:#b9770e;--sobre-accent:#fff;--cana:#4f7d1d;--error:#a32a12;--error-fondo:rgba(190,60,30,.1)}
+*{box-sizing:border-box}
+html{min-height:100%}
+body{margin:0;min-height:100vh;color:var(--tinta);font:16px/1.5 'Plus Jakarta Sans','Segoe UI',sans-serif;background:radial-gradient(1000px 520px at 85% -10%,rgba(242,184,75,.13),transparent 60%),radial-gradient(800px 460px at -10% 110%,rgba(169,212,111,.09),transparent 60%),var(--fondo)}
+h1,h2{font-family:Fraunces,Georgia,serif;line-height:1.15;margin:0}
+.acceso{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px}
+.acceso-logo{width:96px;height:96px;object-fit:contain;border-radius:16px}
+.acceso-marca{margin:6px 0 18px;color:var(--tinta-2);font-weight:600}
+.tarjeta{width:100%;max-width:420px;padding:28px;background:var(--superficie);border:1px solid var(--borde);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.tarjeta h1{font-size:30px}
+.ayuda{margin:8px 0 20px;color:var(--tinta-2)}
+label{display:block;margin-bottom:16px;font-weight:600}
+label small,.nota{font-weight:400;color:var(--tinta-2);font-size:14px}
+label>small{display:block;margin-top:4px}
+input,select{width:100%;min-height:48px;margin-top:6px;padding:10px 12px;font:inherit;color:var(--tinta);background:var(--fondo);border:1px solid var(--borde);border-radius:10px}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.clave{display:flex;gap:8px;align-items:flex-end}
+.clave input{flex:1;min-width:0}
+button,.boton{min-height:48px;padding:10px 16px;font:inherit;font-weight:700;color:var(--tinta);background:transparent;border:1px solid var(--borde);border-radius:10px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.principal,.boton{background:var(--accent);border-color:var(--accent);color:var(--sobre-accent)}
+form>.principal{width:100%;font-size:18px}
+button:disabled{opacity:.6;cursor:wait}
+.nota{margin:14px 0 0}
+.aviso{margin:0 0 16px;padding:12px;border-radius:10px;color:var(--error);background:var(--error-fondo);font-weight:600}
+.exito{margin:0 0 16px;padding:14px;border:1px solid var(--cana);border-radius:10px}
+.exito code{display:block;margin-top:6px;font:700 24px ui-monospace,Consolas,monospace;letter-spacing:.04em;overflow-wrap:anywhere;color:var(--cana)}
+/* Usuarios */
+.admin{max-width:920px;margin:0 auto;padding:20px 16px 60px}
+.admin-top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:20px}
+.admin-top h1{font-size:32px}
+.admin .tarjeta{max-width:none;margin-bottom:20px}
+.admin h2{font-size:22px;margin-bottom:14px}
+.campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 14px}
+.cuenta{display:flex;gap:12px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 0;border-top:1px solid var(--borde)}
+.cuenta:first-child{border-top:0}
+.cuenta b{font-size:17px}
+.cuenta small{display:block;color:var(--tinta-2);overflow-wrap:anywhere}
+.cuenta-acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cuenta-acciones select{width:auto;margin:0}
+.etiqueta{display:inline-block;margin-left:6px;padding:1px 8px;border:1px solid var(--borde);border-radius:99px;font-size:13px;font-weight:600}
+.etiqueta.off{color:var(--error);border-color:currentColor}
+.bitacora{list-style:none;margin:0;padding:0;max-height:360px;overflow:auto}
+.bitacora li{padding:8px 0;border-top:1px solid var(--borde);overflow-wrap:anywhere}
+.bitacora li:first-child{border-top:0}
+.bitacora time{display:block;font-size:13px;color:var(--tinta-2)}
+/* Pantalla de entrada: panel de marca y tarjeta de vidrio. */
+.pantalla-entrada{position:relative;overflow-x:hidden}
+.pantalla-entrada::before,.pantalla-entrada::after{content:"";position:fixed;z-index:-1;width:560px;height:560px;border-radius:50%;filter:blur(80px);pointer-events:none}
+.pantalla-entrada::before{top:-200px;right:-120px;background:rgba(242,184,75,.2)}
+.pantalla-entrada::after{bottom:-240px;left:-140px;background:rgba(169,212,111,.14)}
+.burbujas{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.burbujas i{position:absolute;bottom:-40px;width:14px;height:14px;border-radius:50%;border:1px solid rgba(242,184,75,.4);background:rgba(242,184,75,.06);animation:subir 16s linear infinite}
+.burbujas i:nth-child(1){left:6%;animation-delay:-2s}
+.burbujas i:nth-child(2){left:16%;width:8px;height:8px;animation-duration:12s;animation-delay:-9s}
+.burbujas i:nth-child(3){left:29%;width:20px;height:20px;animation-duration:20s;animation-delay:-5s}
+.burbujas i:nth-child(4){left:41%;width:10px;height:10px;animation-delay:-13s}
+.burbujas i:nth-child(5){left:58%;width:12px;height:12px;animation-duration:18s;animation-delay:-1s}
+.burbujas i:nth-child(6){left:70%;width:22px;height:22px;animation-duration:22s;animation-delay:-11s}
+.burbujas i:nth-child(7){left:83%;width:9px;height:9px;animation-duration:13s;animation-delay:-6s}
+.burbujas i:nth-child(8){left:94%;animation-duration:17s;animation-delay:-15s}
+@keyframes subir{from{transform:translateY(0);opacity:0}12%{opacity:1}85%{opacity:.7}to{transform:translateY(-110vh) translateX(24px);opacity:0}}
+.tema{position:fixed;top:16px;right:16px;z-index:5;width:48px;min-height:48px;padding:0;border-radius:50%;background:var(--superficie)}
+.acceso{flex-direction:row;gap:72px;max-width:1040px;margin:0 auto}
+.marca-panel{flex:1;min-width:0;animation:aparecer .5s ease both}
+.acceso-sello{display:inline-flex;width:112px;height:112px;padding:8px;border-radius:26px;background:#fff;box-shadow:0 14px 36px rgba(0,0,0,.35)}
+.acceso .acceso-logo{width:100%;height:100%;border-radius:18px}
+.marca-pre{margin:26px 0 4px;color:var(--accent);font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.marca-titulo{margin:0;font:700 clamp(40px,4.6vw,56px)/1.05 Fraunces,Georgia,serif}
+.marca-lista{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:12px;color:var(--tinta-2);font-size:17px}
+.marca-lista li{position:relative;padding-left:26px}
+.marca-lista li::before{content:"";position:absolute;left:2px;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.acceso .tarjeta{flex:none;width:100%;max-width:420px;padding:34px;border:1px solid rgba(255,255,255,.12);border-radius:28px;background:linear-gradient(120deg,rgba(255,255,255,.1),rgba(18,15,11,.6));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 28px 72px rgba(0,0,0,.45);animation:aparecer .5s .08s ease both}
+body.claro .acceso .tarjeta{border-color:rgba(150,104,24,.22);background:linear-gradient(120deg,rgba(255,255,255,.9),rgba(255,250,241,.65));box-shadow:0 28px 72px rgba(90,60,10,.18)}
+@keyframes aparecer{from{opacity:0;transform:translateY(12px)}}
+.acceso .tarjeta h1{font-size:32px;font-weight:600}
+.acceso .ayuda{margin:8px 0 24px}
+.campo{position:relative;display:block;margin-bottom:14px;font-weight:500}
+.campo input{margin:0;min-height:60px;padding:24px 18px 8px;font-size:17px;border:1px solid var(--borde);border-radius:16px;background:rgba(255,255,255,.07);transition:border-color .2s,background .2s}
+body.claro .campo input{background:rgba(255,255,255,.8)}
+.campo input:hover{border-color:var(--accent)}
+.campo input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.campo>span{position:absolute;left:18px;top:19px;color:var(--tinta-2);font-size:17px;pointer-events:none;transition:top .15s,font-size .15s,color .15s}
+.campo input:focus+span,.campo input:not(:placeholder-shown)+span{top:8px;font-size:13px;font-weight:600}
+.campo input:focus+span{color:var(--accent)}
+.campo input:-webkit-autofill{-webkit-text-fill-color:var(--tinta);-webkit-box-shadow:0 0 0 40px var(--superficie) inset;caret-color:var(--tinta)}
+.clave{display:block}
+.clave input{width:100%;padding-right:60px}
+.ver{position:absolute;top:6px;right:6px;width:48px;min-height:48px;padding:0;border:0;border-radius:12px;color:var(--tinta-2)}
+.ver:hover{color:var(--tinta);background:rgba(255,255,255,.08)}
+.ver .tachado{display:none}
+.ver[aria-pressed="true"] .tachado{display:block}
+.mayus{margin:-6px 0 12px 4px;color:var(--accent);font-size:14px;font-weight:600}
+.recordar{display:flex;gap:10px;align-items:center;margin:0 0 16px 2px;font-size:15px;font-weight:500;cursor:pointer}
+.recordar input{flex:none;width:22px;height:22px;min-height:0;margin:0;accent-color:var(--accent)}
+.fuerza{margin:-4px 0 14px 4px}
+.fuerza i{display:block;height:6px;border-radius:9px;background:var(--borde);position:relative;overflow:hidden}
+.fuerza i::after{content:"";position:absolute;inset:0 auto 0 0;width:33%;background:var(--error);border-radius:inherit;transition:width .2s,background .2s}
+.fuerza[data-nivel="2"] i::after{width:66%;background:var(--accent)}
+.fuerza[data-nivel="3"] i::after{width:100%;background:var(--cana)}
+.fuerza small{display:block;margin-top:5px;font-size:14px;color:var(--tinta-2)}
+.acceso form>.principal{min-height:56px;font-size:18px;border-radius:999px;box-shadow:0 10px 26px rgba(242,184,75,.22);transition:filter .2s,transform .2s}
+.acceso form>.principal:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
+.principal.cargando span::before{content:"";display:inline-block;width:16px;height:16px;margin-right:10px;vertical-align:-3px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:girar .7s linear infinite}
+@keyframes girar{to{transform:rotate(360deg)}}
+.sacudir{animation:sacudir .35s}
+@keyframes sacudir{25%{transform:translateX(-6px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+.acceso .nota{text-align:center}
+.acceso .boton{width:100%;border-radius:999px}
+@media(max-width:880px){
+ .acceso{flex-direction:column;justify-content:flex-start;gap:20px;padding:24px 16px 32px}
+ .marca-panel{flex:none;text-align:center}
+ .acceso-sello{width:84px;height:84px;padding:6px;border-radius:20px}
+ .acceso .acceso-logo{border-radius:14px}
+ .marca-pre{margin:12px 0 2px;font-size:12px}
+ .marca-titulo{font-size:26px}
+ .marca-lista{display:none}
+ .acceso .tarjeta{padding:26px 22px}
+}
+@media(prefers-reduced-motion:reduce){.burbujas{display:none}.marca-panel,.acceso .tarjeta,.sacudir,.principal.cargando span::before{animation:none}.acceso form>.principal,.campo input,.campo>span{transition:none}}

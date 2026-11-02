@@ -16,6 +16,7 @@ import { generatePartsRequestPDF } from './parts-request.mjs';
 import { equipmentStore, REPLACE_FIELDS } from './equipment.mjs';
 import { passwordOk } from './password.mjs';
 import { pumpPhotoStore } from './pump-photos.mjs';
+import { authStore, authGate, delicateAction } from './auth.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const configuration = vaultConfiguration(ROOT);
@@ -148,9 +149,19 @@ El despiece es ilustrativo y no demuestra qué componentes existen en el equipo 
 Si piden análisis de fallas, separá: Hechos documentados, Hipótesis por verificar, Datos faltantes, Comprobaciones propuestas. No presentes una hipótesis como diagnóstico ni una probabilidad sin datos. No autorices operar ni intervenir maquinaria. No inventes contenido de planos: solo se adjuntan sus nombres.
 Terminá con las fuentes utilizadas. Si no hay historial, decilo explícitamente.`;
 
+// Acceso con cuenta: se activa al arrancar el visor local, no en Vercel ni Codespaces.
+let access=null;
+export function useAccess(store){access=store;}
+
 export async function handler(req,res) {
  try {
   if (!isAllowedHost(req.headers.host)) return send(res,403,{error:'Host no permitido.'});
+  let currentUser=null;
+  if(access){
+   const gate=await authGate({store:access,req,res,url:new URL(req.url,`http://127.0.0.1:${PORT}`),send,payload,isAllowedOrigin});
+   if(gate.done)return;
+   currentUser=gate.user;
+  }
   // En Vercel, con VISOR_PASSWORD definida, la API también exige la contraseña (las páginas las protege middleware.js).
   if (ON_VERCEL && !passwordOk(req.headers.authorization, process.env.VISOR_PASSWORD)) { res.writeHead(401,{'WWW-Authenticate':'Basic realm="Visor Vocatus", charset="UTF-8"','Content-Type':'application/json; charset=utf-8'}); return res.end(JSON.stringify({error:'Acceso restringido.'})); }
   const url=new URL(req.url,`http://127.0.0.1:${PORT}`);
@@ -246,6 +257,11 @@ export async function handler(req,res) {
    const vercelOrigin=ON_VERCEL&&req.headers['x-original-host']&&`https://${req.headers['x-original-host']}`;
    if(origin && !isAllowedOrigin(origin) && origin!==vercelOrigin) return send(res,403,{error:'Origen no permitido.'});
    const body=await payload(req);
+   if(access&&currentUser){
+    const delicate=delicateAction(req.method,url.pathname,body);
+    if(delicate&&currentUser.role!=='admin')return send(res,403,{code:'ADMIN_ONLY',error:'Este cambio solo lo puede hacer un administrador.'});
+    if(delicate)res.once('finish',()=>{if(res.statusCode<400)access.audit(currentUser.username,delicate).catch(()=>{});});
+   }
    if(url.pathname==='/api/maintenance' && !configuration.writable) return send(res,403,{error:'Este alojamiento no tiene almacenamiento persistente. Los reportes se conservan en el navegador.'});
    if(req.method==='DELETE') {
     const p=await readPump(body.tag); await maintenance.remove(p.tag,body.id);
@@ -325,11 +341,13 @@ export async function handler(req,res) {
   if(req.method!=='GET') return send(res,405,{error:'Método no permitido.'});
   const filename=path.resolve(PUBLIC,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!filename.startsWith(PUBLIC+path.sep)) return send(res,403,{error:'Ruta inválida.'});
-  const content=await readFile(filename);
+  let content=await readFile(filename);
+  if(access&&path.extname(filename)==='.html'&&path.basename(filename)!=='login.html'){const html=content.toString('utf8');const i=html.indexOf('</head>');if(i>=0)content=Buffer.from(html.slice(0,i)+'<link rel="stylesheet" href="/sesion.css"><script src="/sesion.js"></script>'+html.slice(i));}
   res.writeHead(200,{'Content-Type':mime[path.extname(filename)]||'application/octet-stream','Content-Length':content.length,'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'}); res.end(content);
  } catch(e) { send(res,e.code==='PUMP_NOT_AVAILABLE'?409:e.code==='ENOENT'?404:400,{code:e.code,error:e.message==='fetch failed'?'No se pudo conectar con Gemini. Revisá la conexión a internet.':e.message}); }
 }
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
- const bind=CLOUD_DEV || process.env.PORT ? '0.0.0.0' : '127.0.0.1';
+ const bind=process.env.VISOR_BIND || (CLOUD_DEV || process.env.PORT ? '0.0.0.0' : '127.0.0.1');
+ if(!ON_VERCEL&&!CLOUD_DEV&&process.env.VISOR_AUTH!=='0')useAccess(authStore());
  http.createServer(handler).listen(PORT,bind,()=>console.log(`Visor: http://${bind}:${PORT}\nBóveda: ${VAULT}\nGemini: ${apiKey?'configurado':'pendiente de clave'}`));
 }

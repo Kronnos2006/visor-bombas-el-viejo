@@ -1,0 +1,80 @@
+// Pantalla de entrada: entrar, crear el primer administrador y cambiar contraseña.
+const $=id=>document.getElementById(id),params=new URLSearchParams(location.search);
+const leer=k=>{try{return localStorage.getItem(k);}catch{return null;}},guardar=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch{}};
+const SIN_CONEXION='No se pudo conectar con el visor. Revisá que su ventana negra siga abierta.';
+const destino=()=>{const n=params.get('next')||'/';return n.startsWith('/')&&!n.startsWith('//')&&!n.startsWith('/\\')?n:'/';};
+
+// Tema
+const pintarTema=()=>{const claro=document.body.classList.contains('claro');$('tema').firstElementChild.textContent=claro?'🌙':'☀️';$('tema').setAttribute('aria-pressed',claro);};
+if(leer('vocatus-tema')==='claro')document.body.classList.add('claro');
+pintarTema();
+$('tema').onclick=()=>{document.body.classList.toggle('claro');guardar('vocatus-tema',document.body.classList.contains('claro')?'claro':'oscuro');pintarTema();};
+
+const post=async(path,body)=>{
+ let r;try{r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}catch{throw new Error(SIN_CONEXION);}
+ const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'No se pudo completar. Probá de nuevo.');return data;
+};
+function aviso(text){const a=$('aviso');a.textContent=text||'';a.hidden=!text;if(text){a.classList.remove('sacudir');void a.offsetWidth;a.classList.add('sacudir');}}
+function mostrar(id,titulo,ayuda){
+ for(const f of ['f-login','f-setup','f-cambiar','sin-permiso'])$(f).hidden=f!==id;
+ $('titulo').textContent=titulo;$('ayuda').textContent=ayuda;document.title=titulo+' · Vocatus';
+ const inputs=[...$(id).querySelectorAll('.campo input')];(inputs.find(i=>!i.value)||inputs[0])?.focus();
+}
+function enviar(id,accion,textoEspera){
+ const form=$(id);
+ form.onsubmit=async e=>{
+  e.preventDefault();aviso('');
+  const vacio=[...form.querySelectorAll('input[required]')].find(i=>!i.value.trim());
+  if(vacio){aviso(`Falta: ${vacio.parentElement.querySelector('span').textContent}.`);vacio.focus();return;}
+  const boton=form.querySelector('.principal'),texto=boton.querySelector('span'),original=texto.textContent;
+  boton.disabled=true;boton.classList.add('cargando');texto.textContent=textoEspera;
+  try{await accion(Object.fromEntries(new FormData(form)));}
+  catch(err){aviso(err.message);boton.disabled=false;boton.classList.remove('cargando');texto.textContent=original;form.querySelector('input[type=password]')?.select();}
+ };
+ form.addEventListener('input',()=>{if(!$('aviso').hidden)aviso('');});
+}
+
+// Ver contraseña y aviso de mayúsculas
+document.querySelectorAll('.ver').forEach(b=>b.onclick=()=>{
+ const i=b.parentElement.querySelector('input'),ver=i.type==='password';
+ i.type=ver?'text':'password';b.setAttribute('aria-pressed',ver);b.setAttribute('aria-label',ver?'Ocultar contraseña':'Mostrar contraseña');i.focus();
+});
+document.querySelectorAll('input[type=password]').forEach(i=>{
+ const nota=i.form.querySelector('.mayus');
+ const ver=e=>{if(e.getModifierState)nota.hidden=!e.getModifierState('CapsLock');};
+ i.addEventListener('keydown',ver);i.addEventListener('keyup',ver);i.addEventListener('blur',()=>nota.hidden=true);
+});
+// Solo orienta; la regla obligatoria (8 caracteres) la aplica el servidor.
+document.querySelectorAll('[data-fuerza]').forEach(i=>{
+ const box=i.form.querySelector('.fuerza'),msg=box.querySelector('small');
+ i.addEventListener('input',()=>{
+  const v=i.value,tipos=[/[a-z]/,/[A-Z]/,/\d/,/[^a-zA-Z0-9]/].filter(r=>r.test(v)).length;
+  box.hidden=!v;
+  const nivel=v.length<8?1:(v.length>=12&&tipos>=2)||tipos>=3?3:2;
+  box.dataset.nivel=nivel;
+  msg.textContent=v.length<8?`Faltan ${8-v.length} caracteres.`:nivel===3?'Contraseña fuerte.':'Sirve. Más larga es más segura.';
+ });
+});
+
+// Recordar usuario: solo el nombre, nunca la contraseña.
+const recordado=leer('vocatus-usuario');
+if(recordado){$('f-login').identifier.value=recordado;$('recordar').checked=true;}
+enviar('f-login',async d=>{
+ const {user}=await post('/api/auth/login',d);
+ guardar('vocatus-usuario',$('recordar').checked?d.identifier.trim():null);
+ location.replace(user.mustChange?'/login.html?cambiar=1&next='+encodeURIComponent(destino()):destino());
+},'Entrando…');
+enviar('f-setup',async d=>{await post('/api/auth/setup',d);location.replace('/');},'Creando…');
+enviar('f-cambiar',async d=>{await post('/api/auth/change-password',d);location.replace(destino());},'Guardando…');
+
+let state=null;
+try{state=await (await fetch('/api/auth/state')).json();}catch{mostrar('sin-permiso','Sin conexión',SIN_CONEXION);$('sin-permiso').hidden=true;}
+if(state){
+ if(state.setup){
+  if(state.setupAllowed)mostrar('f-setup','Crear administrador','Es la primera vez. Esta cuenta controlará el visor.');
+  else{mostrar('sin-permiso','Falta el administrador','Abrí el visor en la computadora donde está instalado para crear la primera cuenta.');$('sin-permiso').hidden=true;}
+ }else if(!state.user)mostrar('f-login','Entrar','Escribí tu usuario o correo y tu contraseña.');
+ else if(params.has('sinpermiso'))mostrar('sin-permiso','Sin permiso','Esta parte solo la puede usar un administrador.');
+ else if(params.has('cambiar')||state.user.mustChange)mostrar('f-cambiar',state.user.mustChange?'Creá tu contraseña':'Cambiar contraseña',state.user.mustChange?'Por seguridad, cambiá la contraseña temporal por una tuya.':'Elegí una contraseña nueva.');
+ else location.replace(destino());
+}
