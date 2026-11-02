@@ -40,3 +40,13 @@ body.app-tel .mejora-model-access p{grid-column:1/-1;margin:0;color:var(--tinta-
    no debe desplazar el número fuera del punto que se está pulsando. */
 body #labels .label:not(.selected-marker):is(:hover,:focus-visible,:active){transform:translate(-50%,-50%)}
 body #labels .label.part-label.hover-marker:not(.selected-marker){transform:translate(-50%,-50%) scale(1.15)}
+/* Historial prioriza la lectura; el modelo se abre a petición. */
+body.app-tel[data-tel-seccion="historial"]:not(.hist-model-open){--escena:0px}
+body.app-tel[data-tel-seccion="historial"]:not(.hist-model-open) main{display:none}
+body.app-tel[data-tel-seccion="historial"] #history-model{display:none}
+body.app-tel[data-tel-seccion="historial"] .mejora-model-access{grid-template-columns:1fr;justify-items:start}
+body.app-tel[data-tel-seccion="historial"] .mejora-model-access [data-model-mode="exploded"],
+body.app-tel[data-tel-seccion="historial"] .mejora-model-access [data-model-status]{display:none}
+@media(min-width:901px){
+ body.app-tel[data-tel-seccion="historial"]:not(.hist-model-open) #tel-contenido{left:var(--riel);width:auto;border-left:0;padding-left:max(28px,calc((100% - 960px)/2));padding-right:max(28px,calc((100% - 960px)/2))}
+}

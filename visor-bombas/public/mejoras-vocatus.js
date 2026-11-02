@@ -102,7 +102,7 @@ function init(){
  const bodegaObserver=new MutationObserver(updateBodegaLinks);bodegaObserver.observe($('#bod-lista'),{childList:true});
  document.addEventListener('vocatus:listo',()=>{paintOrderOptions();load();});document.addEventListener('vocatus:bomba',()=>setTimeout(enhancePanel,100));
  const modelAccess=document.createElement('nav');modelAccess.className='mejora-model-access';modelAccess.setAttribute('aria-label','Modelo 3D de la bomba');
- modelAccess.innerHTML='<button type="button" data-model-mode="assembled" aria-pressed="false" disabled>◈ Ver bomba en 3D</button><button type="button" data-model-mode="exploded" aria-pressed="false" disabled>↔ Vista explosionada</button><p data-model-status role="status" hidden></p>';
+ modelAccess.innerHTML='<button type="button" data-model-mode="assembled" aria-pressed="false" disabled>Ver 3D</button><button type="button" data-model-mode="exploded" aria-pressed="false" disabled>↔ Vista explosionada</button><p data-model-status role="status" hidden></p>';
  $('.tel-ficha .tel-volver').after(modelAccess);
  let modelTicket=0,modelTag='';
  async function openPumpModel(exploded){
@@ -126,7 +126,17 @@ function init(){
   }
   status.textContent='El modelo sigue cargando. Podés volver a pulsar cuando termine.';
  }
- modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.onclick=()=>openPumpModel(button.dataset.modelMode==='exploded'));
+ modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.onclick=()=>{
+  if(button.dataset.modelMode==='assembled'&&document.body.dataset.telSeccion==='historial'&&document.body.classList.contains('hist-model-open')){
+   ++modelTicket;document.body.classList.remove('hist-model-open','mejora-model-open');
+   V()?.explode(0);modelAccess.querySelector('[data-model-status]').hidden=true;
+   modelAccess.querySelectorAll('[data-model-mode]').forEach(b=>b.setAttribute('aria-pressed','false'));
+   button.textContent='Ver 3D';button.setAttribute('aria-expanded','false');window.dispatchEvent(new Event('resize'));return;
+  }
+  openPumpModel(button.dataset.modelMode==='exploded');
+ });
+ const syncModelToggle=()=>{const open=document.body.classList.contains('hist-model-open');const button=modelAccess.querySelector('[data-model-mode="assembled"]');button.textContent=open?'Ocultar 3D':'Ver 3D';button.setAttribute('aria-expanded',String(open));};
+ new MutationObserver(syncModelToggle).observe(document.body,{attributes:true,attributeFilter:['class']});syncModelToggle();
  const enableModelAccess=()=>{const p=V()?.pump;modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.disabled=!p?.tag||!!p.pending||(button.dataset.modelMode==='exploded'&&(p.data?.inactive||p.data?.enUso===false)));};document.addEventListener('vocatus:bomba',enableModelAccess);document.addEventListener('vocatus:referencia',enableModelAccess);enableModelAccess();
  document.addEventListener('vocatus:bomba',event=>{if(event.detail!==modelTag){++modelTicket;document.body.classList.remove('mejora-model-open');modelAccess.querySelector('[data-model-status]').hidden=true;modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.setAttribute('aria-pressed','false'));}});
  document.addEventListener('click',event=>{if(event.target.closest('#history-model'))setTimeout(()=>{if(!document.body.classList.contains('hist-model-open')){++modelTicket;document.body.classList.remove('mejora-model-open');modelAccess.querySelector('[data-model-status]').hidden=true;modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.setAttribute('aria-pressed','false'));window.dispatchEvent(new Event('resize'));}},0);});

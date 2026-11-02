@@ -420,7 +420,7 @@ function iniciar() {
  // ---------- Ficha dentro de la app ----------
  function abrirFicha(tag, pestana = 'ficha', reference = null) {
   const key=selectionIdentity(reference?{pending:reference}:{tag});if(!key)return;
-  const request=++fichaRequest;ficha.dataset.selection=key;ficha.dataset.tag=reference?'':tag;document.body.classList.remove('hist-model-open');
+  const request=++fichaRequest;ficha.dataset.selection=key;ficha.dataset.tag=reference?'':tag;document.body.classList.remove('hist-model-open','mejora-model-open');
   mostrarMapaAmplio(false);
   viendoFicha = true; ficha.dataset.origen = seccion; ficha.hidden = false; document.body.classList.add('tel-con-ficha'); fab.hidden = !!reference;
   // En computadora, Pendientes es «lista y detalle»: la lista queda a la izquierda y la ficha a la derecha.
@@ -477,7 +477,7 @@ function iniciar() {
   if(inspector?.classList.contains('is-fullscreen'))$('#expand-inspector')?.click();
   mostrarMapaAmplio(false);
   seccion = id; viendoFicha = false; ficha.hidden = true; fab.hidden = true;
-  eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d');
+  eligiendo = null; document.body.classList.remove('tel-con-ficha', 'tel-eligiendo', 'tel-3d', 'hist-model-open', 'mejora-model-open');
   for (const [k, p] of Object.entries(paneles)) p.hidden = k !== id;
   barra.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.s === id ? 'page' : 'false'));
   titulo.textContent=SECCIONES.find(s=>s.id===id).nombre;cabecera.setSection(titulo.textContent);
@@ -487,7 +487,7 @@ function iniciar() {
   if (id === 'bodega') pintarBodega();
   if (id === 'mantenimiento' || id === 'bodega') pintarResumen();
   if(id==='mantenimiento'){resumenMant();paintLocalReports();}
-  if(id==='areas'||(id==='historial'&&!V()?.pumps?.some(p=>p.tag===location.hash.slice(1).toUpperCase())))V()?.ensure3D?.();
+  if(id==='areas')V()?.ensure3D?.();
   if (id === 'historial') pintarHistorial();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
