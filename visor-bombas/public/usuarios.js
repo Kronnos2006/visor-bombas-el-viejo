@@ -29,6 +29,7 @@ function fila(u){
   rechazar.onclick=()=>accion(()=>api(`/api/auth/users/${u.id}/reject`,{}));
   return el('div',{className:'cuenta'},info,el('div',{className:'cuenta-acciones'},aprobar,rechazar));
  }
+ if(u.status&&u.id===yo.id){rol.disabled=true;activa.disabled=true;clave.disabled=true;rol.title=activa.title='Otro administrador debe cambiar tu rol o estado.';clave.title='Usá Cambiar contraseña en el menú de tu cuenta.';}
  return el('div',{className:'cuenta'},info,el('div',{className:'cuenta-acciones'},rol,clave,activa));
 }
 async function pintar(){

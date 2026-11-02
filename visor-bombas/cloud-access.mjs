@@ -31,7 +31,11 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
  function approved(ctx){const a=ctx?.account;return !!(a&&a.status==='approved'&&a.active===true&&a.sessionValid===true&&['admin','usuario'].includes(a.role));}
  function requireAdmin(ctx){if(!approved(ctx)||ctx.account.mustChange||ctx.account.role!=='admin')throw error('Solo un administrador puede usar esta parte.',403,'ADMIN_ONLY');return ctx.account.id;}
  const manage=(actor,action,target=null,input={})=>rpc('vocatus_manage_account',{p_actor:actor,p_action:action,p_target:target,p_input:input});
- async function requestAccount(token,input){return unwrap(await asUser(token).rpc('vocatus_request_access',{p_username:input.username,p_name:input.name}));}
+ async function requestAccount(token,input){
+  const result=await asUser(token).rpc('vocatus_request_access',{p_username:input.username,p_name:input.name});
+  if(result.error?.message?.startsWith('Tu membresía de consulta sigue vigente.'))throw error('Tu acceso de consulta sigue vigente. Un administrador debe revisar tu perfil antes de habilitar escritura.',409,'MEMBER_PROFILE_REVIEW');
+  return unwrap(result);
+ }
  async function login(identifier,password){
   let email=String(identifier||'').trim().toLowerCase();
   if(!email.includes('@'))email=(await rpc('vocatus_account_email',{p_identifier:email}))?.email||'invalid-login@invalid.invalid';
@@ -42,7 +46,7 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
   if(!ctx.account){
    const profile={username:ctx.identity.user_metadata?.requested_username,name:ctx.identity.user_metadata?.requested_name};
    if(!profile.username||!profile.name)return {ctx,session:result.data.session,needsProfile:true};
-   try{await requestAccount(ctx.token,profile);}catch{return {ctx,session:result.data.session,needsProfile:true};}
+   try{await requestAccount(ctx.token,profile);}catch(e){if(e.code==='MEMBER_PROFILE_REVIEW')throw e;return {ctx,session:result.data.session,needsProfile:true};}
    ctx=await context(ctx.token);
    if(!ctx?.account)return {ctx,session:result.data.session,needsProfile:true};
   }
@@ -72,7 +76,7 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
    }
    if(path==='request-profile'){post();
     if(!ctx?.identity||ctx.account)throw error('Entrá con tu cuenta antes de completar una solicitud nueva.',403);
-    const account=await requestAccount(ctx.token,body);return send(res,201,{pending:true,user:account});
+    const account=await requestAccount(ctx.token,body);return send(res,201,{pending:account.status==='pending',user:account});
    }
    if(path==='sync'){post();ctx=await context(body.access_token);if(!ctx?.account||ctx.account.sessionValid!==true)throw error('Sin sesión.',401);cookie({access_token:body.access_token,expires_in:3600});return send(res,200,{user:ctx.account});}
    if(path==='logout'){post();if(ctx)unwrap(await service.auth.admin.signOut(ctx.token,'global'));cookie();return send(res,200,{ok:true});}
@@ -83,8 +87,7 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
     if(String(body.next||'').length<8||body.next===body.current)throw error('Elegí otra contraseña de al menos 8 caracteres.');
     unwrap(await service.auth.admin.updateUserById(ctx.identity.id,{password:body.next}));
     await rpc('vocatus_password_changed',{p_actor:ctx.identity.id});
-    // Los JWT emiten iat en segundos: esperar al siguiente segundo invalida todos los anteriores.
-    await new Promise(resolve=>setTimeout(resolve,1100));
+    // La sesión nueva se compara por created_at; no exige esperar al siguiente segundo.
     const next=await login(ctx.identity.email,body.next);cookie(next.session);return send(res,200,{user:next.ctx.account,session:next.session});
    }
    const actor=requireAdmin(ctx);

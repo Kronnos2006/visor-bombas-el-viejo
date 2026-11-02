@@ -6,7 +6,7 @@
 begin;
 do $$ begin
  if (select md5(coalesce(string_agg(to_jsonb(m)::text,'' order by email),'')) from vocatus_auth.members m)
- <> 'c293a100984673852f1d4577910f6b3a' then
+ is distinct from (select members_md5 from vocatus_access.installation where singleton) then
   raise exception 'Miembros cambiaron: no revertir automáticamente';
  end if;
  if exists(select 1 from vocatus_access.audit where action<>'access_schema_initialized') then

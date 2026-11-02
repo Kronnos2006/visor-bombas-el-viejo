@@ -1,0 +1,57 @@
+{
+  "projectRef": "rbiuaucawhmiqvqomqec",
+  "syntheticDataOnly": true,
+  "run": "68a6fbd0-3e2f-4864-9173-26830d0f90d9",
+  "checks": [
+    {
+      "name": "sesión real posterior a la revocación dentro del mismo segundo",
+      "passed": true
+    },
+    {
+      "name": "miembro activo sin perfil conserva permisos y obtiene perfil aprobado",
+      "passed": true
+    },
+    {
+      "name": "solicitudes de cuentas no miembros quedan pendientes",
+      "passed": true
+    },
+    {
+      "name": "autoaprobación, cambio de rol propio y acceso directo a gestión bloqueados",
+      "passed": true
+    },
+    {
+      "name": "administrador aprueba y rechaza solicitudes reales",
+      "passed": true
+    },
+    {
+      "name": "miembro previo lee, sube imagen sintética y ejecuta publish_photo con su sesión previa",
+      "passed": true
+    },
+    {
+      "name": "pendiente y rechazado no leen ni suben ni publican fotos",
+      "passed": true
+    },
+    {
+      "name": "desactivar cierra acceso de sesión abierta y renovar no la reabre, ni tras reactivar",
+      "passed": true
+    },
+    {
+      "name": "usuario crea orden y la cierra con un informe real",
+      "passed": true
+    },
+    {
+      "name": "solo administrador archiva informe y queda bitácora",
+      "passed": true
+    },
+    {
+      "name": "restablecer, cambiar contraseña y volver a entrar inmediatamente sin espera artificial",
+      "passed": true
+    },
+    {
+      "name": "dos administradores no pueden degradarse/desactivarse mutuamente dejando cero administradores",
+      "passed": true
+    }
+  ],
+  "passed": 12,
+  "failed": 0
+}

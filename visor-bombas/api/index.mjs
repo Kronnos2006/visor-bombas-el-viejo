@@ -1,8 +1,8 @@
 // Adaptador para Vercel: reutiliza el handler de server.mjs en modo DEMO (solo lectura).
 process.env.VOCATUS_DEMO = '1';
 const { handler,useCloudAccess } = await import('../server.mjs');
-if(process.env.VOCATUS_CLOUD_ACCOUNTS==='1'){
- if(process.env.VERCEL_ENV!=='preview')throw Error('Cuentas nuevas solo permitidas en Preview.');
+const {assertAccountPreviewScope}=await import('../cloud-preview-config.js');
+if(assertAccountPreviewScope(process.env)){
  const {createCloudAccess}=await import('../cloud-access.mjs');useCloudAccess(createCloudAccess());
 }
 export default function (req, res) {

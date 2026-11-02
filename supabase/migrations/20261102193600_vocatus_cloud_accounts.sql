@@ -27,6 +27,15 @@ create table vocatus_access.audit (
  target uuid references auth.users(id),
  detail jsonb not null default '{}'::jsonb
 );
+-- Referencia de reversión específica de esta instalación, sin correos ni filas históricas.
+create table vocatus_access.installation (
+ singleton boolean primary key default true check(singleton),
+ members_md5 text not null,
+ installed_at timestamptz not null default now()
+);
+insert into vocatus_access.installation(members_md5)
+select md5(coalesce(string_agg(to_jsonb(m)::text,'' order by email),'')) from vocatus_auth.members m;
+alter table vocatus_access.installation enable row level security;
 alter table vocatus_access.accounts enable row level security;
 alter table vocatus_access.audit enable row level security;
 revoke all on all tables in schema vocatus_access from public,anon,authenticated;
@@ -49,8 +58,7 @@ create function vocatus_access.session_allowed(p_revoked_before timestamptz)
 returns boolean language sql stable security definer set search_path='' as $$
  select auth.uid() is not null and exists(
   select 1 from auth.sessions sess where sess.id::text=auth.jwt()->>'session_id' and sess.user_id=auth.uid()
-  and (p_revoked_before is null or (sess.created_at>p_revoked_before
-   and to_timestamp(coalesce((auth.jwt()->>'iat')::double precision,0))>p_revoked_before))
+  and (p_revoked_before is null or sess.created_at>p_revoked_before)
  );
 $$;
 revoke all on function vocatus_access.session_allowed(timestamptz) from public,anon;
@@ -99,15 +107,26 @@ grant execute on function public.vocatus_account() to authenticated;
 -- El solicitante solo puede crear su perfil pendiente. Nunca puede escribir rol/aprobación.
 create function vocatus_access.request(p_username text,p_name text)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare uid uuid:=auth.uid(); uname text:=lower(trim(p_username)); person text:=trim(p_name);
+declare uid uuid:=auth.uid(); uname text:=lower(trim(p_username)); person text:=trim(p_name); membership text;
 begin
  if uid is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
  if uname !~ '^[a-z0-9._-]{3,40}$' or length(person) not between 1 and 80 then raise exception 'Datos de solicitud inválidos'; end if;
  if exists(select 1 from vocatus_access.accounts where id=uid) then
   return vocatus_access.self_account();
  end if;
- insert into vocatus_access.accounts(id,username,name) values(uid,uname,person);
- insert into vocatus_access.audit(actor,action,target) values(uid,'access_requested',uid);
+ -- Mantener el acceso de miembros activos incorporados después de la migración.
+ select m.role into membership from vocatus_auth.members m join auth.users u on m.email=lower(u.email)
+ where u.id=uid and m.active and u.email_confirmed_at is not null;
+ if membership='viewer' then
+  raise exception 'Tu membresía de consulta sigue vigente. Pedí a un administrador que revise tu perfil antes de solicitar permisos de escritura.' using errcode='42501';
+ elsif membership in ('admin','editor') then
+  insert into vocatus_access.accounts(id,username,name,role,status)
+  values(uid,uname,person,case when membership='admin' then 'admin' else 'usuario' end,'approved');
+  insert into vocatus_access.audit(actor,action,target) values(uid,'existing_member_profile_restored',uid);
+ else
+  insert into vocatus_access.accounts(id,username,name) values(uid,uname,person);
+  insert into vocatus_access.audit(actor,action,target) values(uid,'access_requested',uid);
+ end if;
  return vocatus_access.self_account();
 end;
 $$;
@@ -155,6 +174,7 @@ begin
   update vocatus_access.accounts set status=case when action='approve' then 'approved' else 'rejected' end,
    reviewed_at=now(),reviewed_by=p_actor where id=p_target;
  elsif action='update' then
+  if p_actor=p_target then raise exception 'No podés cambiar tu propio rol ni estado' using errcode='42501'; end if;
   if p_input ? 'role' and p_input->>'role' not in ('admin','usuario') then raise exception 'Rol inválido'; end if;
   if p_input ? 'active' and jsonb_typeof(p_input->'active')<>'boolean' then raise exception 'Estado inválido'; end if;
   if target.role='admin' and target.active and target.status='approved' and

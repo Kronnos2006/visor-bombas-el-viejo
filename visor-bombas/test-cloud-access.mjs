@@ -94,7 +94,7 @@ test('sync rechaza una sesión revocada y no permite regenerar su cookie',async(
  assert.equal((await route(access,'sync',{body:{access_token:'old-token'}})).status,401);
 });
 
-function profileBackend({conflict=false}={}){
+function profileBackend({conflict=false,existingMember=false,viewer=false}={}){
  let account=null;const calls=[];
  const session={access_token:'verified-token',refresh_token:'refresh-test',expires_in:3600};
  const factory=(_url,key)=>({
@@ -106,7 +106,8 @@ function profileBackend({conflict=false}={}){
    if(name==='vocatus_account')return {data:account};
    if(name==='vocatus_request_access'){
     if(conflict)return {error:{code:'23505'}};
-    account={...approved,status:'pending',username:input.p_username,name:input.p_name};
+    if(viewer)return {error:{message:'Tu membresía de consulta sigue vigente. Pedí a un administrador que revise tu perfil antes de solicitar permisos de escritura.'}};
+    account={...approved,status:existingMember?'approved':'pending',username:input.p_username,name:input.p_name};
     return {data:account};
    }
    throw Error('No se permite usar administración durante una solicitud');
@@ -130,4 +131,18 @@ test('un nombre ocupado después de signup conserva la identidad y ofrece comple
  const result=await route(access,'request',{body:{username:'ocupado',name:'Solicitante',email:identity.email,password:'test-password-123'}});
  assert.equal(result.status,200);assert.equal(result.data.needsProfile,true);
  assert.equal(result.data.session.access_token,'verified-token');
+});
+
+test('completar perfil de miembro aprobado no devuelve un estado pendiente',async()=>{
+ const {access}=profileBackend({existingMember:true});
+ const result=await route(access,'request-profile',{body:{username:'miembro',name:'Miembro'}});
+ assert.equal(result.status,201);assert.equal(result.data.pending,false);
+ assert.equal(result.data.user.status,'approved');assert.equal(result.data.user.role,'usuario');
+});
+
+test('miembro de consulta recibe un error claro y conserva su membresía sin crear perfil pendiente',async()=>{
+ const {access,calls}=profileBackend({viewer:true});
+ const result=await route(access,'request-profile',{body:{username:'lector',name:'Lector'}});
+ assert.equal(result.status,409);assert.match(result.data.error,/acceso de consulta sigue vigente/);
+ assert.equal(calls.some(x=>x.key==='server-test'),false);
 });

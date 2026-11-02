@@ -1,0 +1,20 @@
+{
+  "projectRef": "rbiuaucawhmiqvqomqec",
+  "syntheticDataOnly": true,
+  "checks": [
+    {
+      "name": "entrada servidor actual usuario",
+      "passed": true
+    },
+    {
+      "name": "entrada servidor actual admin",
+      "passed": true
+    },
+    {
+      "name": "subir, publicar y descargar con límites actuales del bucket",
+      "passed": true
+    }
+  ],
+  "passed": 3,
+  "failed": 0
+}

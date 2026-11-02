@@ -1,5 +1,7 @@
 # Revisión previa a cambios de base: cuentas de Preview
 
+> Registro histórico. Estado vigente, nuevas huellas, pruebas reales y pendientes en [RESULTADOS-AISLADOS.md](RESULTADOS-AISLADOS.md). El SQL solo se ejecutó en el proyecto temporal autorizado; continúa sin aprobación para la base compartida.
+
 Estado: código preparado, SQL NO ejecutado, sin despliegue de Preview todavía. No está terminado el objetivo.
 
 ## Base y SQL completo
@@ -39,7 +41,7 @@ La migración local fue creada con Supabase CLI 3.0.0, comando `migration new`; 
 
 ## Configuración exacta en Vercel
 
-Proyecto `visor-bombas-el-viejo` > Settings > Environment Variables. Marcar SOLO `Preview`; limitar a `codex/cuentas-vercel` si la interfaz lo permite:
+Proyecto `visor-bombas-el-viejo` > Settings > Environment Variables. Marcar SOLO `Preview` y limitar obligatoriamente a `codex/cuentas-vercel`; no crear una variable general para todas las ramas. Activar Deployment Protection con autenticación antes de desplegar y comprobar que un visitante anónimo queda bloqueado:
 
 | Variable | Configuración |
 | --- | --- |

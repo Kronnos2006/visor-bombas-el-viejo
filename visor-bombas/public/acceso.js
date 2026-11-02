@@ -84,6 +84,7 @@ enviar('f-request',async d=>{
  d.username=d.username.trim().toLowerCase();d.name=d.name.trim();
  const result=await post(completingProfile?'/api/auth/request-profile':'/api/auth/request',completingProfile?{username:d.username,name:d.name}:d);
  if(result.needsProfile){mostrarSolicitud(true);aviso('Completá tu solicitud con un nombre de usuario disponible.');return;}
+ if(result.user?.status==='approved'){location.replace(destino());return;}
  mostrar('f-login','Solicitud enviada',result.confirmEmail?'Confirmá tu correo y luego entrá para completar la solicitud.':'Tu solicitud está pendiente de aprobación.');
 },'Enviando…');
 let state=null;

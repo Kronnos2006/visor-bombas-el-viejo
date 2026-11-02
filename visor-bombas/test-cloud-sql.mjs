@@ -6,6 +6,7 @@ import {createRequire} from 'node:module';
 const {parse}=createRequire(import.meta.url)('libpg-query');
 const migration=new URL('../supabase/migrations/20261102193600_vocatus_cloud_accounts.sql',import.meta.url);
 const rollback=new URL('../supabase/review/cuentas-preview-rollback.sql',import.meta.url);
+const recovery=new URL('../supabase/review/cuentas-preview-member-recovery.sql',import.meta.url);
 
 test('la migración y la reversión tienen sintaxis PostgreSQL 17 válida sin ejecutar SQL',async()=>{
  for(const file of [migration,rollback]){
@@ -15,6 +16,11 @@ test('la migración y la reversión tienen sintaxis PostgreSQL 17 válida sin ej
   assert.equal(ast.stmts[0].stmt.TransactionStmt.kind,'TRANS_STMT_BEGIN');
   assert.equal(ast.stmts.at(-1).stmt.TransactionStmt.kind,'TRANS_STMT_COMMIT');
  }
+});
+
+test('la recuperación manual tiene sintaxis PostgreSQL válida',async()=>{
+ const ast=await parse(await readFile(recovery,'utf8'));
+ assert.ok(ast.stmts.length>0);
 });
 test('también se analiza el contenido de cada función LANGUAGE SQL',async()=>{
  const ast=await parse(await readFile(migration,'utf8'));
