@@ -190,11 +190,20 @@ function iniciar() {
 
  paneles.pendientes.innerHTML = `<div id="pend-lista"><p class="tel-vacio">Cargando…</p></div>`;
 
- paneles.historial.innerHTML = `<label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="hist-buscar" type="search" placeholder="TAG, marca, modelo o serie" aria-label="Buscar bomba en Historial" autocomplete="off"></label>
+ paneles.historial.innerHTML = `<button type="button" id="hist-ver-3d" class="tel-sec" aria-expanded="false" aria-controls="viewport">Ver 3D</button><label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="hist-buscar" type="search" placeholder="TAG, marca, modelo o serie" aria-label="Buscar bomba en Historial" autocomplete="off"></label>
   <div class="tel-filtros"><div class="tel-campo tf-area"><label for="hist-area">Área</label><select id="hist-area"></select></div><div class="tel-campo"><label for="hist-fluido">Fluido</label><select id="hist-fluido"><option value="">Todos</option><option value="alcohol">Alcohol</option><option value="agua">Agua</option><option value="mosto">Mosto / vinaza</option><option value="sin-uso">Sin uso</option></select></div>
   <div class="tel-campo"><label for="hist-marca">Marca</label><select id="hist-marca"><option value="">Todas</option></select></div></div>
   <p id="hist-cuenta" class="tel-cuenta" aria-live="polite"></p>
   <div id="hist-tarjetas" class="tel-tarjetas"></div>`;
+ const historyModelToggle=$('#hist-ver-3d');
+ historyModelToggle.onclick=()=>{
+  const open=!document.body.classList.contains('hist-model-open');
+  document.body.classList.toggle('hist-model-open',open);
+  if(open)V()?.ensure3D?.();
+  window.dispatchEvent(new Event('resize'));
+ };
+ const syncHistoryModelToggle=()=>{const open=document.body.classList.contains('hist-model-open');historyModelToggle.textContent=open?'Ocultar 3D':'Ver 3D';historyModelToggle.setAttribute('aria-expanded',String(open));};
+ new MutationObserver(syncHistoryModelToggle).observe(document.body,{attributes:true,attributeFilter:['class']});
  for (const id of ['hist-buscar', 'hist-fluido', 'hist-marca']) $('#' + id).addEventListener(id === 'hist-buscar' ? 'input' : 'change', () => pintarHistorial());
  $('#hist-area').onchange = e => { filtroHist = e.target.value; if (filtroHist) V()?.chooseArea(filtroHist); pintarHistorial(); };
 
