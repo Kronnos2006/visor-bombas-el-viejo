@@ -12,6 +12,7 @@ function fila(u){
  const info=el('div',{},titulo);
  if(u.id===yo.id)info.append(el('span',{className:'etiqueta',textContent:'Vos'}));
  if(!u.active)info.append(el('span',{className:'etiqueta off',textContent:'Desactivada'}));
+ if(u.status&&u.status!=='approved')info.append(el('span',{className:'etiqueta',textContent:u.status==='pending'?'Solicitud pendiente':'Rechazada'}));
  if(u.mustChange)info.append(el('span',{className:'etiqueta',textContent:'Contraseña temporal'}));
  info.append(el('small',{textContent:[u.username,u.email].filter(Boolean).join(' · ')}),el('small',{textContent:u.lastLogin?'Última entrada: '+new Date(u.lastLogin).toLocaleString('es-CR'):'Todavía no ha entrado'}));
  const rol=el('select',{ariaLabel:`Permiso de ${u.name}`});
@@ -21,6 +22,13 @@ function fila(u){
  clave.onclick=()=>accion(async()=>{const r=await api(`/api/auth/users/${u.id}/reset`,{});mostrarClave(r.user,r.password);});
  const activa=el('button',{type:'button',textContent:u.active?'Desactivar':'Activar'});
  activa.onclick=()=>accion(()=>api(`/api/auth/users/${u.id}`,{active:!u.active}));
+ if(u.status==='pending'){
+  const aprobar=el('button',{type:'button',textContent:'Aprobar'}),rechazar=el('button',{type:'button',textContent:'Rechazar'});
+  aprobar.disabled=rechazar.disabled=u.id===yo.id;
+  aprobar.onclick=()=>accion(()=>api(`/api/auth/users/${u.id}/approve`,{}));
+  rechazar.onclick=()=>accion(()=>api(`/api/auth/users/${u.id}/reject`,{}));
+  return el('div',{className:'cuenta'},info,el('div',{className:'cuenta-acciones'},aprobar,rechazar));
+ }
  return el('div',{className:'cuenta'},info,el('div',{className:'cuenta-acciones'},rol,clave,activa));
 }
 async function pintar(){

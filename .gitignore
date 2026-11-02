@@ -78,3 +78,6 @@ visor-bombas/.auditoria-regresion/
 .vercel/
 .vercel
 .env*
+
+# Estado de herramientas de Supabase (sin credenciales en Git)
+supabase/.temp/

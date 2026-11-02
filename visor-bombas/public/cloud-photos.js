@@ -8,7 +8,7 @@ const notify=entity=>document.dispatchEvent(new CustomEvent('vocatus:cloud-photo
 const changed=()=>document.dispatchEvent(new Event('vocatus:cloud-auth'));
 export const cloudEnabled=()=>typeof window!=='undefined'&&cloudPhotoConfig.enabled;
 async function client(){
- if(!clientPromise)clientPromise=import('./vendor/supabase.js').then(({createClient})=>createClient(cloudPhotoConfig.url,cloudPhotoConfig.key,{auth:{storageKey:'vocatus-photo-session',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));
+ if(!clientPromise)clientPromise=(async()=>{if(typeof document!=='undefined'&&document.documentElement?.dataset.cloudAccounts==='1'){const {sharedAccountClient}=await import('./cloud-session.js');return sharedAccountClient();}return import('./vendor/supabase.js').then(({createClient})=>createClient(cloudPhotoConfig.url,cloudPhotoConfig.key,{auth:{storageKey:'vocatus-photo-session',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));})();
  return clientPromise;
 }
 function invalidatePermissions(){permissionGeneration++;permissions=null;permissionOwner=null;permissionUntil=0;permissionRequest=null;}
@@ -120,6 +120,7 @@ export function bindCloudPhotoControls(root,entity,{refresh,flush,resolve,detail
  addStyles();
 }
 async function openAccount(){
+ if(document.documentElement.dataset.cloudAccounts==='1'){location.assign('/login.html?next='+encodeURIComponent(location.pathname+location.search+location.hash));return;}
  const supabase=await client();document.getElementById('vocatus-cloud-account')?.remove();
  const dialog=document.createElement('dialog');dialog.id='vocatus-cloud-account';dialog.className='cloud-account';
  dialog.innerHTML=`<form method="dialog"><button type="submit" class="cloud-close">Cerrar</button></form><h2>Fotos del equipo VOCATUS</h2><p>Solo los correos autorizados pueden consultar y actualizar las fotos. Usá tu cuenta en cada teléfono o computadora.</p>${session?`<p>Sesión: ${esc(session.user.email)}</p><button type="button" data-sign-out>Cerrar sesión</button>`:`<form data-login><label>Correo<input name="email" type="email" autocomplete="username" required></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required></label><button type="submit">Entrar</button><button type="button" data-register>Crear mi cuenta</button></form><p>Si creás una cuenta, confirmá tu correo antes de entrar.</p>`}<p role="status" data-login-status></p>`;

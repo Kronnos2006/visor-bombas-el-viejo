@@ -89,3 +89,7 @@ El administrador luego crea una cuenta temporal de usuario mediante el servidor,
 Se ejecutaron git fetch origin y git merge origin/main: la rama ya incluía 1b0346c. Se añadió cloud-identity.mjs como módulo de servidor independiente, que consume un proveedor Auth verificado y una lectura actual de la cuenta. Reutiliza delicateAction() de auth.mjs; no usa metadata editable, no guarda sesiones locales y no cachea permisos. El módulo todavía NO está conectado al handler de Vercel: faltan el almacén Supabase, la migración, la entrada compartida y la administración completa. No se activa en el visor local.
 
 Seis pruebas unitarias adicionales cubren identidad confirmada, UUID, cuenta activa, rechazo de tokens, caída del almacén, cambio de rol, acciones administrativas y cambio obligatorio de contraseña. Son pruebas con proveedores simulados; no sustituyen las pruebas con usuarios reales ni RLS en Supabase.
+
+## Integración preparada para revisión SQL
+
+Ahora hay una implementación inicial de servidor/Edge y pantallas compartidas, detrás de VOCATUS_CLOUD_ACCOUNTS=1 y exclusivamente VERCEL_ENV=preview. Aún no está validada contra una base migrada ni en un Preview real. La solicitud de aprobación del SQL completo, riesgos, reversión y variables exactas están en supabase/review/REVISION-CUENTAS.md. La migración NO fue aplicada. Las pruebas unitarias adicionales verifican rutas protegidas, cuenta pendiente/desactivada, rol, origen y uso del actor verificado con proveedores simulados; no sustituyen las verificaciones reales pendientes.

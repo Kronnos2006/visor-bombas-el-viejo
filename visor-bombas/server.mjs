@@ -152,10 +152,18 @@ Terminá con las fuentes utilizadas. Si no hay historial, decilo explícitamente
 // Acceso con cuenta: se activa al arrancar el visor local, no en Vercel ni Codespaces.
 let access=null;
 export function useAccess(store){access=store;}
+let cloudAccess=null;
+export function useCloudAccess(store){cloudAccess=store;}
 
 export async function handler(req,res) {
  try {
   if (!isAllowedHost(req.headers.host)) return send(res,403,{error:'Host no permitido.'});
+  if(ON_VERCEL&&!passwordOk(req.headers.authorization,process.env.VISOR_PASSWORD))return send(res,401,{error:'Acceso restringido.'});
+  const cloudUrl=new URL(req.url,`http://127.0.0.1:${PORT}`);
+  if(cloudAccess){
+   if(cloudUrl.pathname.startsWith('/api/auth/'))return cloudAccess.route({req,res,url:cloudUrl,send,payload});
+   await cloudAccess.authorize(req,cloudUrl);
+  }
   let currentUser=null;
   if(access){
    const gate=await authGate({store:access,req,res,url:new URL(req.url,`http://127.0.0.1:${PORT}`),send,payload,isAllowedOrigin});
@@ -257,6 +265,10 @@ export async function handler(req,res) {
    const vercelOrigin=ON_VERCEL&&req.headers['x-original-host']&&`https://${req.headers['x-original-host']}`;
    if(origin && !isAllowedOrigin(origin) && origin!==vercelOrigin) return send(res,403,{error:'Origen no permitido.'});
    const body=await payload(req);
+   if(cloudAccess){
+    const decision=await cloudAccess.authorize(req,url,body);
+    if(decision.audit)await cloudAccess.audit(decision.user.id,decision.audit,{tag:String(body.tag||'').slice(0,100),phase:'authorized_attempt'});
+   }
    if(access&&currentUser){
     const delicate=delicateAction(req.method,url.pathname,body);
     if(delicate&&currentUser.role!=='admin')return send(res,403,{code:'ADMIN_ONLY',error:'Este cambio solo lo puede hacer un administrador.'});
@@ -344,7 +356,7 @@ export async function handler(req,res) {
   let content=await readFile(filename);
   if(access&&path.extname(filename)==='.html'&&path.basename(filename)!=='login.html'){const html=content.toString('utf8');const i=html.indexOf('</head>');if(i>=0)content=Buffer.from(html.slice(0,i)+'<link rel="stylesheet" href="/sesion.css"><script src="/sesion.js"></script>'+html.slice(i));}
   res.writeHead(200,{'Content-Type':mime[path.extname(filename)]||'application/octet-stream','Content-Length':content.length,'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'}); res.end(content);
- } catch(e) { send(res,e.code==='PUMP_NOT_AVAILABLE'?409:e.code==='ENOENT'?404:400,{code:e.code,error:e.message==='fetch failed'?'No se pudo conectar con Gemini. Revisá la conexión a internet.':e.message}); }
+ } catch(e) { send(res,e.status||(e.code==='PUMP_NOT_AVAILABLE'?409:e.code==='ENOENT'?404:400),{code:e.code,error:e.message==='fetch failed'?'No se pudo conectar con Gemini. Revisá la conexión a internet.':e.message}); }
 }
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
  const bind=process.env.VISOR_BIND || (CLOUD_DEV || process.env.PORT ? '0.0.0.0' : '127.0.0.1');

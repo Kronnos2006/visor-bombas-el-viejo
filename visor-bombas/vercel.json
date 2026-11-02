@@ -14,5 +14,5 @@
       "maxDuration": 60
     }
   },
-  "buildCommand": "node tools/proteger-historial.mjs"
+  "buildCommand": "node tools/proteger-historial.mjs && node tools/prepare-cloud-access.mjs"
 }

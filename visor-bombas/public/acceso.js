@@ -12,11 +12,11 @@ $('tema').onclick=()=>{document.body.classList.toggle('claro');guardar('vocatus-
 
 const post=async(path,body)=>{
  let r;try{r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}catch{throw new Error(SIN_CONEXION);}
- const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'No se pudo completar. Probá de nuevo.');return data;
+ const data=await r.json().catch(()=>({}));if(data.session){const {acceptCloudSession}=await import('./cloud-session.js');await acceptCloudSession(data.session);}if(!r.ok)throw new Error(data.error||'No se pudo completar. Probá de nuevo.');return data;
 };
 function aviso(text){const a=$('aviso');a.textContent=text||'';a.hidden=!text;if(text){a.classList.remove('sacudir');void a.offsetWidth;a.classList.add('sacudir');}}
 function mostrar(id,titulo,ayuda){
- for(const f of ['f-login','f-setup','f-cambiar','sin-permiso'])$(f).hidden=f!==id;
+ for(const f of ['f-login','f-setup','f-request','f-cambiar','sin-permiso'])$(f).hidden=f!==id;
  $('titulo').textContent=titulo;$('ayuda').textContent=ayuda;document.title=titulo+' · Vocatus';
  const inputs=[...$(id).querySelectorAll('.campo input')];(inputs.find(i=>!i.value)||inputs[0])?.focus();
 }
@@ -28,7 +28,7 @@ function enviar(id,accion,textoEspera){
   if(vacio){aviso(`Falta: ${vacio.parentElement.querySelector('span').textContent}.`);vacio.focus();return;}
   const boton=form.querySelector('.principal'),texto=boton.querySelector('span'),original=texto.textContent;
   boton.disabled=true;boton.classList.add('cargando');texto.textContent=textoEspera;
-  try{await accion(Object.fromEntries(new FormData(form)));}
+  try{await accion(Object.fromEntries(new FormData(form)));boton.disabled=false;boton.classList.remove('cargando');texto.textContent=original;}
   catch(err){aviso(err.message);boton.disabled=false;boton.classList.remove('cargando');texto.textContent=original;form.querySelector('input[type=password]')?.select();}
  };
  form.addEventListener('input',()=>{if(!$('aviso').hidden)aviso('');});
@@ -62,14 +62,27 @@ if(recordado){$('f-login').identifier.value=recordado;$('recordar').checked=true
 enviar('f-login',async d=>{
  const {user}=await post('/api/auth/login',d);
  guardar('vocatus-usuario',$('recordar').checked?d.identifier.trim():null);
+ if(user.status&&user.status!=='approved'){mostrar('f-login',user.status==='pending'?'Solicitud pendiente':'Solicitud rechazada','Un administrador debe aprobar tu acceso antes de entrar.');return;}
+ if(user.active===false){aviso('Tu cuenta está desactivada. Consultá a un administrador.');return;}
  location.replace(user.mustChange?'/login.html?cambiar=1&next='+encodeURIComponent(destino()):destino());
 },'Entrando…');
 enviar('f-setup',async d=>{await post('/api/auth/setup',d);location.replace('/');},'Creando…');
 enviar('f-cambiar',async d=>{await post('/api/auth/change-password',d);location.replace(destino());},'Guardando…');
 
+$('request-access').onclick=()=>mostrar('f-request','Solicitar acceso','Creá tu cuenta y confirmá el correo. Un administrador revisará tu solicitud.');
+$('request-back').onclick=()=>mostrar('f-login','Conectar mi cuenta','Escribí tu usuario o correo y tu contraseña.');
+enviar('f-request',async d=>{const result=await post('/api/auth/request',d);mostrar('f-login','Solicitud enviada',result.confirmEmail?'Confirmá tu correo y luego entrá para completar la solicitud.':'Tu solicitud está pendiente de aprobación.');},'Enviando…');
 let state=null;
 try{state=await (await fetch('/api/auth/state')).json();}catch{mostrar('sin-permiso','Sin conexión',SIN_CONEXION);$('sin-permiso').hidden=true;}
 if(state){
+ if(state.cloud){
+  try{const {startCloudAccount}=await import('./cloud-session.js');if(await startCloudAccount())state=await(await fetch('/api/auth/state')).json();}catch{}
+  $('request-access').hidden=false;
+  $('f-login').querySelector('.principal span').textContent='Conectar mi cuenta';
+ }
+ if(state.user?.status&&state.user.status!=='approved'){
+  mostrar('f-login',state.user.status==='pending'?'Solicitud pendiente':'Solicitud rechazada','Un administrador debe aprobar tu acceso.');
+ }else
  if(state.setup){
   if(state.setupAllowed)mostrar('f-setup','Crear administrador','Es la primera vez. Esta cuenta controlará el visor.');
   else{mostrar('sin-permiso','Falta el administrador','Abrí el visor en la computadora donde está instalado para crear la primera cuenta.');$('sin-permiso').hidden=true;}
