@@ -1,5 +1,7 @@
 # Correcciones y pruebas aisladas · 2 de noviembre de 2026
 
+> El respaldo ya se completó y verificó. La revisión vigente para aprobación está en [APROBACION-SQL-CUENTAS.md](APROBACION-SQL-CUENTAS.md); los estados previos de bloqueo de este registro son históricos.
+
 > Seguimiento vigente del respaldo, auditoría de todos los commits, instrucciones exactas de Vercel y diagnóstico de Storage/concurrencia en [PENDIENTES-Y-PREVIEW.md](PENDIENTES-Y-PREVIEW.md).
 
 Estado actual: SQL aprobado únicamente para pruebas en el proyecto temporal. **No aplicado en `gtfqhljbxyanfyrarykw`. No solicitar todavía aprobación de la base compartida.** Este informe reemplaza los estados históricos de REVISION-CUENTAS.md.

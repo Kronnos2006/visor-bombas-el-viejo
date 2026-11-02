@@ -1,5 +1,7 @@
 # Respaldo, historial y Preview · 2 de noviembre de 2026
 
+> Actualización: el propietario terminó el respaldo de los 119 archivos y se verificó de nuevo sin claves. Estado vigente, hashes, resultados y solicitud de aprobación en [APROBACION-SQL-CUENTAS.md](APROBACION-SQL-CUENTAS.md). Las menciones de respaldo incompleto de abajo son históricas.
+
 No se aplicó SQL en `gtfqhljbxyanfyrarykw`. No se subió la rama. No se modificaron main, producción ni VISOR_PASSWORD.
 
 ## Respaldo privado
