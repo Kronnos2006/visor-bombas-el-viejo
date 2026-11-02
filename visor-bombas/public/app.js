@@ -1,4 +1,4 @@
-import {aplicarCambiosCampo,cubiertaFotografica} from './cambios-campo.js?v=borde-pdf-20261029e';
+import {aplicarCambiosCampo,cubiertaFotografica} from './cambios-campo.js?v=bombas-torre-pequena-20261102b';
 import {savedSurveyHTML} from './survey-view.js';
 import {evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {normalizeSearch,searchPump,completeness,verificationOf,verificationText,storageDescription} from './interfaz-core.js';
@@ -449,6 +449,15 @@ function refitCurrentView(){
  if(state.view==='plant'){if(state.area==='integrado'&&state.filtroInt)flyIntegrado();else flyArea(state.area,$('#top').classList.contains('active')?'superior':undefined);return;}
  const box=state.detail==='schematic'?anatomy?.bounds():photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;
  if(!box||box.isEmpty())return;const direction=camera.position.clone().sub(controls.target);if(direction.lengthSq()<1e-6)direction.set(5,4,7);const [pos,obj]=encuadrar(box,direction,1.15,detailRailFraction());fly(pos,obj);
+}
+// Reabrir un visor oculto exige medirlo antes de encuadrar la bomba.
+function resumePump3D(){
+ requestAnimationFrame(()=>{
+  const w=viewport.clientWidth,h=viewport.clientHeight;
+  if(!renderer||!camera||!w||!h)return;
+  renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();
+  refitCurrentView();
+ });
 }
 function resetAnatomy(){
  if(!ensureAnatomy())return;anatomy.reset();state.part=null;setExplosion(0);selectPart(null);syncAnatomyTools();fitAnatomy();
@@ -1115,7 +1124,7 @@ window.vocatus={
  select:tag=>selectPhotoPump(tag),
  selectReference:reference=>selectPendingPump(reference),
  tab:name=>{state.tab=name;renderPanel();},
- explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&Number(value)>30&&document.body.classList.contains('app-tel'))fly([15,12,32],[0,0,0],650);},
+ explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&document.body.classList.contains('app-tel')){const ticket=state.loading;setTimeout(()=>{if(ticket===state.loading&&state.view==='pump')resumePump3D();},450);}},
  locate:()=>locateSelectedPump(),
  back:()=>{if(state.view!=='plant'||state.pump)$('#back').click();},
  chooseArea:id=>chooseArea(id),elegirArea:id=>chooseArea(id),
@@ -1123,8 +1132,8 @@ window.vocatus={
  get explosion(){return state.explode;},
  get listo(){return state.view==='pump'&&detailFlightTicket!==state.loading;},
  corte:()=>$('#anatomy-cut').click(),transparente:()=>$('#anatomy-transparent').click(),get anatomia(){return anatomy?{...anatomy.state}:{};},
- vista:t=>{if(!camera||state.view==='plant')return;const ex=state.explode>30,k=document.body.classList.contains('app-tel')&&ex?1.5:1;const P={tres:[10,8,ex?21:12],frente:[0,1.2,ex?22:13],arriba:[0,ex?30:22,.1]}[t];if(P)fly(P.map(v=>v*k),[0,0,0],650);},
+ vista:t=>{if(!camera||state.view==='plant')return;const direction={tres:[10,8,12],frente:[0,1.2,13],arriba:[0,22,.1]}[t];if(!direction)return;const bounds=state.detail==='schematic'?anatomy?.bounds():photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;if(bounds&&!bounds.isEmpty()){const [position,target]=encuadrar(bounds,new THREE.Vector3(...direction),1.2,detailRailFraction());fly(position,target,650);}else fly(direction,[0,0,0],650);},
  areaDe:p=>areaOf(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
- ensure3D:ensurePlant,api
+ resume3D:resumePump3D,ensure3D:ensurePlant,api
 };
 document.dispatchEvent(new Event('vocatus:listo'));

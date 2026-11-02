@@ -110,13 +110,13 @@ function init(){
   if(exploded&&(pump.inactive||pump.enUso===false)){notify('Este equipo está sin uso; su despiece no está identificado.');return;}
   const ticket=++modelTicket;modelTag=tag;document.body.classList.add('hist-model-open','mejora-model-open');
   const status=modelAccess.querySelector('[data-model-status]');status.hidden=false;status.textContent='Preparando el modelo de '+tag+'…';
-  window.dispatchEvent(new Event('resize'));V()?.ensure3D?.();
+  window.dispatchEvent(new Event('resize'));V()?.resume3D?.();
   for(let n=0;n<300;n++){
-   if(ticket!==modelTicket||V()?.pump?.tag!==tag||!document.body.classList.contains('tel-con-ficha'))return;
+   if(ticket!==modelTicket||V()?.pump?.tag!==tag||!document.body.classList.contains('tel-con-ficha')||!document.body.classList.contains('hist-model-open'))return;
    if(V().listo){
     await new Promise(resolve=>setTimeout(resolve,350));
     if(ticket!==modelTicket||V()?.pump?.tag!==tag||!document.body.classList.contains('tel-con-ficha'))return;
-    V().explode(exploded?100:0);V().vista('tres');
+    V().explode(exploded?100:0);V()?.resume3D?.();
     modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.modelMode===(exploded?'exploded':'assembled'))));
     const pieces=$('#tel-vistas [data-piezas] span');if(pieces)pieces.textContent=exploded?'Juntar piezas':'Separar piezas';
     status.textContent=exploded?'Piezas separadas · tocá una pieza para consultarla.':'Bomba completa · arrastrá para girar y acercá con dos dedos.';
