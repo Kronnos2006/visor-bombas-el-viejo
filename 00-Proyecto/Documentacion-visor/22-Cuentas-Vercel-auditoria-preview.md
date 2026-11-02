@@ -83,3 +83,9 @@ El administrador luego crea una cuenta temporal de usuario mediante el servidor,
 - Migración aditiva y comparativa de conteos/huellas; no alterar los miembros existentes ni contenido histórico.
 - npm test y pruebas nuevas de permisos; navegador con usuario y admin en celular/computadora.
 - URL de Preview verificada; Production sigue protegida por VISOR_PASSWORD hasta confirmación del propietario.
+
+## Avance posterior: frontera de identidad
+
+Se ejecutaron git fetch origin y git merge origin/main: la rama ya incluía 1b0346c. Se añadió cloud-identity.mjs como módulo de servidor independiente, que consume un proveedor Auth verificado y una lectura actual de la cuenta. Reutiliza delicateAction() de auth.mjs; no usa metadata editable, no guarda sesiones locales y no cachea permisos. El módulo todavía NO está conectado al handler de Vercel: faltan el almacén Supabase, la migración, la entrada compartida y la administración completa. No se activa en el visor local.
+
+Seis pruebas unitarias adicionales cubren identidad confirmada, UUID, cuenta activa, rechazo de tokens, caída del almacén, cambio de rol, acciones administrativas y cambio obligatorio de contraseña. Son pruebas con proveedores simulados; no sustituyen las pruebas con usuarios reales ni RLS en Supabase.
