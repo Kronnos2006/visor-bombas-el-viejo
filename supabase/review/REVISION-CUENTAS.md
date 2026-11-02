@@ -66,3 +66,9 @@ En Supabase > Authentication > URL Configuration, una vez exista la URL exacta d
 8. Entregar URL de Preview y evidencias. No fusionar a main ni promover a producción.
 
 Verificación de preparación: npm test ejecutado con npm 12.2.1 oficial: 262/262 pruebas aprobadas. Las nueve nuevas pruebas de cloud-access usan proveedores simulados. No se ejecutaron migraciones ni pruebas de escritura sobre el Supabase compartido. El objetivo sigue pendiente hasta aprobación SQL, configuración privada de Preview y validación real.
+
+## Revisión de sesión y solicitudes antes de aplicar
+
+El SQL revisado consulta auth.sessions (solo lectura) para que un JWT cerrado por Supabase no conserve permisos hasta su expiración. El cierre de sesión del servidor usa Auth Admin signOut con el token verificado, y el navegador elimina después su sesión local. No se borran filas de negocio. Se corrigió la pantalla de entrada para cuentas inactivas/sesiones revocadas y para completar solicitudes con identidades Auth existentes sin inventar usuario ni crear duplicados. Un conflicto de nombre permite completar el perfil con otro nombre, conservando la identidad.
+
+Verificación actual: npm test, 266/266 pruebas aprobadas. Las cuatro pruebas nuevas adicionales son simuladas (logout/revocación, sync revocado, identidad sin perfil y conflicto de nombre). La ejecución y pruebas de RLS en Supabase continúan pendientes de aprobación del SQL completo actualizado. No se ha aplicado ninguna migración.

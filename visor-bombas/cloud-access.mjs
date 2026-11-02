@@ -28,7 +28,7 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
   if(!account||account.id!==result.data.user.id)return {identity:result.data.user,account:null,token};
   return {identity:result.data.user,account,token};
  }
- function approved(ctx){const a=ctx?.account;return !!(a&&a.status==='approved'&&a.active&&a.sessionValid);}
+ function approved(ctx){const a=ctx?.account;return !!(a&&a.status==='approved'&&a.active===true&&a.sessionValid===true&&['admin','usuario'].includes(a.role));}
  function requireAdmin(ctx){if(!approved(ctx)||ctx.account.mustChange||ctx.account.role!=='admin')throw error('Solo un administrador puede usar esta parte.',403,'ADMIN_ONLY');return ctx.account.id;}
  const manage=(actor,action,target=null,input={})=>rpc('vocatus_manage_account',{p_actor:actor,p_action:action,p_target:target,p_input:input});
  async function requestAccount(token,input){return unwrap(await asUser(token).rpc('vocatus_request_access',{p_username:input.username,p_name:input.name}));}
@@ -38,8 +38,14 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
   const result=await publicClient().auth.signInWithPassword({email,password:String(password||'')});
   if(result.error||!result.data.session)throw error('Usuario o contraseña incorrectos.',401);
   let ctx=await context(result.data.session.access_token);
-  if(ctx&&!ctx.account){await requestAccount(ctx.token,{username:ctx.identity.user_metadata?.requested_username||String(ctx.identity.email).split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g,'').slice(0,25)+'-'+ctx.identity.id.slice(0,8),name:ctx.identity.user_metadata?.requested_name||String(ctx.identity.email).split('@')[0].slice(0,80)});ctx=await context(ctx.token);}
-  if(!ctx?.account)throw error('Completá la solicitud de acceso con tu cuenta confirmada.',403);
+  if(!ctx)throw error('No se pudo validar la sesión.',401);
+  if(!ctx.account){
+   const profile={username:ctx.identity.user_metadata?.requested_username,name:ctx.identity.user_metadata?.requested_name};
+   if(!profile.username||!profile.name)return {ctx,session:result.data.session,needsProfile:true};
+   try{await requestAccount(ctx.token,profile);}catch{return {ctx,session:result.data.session,needsProfile:true};}
+   ctx=await context(ctx.token);
+   if(!ctx?.account)return {ctx,session:result.data.session,needsProfile:true};
+  }
   return {ctx,session:result.data.session};
  }
  async function route({req,res,url,send,payload}){
@@ -56,16 +62,20 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
    let ctx=await context(cloudToken(req));
    if(path==='state'&&req.method==='GET')return send(res,200,{cloud:true,setup:false,setupAllowed:false,user:ctx?.account||null});
    if(path==='me'&&req.method==='GET')return approved(ctx)?send(res,200,{user:ctx.account}):send(res,401,{code:'AUTH_REQUIRED',error:'Sin sesión aprobada.'});
-   if(path==='login'){post();const result=await login(body.identifier,body.password);cookie(result.session);return send(res,200,{user:result.ctx.account,session:result.session});}
+   if(path==='login'){post();const result=await login(body.identifier,body.password);cookie(result.session);return send(res,200,{user:result.ctx?.account||null,session:result.session,needsProfile:!!result.needsProfile});}
    if(path==='request'){post();
     if(!/^[a-z0-9._-]{3,40}$/.test(body.username||'')||!String(body.name||'').trim()||String(body.name).length>80||!/^\S+@\S+\.\S+$/.test(body.email||'')||String(body.password||'').length<8)throw error('Revisá nombre, usuario, correo y contraseña.');
     const r=await publicClient().auth.signUp({email:body.email,password:body.password,options:{emailRedirectTo:expected+'/login.html',data:{requested_username:body.username,requested_name:body.name}}});
     if(r.error)throw error('No se pudo enviar la solicitud. Revisá los datos o intentá más tarde.');
-    if(r.data.session){await requestAccount(r.data.session.access_token,body);cookie(r.data.session);return send(res,201,{pending:true,session:r.data.session});}
+    if(r.data.session){cookie(r.data.session);try{await requestAccount(r.data.session.access_token,body);}catch{return send(res,200,{needsProfile:true,session:r.data.session});}return send(res,201,{pending:true,session:r.data.session});}
     return send(res,202,{pending:true,confirmEmail:true});
    }
-   if(path==='sync'){post();ctx=await context(body.access_token);if(!ctx?.account)throw error('Sin sesión.',401);cookie({access_token:body.access_token,expires_in:3600});return send(res,200,{user:ctx.account});}
-   if(path==='logout'){post();cookie();if(ctx)await asUser(ctx.token).auth.signOut({scope:'global'});return send(res,200,{ok:true});}
+   if(path==='request-profile'){post();
+    if(!ctx?.identity||ctx.account)throw error('Entrá con tu cuenta antes de completar una solicitud nueva.',403);
+    const account=await requestAccount(ctx.token,body);return send(res,201,{pending:true,user:account});
+   }
+   if(path==='sync'){post();ctx=await context(body.access_token);if(!ctx?.account||ctx.account.sessionValid!==true)throw error('Sin sesión.',401);cookie({access_token:body.access_token,expires_in:3600});return send(res,200,{user:ctx.account});}
+   if(path==='logout'){post();if(ctx)unwrap(await service.auth.admin.signOut(ctx.token,'global'));cookie();return send(res,200,{ok:true});}
    if(!ctx?.account)throw error('Tu sesión terminó.',401,'AUTH_REQUIRED');
    if(path==='change-password'){post();
     const signed=await publicClient().auth.signInWithPassword({email:ctx.identity.email,password:String(body.current||'')});

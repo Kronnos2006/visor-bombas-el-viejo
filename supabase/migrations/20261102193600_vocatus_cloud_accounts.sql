@@ -46,7 +46,9 @@ end $$;
 
 create function vocatus_access.allowed(p_write boolean default false)
 returns boolean language sql stable security definer set search_path='' as $$
- select auth.uid() is not null and exists (
+ select auth.uid() is not null
+ and exists(select 1 from auth.sessions sess where sess.id::text=auth.jwt()->>'session_id' and sess.user_id=auth.uid())
+ and exists (
   select 1 from auth.users u join vocatus_auth.members m on m.email=lower(u.email)
   left join vocatus_access.accounts a on a.id=u.id
   where u.id=auth.uid() and u.email_confirmed_at is not null and m.active
@@ -73,8 +75,9 @@ create function vocatus_access.self_account()
 returns jsonb language sql stable security definer set search_path='' as $$
  select jsonb_build_object('id',a.id,'username',a.username,'name',a.name,'email',u.email,
  'role',a.role,'status',a.status,'active',a.active,'mustChange',a.must_change,
- 'createdAt',a.created_at,'sessionValid',a.revoked_before is null or
- to_timestamp(coalesce((auth.jwt()->>'iat')::double precision,0))>a.revoked_before)
+ 'createdAt',a.created_at,'sessionValid',
+ exists(select 1 from auth.sessions sess where sess.id::text=auth.jwt()->>'session_id' and sess.user_id=auth.uid())
+ and (a.revoked_before is null or to_timestamp(coalesce((auth.jwt()->>'iat')::double precision,0))>a.revoked_before))
  from vocatus_access.accounts a join auth.users u on u.id=a.id where a.id=auth.uid();
 $$;
 revoke all on function vocatus_access.self_account() from public,anon;

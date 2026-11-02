@@ -56,11 +56,20 @@ document.querySelectorAll('[data-fuerza]').forEach(i=>{
  });
 });
 
+let completingProfile=false;
+function mostrarSolicitud(existing=false){
+ completingProfile=existing;
+ const form=$('f-request');
+ for(const name of ['email','password']){const input=form.elements.namedItem(name);input.required=!existing;input.closest('label').hidden=existing;}
+ mostrar('f-request',existing?'Completar solicitud':'Solicitar acceso',existing?'Elegí tu usuario y nombre. Tu cuenta ya existe; no hace falta crear otra.':'Creá tu cuenta y confirmá el correo. Un administrador revisará tu solicitud.');
+}
 // Recordar usuario: solo el nombre, nunca la contraseña.
 const recordado=leer('vocatus-usuario');
 if(recordado){$('f-login').identifier.value=recordado;$('recordar').checked=true;}
 enviar('f-login',async d=>{
- const {user}=await post('/api/auth/login',d);
+ const result=await post('/api/auth/login',d);
+ if(result.needsProfile){mostrarSolicitud(true);return;}
+ const {user}=result;
  guardar('vocatus-usuario',$('recordar').checked?d.identifier.trim():null);
  if(user.status&&user.status!=='approved'){mostrar('f-login',user.status==='pending'?'Solicitud pendiente':'Solicitud rechazada','Un administrador debe aprobar tu acceso antes de entrar.');return;}
  if(user.active===false){aviso('Tu cuenta está desactivada. Consultá a un administrador.');return;}
@@ -69,9 +78,14 @@ enviar('f-login',async d=>{
 enviar('f-setup',async d=>{await post('/api/auth/setup',d);location.replace('/');},'Creando…');
 enviar('f-cambiar',async d=>{await post('/api/auth/change-password',d);location.replace(destino());},'Guardando…');
 
-$('request-access').onclick=()=>mostrar('f-request','Solicitar acceso','Creá tu cuenta y confirmá el correo. Un administrador revisará tu solicitud.');
+$('request-access').onclick=()=>mostrarSolicitud(false);
 $('request-back').onclick=()=>mostrar('f-login','Conectar mi cuenta','Escribí tu usuario o correo y tu contraseña.');
-enviar('f-request',async d=>{const result=await post('/api/auth/request',d);mostrar('f-login','Solicitud enviada',result.confirmEmail?'Confirmá tu correo y luego entrá para completar la solicitud.':'Tu solicitud está pendiente de aprobación.');},'Enviando…');
+enviar('f-request',async d=>{
+ d.username=d.username.trim().toLowerCase();d.name=d.name.trim();
+ const result=await post(completingProfile?'/api/auth/request-profile':'/api/auth/request',completingProfile?{username:d.username,name:d.name}:d);
+ if(result.needsProfile){mostrarSolicitud(true);aviso('Completá tu solicitud con un nombre de usuario disponible.');return;}
+ mostrar('f-login','Solicitud enviada',result.confirmEmail?'Confirmá tu correo y luego entrá para completar la solicitud.':'Tu solicitud está pendiente de aprobación.');
+},'Enviando…');
 let state=null;
 try{state=await (await fetch('/api/auth/state')).json();}catch{mostrar('sin-permiso','Sin conexión',SIN_CONEXION);$('sin-permiso').hidden=true;}
 if(state){
@@ -80,7 +94,9 @@ if(state){
   $('request-access').hidden=false;
   $('f-login').querySelector('.principal span').textContent='Conectar mi cuenta';
  }
- if(state.user?.status&&state.user.status!=='approved'){
+ if(state.cloud&&state.user&&(state.user.active===false||state.user.sessionValid===false)){
+  mostrar('f-login','Conectar mi cuenta',state.user.active===false?'Tu cuenta está desactivada. Consultá a un administrador.':'Tu sesión terminó. Volvé a entrar.');
+ }else if(state.user?.status&&state.user.status!=='approved'){
   mostrar('f-login',state.user.status==='pending'?'Solicitud pendiente':'Solicitud rechazada','Un administrador debe aprobar tu acceso.');
  }else
  if(state.setup){

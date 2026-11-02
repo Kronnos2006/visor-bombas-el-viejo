@@ -12,7 +12,16 @@
   if(user.role==='admin'){const a=document.createElement('a');a.href='/usuarios.html';a.textContent='Usuarios';menu.append(a);}
   const clave=document.createElement('a');clave.href='/login.html?cambiar=1&next='+encodeURIComponent(location.pathname+location.search);clave.textContent='Cambiar contraseña';menu.append(clave);
   const salir=document.createElement('button');salir.type='button';salir.textContent='Salir';
-  salir.onclick=async()=>{try{const state=await(await nativo('/api/auth/state')).json();if(state.cloud){const {sharedAccountClient}=await import('./cloud-session.js');await(await sharedAccountClient()).auth.signOut();}}catch{}await nativo('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});location.assign('/login.html');};
+  salir.onclick=async()=>{
+   salir.disabled=true;
+   try{
+    const state=await(await nativo('/api/auth/state')).json();
+    const response=await nativo('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    if(!response.ok)throw Error('No se pudo cerrar la sesión. Volvé a intentar.');
+    if(state.cloud){const {sharedAccountClient}=await import('./cloud-session.js');await(await sharedAccountClient()).auth.signOut({scope:'local'});}
+    location.assign('/login.html');
+   }catch(e){salir.disabled=false;salir.textContent=e.message;}
+  };
   menu.append(salir);box.append(menu);
   const tema=document.getElementById('tema-toggle'),destino=document.querySelector('header');
   if(tema?.parentElement)tema.parentElement.insertBefore(box,tema);else if(destino)destino.append(box);else{box.classList.add('sesion-flotante');document.body.append(box);}
