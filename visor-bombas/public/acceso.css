@@ -119,3 +119,5 @@ body.claro .campo input{background:rgba(255,255,255,.8)}
  .acceso .tarjeta{padding:26px 22px}
 }
 @media(prefers-reduced-motion:reduce){.burbujas{display:none}.marca-panel,.acceso .tarjeta,.sacudir,.principal.cargando span::before{animation:none}.acceso form>.principal,.campo input,.campo>span{transition:none}}
+/* Acciones secundarias de la entrada: separadas y sin competir con el botón principal. */
+#request-access,#request-back{margin-top:12px;background:transparent;border:1px solid var(--accent);color:var(--tinta)}

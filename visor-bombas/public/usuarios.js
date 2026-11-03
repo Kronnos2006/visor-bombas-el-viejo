@@ -14,12 +14,12 @@ function fila(u){
  if(!u.active)info.append(el('span',{className:'etiqueta off',textContent:'Desactivada'}));
  if(u.status&&u.status!=='approved')info.append(el('span',{className:'etiqueta',textContent:u.status==='pending'?'Solicitud pendiente':'Rechazada'}));
  if(u.mustChange)info.append(el('span',{className:'etiqueta',textContent:'Contraseña temporal'}));
- info.append(el('small',{textContent:[u.username,u.email].filter(Boolean).join(' · ')}),el('small',{textContent:u.lastLogin?'Última entrada: '+new Date(u.lastLogin).toLocaleString('es-CR'):'Todavía no ha entrado'}));
+ info.append(el('small',{textContent:[u.username,u.email].filter(Boolean).join(' · ')}),...(u.lastLogin===undefined?[]:[el('small',{textContent:u.lastLogin?'Última entrada: '+new Date(u.lastLogin).toLocaleString('es-CR'):'Todavía no ha entrado'})]));
  const rol=el('select',{ariaLabel:`Permiso de ${u.name}`});
  rol.append(el('option',{value:'usuario',textContent:'Usuario'}),el('option',{value:'admin',textContent:'Administrador'}));rol.value=u.role;
  rol.onchange=()=>accion(()=>api(`/api/auth/users/${u.id}`,{role:rol.value}));
  const clave=el('button',{type:'button',textContent:'Nueva contraseña'});
- clave.onclick=()=>accion(async()=>{const r=await api(`/api/auth/users/${u.id}/reset`,{});mostrarClave(r.user,r.password);});
+ clave.onclick=()=>accion(async()=>{const r=await api(`/api/auth/users/${u.id}/reset`,{});mostrarClave(u,r.password);});
  const activa=el('button',{type:'button',textContent:u.active?'Desactivar':'Activar'});
  activa.onclick=()=>accion(()=>api(`/api/auth/users/${u.id}`,{active:!u.active}));
  if(u.status==='pending'){
@@ -35,7 +35,9 @@ function fila(u){
 async function pintar(){
  const {users}=await api('/api/auth/users');$('lista').replaceChildren(...users.map(fila));
  const {entries}=await api('/api/auth/audit');
- $('bitacora').replaceChildren(...(entries.length?entries:[]).map(e=>el('li',{},el('time',{textContent:new Date(e.at).toLocaleString('es-CR')}),`${e.actor}: ${e.action}${e.detail?' · '+e.detail:''}`)));
+ $('bitacora').replaceChildren(...(entries.length?entries:[]).map(e=>el('li',{},el('time',{textContent:new Date(e.at).toLocaleString('es-CR')}),`${e.actor||'Sistema'}: ${e.action}${e.detail&&e.detail!=='{}'?' · '+e.detail:''}`)));
 }
 $('crear').onsubmit=e=>{e.preventDefault();const form=e.target;accion(async()=>{const r=await api('/api/auth/users',Object.fromEntries(new FormData(form)));form.reset();mostrarClave(r.user,r.password);});};
-yo=(await api('/api/auth/me')).user;await pintar();
+if(document.documentElement.dataset.cloudAccounts==='1'){const correo=$('crear').elements.email;correo.required=true;correo.closest('label').querySelector('small')?.remove();}
+$('crear').reset();
+try{yo=(await api('/api/auth/me')).user;await pintar();}catch(e){aviso(e.message||'No se pudo cargar la lista de cuentas.');}

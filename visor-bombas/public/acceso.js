@@ -1,7 +1,7 @@
 // Pantalla de entrada: entrar, crear el primer administrador y cambiar contraseña.
 const $=id=>document.getElementById(id),params=new URLSearchParams(location.search);
 const leer=k=>{try{return localStorage.getItem(k);}catch{return null;}},guardar=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch{}};
-const SIN_CONEXION='No se pudo conectar con el visor. Revisá que su ventana negra siga abierta.';
+const SIN_CONEXION=document.documentElement.dataset.cloudAccounts==='1'?'No se pudo conectar. Revisá tu internet y probá de nuevo.':'No se pudo conectar con el visor. Revisá que su ventana negra siga abierta.';
 const destino=()=>{const n=params.get('next')||'/';return n.startsWith('/')&&!n.startsWith('//')&&!n.startsWith('/\\')?n:'/';};
 
 // Tema
@@ -79,7 +79,7 @@ enviar('f-setup',async d=>{await post('/api/auth/setup',d);location.replace('/')
 enviar('f-cambiar',async d=>{await post('/api/auth/change-password',d);location.replace(destino());},'Guardando…');
 
 $('request-access').onclick=()=>mostrarSolicitud(false);
-$('request-back').onclick=()=>mostrar('f-login','Conectar mi cuenta','Escribí tu usuario o correo y tu contraseña.');
+$('request-back').onclick=()=>mostrar('f-login','Entrar','Escribí tu usuario o correo y tu contraseña.');
 enviar('f-request',async d=>{
  d.username=d.username.trim().toLowerCase();d.name=d.name.trim();
  const result=await post(completingProfile?'/api/auth/request-profile':'/api/auth/request',completingProfile?{username:d.username,name:d.name}:d);
@@ -93,10 +93,9 @@ if(state){
  if(state.cloud){
   try{const {startCloudAccount}=await import('./cloud-session.js');if(await startCloudAccount())state=await(await fetch('/api/auth/state')).json();}catch{}
   $('request-access').hidden=false;
-  $('f-login').querySelector('.principal span').textContent='Conectar mi cuenta';
  }
  if(state.cloud&&state.user&&(state.user.active===false||state.user.sessionValid===false)){
-  mostrar('f-login','Conectar mi cuenta',state.user.active===false?'Tu cuenta está desactivada. Consultá a un administrador.':'Tu sesión terminó. Volvé a entrar.');
+  mostrar('f-login','Entrar',state.user.active===false?'Tu cuenta está desactivada. Consultá a un administrador.':'Tu sesión terminó. Volvé a entrar.');
  }else if(state.user?.status&&state.user.status!=='approved'){
   mostrar('f-login',state.user.status==='pending'?'Solicitud pendiente':'Solicitud rechazada','Un administrador debe aprobar tu acceso.');
  }else
