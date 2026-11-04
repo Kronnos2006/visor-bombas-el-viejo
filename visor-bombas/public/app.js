@@ -855,7 +855,7 @@ function selectPendingPump(reference){
  state.pump={tag:'Sin TAG',pending:reference,data:{variant:'lf',marca:'',modelo:'',seal:{},orings:[],history:[]}};
  state.part=null;state.tab='ficha';
  document.dispatchEvent(new CustomEvent('vocatus:referencia',{detail:reference}));
- $('#selected-tag').textContent=pumpNames.nameOf(clavePendiente(reference))||'Sin TAG';$('#selected-name').textContent=reference.nombre;
+ $('#selected-tag').textContent='Sin TAG';$('#selected-name').textContent=reference.nombre;
  $('#source-status').textContent='IDENTIFICACIÓN PENDIENTE · GEOMETRÍA DE REFERENCIA';
  $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
  $('#back').hidden=false;

@@ -16,12 +16,13 @@ export async function abrirFichaPendiente(panel,s){
   e.preventDefault();const form=e.currentTarget,estado=form.querySelector('#nombre-estado'),button=form.querySelector('button'),valor=form.nombre.value;button.disabled=true;estado.textContent='Guardando…';
   try{
    const result=await pumpNames.save(key,valor);if(!form.isConnected)return;
-   panel.querySelector('h2').textContent=pumpNames.nameOf(key)||s.nombre;
+   panel.querySelector('h2').textContent=pumpNames.nameOf(key)||s.nombre;encabezado();
    estado.textContent={done:'Nombre guardado para todo el equipo.',offline:'Guardado en este celular. Se comparte cuando vuelva la señal.','signed-out':'Guardado en este navegador. Entrá con tu cuenta para compartirlo.','read-only':'Guardado en este navegador. Tu cuenta solo permite consultar.'}[result]||'Guardado en este navegador. Todavía no se pudo compartir; se reintenta solo.';
   }catch{estado.textContent='No se pudo guardar. Revisá el almacenamiento del navegador.';}
   finally{button.disabled=false;}
  };
  panel.querySelector('#maquina-pendiente').onsubmit=e=>{e.preventDefault();try{const data={nombre:pumpNames.nameOf(key),...Object.fromEntries(new FormData(e.currentTarget))};localStorage.setItem(key,JSON.stringify(data));abrirFichaPendiente(panel,s).then(()=>{if(panel.querySelector('#maquina-pendiente')?.dataset.reference===key)panel.querySelector('#maquina-estado').textContent='Datos guardados en este navegador.';});}catch{panel.querySelector('#maquina-estado').textContent='No se pudo guardar. Revisá el almacenamiento del navegador.';}};
+ const encabezado=()=>{const el=document.getElementById('selected-tag');if(el)el.textContent=pumpNames.nameOf(key)||'Sin TAG';};encabezado();
  const destino=panel.querySelector('#imagenes-pendientes');
  async function pintar(){
   let act={},photoError='';try{act=await fotosActualizadas(key,{writable:false});photoError=act.warning||'';}catch(error){photoError=error.message;}if(!destino.isConnected)return;
