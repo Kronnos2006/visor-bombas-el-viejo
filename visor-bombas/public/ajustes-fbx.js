@@ -25,8 +25,9 @@ export const TORRE_FBX={
  B11:{x:-28.819,z:3.884,piezas:/DUSA - (Bomba 1 columna Vinaza|Cubierta bomba 1 columna Vinaza|Conexiones visuales bomba Vinaza)/},
  B12:{x:-27.919,z:3.884,piezas:/DUSA - (Bomba 2 columna Vinaza|Cubierta bomba 2 columna Vinaza|Conexiones bomba 2 columna Vinaza)/}
 };
-// Fichas que el FBX no permite unir a una bomba: se ordenan en una fila libre, sin encimarse.
-export const TORRE_FILA_LIBRE={B4:{x:-36.7,z:1},B5:{x:-35.5,z:1},B6:{x:-34.3,z:1},B7:{x:-33.2,z:1},B8:{x:-32.1,z:1},B19:{x:-27.7,z:7.8}};
+// El usuario pidió sacar estas cinco del 3D de la planta. Sus fichas siguen en la lista de bombas.
+export const TORRE_SIN_DIBUJO=new Set(['B4','B5','B6','B7','B8']);
+export const TORRE_FILA_LIBRE={B19:{x:-27.7,z:7.8}};
 export const TORRE_SIN_FICHA=[{"nombre": "Bomba 2 - envolvente fotográfica", "sector": "DUSA", "nota": "Bomba del FBX en la fila de la torre. Falta confirmar su TAG en planta.", "bombas": [{"min": [-38.061, 0.6, 2.398], "max": [-37.221, 1.806, 3.698]}]},
  {"nombre": "Bomba 3 - envolvente fotográfica", "sector": "DUSA", "nota": "Bomba del FBX en la fila de la torre. Falta confirmar su TAG en planta.", "bombas": [{"min": [-37.086, 0.6, 2.398], "max": [-36.246, 1.806, 3.698]}]},
  {"nombre": "Bomba columna Bach fotos 141932", "sector": "DUSA", "nota": "Bomba del FBX en la fila de la torre. Falta confirmar su TAG en planta.", "bombas": [{"min": [-30.502, 0.6, 3.215], "max": [-29.662, 1.806, 4.515]}]}];

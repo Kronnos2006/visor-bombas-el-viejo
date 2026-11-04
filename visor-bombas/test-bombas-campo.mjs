@@ -23,13 +23,10 @@ test('ajustes del FBX: 5 verticales reemplazan a 3 y la torre pequeña baja 2,06
  moverTorrePequena({traverse:f=>[m,otro].forEach(f)},info,g);
  assert.ok(Math.abs(m.position.z+1.06)<1e-9);assert.equal(otro.position.z,1);assert.ok(Math.abs(info.sectores[P].min[2]-2.94)<1e-9);assert.ok(Math.abs(g[0].bombas[0].max[2]-3.94)<1e-9);
 });
-test('torre según FBX: cada ficha va a un solo lugar y las de fila libre no chocan con las bombas',async()=>{
- const {TORRE_FBX,TORRE_FILA_LIBRE,TORRE_SIN_FICHA}=await import('./public/ajustes-fbx.js');
- assert.deepEqual(Object.keys(TORRE_FBX).sort(),['B10','B11','B12','B2','B3','B9'].sort());assert.equal(TORRE_SIN_FICHA.length,3);
- for(const tag of Object.keys(TORRE_FILA_LIBRE))assert.ok(!TORRE_FBX[tag],tag);
- const libres=Object.values(TORRE_FILA_LIBRE),ocupadas=[...Object.values(TORRE_FBX),...TORRE_SIN_FICHA.map(g=>({x:(g.bombas[0].min[0]+g.bombas[0].max[0])/2,z:(g.bombas[0].min[2]+g.bombas[0].max[2])/2}))];
- for(const a of libres)for(const b of ocupadas)assert.ok(Math.abs(a.x-b.x)>.85||Math.abs(a.z-b.z)>1.7);
- for(const [i,a] of libres.entries())for(const b of libres.slice(i+1))assert.ok(Math.abs(a.x-b.x)>=1||Math.abs(a.z-b.z)>2);
+test('torre: B4 a B8 fuera del 3D y las demás fichas siguen dibujadas',async()=>{
+ const {TORRE_FBX,TORRE_SIN_DIBUJO,TORRE_FILA_LIBRE,TORRE_SIN_FICHA}=await import('./public/ajustes-fbx.js');
+ assert.deepEqual([...TORRE_SIN_DIBUJO],['B4','B5','B6','B7','B8']);
+ assert.deepEqual(Object.keys(TORRE_FBX).sort(),['B10','B11','B12','B2','B3','B9'].sort());assert.deepEqual(Object.keys(TORRE_FILA_LIBRE),['B19']);assert.equal(TORRE_SIN_FICHA.length,3);
 });
 test('tanques de agua: solo queda la bomba auxiliar del FBX',async()=>{
  const {gruposConCampo,ADICIONALES_RETIRADAS:R}=await import('./public/ajustes-fbx.js');
