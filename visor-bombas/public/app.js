@@ -14,6 +14,7 @@ import { aplicarRealismo } from './realismo.js';
 import {photoPumps, plantPumps, plateEvidence, photoURL, photo3URL, exterior, sector} from './sector-fotos.js';
 import {torreSinTag} from './equipos-torre.js';
 import {buildTorre, aplicarSeccion, dentroDeSeccion, rangoSeccion, SECCIONES, VISTAS, EJES_X, EJES_Z, CENTRO, LIMITES} from './torre-model.js';
+import {gruposConCampo,moverTorrePequena} from './ajustes-fbx.js';
 import {GLTFLoader} from '/vendor/GLTFLoader.js';
 import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
@@ -876,9 +877,12 @@ function renderPendingPanel(){
 }
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
- Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();})]).then(([info,grupos])=>{
+ Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[])]).then(([info,gruposBase,gruposCampo])=>{
   if(g.parent!==plant)return;integrado.info=info;
+  // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
+  const grupos=gruposConCampo(gruposBase,gruposCampo);
   const alineado=escena.userData.blenderLocal?alinearInfoBlender(THREE,escena,info,grupos):null;integrado.desplazamientoBlender=alineado?.d||null;
+  moverTorrePequena(escena,info,grupos);
   if(info.torre)for(const p of placed.filter(p=>areaOf(p)==='torre')){
    const b=compactar(THREE,exterior(THREE,p.scale,p.variant)),[x,y,z]=torreAIntegrado(info.torre,p.x,p.y??.3,p.z);
    b.position.set(x,y,z);b.rotation.y=p.rotation+info.torre.giro;b.userData.tag=p.tag;b.userData.sectorInt='torre';g.add(b);pumpObjectsInt[p.tag]=b;
@@ -929,6 +933,10 @@ function montarIntegrado(g,escena,placed){
    const hit=new THREE.Mesh(new THREE.BoxGeometry(size[0],size[1],size[2]),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
    hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);
   }
+  if(gruposCampo.length)new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/modelos/bombas-campo.glb').then(({scene:campo})=>{
+   if(g.parent!==plant)return;if(alineado)campo.position.set(...alineado.d);
+   campo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});g.add(campo);aplicarFiltroInt();
+  }).catch(err=>console.warn('Sin geometría de bombas nuevas',err));
   document.dispatchEvent(new Event('vocatus:referencias'));aplicarFiltroInt();renderList();if(state.area==='integrado'&&state.view==='plant'&&detailFlightTicket!==state.loading)flyIntegrado();
  }).catch(err=>console.warn('Sin datos del modelo integrado',err));
 }
