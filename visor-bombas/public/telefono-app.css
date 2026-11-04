@@ -572,3 +572,10 @@ body.app-tel #pump-resumen{min-width:0;grid-template-columns:minmax(0,1fr)}body.
  body.app-tel header .brand.con-deposito{height:60px}
  body.app-tel header .brand.con-deposito .brand-logo{top:12px}
 }
+
+/* Plantas de la torre sobre el 3D, también en esta vista. */
+body.app-tel #torre-planta-tools:not([hidden]){display:block!important;position:absolute;z-index:5;top:10px;left:calc(var(--franja,70px) + 10px);right:10px;margin:0;padding:6px;background:none;border:0;pointer-events:none}
+body.app-tel #torre-planta-botones{display:flex;flex-wrap:wrap;gap:6px;pointer-events:auto}
+body.app-tel #torre-planta-botones button{font-size:13px;padding:6px 10px;width:auto}
+body.app-tel #torre-planta-botones button[aria-pressed=true]{border-color:var(--accent,#e0a93b);color:var(--accent,#e0a93b)}
+body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:var(--borde,#3a5050);color:inherit;background:none;box-shadow:none}
