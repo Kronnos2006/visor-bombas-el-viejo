@@ -15,7 +15,7 @@ import {elegirEtiquetas,realzarBombas} from './vision-bombas.js';
 import {photoPumps, plantPumps, plateEvidence, photoURL, photo3URL, exterior, sector} from './sector-fotos.js';
 import {torreSinTag} from './equipos-torre.js';
 import {buildTorre, aplicarSeccion, dentroDeSeccion, rangoSeccion, SECCIONES, VISTAS, EJES_X, EJES_Z, CENTRO, LIMITES} from './torre-model.js';
-import {gruposConCampo,moverTorrePequena,ubicacionTorreFBX,vincularBombaFBX} from './ajustes-fbx.js';
+import {gruposConCampo,moverTorrePequena,ubicacionTorreFBX,vincularBombaFBX,TORRE_SIN_UBICACION} from './ajustes-fbx.js';
 import {GLTFLoader} from '/vendor/GLTFLoader.js';
 import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
@@ -886,6 +886,7 @@ function montarIntegrado(g,escena,placed){
   moverTorrePequena(escena,info,grupos);
   if(info.torre)for(const p of placed.filter(p=>areaOf(p)==='torre')){
    const b=compactar(THREE,exterior(THREE,p.scale,p.variant)),[x,y,z]=torreAIntegrado(info.torre,p.x,p.y??.3,p.z);
+   if(TORRE_SIN_UBICACION.has(p.tag)){const vacio=new THREE.Group();vacio.position.set(x,y,z);vacio.userData.tag=p.tag;vacio.userData.sectorInt='torre';g.add(vacio);pumpObjectsInt[p.tag]=vacio;continue;}
    const fbx=ubicacionTorreFBX(p.tag),dFbx=alineado?.d||[0,0,0];
    b.position.set(fbx?fbx.x+dFbx[0]:x,y,fbx?fbx.z+dFbx[2]:z);b.rotation.y=p.rotation+info.torre.giro;b.userData.tag=p.tag;b.userData.sectorInt='torre';g.add(b);pumpObjectsInt[p.tag]=b;
    if(alineado){b.updateMatrixWorld(true);const caja=new THREE.Box3().setFromObject(b).applyMatrix4(new THREE.Matrix4().copy(g.matrixWorld).invert()),c=caja.getCenter(new THREE.Vector3());
