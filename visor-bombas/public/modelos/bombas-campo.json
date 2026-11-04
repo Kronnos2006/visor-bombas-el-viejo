@@ -1,0 +1,173 @@
+[
+ {
+  "nombre": "Bomba junto a torre pequeña",
+  "sector": "REF Torre pequena",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     -14.75,
+     0.3,
+     16.49
+    ],
+    "max": [
+     -13.75,
+     2.25,
+     17.81
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba 3 de cinco frente a semilleros",
+  "sector": "REF Semilleros y pies de cuba",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     34.9,
+     0.3,
+     16.72
+    ],
+    "max": [
+     36.6,
+     1.515,
+     17.38
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba 4 de cinco frente a semilleros",
+  "sector": "REF Semilleros y pies de cuba",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     34.9,
+     0.3,
+     17.52
+    ],
+    "max": [
+     36.6,
+     1.515,
+     18.18
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba central entre tanques auxiliares",
+  "sector": "REF Cuatro tanques detalle",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     12.1,
+     0.3,
+     4.25
+    ],
+    "max": [
+     13,
+     1.295,
+     5.65
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba vertical 1 de 5 de calderas",
+  "sector": "REF Detalle",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     11.75,
+     0.3,
+     -22.85
+    ],
+    "max": [
+     12.75,
+     2,
+     -22.05
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba vertical 2 de 5 de calderas",
+  "sector": "REF Detalle",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     11.75,
+     0.3,
+     -24.65
+    ],
+    "max": [
+     12.75,
+     2,
+     -23.85
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba vertical 3 de 5 de calderas",
+  "sector": "REF Detalle",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     11.75,
+     0.3,
+     -26.45
+    ],
+    "max": [
+     12.75,
+     2.15,
+     -25.65
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba vertical 4 de 5 de calderas",
+  "sector": "REF Detalle",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     11.75,
+     0.3,
+     -28.25
+    ],
+    "max": [
+     12.75,
+     2.15,
+     -27.45
+    ]
+   }
+  ]
+ },
+ {
+  "nombre": "Bomba vertical 5 de 5 de calderas",
+  "sector": "REF Detalle",
+  "nota": "Añadida desde el FBX general de Revit. Sin TAG ni datos confirmados.",
+  "bombas": [
+   {
+    "min": [
+     11.75,
+     0.3,
+     -30.05
+    ],
+    "max": [
+     12.75,
+     1.45,
+     -29.25
+    ]
+   }
+  ]
+ }
+]
