@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import {compactar} from './compactar.js';
 import { aplicarRealismo } from './realismo.js';
+import {elegirEtiquetas,realzarBombas} from './vision-bombas.js';
 import {photoPumps, plantPumps, plateEvidence, photoURL, photo3URL, exterior, sector} from './sector-fotos.js';
 import {torreSinTag} from './equipos-torre.js';
 import {buildTorre, aplicarSeccion, dentroDeSeccion, rangoSeccion, SECCIONES, VISTAS, EJES_X, EJES_Z, CENTRO, LIMITES} from './torre-model.js';
@@ -232,7 +233,7 @@ function initScene(){
   componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x=reducedMotion.matches?x:g.position.x+(x-g.position.x)*.12;});
   controls.update();solSegunVista();renderer.render(scene,camera);
   const partLabels=[],pumpLabels=[];
-  for(const m of markers){if(m.leader)m.leader.hidden=true;const show=m.kind!=='part'?state.view==='plant'&&markerInArea(m):state.view==='pump'&&m.obj.parent.visible&&(!state.sector||state.detail==='schematic');m.el.hidden=!show;if(!show)continue;const v=m.obj.getWorldPosition(new THREE.Vector3()).project(camera);m.el.hidden=v.z>1||v.z< -1||Math.abs(v.x)>1||Math.abs(v.y)>1;const x=(v.x+1)/2*viewport.clientWidth,y=(-v.y+1)/2*viewport.clientHeight;m.el.style.left=x+'px';m.el.style.top=y+'px';if(m.kind==='part'&&!m.el.hidden)partLabels.push({marker:m,x,y,anchorY:y});if(m.kind==='pump'&&(m.area==='torre'||m.area==='integrado')&&!m.el.hidden)pumpLabels.push({m,x,y});}
+  for(const m of markers){if(m.leader)m.leader.hidden=true;const show=m.kind!=='part'?state.view==='plant'&&markerInArea(m):state.view==='pump'&&m.obj.parent.visible&&(!state.sector||state.detail==='schematic');m.el.hidden=!show;if(!show)continue;const v=m.obj.getWorldPosition(new THREE.Vector3()).project(camera);m.el.hidden=v.z>1||v.z< -1||Math.abs(v.x)>1||Math.abs(v.y)>1;const x=(v.x+1)/2*viewport.clientWidth,y=(-v.y+1)/2*viewport.clientHeight;m.el.style.left=x+'px';m.el.style.top=y+'px';if(m.kind==='part'&&!m.el.hidden)partLabels.push({marker:m,x,y,anchorY:y});if(m.kind==='pump'&&(m.area==='torre'||m.area==='integrado')&&!m.el.hidden)pumpLabels.push({m,x,y,z:v.z});}
   separarEtiquetas(pumpLabels);
   for(const label of labelPositions(partLabels,viewport.clientWidth,viewport.clientHeight)){const m=label.marker;m.el.hidden=!!label.hidden;if(label.hidden)continue;m.el.style.top=label.y+'px';m.leader.hidden=!label.offset;m.leader.style.left=label.x+'px';m.leader.style.top=Math.min(label.y,label.anchorY)+'px';m.leader.style.height=Math.abs(label.offset)+'px';}
  });
@@ -922,13 +923,14 @@ function montarIntegrado(g,escena,placed){
    s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
    const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
    const el=document.createElement('button');el.className='label pending-label sin-ficha';el.textContent=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;el.title=s.nombre;
-   el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);
+   el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);el.dataset.nombre=s.nombre;
    el.onclick=()=>{selectPendingPump(s);};
    $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector)});
    const size=s.max.map((v,i)=>v-s.min[i]);
    const hit=new THREE.Mesh(new THREE.BoxGeometry(size[0],size[1],size[2]),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
    hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);
   }
+  realzarBombas(g);
   document.dispatchEvent(new Event('vocatus:referencias'));aplicarFiltroInt();renderList();if(state.area==='integrado'&&state.view==='plant'&&detailFlightTicket!==state.loading)flyIntegrado();
  }).catch(err=>console.warn('Sin datos del modelo integrado',err));
 }
@@ -1031,11 +1033,11 @@ setTimeout(()=>{if(state.view==='plant'&&!location.hash)flyArea(state.area);},50
 
 // Etiquetas de bombas de la torre: si dos chocan se oculta una (se elige desde el panel o con el mouse).
 function separarEtiquetas(items){
- const puestos=[];
- for(const it of items.sort((a,b)=>b.y-a.y)){
-  if(puestos.some(p=>Math.abs(p.x-it.x)<40&&Math.abs(p.y-it.y)<20)){it.m.el.hidden=true;continue;}
-  puestos.push({x:it.x,y:it.y});
- }
+ const ahora=performance.now();
+ for(const it of items){const el=it.m.el;
+  if(!el._medida||ahora-el._medida.t>2000)el._medida={w:el.offsetWidth,h:el.offsetHeight,t:ahora};
+  it.w=el._medida.w;it.h=el._medida.h;it.prioridad=el.classList.contains('located')||el.matches(':hover,:focus-visible');}
+ for(const it of elegirEtiquetas(items))it.m.el.hidden=true;
 }
 // Panel «Bombas de la torre»: elegir sin saturar el 3D. Agrupadas por fila según el croquis.
 function renderPumpRail(rail){
@@ -1056,16 +1058,25 @@ function resaltarBomba(tag){
  document.querySelectorAll('#parts-rail [data-pump]').forEach(b=>b.classList.toggle('active',b.dataset.pump===tag));
 }
 // Al pasar el mouse por una bomba en el mapa: nombre y resaltado.
+// Contorno de la bomba sin ficha bajo el puntero: la misma caja que abre su información.
+function marcarPendiente(obj){
+ if(marcarPendiente.actual===obj)return;
+ marcarPendiente.linea?.removeFromParent();marcarPendiente.linea?.geometry.dispose();marcarPendiente.linea=null;marcarPendiente.actual=obj;
+ if(!obj)return;
+ const linea=new THREE.LineSegments(new THREE.EdgesGeometry(obj.geometry),new THREE.LineBasicMaterial({color:0x8fdc3a,depthTest:false,transparent:true}));
+ linea.raycast=()=>{};linea.renderOrder=6;obj.add(linea);marcarPendiente.linea=linea;
+}
 (function pumpHover(){
  const tip=$('#part-tip');if(!renderer||!tip)return;let frame=0;
  renderer.domElement.addEventListener('pointermove',e=>{
   if(frame||state.view!=='plant'||state.pump||e.pointerType==='touch')return;
   frame=requestAnimationFrame(()=>{frame=0;
-   if(state.view!=='plant'||state.pump){tip.hidden=true;resaltarBomba(null);return;}
+   if(state.view!=='plant'||state.pump){tip.hidden=true;resaltarBomba(null);marcarPendiente(null);return;}
    const r=renderer.domElement.getBoundingClientRect();
    raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
    const hit=raycaster.intersectObjects(pickables,false).find(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return true;});
-   const pendiente=hit?.object.userData.pending;if(pendiente){tip.textContent=pendiente.nombre+' · sin TAG';tip.style.left=(e.clientX-r.left+14)+'px';tip.style.top=(e.clientY-r.top+14)+'px';tip.hidden=false;renderer.domElement.style.cursor='pointer';resaltarBomba(null);return;}
+   const pendiente=hit?.object.userData.pending;if(pendiente){tip.textContent=pendiente.nombre+' · sin TAG';tip.style.left=(e.clientX-r.left+14)+'px';tip.style.top=(e.clientY-r.top+14)+'px';tip.hidden=false;renderer.domElement.style.cursor='pointer';resaltarBomba(null);marcarPendiente(hit.object);return;}
+   marcarPendiente(null);
    const tag=hit?.object.userData.tag||null;resaltarBomba(tag);
    if(!tag){
     const eq=state.area==='torre'&&torre?raycaster.intersectObjects(torre.objetos.filter(o=>o.visible&&o.userData.nombre),false).find(h=>dentroDeSeccion(state.seccion,h.point.y)):null;
