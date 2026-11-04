@@ -13,7 +13,7 @@ import {MeshoptEncoder} from 'meshoptimizer';
 globalThis.self=globalThis;globalThis.window={innerWidth:1000,innerHeight:800};
 THREE.TextureLoader.prototype.load=function(){return new THREE.Texture();};
 const GRUPOS=[
- {nombre:'Bomba junto a torre pequeña',sector:'REF Torre pequena',re:/^VOCATUS - Bomba (faltante|detalle) - /},
+ {nombre:'Bomba junto a torre pequeña',sector:'REF Almacenamiento alcohol',re:/^VOCATUS - Bomba (faltante|detalle) - /},
  {nombre:'Bomba 3 de cinco frente a semilleros',sector:'REF Semilleros y pies de cuba',re:/^VOCATUS - Bomba 3 de cinco/},
  {nombre:'Bomba 4 de cinco frente a semilleros',sector:'REF Semilleros y pies de cuba',re:/^VOCATUS - Bomba 4 de cinco/},
  {nombre:'Bomba central entre tanques auxiliares',sector:'REF Cuatro tanques detalle',re:/^VOCATUS - Bomba central entre tanques/},

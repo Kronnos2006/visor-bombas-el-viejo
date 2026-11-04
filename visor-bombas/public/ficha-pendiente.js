@@ -4,7 +4,7 @@ import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js';
 import {pumpNames} from './pump-names.js';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const CAMPOS_PENDIENTES=[['tag','TAG de la máquina'],['nombre','Nombre de la máquina'],['marca','Marca'],['modelo','Modelo'],['serie','Número de serie'],['servicio','Servicio / fluido'],['potencia','Potencia (kW)'],['rpm','Velocidad (rpm)'],['size','Tamaño'],['caudal','Caudal (GPM)'],['altura','Altura (m)'],['impulsor','Impulsor (mm)'],['temperatura','Temperatura de trabajo'],['motor','Motor'],['acople','Elemento de acople'],['rodamiento_delantero','Rodamiento delantero'],['rodamiento_trasero','Rodamiento trasero'],['sello','Sello mecánico'],['sello_marca','Marca del sello'],['sello_modelo','Modelo del sello'],['sello_codigo','Código del sello'],['sello_diametro','Diámetro del sello (con unidad)'],['sello_material','Materiales del sello'],['motor_marca','Marca del motor'],['motor_modelo','Modelo del motor'],['motor_serie','Serie del motor'],['empaque','Empaque'],['orings','O-rings'],['observaciones','Observaciones']];
-export function clavePendiente(s){return 'integrado:'+s.sector+':'+s.nombre;}
+export function clavePendiente(s){return 'integrado:'+(s.sectorClave||s.sector)+':'+s.nombre;}
 export async function abrirFichaPendiente(panel,s){
  const key=clavePendiente(s),sector=SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector;
  const live=panel.querySelector('form[data-reference]');

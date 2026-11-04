@@ -34,3 +34,9 @@ test('tanques de agua: solo queda la bomba auxiliar del FBX',async()=>{
  const r=gruposConCampo([{nombre:R,bombas:[]},aux],[{nombre:'n',bombas:[]}]);
  assert.ok(!r.some(g=>g.nombre===R));assert.ok(r.includes(aux));
 });
+test('semilleros: las tres bombas pasan de sector sin perder su clave',async()=>{
+ const {separarSemilleros,GRUPO_SEMILLEROS:N,SECTOR_FERMENTACION:F,SECTOR_SEMILLEROS:S}=await import('./public/ajustes-fbx.js');
+ const b=x=>({min:[x,0,0],max:[x+1,1,1]}),r=separarSemilleros([{nombre:N,sector:F,bombas:[b(18),b(20),b(32),b(34),b(35)]}]);
+ assert.equal(r.length,2);assert.equal(r[0].bombas.length,2);assert.equal(r[0].sector,F);
+ assert.equal(r[1].bombas.length,3);assert.equal(r[1].sector,S);assert.equal(r[1].sectorClave,F);assert.equal(r[1].indiceBase,2);
+});

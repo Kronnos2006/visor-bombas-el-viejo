@@ -4,6 +4,30 @@ export const CONJUNTO_REEMPLAZADO='Conjunto compartido de bombas verticales de c
 // Confirmado por el usuario: en ese sitio solo va la bomba auxiliar del FBX.
 export const ADICIONALES_RETIRADAS='Bombas adicionales de tanques de agua';
 export const TORRE_PEQUENA='REF Torre pequena',DESPLAZAMIENTO_TORRE_Z=-2.06;
+// Confirmado por el usuario: las tres bombas de este grupo que están frente a semilleros pertenecen a Semilleros.
+export const GRUPO_SEMILLEROS='Dos bombas frontales y tres frente a semilleros',SECTOR_FERMENTACION='REF Fermentacion',SECTOR_SEMILLEROS='REF Semilleros y pies de cuba',X_SEMILLEROS=28;
+export function separarSemilleros(grupos){
+ const i=grupos.findIndex(g=>g.nombre===GRUPO_SEMILLEROS&&g.sector===SECTOR_FERMENTACION);if(i<0)return grupos;
+ const g=grupos[i],frente=g.bombas.filter(b=>b.min[0]<X_SEMILLEROS),semilleros=g.bombas.filter(b=>b.min[0]>=X_SEMILLEROS);
+ if(!semilleros.length)return grupos;
+ // Conservan su clave y numeración anteriores para no perder nombres, fotos ni datos ya guardados.
+ const r=[...grupos];r.splice(i,1,{...g,bombas:frente},{...g,sector:SECTOR_SEMILLEROS,sectorClave:SECTOR_FERMENTACION,indiceBase:frente.length,bombas:semilleros});
+ return r;
+}
+// Parte también la malla, para que se vean al aislar Semilleros. dx: desplazamiento del modelo publicado.
+export function moverMallasSemilleros(T,escena,dx=0){
+ const limite=X_SEMILLEROS+dx,nuevas=[];
+ escena.traverse(o=>{
+  if(!o.isMesh||o.userData.sector!==SECTOR_FERMENTACION)return;
+  if(!/Dos bombas frontales y tres frente|Conexiones dos bombas y tres semilleros/.test(String(o.userData.original_name||o.userData.bomba||o.name).replace(/_/g,' ')))return;
+  o.updateMatrix();const g=o.geometry,p=g.attributes.position,idx=g.index,n=idx?idx.count:p.count,v=new T.Vector3(),aqui=[],alla=[];
+  for(let i=0;i+2<n;i+=3){let x=0;const t=[0,1,2].map(k=>idx?idx.getX(i+k):i+k);for(const q of t)x+=v.fromBufferAttribute(p,q).applyMatrix4(o.matrix).x;(x/3>=limite?alla:aqui).push(...t);}
+  if(!alla.length||!aqui.length){if(alla.length)o.userData.sector=SECTOR_SEMILLEROS;return;}
+  const copia=o.clone();copia.geometry=g.clone();copia.geometry.setIndex(alla);copia.userData={...o.userData,sector:SECTOR_SEMILLEROS};
+  const propia=g.clone();propia.setIndex(aqui);o.geometry=propia;nuevas.push([o.parent,copia]);
+ });
+ for(const [padre,copia] of nuevas)padre.add(copia);
+}
 export function gruposConCampo(base,campo){
  // Las cinco bombas verticales del FBX sustituyen al conjunto aproximado de tres.
  return campo.length?[...base.filter(g=>g.nombre!==CONJUNTO_REEMPLAZADO&&g.nombre!==ADICIONALES_RETIRADAS),...campo,...TORRE_SIN_FICHA.map(g=>structuredClone(g))]:[...base];
