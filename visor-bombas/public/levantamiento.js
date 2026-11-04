@@ -5,6 +5,8 @@ import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js';
 import {expedienteDe} from './expediente.js';
 import {validateSurveyInput,NUMERIC_RULES} from './survey-validation.js';
 import {verificationText} from './verification-core.js';
+import {createOutbox,queueMessage,surveyConnection,syncOutbox} from './cloud-surveys.js';
+import {cloudPhotoConfig} from './cloud-photos-config.js';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store = {get(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}, set(k,v){const text=JSON.stringify(v);localStorage.setItem(k,text);if(localStorage.getItem(k)!==text)throw Error('No se confirmó el guardado del borrador.');}, del(k){try{localStorage.removeItem(k);}catch{}}};
@@ -19,7 +21,22 @@ const photosByTag = new Map(),photoJobs=new Map();
 let photoReady=false,dataReady=false,submitting=false;
 function draftNotice(text,error=false){const el=$('#draft-status');el.textContent=text;el.dataset.error=String(error);}
 function queuePhotos(tag,task){const previous=photoJobs.get(tag)||Promise.resolve();const job=previous.catch(()=>{}).then(task);photoJobs.set(tag,job);job.finally(()=>{if(photoJobs.get(tag)===job)photoJobs.delete(tag);}).catch(()=>{});return job;}
-function saveLabel(){return info.writable?'Guardar en Obsidian':'Guardar en este navegador';}
+const outbox=createOutbox();
+const cloudMode=()=>!info.writable&&!!cloudPhotoConfig.enabled;
+function saveLabel(){return info.writable?'Guardar en Obsidian':cloudMode()?'Guardar y subir':'Guardar en este navegador';}
+let syncing=false;
+async function syncSurveys(){
+ if(syncing||!cloudMode())return null;syncing=true;
+ const box=$('#cola-nube');
+ try{
+  const result=await syncOutbox(outbox,surveyConnection);
+  const text=queueMessage(result);box.hidden=!text;
+  box.querySelector('span').textContent=text;
+  box.querySelector('a').hidden=result.status!=='signed-out';
+  return result;
+ }catch(error){box.hidden=false;box.querySelector('span').textContent='No se pudo leer la cola del celular: '+error.message;return null;}
+ finally{syncing=false;}
+}
 function syncActions(){$('#photo-input').disabled=!activeTag||!photoReady||submitting;$('#save').disabled=submitting||!photoReady||!dataReady;$('#save').textContent=submitting?'Guardando…':saveLabel();}
 function reportDraftError(error){draftNotice('No se pudo conservar el borrador: '+error.message+' Descargá un paquete antes de salir.',true);}
 let clearFields={};
@@ -122,7 +139,7 @@ async function selectTag() {
  $('#photo-retry').hidden=true;loadPhotos(activeTag,ticket);history.replaceState(null, '', '?tag=' + activeTag + location.hash);
  $('#status').innerHTML = chips(info.rows.find(r => r.tag === activeTag));
  let data = null;
- try{const r=await fetch('/api/pump?tag='+encodeURIComponent(activeTag),{signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('No se pudo consultar la ficha (HTTP '+r.status+').');data=await r.json();}catch(error){if(ticket===selection){$('#status').textContent=error.message+' Tocá Abrir equipo para reintentar.';}return;}
+ try{const r=await fetch('/api/pump?tag='+encodeURIComponent(activeTag),{signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('No se pudo consultar la ficha (HTTP '+r.status+').');data=await r.json();}catch(error){if(ticket===selection){if(cloudMode()&&!/HTTP/.test(error.message)){dataReady=true;syncActions();$('#status').textContent='Sin señal: no se ve lo ya registrado de '+activeTag+', pero podés llenar y guardar.';}else $('#status').textContent=error.message+' Tocá Abrir equipo para reintentar.';}return;}
  while(submitting&&ticket===selection)await new Promise(resolve=>setTimeout(resolve,30));
  if (ticket !== selection) return; // llegó tarde: el usuario ya eligió otro equipo
  current = data;if(current?.data&&!info.rows.some(row=>row.tag===activeTag))$('#status').innerHTML='<span class="chip">Ficha documental disponible · '+esc(activeTag)+'</span>';
@@ -200,6 +217,16 @@ $('#form').onsubmit=async e=>{
  let data;try{data=await settledInput();}catch(error){return message('#result','err',esc(error.message));}
  lockForm(true);
  try{
+  if(cloudMode()){
+   const family=kind(data.tag),id=crypto.randomUUID();data.fieldLabels=Object.fromEntries(info.fields.map(field=>[field.id,field.label+(field.unit?.[family]?' ('+field.unit[family]+')':'')]));
+   await outbox.put({id,tag:data.tag,data:{...packageOf(data),id}});
+   // Ya está en la cola: el formulario queda limpio para no enviar lo mismo dos veces.
+   try{store.del(draftKey(data.tag));store.del(photoKey(data.tag));localStorage.removeItem(savedSurveyKey(data.tag));photosByTag.delete(data.tag);await writeSurveyPhotos(data.tag,[]);}catch{}
+   const result=await syncSurveys();
+   message('#result',result?.status==='done'?'ok':'warn',result?.status==='done'?esc(data.tag)+' subido a la base de datos.':esc(data.tag)+' guardado en este celular. Todavía no se subió; mirá el aviso de arriba.');
+   $('#form').reset();$('#tag').value=data.tag;$('#form [name=date]').value=data.date;$('#form [name=author]').value=data.author;activeTag='';draftNotice('');
+   return;
+  }
   if(!info.writable){const family=kind(data.tag);data.fieldLabels=Object.fromEntries(info.fields.map(field=>[field.id,field.label+(field.unit?.[family]?' ('+field.unit[family]+')':'')]));writeSavedSurvey(data);store.set(draftKey(data.tag),data);message('#result','ok','Datos y adjuntos de '+esc(data.tag)+' guardados en este navegador. La ficha documental de Obsidian se conserva. Descargá el paquete para trasladarlos a planta.');draftNotice('Cambios locales guardados de '+data.tag+' · pendientes de llevar a Obsidian.');return;}
   const out=await send(packageOf(data));
   // Primero conservar la confirmación. La limpieza del borrador no elimina fotos guardadas.
@@ -253,7 +280,15 @@ try {
 $('#tags').innerHTML = info.rows.map(r => `<option value="${esc(r.tag)}">${esc(r.servicio)}</option>`).join('');
 message('#mode', info.writable ? (info.demo ? 'warn' : 'ok') : 'warn', info.writable
  ? (info.demo ? 'Modo demostración: se escribe en la bóveda de ejemplo.' : 'Conectado a Obsidian: lo que guardes se escribe en la ficha.')
- : 'Guardado local en este navegador. Los cambios no se sincronizan con Obsidian. Guardá aquí y descargá el paquete para llevarlo a planta.');
+ : cloudMode()?'Lo que guardes se sube a la base de datos. Sin señal queda en este celular y se sube cuando vuelva.':'Guardado local en este navegador. Los cambios no se sincronizan con Obsidian. Guardá aquí y descargá el paquete para llevarlo a planta.');
+if(cloudMode()){
+ $('#mode').insertAdjacentHTML('afterend','<div id="cola-nube" class="msg warn" role="status" hidden><span></span> <a href="/login.html?next=/levantamiento.html" hidden>Entrar</a> <button type="button">Reintentar</button></div><p><a href="/levantamientos.html">Ver levantamientos recibidos</a></p>');
+ $('#cola-nube button').onclick=syncSurveys;
+ window.addEventListener('online',syncSurveys);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncSurveys();});
+ setInterval(syncSurveys,60000);
+ syncSurveys();
+}
 syncActions();
 $('#form [name=date]').value = today();
 $('#form [name=author]').value = store.get('vocatus-responsable') || '';
