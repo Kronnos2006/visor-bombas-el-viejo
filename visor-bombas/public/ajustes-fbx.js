@@ -1,10 +1,12 @@
 // Diferencias confirmadas por el usuario entre el FBX general (nov-2026) y los modelos ya publicados.
 // Los modelos y bombas-individuales.json no se regeneran: se ajustan al cargar.
 export const CONJUNTO_REEMPLAZADO='Conjunto compartido de bombas verticales de calderas';
+// Confirmado por el usuario: en ese sitio solo va la bomba auxiliar del FBX.
+export const ADICIONALES_RETIRADAS='Bombas adicionales de tanques de agua';
 export const TORRE_PEQUENA='REF Torre pequena',DESPLAZAMIENTO_TORRE_Z=-2.06;
 export function gruposConCampo(base,campo){
  // Las cinco bombas verticales del FBX sustituyen al conjunto aproximado de tres.
- return campo.length?[...base.filter(g=>g.nombre!==CONJUNTO_REEMPLAZADO),...campo,...TORRE_SIN_FICHA.map(g=>structuredClone(g))]:[...base];
+ return campo.length?[...base.filter(g=>g.nombre!==CONJUNTO_REEMPLAZADO&&g.nombre!==ADICIONALES_RETIRADAS),...campo,...TORRE_SIN_FICHA.map(g=>structuredClone(g))]:[...base];
 }
 // En el FBX todo el sector de la torre pequeña está 2,06 m más al sur.
 export function moverTorrePequena(escena,info,grupos,dz=DESPLAZAMIENTO_TORRE_Z){

@@ -31,3 +31,9 @@ test('torre según FBX: cada ficha va a un solo lugar y las de fila libre no cho
  for(const a of libres)for(const b of ocupadas)assert.ok(Math.abs(a.x-b.x)>.85||Math.abs(a.z-b.z)>1.7);
  for(const [i,a] of libres.entries())for(const b of libres.slice(i+1))assert.ok(Math.abs(a.x-b.x)>=1||Math.abs(a.z-b.z)>2);
 });
+test('tanques de agua: solo queda la bomba auxiliar del FBX',async()=>{
+ const {gruposConCampo,ADICIONALES_RETIRADAS:R}=await import('./public/ajustes-fbx.js');
+ const aux={nombre:'Bomba auxiliar exterior de tanques de agua - motor y guarda ventilada',bombas:[]};
+ const r=gruposConCampo([{nombre:R,bombas:[]},aux],[{nombre:'n',bombas:[]}]);
+ assert.ok(!r.some(g=>g.nombre===R));assert.ok(r.includes(aux));
+});
