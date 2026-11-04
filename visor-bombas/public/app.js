@@ -18,7 +18,7 @@ import {elegirEtiquetas,realzarBombas} from './vision-bombas.js';
 import {photoPumps, plantPumps, plateEvidence, photoURL, photo3URL, exterior, sector} from './sector-fotos.js';
 import {torreSinTag} from './equipos-torre.js';
 import {buildTorre, aplicarSeccion, dentroDeSeccion, rangoSeccion, SECCIONES, VISTAS, EJES_X, EJES_Z, CENTRO, LIMITES} from './torre-model.js';
-import {gruposConCampo,moverTorrePequena,ubicacionTorreFBX,vincularBombaFBX,TORRE_SIN_DIBUJO,separarSemilleros,moverMallasSemilleros} from './ajustes-fbx.js';
+import {gruposConCampo,moverTorrePequena,ubicacionTorreFBX,vincularBombaFBX,TORRE_SIN_DIBUJO,separarSemilleros,moverMallasSemilleros,agregarBombaFrente} from './ajustes-fbx.js';
 import {GLTFLoader} from '/vendor/GLTFLoader.js';
 import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
@@ -891,7 +891,7 @@ function montarIntegrado(g,escena,placed){
  Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[])]).then(([info,gruposBase,gruposCampo])=>{
   if(g.parent!==plant)return;integrado.info=info;
   // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
-  const grupos=separarSemilleros(gruposConCampo(gruposBase,gruposCampo));
+  const grupos=agregarBombaFrente(separarSemilleros(gruposConCampo(gruposBase,gruposCampo)));
   const alineado=escena.userData.blenderLocal?alinearInfoBlender(THREE,escena,info,grupos):null;integrado.desplazamientoBlender=alineado?.d||null;
   moverTorrePequena(escena,info,grupos);
   moverMallasSemilleros(THREE,escena,alineado?.d?.[0]||0);

@@ -40,3 +40,8 @@ test('semilleros: las tres bombas pasan de sector sin perder su clave',async()=>
  assert.equal(r.length,2);assert.equal(r[0].bombas.length,2);assert.equal(r[0].sector,F);
  assert.equal(r[1].bombas.length,3);assert.equal(r[1].sector,S);assert.equal(r[1].sectorClave,F);assert.equal(r[1].indiceBase,2);
 });
+test('tanques: agrega una bomba entre B22 y B30 sin tocar las demás',async()=>{
+ const {agregarBombaFrente,FRENTE_TANQUES:N}=await import('./public/ajustes-fbx.js');
+ const otro={nombre:'x',bombas:[]},g={nombre:N,entre:[['B23','B25']],bombas:[{min:[0,0,0],max:[1,1,1]}]};
+ const [a,b]=agregarBombaFrente([otro,g]);assert.equal(a,otro);assert.deepEqual(b.entre.at(-1),['B22','B30']);assert.equal(b.bombas.length,2);assert.equal(g.entre.length,1,'no altera el original');
+});

@@ -28,6 +28,14 @@ export function moverMallasSemilleros(T,escena,dx=0){
  });
  for(const [padre,copia] of nuevas)padre.add(copia);
 }
+// Bomba señalada por el usuario en el sector de tanques, entre B22 y B30. Sin ficha ni TAG.
+export const FRENTE_TANQUES='Bombas faltantes del frente de tanques';
+export function agregarBombaFrente(grupos){
+ return grupos.map(g=>{
+  if(g.nombre!==FRENTE_TANQUES||!g.entre)return g;
+  return {...g,entre:[...g.entre,['B22','B30']],fracciones:[...(g.fracciones||g.entre.map(()=>.5)),.5],bombas:[...g.bombas,{min:[0,0,0],max:[.1,.1,.1]}]};
+ });
+}
 export function gruposConCampo(base,campo){
  // Las cinco bombas verticales del FBX sustituyen al conjunto aproximado de tres.
  return campo.length?[...base.filter(g=>g.nombre!==CONJUNTO_REEMPLAZADO&&g.nombre!==ADICIONALES_RETIRADAS),...campo,...TORRE_SIN_FICHA.map(g=>structuredClone(g))]:[...base];
