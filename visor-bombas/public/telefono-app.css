@@ -579,3 +579,20 @@ body.app-tel #torre-planta-botones{display:flex;flex-wrap:wrap;gap:6px;pointer-e
 body.app-tel #torre-planta-botones button{font-size:13px;padding:6px 10px;width:auto}
 body.app-tel #torre-planta-botones button[aria-pressed=true]{border-color:var(--accent,#e0a93b);color:var(--accent,#e0a93b)}
 body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:var(--borde,#3a5050);color:inherit;background:none;box-shadow:none}
+
+/* Paleta de bombas sobre el 3D. */
+#paleta-bombas{position:absolute;z-index:6;top:62px;right:12px;width:min(270px,72vw);max-height:calc(100% - 76px);display:flex;flex-direction:column;align-items:flex-end;pointer-events:none}
+#paleta-bombas[hidden]{display:none}
+#paleta-bombas>*{pointer-events:auto}
+#paleta-bombas .paleta-boton{display:inline-flex;gap:8px;align-items:center;min-height:44px;padding:8px 14px;font-size:15px;font-weight:600;border-radius:10px;border:1px solid var(--borde,#6b5427);background:var(--superficie-solida,#1d160c);color:inherit;cursor:pointer}
+#paleta-bombas .paleta-boton i{font-style:normal;transition:transform .15s}
+#paleta-bombas.abierta .paleta-boton i{transform:rotate(180deg)}
+#paleta-cuerpo{width:100%;margin-top:6px;min-height:0;display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;border:1px solid var(--borde,#6b5427);background:var(--superficie-solida,#1d160c)}
+#paleta-cuerpo[hidden]{display:none}
+#paleta-buscar{width:100%;min-height:40px;padding:6px 10px;font-size:15px;border-radius:8px;border:1px solid var(--borde,#6b5427);background:transparent;color:inherit}
+#paleta-filas{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:4px}
+#paleta-filas .paleta-fila{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid transparent;background:none;color:inherit;cursor:pointer}
+#paleta-filas .paleta-fila:is(:hover,:focus-visible),#paleta-filas .paleta-fila.activa{border-color:var(--accent,#e0a93b)}
+#paleta-filas .paleta-fila strong{display:block;font-size:15px}
+#paleta-filas .paleta-fila small{display:block;font-size:12px;opacity:.8}
+#paleta-filas p{margin:6px;font-size:14px}

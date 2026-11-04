@@ -8,6 +8,7 @@ import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPis
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
 import {pumpNames,startPumpNames} from './pump-names.js';
+import {crearPaleta} from './paleta-bombas.js';
 import {pumpVisibility,esAdmin,claveTag,bloqueAdmin,explicarErrorVisibilidad,recortarCajas} from './bombas-admin.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -40,6 +41,7 @@ import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const primeraPlanta=createFirstFloorView(THREE);
+let paletaBombas=null;
 const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
 const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index),onSummary:()=>{state.tab="ficha";renderPanel();},onLayout:()=>renderPanel()});
 const extraReferences=[];
@@ -235,6 +237,7 @@ function initScene(){
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
   componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x=reducedMotion.matches?x:g.position.x+(x-g.position.x)*.12;});
   controls.update();solSegunVista();renderer.render(scene,camera);
+  paletaBombas?.mostrar(state.view==='plant');
   const partLabels=[],pumpLabels=[];
   for(const m of markers){if(m.leader)m.leader.hidden=true;const show=m.kind!=='part'?state.view==='plant'&&markerInArea(m):state.view==='pump'&&m.obj.parent.visible&&(!state.sector||state.detail==='schematic');m.el.hidden=!show;if(!show)continue;const v=m.obj.getWorldPosition(new THREE.Vector3()).project(camera);m.el.hidden=v.z>1||v.z< -1||Math.abs(v.x)>1||Math.abs(v.y)>1;const x=(v.x+1)/2*viewport.clientWidth,y=(-v.y+1)/2*viewport.clientHeight;m.el.style.left=x+'px';m.el.style.top=y+'px';if(m.kind==='part'&&!m.el.hidden)partLabels.push({marker:m,x,y,anchorY:y});if(m.kind==='pump'&&(m.area==='torre'||m.area==='integrado')&&!m.el.hidden)pumpLabels.push({m,x,y,z:v.z});}
   separarEtiquetas(pumpLabels);
@@ -585,6 +588,7 @@ function refreshPhotoHistory(pump){
 }
 document.addEventListener('vocatus:nombres',()=>{for(const s of integrado?.references||[])if(s.labelEl)s.labelEl.textContent=pumpNames.nameOf(clavePendiente(s))||s.labelBase;renderList();document.dispatchEvent(new Event('vocatus:referencias'));});
 startPumpNames();
+montarPaleta();
 document.addEventListener('vocatus:storage-ready',()=>{if($('#history-load-error')&&state.tab==='historial'&&state.pump){if($('#rep-list'))refreshPhotoHistory(state.pump);else{$('#history-load-error').remove();mountHistoryChart(state.pump);}}});
 async function mountHistoryChart(pump,reports){
  const mount=document.getElementById('chart-mount');
@@ -942,7 +946,7 @@ function montarIntegrado(g,escena,placed){
    $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector),ref:s});
    const size=s.max.map((v,i)=>v-s.min[i]);
    const hit=new THREE.Mesh(new THREE.BoxGeometry(size[0],size[1],size[2]),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
-   hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);
+   hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);s.hit=hit;
   }
   if(gruposCampo.length)new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/modelos/bombas-campo.glb').then(({scene:campo})=>{
    if(g.parent!==plant)return;if(alineado)campo.position.set(...alineado.d);
@@ -952,6 +956,12 @@ function montarIntegrado(g,escena,placed){
   pumpVisibility.sync().catch(()=>{});aplicarVisibilidadBombas();
   document.dispatchEvent(new Event('vocatus:referencias'));aplicarFiltroInt();renderList();if(state.area==='integrado'&&state.view==='plant'&&detailFlightTicket!==state.loading)flyIntegrado();
  }).catch(err=>console.warn('Sin datos del modelo integrado',err));
+}
+function montarPaleta(){
+ if(paletaBombas||!$('#viewport')||!$('#pump-list'))return;
+ paletaBombas=crearPaleta({contenedor:$('#viewport'),lista:$('#pump-list'),
+  alSenalar:({tag,pendiente})=>{if(tag){marcarPendiente(null);resaltarBomba(tag);}else{resaltarBomba(null);const hit=integrado?.references?.[Number(pendiente)]?.hit;if(hit)marcarPendiente(hit);}},
+  alDejar:()=>{resaltarBomba(null);marcarPendiente(null);}});
 }
 function aplicarVisibilidadBombas(){
  if(!integrado?.g)return;
@@ -1086,7 +1096,7 @@ function renderPumpRail(rail){
 }
 function resaltarBomba(tag){
  if(bombaResaltada===tag)return;
- const set=(t,on)=>pumpObjects[t]?.traverse(o=>{if(o.isMesh&&o.material.emissive){if(on){o.userData.em??=o.material.emissive.getHex();o.material.emissive.setHex(0x8fdc3a);o.material.emissiveIntensity=.6;}else if(o.userData.em!==undefined){o.material.emissive.setHex(o.userData.em);o.material.emissiveIntensity=1;}}});
+ const set=(t,on)=>(state.area==="integrado"&&pumpObjectsInt[t]||pumpObjects[t])?.traverse(o=>{if(o.isMesh&&o.material.emissive){if(on){o.userData.em??=o.material.emissive.getHex();o.material.emissive.setHex(0x8fdc3a);o.material.emissiveIntensity=.6;}else if(o.userData.em!==undefined){o.material.emissive.setHex(o.userData.em);o.material.emissiveIntensity=1;}}});
  if(bombaResaltada)set(bombaResaltada,false);bombaResaltada=tag;if(tag)set(tag,true);
  if(!resaltarBomba.faro){const f=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,6,24,1,true),new THREE.MeshBasicMaterial({color:0x8fdc3a,transparent:true,opacity:.35,depthWrite:false,side:THREE.DoubleSide}));f.raycast=()=>{};f.renderOrder=5;resaltarBomba.faro=f;scene.add(f);}
  const w=tag&&pumpWorld(tag);resaltarBomba.faro.visible=!!w&&state.view==='plant';if(w)resaltarBomba.faro.position.set(w.x,w.y+3,w.z);
