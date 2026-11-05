@@ -26,7 +26,7 @@ export async function abrirFichaPendiente(panel,s){
   finally{button.disabled=false;}
  };
  panel.querySelector('#maquina-pendiente').onsubmit=e=>{e.preventDefault();try{const data={nombre:pumpNames.nameOf(key),...Object.fromEntries(new FormData(e.currentTarget))};localStorage.setItem(key,JSON.stringify(data));abrirFichaPendiente(panel,s).then(()=>{if(panel.querySelector('#maquina-pendiente')?.dataset.reference===key)panel.querySelector('#maquina-estado').textContent='Datos guardados en este navegador.';});}catch{panel.querySelector('#maquina-estado').textContent='No se pudo guardar. Revisá el almacenamiento del navegador.';}};
- const encabezado=()=>{const el=document.getElementById('selected-tag');if(el)el.textContent=pumpNames.nameOf(key)||'Sin TAG';};encabezado();
+ const encabezado=()=>{const el=document.getElementById('selected-tag');if(el)el.textContent=s.tagAsignado||pumpNames.nameOf(key)||'Sin TAG';};encabezado();
  const destino=panel.querySelector('#imagenes-pendientes');
  // Las fotos pertenecen a este lugar, aunque cambie su TAG.
  const fotoKey=s.fotoKey||key;

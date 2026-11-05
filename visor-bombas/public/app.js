@@ -7,7 +7,7 @@ import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera} from './bombas-calderas.js';
-import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105f';
+import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105g';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
 import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
@@ -588,7 +588,9 @@ function refreshPhotoHistory(pump){
  const reports=listReports(pump.tag||pump.data?.tag);
  return Promise.all([mountHistoryChart(pump,reports),paintReports(pump.tag||pump.data?.tag,reports)]);
 }
-document.addEventListener('vocatus:nombres',()=>{for(const s of integrado?.references||[])if(s.labelEl)s.labelEl.textContent=pumpNames.nameOf(clavePendiente(s))||s.labelBase;renderList();document.dispatchEvent(new Event('vocatus:referencias'));});
+// El TAG de la lista manda sobre los nombres viejos guardados en la base.
+const nombreVisible=s=>s.tagAsignado||pumpNames.nameOf(clavePendiente(s))||s.labelBase;
+document.addEventListener('vocatus:nombres',()=>{for(const s of integrado?.references||[])if(s.labelEl)s.labelEl.textContent=nombreVisible(s);renderList();document.dispatchEvent(new Event('vocatus:referencias'));});
 startPumpNames();
 montarPaleta();
 document.addEventListener('vocatus:storage-ready',()=>{if($('#history-load-error')&&state.tab==='historial'&&state.pump){if($('#rep-list'))refreshPhotoHistory(state.pump);else{$('#history-load-error').remove();mountHistoryChart(state.pump);}}});
@@ -982,7 +984,7 @@ function montarIntegrado(g,escena,placed){
    const etiquetaFija=s.tagAsignado||asig?.nombre||null;
    s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
    const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
-   const el=document.createElement('button');el.className='label pending-label sin-ficha';s.labelBase=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;s.labelEl=el;if(etiquetaFija)s.labelBase=etiquetaFija;el.textContent=pumpNames.nameOf(clavePendiente(s))||s.labelBase;el.title=s.tagAsignado?tituloTag(asignacion,s.tagAsignado):s.nombre;
+   const el=document.createElement('button');el.className='label pending-label sin-ficha';s.labelBase=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;s.labelEl=el;if(etiquetaFija)s.labelBase=etiquetaFija;el.textContent=nombreVisible(s);el.title=s.tagAsignado?tituloTag(asignacion,s.tagAsignado):s.nombre;
    el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);el.dataset.nombre=s.nombre;
    const fichaTag=s.tagAsignado&&conFicha.has(s.tagAsignado)?s.tagAsignado:null;
    if(fichaTag)lugaresFoto[fichaTag]=clavePendiente(s);
