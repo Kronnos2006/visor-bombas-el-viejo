@@ -9,6 +9,7 @@ import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
+import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
 import {pumpVisibility,esAdmin,claveTag,bloqueAdmin,explicarErrorVisibilidad,recortarCajas} from './bombas-admin.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -246,8 +247,8 @@ function initScene(){
  }catch(e){show3DError(e);}
 }
 function normalize(s){return normalizeSearch(s); }
-function renderList(){const q=normalize($('#search').value),area=state.area,tipo=$('#tipo').value,marca=$('#marca').value;const selectedArea=area;const list=state.pumps.filter(p=>(esAdmin()||pumpVisibility.stateOf(claveTag(p.tag))!=='quitada')&&(state.area!=='integrado'||!state.filtroInt||areaOf(p)===state.filtroInt)&&(!selectedArea||areaOf(p)===selectedArea||selectedArea==='integrado')&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&searchPump(p,q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(pumpNames.nameOf(claveTag(p.tag))||p.nombre||p.servicio)} · ${esc(areaName(areaOf(p)))}${pumpVisibility.stateOf(claveTag(p.tag))?' · '+pumpVisibility.stateOf(claveTag(p.tag)):''}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;const pendientes=(state.area==='integrado'?integrado?.references||[]:[]).filter(p=>(esAdmin()||pumpVisibility.stateOf(clavePendiente(p))!=='quitada')&&(!state.filtroInt||sectorDe(p.sector)===state.filtroInt)&&(!tipo&&!marca)&&normalize(`${p.nombre} ${SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre||''}`).includes(q));
- if(pendientes.length){if(!list.length)$('#pump-list').innerHTML='';$('#pump-list').insertAdjacentHTML('beforeend',pendientes.map(p=>`<button class="pump-row ${state.pump?.pending===p?'active':''}" data-pending="${integrado.references.indexOf(p)}"><i>↗</i><strong>${esc(pumpNames.nameOf(clavePendiente(p))||'Bomba '+p.numero)}</strong><small>${esc(SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre)} · sin TAG${pumpVisibility.stateOf(clavePendiente(p))?' · '+pumpVisibility.stateOf(clavePendiente(p)):''}</small></button>`).join(''));$('#pump-list').querySelectorAll('[data-pending]').forEach(b=>b.onclick=()=>selectPendingPump(integrado.references[Number(b.dataset.pending)]));}
+function renderList(){const q=normalize($('#search').value),area=state.area,tipo=$('#tipo').value,marca=$('#marca').value;const selectedArea=area;const list=state.pumps.filter(p=>(esAdmin()||pumpVisibility.stateOf(claveTag(p.tag))!=='quitada')&&(state.area!=='integrado'||!state.filtroInt||(integrado?.asignacion?(pumpObjectsInt[p.tag]?.userData.sectorInt===state.filtroInt):areaOf(p)===state.filtroInt))&&(!selectedArea||areaOf(p)===selectedArea||selectedArea==='integrado')&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&searchPump(p,q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(pumpNames.nameOf(claveTag(p.tag))||integrado?.asignacion?.excel[p.tag]?.nombre||p.nombre||p.servicio)} · ${esc(areaName(areaOf(p)))}${pumpVisibility.stateOf(claveTag(p.tag))?' · '+pumpVisibility.stateOf(claveTag(p.tag)):''}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;const pendientes=(state.area==='integrado'?integrado?.references||[]:[]).filter(p=>(esAdmin()||pumpVisibility.stateOf(clavePendiente(p))!=='quitada')&&(!state.filtroInt||sectorDe(p.sector)===state.filtroInt)&&(!tipo&&!marca)&&normalize(`${p.nombre} ${SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre||''}`).includes(q));
+ if(pendientes.length){if(!list.length)$('#pump-list').innerHTML='';$('#pump-list').insertAdjacentHTML('beforeend',pendientes.map(p=>`<button class="pump-row ${state.pump?.pending===p?'active':''}" data-pending="${integrado.references.indexOf(p)}"><i>↗</i><strong>${esc(pumpNames.nameOf(clavePendiente(p))||p.tagAsignado||'Bomba '+p.numero)}</strong><small>${esc(SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre)}${p.tagAsignado?' · '+(integrado.asignacion?.excel[p.tagAsignado]?.nombre||''):' · sin TAG'}${pumpVisibility.stateOf(clavePendiente(p))?' · '+pumpVisibility.stateOf(clavePendiente(p)):''}</small></button>`).join(''));$('#pump-list').querySelectorAll('[data-pending]').forEach(b=>b.onclick=()=>selectPendingPump(integrado.references[Number(b.dataset.pending)]));}
  $('#count').textContent=`${list.length+pendientes.length} de ${state.pumps.length+(state.area==='integrado'?(integrado?.references.length||0):0)}`;$('#count').title=state.pumps.length+' equipos con TAG'+(state.area==='integrado'?' + '+(integrado?.references.length||0)+' referencias 3D sin TAG':'');$('#count-breakdown').textContent=list.length+' con TAG + '+pendientes.length+' referencias sin TAG en esta vista';$('#clear-filters').hidden=!(q||tipo||marca||state.filtroInt||state.area!=='integrado');$('#pump-list').querySelectorAll('button[data-tag]').forEach(b=>b.onclick=()=>selectPump(b.dataset.tag));document.dispatchEvent(new CustomEvent('vocatus:lista'));}
 async function selectPump(tag){
  if(state.sector)return selectPhotoPump(tag);
@@ -883,12 +884,13 @@ function renderPendingPanel(){
  const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
  if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
- abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending===reference)pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
+ abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
- Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[])]).then(([info,gruposBase,gruposCampo])=>{
+ Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([info,gruposBase,gruposCampo,asignacionData])=>{
+  const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];
   if(g.parent!==plant)return;integrado.info=info;
   // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
   const grupos=agregarBombaFrente(separarSemilleros(gruposConCampo(gruposBase,gruposCampo)));
@@ -935,22 +937,53 @@ function montarIntegrado(g,escena,placed){
   const retirados=new Set(cambios.removedMeshes);for(let i=pickables.length-1;i>=0;i--)if(retirados.has(pickables[i]))pickables.splice(i,1);
   for(const body of Object.values(tankBodies))body.traverse(o=>{if(o.isMesh&&!pickables.includes(o))pickables.push(o);});
   window.__cambiosCampo={...cambios,removedMeshes:undefined};
+  // Lista del usuario: cada cuerpo con ficha pasa a mostrar el TAG que él le asignó.
+  const conFicha=new Set(state.pumps.map(p=>p.tag)),inversaG=new THREE.Matrix4().copy(g.matrixWorld).invert(),gruposTag=[];
+  const cajaLocal=b=>{b.updateMatrixWorld(true);const k=new THREE.Box3().setFromObject(b).applyMatrix4(inversaG);return {min:k.min.toArray(),max:k.max.toArray()};};
+  const originales={...pumpObjectsInt};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
+  const marcadorDe=t=>markers.find(m=>m.kind==='pump'&&m.area==='integrado'&&m.id===t);
+  for(const [viejo,b] of Object.entries(originales)){
+   const id=claveCuerpo(viejo),a=asignacion.porLugar.get(id),quitar=asignacion.quitar.has(id),nuevo=a?.tag||(asignacionData?null:viejo),m=marcadorDe(viejo);
+   const sacarPick=()=>b.traverse(o=>{if(o.isMesh){delete o.userData.tag;const i=pickables.indexOf(o);if(i>=0)pickables.splice(i,1);}});
+   if(quitar||!nuevo){sacarPick();if(m){m.el.remove();markers.splice(markers.indexOf(m),1);}if(quitar||!b.children.length)b.visible=false;b.userData.quitada=quitar||!b.children.length;if(!b.userData.quitada)b.userData.sector=b.userData.sectorInt==='torre'?'DUSA':'Sector de tanques';continue;}
+   if(conFicha.has(nuevo)){b.userData.tag=nuevo;b.traverse(o=>{if(o.isMesh)o.userData.tag=nuevo;});pumpObjectsInt[nuevo]=b;if(m){m.id=nuevo;m.el.textContent=nuevo;m.el.title=tituloTag(asignacion,nuevo);m.el.onclick=()=>selectPump(nuevo);}continue;}
+   // TAG sin ficha completa: conserva el cuerpo y abre los datos del Excel.
+   sacarPick();if(m){m.el.remove();markers.splice(markers.indexOf(m),1);}
+   const sectorB=b.userData.sectorInt==='torre'?'DUSA':'Sector de tanques';b.userData.sector=sectorB;
+   gruposTag.push({nombre:tituloTag(asignacion,nuevo),sector:sectorB,tagAsignado:nuevo,clave:id,bombas:[cajaLocal(b)]});
+  }
+  // Bombas que el usuario agregó en sitios nuevos.
+  const dA=alineado?.d||[0,0,0];
+  for(const n of asignacion.nuevas){
+   const sectorN=sectorDePosicion(n.x,n.z),b=compactar(THREE,exterior(THREE,.72,'lf'));g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
+   const k=new THREE.Box3().setFromObject(b),pisoN=alineado?alturaPiso(alineado.pisos,n.x+dA[0],n.z+dA[2],3):null;b.position.y=(pisoN??(.3+dA[1]))-k.min.y;
+   b.userData.sector=sectorN;b.userData.sectorInt=sectorDe(sectorN);b.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+   if(conFicha.has(n.tag)){b.userData.tag=n.tag;b.traverse(o=>{if(o.isMesh){o.userData.tag=n.tag;pickables.push(o);}});pumpObjectsInt[n.tag]=b;const an=new THREE.Object3D();an.position.set(0,2.2,0);b.add(an);marker(an,n.tag,'pump',n.tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:sectorDe(sectorN)});}
+   else gruposTag.push({nombre:tituloTag(asignacion,n.tag),sector:sectorN,tagAsignado:n.tag,clave:'nuevo:'+n.tag,bombas:[cajaLocal(b)]});
+  }
+  grupos.push(...gruposTag);
   const numeracion={};
   for(const grupo of grupos)for(const [indice,caja] of grupo.bombas.entries()){
-   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1+(grupo.indiceBase||0)}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1+(grupo.indiceBase||0),sectorClave:grupo.sectorClave};
+   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1+(grupo.indiceBase||0)}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1+(grupo.indiceBase||0),sectorClave:grupo.sectorClave,clave:grupo.clave,tagAsignado:grupo.tagAsignado};
+   const asig=asignacion.porLugar.get(clavePendiente(s));
+   if(asignacion.quitar.has(clavePendiente(s))){integrado.quitadas.push(s);continue;}
+   if(asig?.x!=null){const dx=asig.x+dA[0]-(s.min[0]+s.max[0])/2,dz=asig.z+dA[2]-(s.min[2]+s.max[2])/2;s.min=[s.min[0]+dx,s.min[1],s.min[2]+dz];s.max=[s.max[0]+dx,s.max[1],s.max[2]+dz];(integrado.mover||(integrado.mover=[])).push({nombre:grupo.nombre,dx,dz});}
+   if(asig?.tag)s.tagAsignado=asig.tag;
+   const etiquetaFija=s.tagAsignado||asig?.nombre||null;
    s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
    const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
-   const el=document.createElement('button');el.className='label pending-label sin-ficha';s.labelBase=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;s.labelEl=el;el.textContent=pumpNames.nameOf(clavePendiente(s))||s.labelBase;el.title=s.nombre;
+   const el=document.createElement('button');el.className='label pending-label sin-ficha';s.labelBase=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;s.labelEl=el;if(etiquetaFija)s.labelBase=etiquetaFija;el.textContent=pumpNames.nameOf(clavePendiente(s))||s.labelBase;el.title=s.tagAsignado?tituloTag(asignacion,s.tagAsignado):s.nombre;
    el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);el.dataset.nombre=s.nombre;
-   el.onclick=()=>{selectPendingPump(s);};
+   const fichaTag=s.tagAsignado&&conFicha.has(s.tagAsignado)?s.tagAsignado:null;
+   el.onclick=()=>{if(fichaTag)selectPump(fichaTag);else selectPendingPump(s);};
    $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector),ref:s});
    const size=s.max.map((v,i)=>v-s.min[i]);
    const hit=new THREE.Mesh(new THREE.BoxGeometry(size[0],size[1],size[2]),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
-   hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);s.hit=hit;
+   hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));if(fichaTag){hit.userData.tag=fichaTag;hit.userData.sectorInt=sectorDe(s.sector);pumpObjectsInt[fichaTag]=hit;}else hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);s.hit=hit;
   }
   if(gruposCampo.length)new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/modelos/bombas-campo.glb').then(({scene:campo})=>{
    if(g.parent!==plant)return;if(alineado)campo.position.set(...alineado.d);
-   campo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});g.add(campo);aplicarVisibilidadBombas();
+   campo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});for(const mv of integrado.mover||[])campo.traverse(o=>{if(o.isMesh&&o.userData.bomba===mv.nombre){o.position.x+=mv.dx;o.position.z+=mv.dz;}});g.add(campo);aplicarVisibilidadBombas();
   }).catch(err=>console.warn('Sin geometría de bombas nuevas',err));
   realzarBombas(g);
   pumpVisibility.sync().catch(()=>{});aplicarVisibilidadBombas();
@@ -965,7 +998,7 @@ function montarPaleta(){
 }
 function aplicarVisibilidadBombas(){
  if(!integrado?.g)return;
- const cajas=(integrado.references||[]).filter(s=>pumpVisibility.stateOf(clavePendiente(s)));
+ const cajas=[...(integrado.quitadas||[]),...(integrado.references||[]).filter(s=>pumpVisibility.stateOf(clavePendiente(s)))];
  recortarCajas(THREE,integrado.g,cajas,o=>!o.userData.tag&&(o.userData.bomba||/bomba/i.test(String(o.userData.original_name||o.name))));
  aplicarFiltroInt();
 }
@@ -987,6 +1020,7 @@ function aplicarFiltroInt(){
  if(!integrado)return;
  integrado.g.traverse(o=>{if(o.userData.sector)o.visible=visibleCon(o.userData.sector,f);});
  for(const [tag,b] of Object.entries(pumpObjectsInt))b.visible=(!f||b.userData.sectorInt===f)&&!pumpVisibility.stateOf(claveTag(tag));
+ integrado.g.traverse(o=>{if(o.userData.quitada)o.visible=false;});
  integrado.g.traverse(o=>{if(o.userData.hitProxy&&o.userData.pending&&pumpVisibility.stateOf(clavePendiente(o.userData.pending)))o.visible=false;});
  if(f==='torre'&&state.primeraPlanta&&integrado.info?.torre){
   const rango=rangoSeccion(state.nivelTorre||'n1'),aMundo=y=>integrado.g.localToWorld(new THREE.Vector3(0,integrado.info.torre.y+y,0)).y;
