@@ -5,12 +5,14 @@ export async function cloudPageAccess(request,{url,key,fetcher=fetch}){
  if(cloudPublicPaths.has(path)||path.startsWith('/api/auth/'))return null;
  const token=request.headers.get('cookie')?.split(';').map(x=>x.trim()).find(x=>x.startsWith('vocatus_cloud_access='))?.slice('vocatus_cloud_access='.length);
  const deny=(status,message)=>new Response(message,{status,headers:{'Cache-Control':'no-store'}});
+ const aLogin=()=>new Response(null,{status:302,headers:{Location:'/login.html?next='+encodeURIComponent(new URL(request.url).pathname+new URL(request.url).search),'Cache-Control':'no-store'}});
+ const esPagina=path==='/'||path.endsWith('.html');
  if(!url||!key)return deny(503,'Falta configurar el servidor de cuentas.');
  if(!token){if(path==='/'||path.endsWith('.html'))return new Response(null,{status:302,headers:{Location:'/login.html?next='+encodeURIComponent(new URL(request.url).pathname+new URL(request.url).search),'Cache-Control':'no-store'}});return deny(401,'Necesitás una sesión aprobada.');}
  try{
   const headers={apikey:key,Authorization:'Bearer '+token};
   const user=await fetcher(url+'/auth/v1/user',{headers,cache:'no-store'});
-  if(!user.ok)return deny(401,'Sesión inválida.');
+  if(!user.ok)return esPagina?aLogin():deny(401,'Sesión inválida.');
   const identity=await user.json();if(!identity.id||!identity.email_confirmed_at)return deny(401,'Sesión inválida.');
   const response=await fetcher(url+'/rest/v1/rpc/vocatus_account',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
   if(!response.ok)return deny(503,'No se pudo comprobar el permiso.');

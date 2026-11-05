@@ -27,6 +27,8 @@ test('cuenta pendiente, rechazada, inactiva y JWT revocado no obtienen datos med
 });
 test('ni JWT inventado ni identidad de otro usuario ni indisponibilidad abren el visor',async()=>{
  assert.equal((await cloudPageAccess(request('/api/bootstrap'),{...config,fetcher:async()=>new Response('{}',{status:401})})).status,401);
+ const vencida=await cloudPageAccess(request('/'),{...config,fetcher:async()=>new Response('{}',{status:401})});
+ assert.equal(vencida.status,302);assert.match(vencida.headers.get('location'),/^\/login\.html/);
  assert.equal((await cloudPageAccess(request('/api/bootstrap'),{...config,fetcher:provider({...approved,id:'other'})})).status,403);
  assert.equal((await cloudPageAccess(request('/api/bootstrap'),{...config,fetcher:async()=>{throw Error('offline');}})).status,503);
 });
