@@ -978,6 +978,7 @@ function montarIntegrado(g,escena,placed){
    const el=document.createElement('button');el.className='label pending-label sin-ficha';s.labelBase=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;s.labelEl=el;if(etiquetaFija)s.labelBase=etiquetaFija;el.textContent=pumpNames.nameOf(clavePendiente(s))||s.labelBase;el.title=s.tagAsignado?tituloTag(asignacion,s.tagAsignado):s.nombre;
    el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);el.dataset.nombre=s.nombre;
    const fichaTag=s.tagAsignado&&conFicha.has(s.tagAsignado)?s.tagAsignado:null;
+   if(fichaTag)lugaresFoto[fichaTag]=clavePendiente(s);
    el.onclick=()=>{if(fichaTag)selectPump(fichaTag);else selectPendingPump(s);};
    $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector),ref:s});
    const size=s.max.map((v,i)=>v-s.min[i]);
@@ -989,6 +990,7 @@ function montarIntegrado(g,escena,placed){
    campo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});for(const mv of integrado.mover||[])campo.traverse(o=>{if(o.isMesh&&o.userData.bomba===mv.nombre){o.position.x+=mv.dx;o.position.z+=mv.dz;}});g.add(campo);aplicarVisibilidadBombas();
   }).catch(err=>console.warn('Sin geometría de bombas nuevas',err));
   realzarBombas(g);
+  ligarFotosAPosicion(lugaresFoto);
   pumpVisibility.sync().catch(()=>{});aplicarVisibilidadBombas();
   document.dispatchEvent(new Event('vocatus:referencias'));aplicarFiltroInt();renderList();if(state.area==='integrado'&&state.view==='plant'&&detailFlightTicket!==state.loading)flyIntegrado();
  }).catch(err=>console.warn('Sin datos del modelo integrado',err));
