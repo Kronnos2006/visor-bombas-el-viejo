@@ -44,3 +44,7 @@ Las fotos de una bomba nueva o con TAG cambiado no se renombran ni se mueven en 
 ## Comprobación
 
 `npm test` pasa con 301 pruebas. Las fichas de B24, B34, B38 y B41 se abrieron en el Preview con las fotos de su lugar.
+
+## Bombas horizontales de calderas
+
+B72 y B74 se dibujan según las fotos de campo en `public/bombas-calderas.js`. El campo `modelo` de cada lugar nuevo en `asignacion-bombas.json` elige el dibujo. Las medidas son aproximadas.

@@ -6,6 +6,7 @@ import {createFirstFloorView} from './primera-planta.js';
 import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
+import {crearModeloCaldera} from './bombas-calderas.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105e';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
@@ -872,7 +873,7 @@ function selectPendingPump(reference){
  const show=()=>{if(ticket!==state.loading)return;state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
  if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf');}
  if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}
- photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail)photoDetail=exterior(THREE,1.2,'lf');scene.add(photoDetail);setPhotoDetail(false);
+ photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);setPhotoDetail(false);
  $('#scene-badge').textContent=state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR';
  $('#scene-help').textContent='Arrastrá para girar · Abrí Piezas de la bomba para ver el despiece';
  setViewButtons(false);renderList();renderPanel();
@@ -963,16 +964,16 @@ function montarIntegrado(g,escena,placed){
   // Bombas que el usuario agregó en sitios nuevos.
   const dA=alineado?.d||[0,0,0];
   for(const n of asignacion.nuevas){
-   const sectorN=sectorDePosicion(n.x,n.z),b=compactar(THREE,exterior(THREE,.72,'lf'));g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
+   const sectorN=sectorDePosicion(n.x,n.z),b=crearModeloCaldera(THREE,n.modelo)||compactar(THREE,exterior(THREE,.72,'lf'));if(n.giro)b.rotation.y=n.giro;g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
    const k=new THREE.Box3().setFromObject(b),pisoN=alineado?alturaPiso(alineado.pisos,n.x+dA[0],n.z+dA[2],3):null;b.position.y=(pisoN??(.3+dA[1]))-k.min.y;
    b.userData.sector=sectorN;b.userData.sectorInt=sectorDe(sectorN);b.traverse(o=>{if(o.isMesh)o.castShadow=true;});
    if(conFicha.has(n.tag)){b.userData.tag=n.tag;b.traverse(o=>{if(o.isMesh){o.userData.tag=n.tag;pickables.push(o);}});pumpObjectsInt[n.tag]=b;const an=new THREE.Object3D();an.position.set(0,2.2,0);b.add(an);marker(an,n.tag,'pump',n.tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:sectorDe(sectorN)});}
-   else gruposTag.push({nombre:tituloTag(asignacion,n.tag),sector:sectorN,tagAsignado:n.tag,clave:'nuevo:'+n.tag,bombas:[cajaLocal(b)]});
+   else gruposTag.push({nombre:tituloTag(asignacion,n.tag),sector:sectorN,tagAsignado:n.tag,clave:'nuevo:'+n.tag,modelo:n.modelo,bombas:[cajaLocal(b)]});
   }
   grupos.push(...gruposTag);
   const numeracion={};
   for(const grupo of grupos)for(const [indice,caja] of grupo.bombas.entries()){
-   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1+(grupo.indiceBase||0)}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1+(grupo.indiceBase||0),sectorClave:grupo.sectorClave,clave:grupo.clave,tagAsignado:grupo.tagAsignado,fotoKey:grupo.fotoKey,imagenesLugar:grupo.imagenesLugar};
+   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1+(grupo.indiceBase||0)}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1+(grupo.indiceBase||0),sectorClave:grupo.sectorClave,clave:grupo.clave,tagAsignado:grupo.tagAsignado,fotoKey:grupo.fotoKey,imagenesLugar:grupo.imagenesLugar,modelo:grupo.modelo};
    const asig=asignacion.porLugar.get(clavePendiente(s));
    if(asignacion.quitar.has(clavePendiente(s))){integrado.quitadas.push(s);continue;}
    if(asig?.x!=null){const dx=asig.x+dA[0]-(s.min[0]+s.max[0])/2,dz=asig.z+dA[2]-(s.min[2]+s.max[2])/2;s.min=[s.min[0]+dx,s.min[1],s.min[2]+dz];s.max=[s.max[0]+dx,s.max[1],s.max[2]+dz];(integrado.mover||(integrado.mover=[])).push({nombre:grupo.nombre,dx,dz});}
