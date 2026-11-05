@@ -44,13 +44,20 @@ export function setPhotoInputStatus(input,message,error=false){
 const b64=blob=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>ko(new Error('No se pudo leer la foto para descargarla.'));r.readAsDataURL(blob);});
 
 function withWarning(photos,message){if(message)Object.defineProperty(photos,'warning',{value:message,enumerable:false});return photos;}
-export async function fotosActualizadas(tag,{writable}){
+// Las fotos siguen a la posición de la bomba: si cambia su TAG, se leen y guardan donde ya estaban.
+const fotosDePosicion=new Map();
+export function ligarFotosAPosicion(mapa){fotosDePosicion.clear();for(const [tag,lugar] of Object.entries(mapa))fotosDePosicion.set(tag,lugar);}
+// '=B30' pide exactamente esa entidad, sin volver a traducirla.
+export const entidadDeFotos=tag=>String(tag).startsWith('=')?String(tag).slice(1):(fotosDePosicion.get(tag)||tag);
+export async function fotosActualizadas(etiqueta,{writable}){
+ const tag=entidadDeFotos(etiqueta);
  if(!writable)return loadPhotoView({loadLocal:()=>locales(tag),loadShared:()=>sharedPhotos(tag),enabled:cloudEnabled()});
  let loc={},localError;try{loc=await locales(tag);}catch(error){localError=error;}
  try{const r=await fetch('/api/pump-photos?tag='+encodeURIComponent(tag));if(!r.ok)throw new Error('No se pudieron consultar las fotos de Obsidian.');const {fotos}=await r.json();return withWarning({...loc,...fotos,...Object.fromEntries(Object.entries(loc).filter(([,v])=>v.pending))},localError?.message);}catch(error){if(localError)throw localError;return withWarning(loc,error.message);}
 }
 const photoQueues=new Map();
-export function guardarFoto(tag,slot,file,options){
+export function guardarFoto(etiqueta,slot,file,options){
+ const tag=entidadDeFotos(etiqueta);
  if(!RANURAS.some(([name])=>name===slot))return Promise.reject(new Error('Categoría de foto desconocida.'));
  const key=tag+':'+slot,previous=photoQueues.get(key)||Promise.resolve();
  const task=previous.catch(()=>{}).then(()=>savePhoto(tag,slot,file,options)).catch(error=>{
@@ -84,6 +91,7 @@ export function htmlFotos(p,orig,act,{writable}){
 
 
 export function photoTransferHTML(tag,{writable,reference=false,displayName=tag}){
+ tag=entidadDeFotos(tag);
  return `${writable?'':cloudPhotoControls(tag)}<section class="photo-transfer" data-photo-tag="${esc(tag)}" aria-label="Pasar fotos entre equipos"><strong>Respaldo de fotos entre teléfono y PC</strong><p>El archivo conserva ${reference?'la referencia del modelo (sin asignar TAG)':'el TAG'} y la categoría. Cargarlo no reemplaza fotos que ya existan.</p><button type="button" class="wide" data-photo-download="tag">Descargar fotos de ${esc(displayName)}</button><button type="button" class="wide" data-photo-download="all">Descargar todas las fotos ${reference?'de referencias sin TAG':'con TAG'} locales</button><label class="foto-btn">Cargar archivo de fotos<input class="foto-file" type="file" accept=".json,application/json" aria-label="Cargar archivo de fotos para ${esc(displayName)}" data-photo-import></label>${writable?'<button type="button" class="wide" data-photo-sync>Guardar fotos locales de '+esc(tag)+' en Obsidian</button>':''}<p data-photo-status role="status" aria-live="polite"></p></section>`;
 }
 async function localEntries(){
@@ -105,6 +113,7 @@ export async function importPhotoPackage(data){
  return idb('readwrite',store=>{const result={added:0,preserved:0,addedKeys:[]};for(const photo of photos){const key=(photo.reference||photo.tag)+':'+photo.slot,r=store.get(key);r.onsuccess=()=>{if(r.result?.blob)result.preserved++;else{store.put({blob:photo.blob,fecha:photo.fecha,pending:true,revision:crypto.randomUUID()},key);result.added++;result.addedKeys.push(key);}};}return{get result(){return result;}};});
 }
 export function bindPhotoTransfers(root,tag,options,onChange){
+ root=entidadDeFotos(root);
  if(!options.writable)bindCloudPhotoControls(root,tag,{refresh:async()=>{if(root.dataset.photoPicking||root.querySelector('input[type=file]:disabled'))return;try{await flushCloudPhotos(tag);}catch{}await onChange?.();},flush:()=>flushCloudPhotos(tag,true),resolve:resolveCloudPhoto,details:()=>cloudDetails(tag)});
  for(const input of root.querySelectorAll('input[type=file]')){input.addEventListener('click',()=>{root.dataset.photoPicking='1';});for(const event of ['change','cancel'])input.addEventListener(event,()=>{delete root.dataset.photoPicking;});}
  const box=root.querySelector('.photo-transfer');if(!box)return;

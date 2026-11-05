@@ -9,7 +9,7 @@ import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
-import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo,entidadFotos} from './asignacion-bombas.js';
+import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
 import {pumpVisibility,esAdmin,claveTag,bloqueAdmin,explicarErrorVisibilidad,recortarCajas} from './bombas-admin.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -24,7 +24,7 @@ import {GLTFLoader} from '/vendor/GLTFLoader.js';
 import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
 import {INFO_URL,SECTORES_INT,visibleCon,torreAIntegrado,cajaSector,sectorDe,ubicarTanques} from './planta-integrada.js';
-import {fotosActualizadas, guardarFoto, originales, htmlFotos, bindPhotoTransfers, photoTransferHTML} from './fotos-bomba.js';
+import {ligarFotosAPosicion,fotosActualizadas, guardarFoto, originales, htmlFotos, bindPhotoTransfers, photoTransferHTML} from './fotos-bomba.js';
 import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
@@ -941,6 +941,9 @@ function montarIntegrado(g,escena,placed){
   const conFicha=new Set(state.pumps.map(p=>p.tag)),inversaG=new THREE.Matrix4().copy(g.matrixWorld).invert(),gruposTag=[];
   const cajaLocal=b=>{b.updateMatrixWorld(true);const k=new THREE.Box3().setFromObject(b).applyMatrix4(inversaG);return {min:k.min.toArray(),max:k.max.toArray()};};
   const originales={...pumpObjectsInt};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
+  const lugaresFoto={};for(const viejo of Object.keys(originales)){const na=asignacion.porLugar.get(claveCuerpo(viejo))?.tag;if(na&&na!==viejo)lugaresFoto[na]=viejo;}
+  // Una ficha sin cuerpo propio no debe mostrar fotos de la posición que antes usaba su número.
+  ligarFotosAPosicion(lugaresFoto);
   const marcadorDe=t=>markers.find(m=>m.kind==='pump'&&m.area==='integrado'&&m.id===t);
   for(const [viejo,b] of Object.entries(originales)){
    const id=claveCuerpo(viejo),a=asignacion.porLugar.get(id),quitar=asignacion.quitar.has(id),nuevo=a?.tag||(asignacionData?null:viejo),m=marcadorDe(viejo);
@@ -950,7 +953,7 @@ function montarIntegrado(g,escena,placed){
    // TAG sin ficha completa: conserva el cuerpo y abre los datos del Excel.
    sacarPick();if(m){m.el.remove();markers.splice(markers.indexOf(m),1);}
    const sectorB=b.userData.sectorInt==='torre'?'DUSA':'Sector de tanques';b.userData.sector=sectorB;
-   gruposTag.push({nombre:tituloTag(asignacion,nuevo),sector:sectorB,tagAsignado:nuevo,clave:id,bombas:[cajaLocal(b)]});
+   gruposTag.push({nombre:tituloTag(asignacion,nuevo),sector:sectorB,tagAsignado:nuevo,clave:id,fotoKey:'='+viejo,bombas:[cajaLocal(b)]});
   }
   // Bombas que el usuario agregó en sitios nuevos.
   const dA=alineado?.d||[0,0,0];
@@ -964,12 +967,11 @@ function montarIntegrado(g,escena,placed){
   grupos.push(...gruposTag);
   const numeracion={};
   for(const grupo of grupos)for(const [indice,caja] of grupo.bombas.entries()){
-   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1+(grupo.indiceBase||0)}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1+(grupo.indiceBase||0),sectorClave:grupo.sectorClave,clave:grupo.clave,tagAsignado:grupo.tagAsignado};
+   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1+(grupo.indiceBase||0)}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1+(grupo.indiceBase||0),sectorClave:grupo.sectorClave,clave:grupo.clave,tagAsignado:grupo.tagAsignado,fotoKey:grupo.fotoKey};
    const asig=asignacion.porLugar.get(clavePendiente(s));
    if(asignacion.quitar.has(clavePendiente(s))){integrado.quitadas.push(s);continue;}
    if(asig?.x!=null){const dx=asig.x+dA[0]-(s.min[0]+s.max[0])/2,dz=asig.z+dA[2]-(s.min[2]+s.max[2])/2;s.min=[s.min[0]+dx,s.min[1],s.min[2]+dz];s.max=[s.max[0]+dx,s.max[1],s.max[2]+dz];(integrado.mover||(integrado.mover=[])).push({nombre:grupo.nombre,dx,dz});}
    if(asig?.tag)s.tagAsignado=asig.tag;
-   if(s.tagAsignado)s.fotoKey=entidadFotos(s.tagAsignado)||undefined;
    const etiquetaFija=s.tagAsignado||asig?.nombre||null;
    s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
    const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
