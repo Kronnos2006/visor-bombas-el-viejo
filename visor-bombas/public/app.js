@@ -682,7 +682,7 @@ function renderPhotoPanel(){
  const docLinks=[...(exp.fab||[]).flatMap(k=>k==='weg'&&p.motor?.catalogo!=='00218XT3E145T'?[enlaces.weg[0]]:enlaces[k]||[]),...(exp.rod||[]).map(k=>enlaces.skf[k]).filter(Boolean).map(l=>({...l,k:'rodamiento · CAD'}))];
  const imagenes=`<div class="block exp-block" id="fuentes-${esc(p.tag)}"><h3>Imágenes del equipo</h3>${exp.pendiente?`<p class="notice pending-source"><strong>PENDIENTE · ${esc(p.tag)}</strong><br>${esc(exp.pendiente)}</p>`:''}<p><a class="doc" href="/#${esc(p.tag)}">Vínculo directo al expediente ${esc(p.tag)}</a></p><p class="eyebrow">PLACA DE CARACTERÍSTICAS</p>${figs(exp.placas,'Sin foto de placa asociada en el Excel.')}<p class="eyebrow">FOTO DE LA BOMBA</p>${figs(exp.fotos,'Sin foto individual en el Excel; ver referencia del lado.')}${exp.nota?`<p class="notice">${esc(exp.nota)}</p>`:''}<p class="muted">Imágenes tomadas de “Libro1 bomba2.xlsx”, asociadas por la fila donde estaban ancladas. Cada pie conserva su fila de origen; no se asignan placas por semejanza.</p></div>`;
  const documentos=`<div class="block exp-block"><h3>Catálogos, fichas y CAD del fabricante</h3>${docLinks.length?`<ul class="doc-links">${linkRows(docLinks)}</ul>`:'<p class="muted">Sin fabricante identificado: no hay documentación asociada.</p>'}<p class="muted">Enlaces públicos a fabricantes y distribuidores. “CAD” = ficha de producto donde el fabricante lo ofrece; el despiece 3D de esta app no es CAD del fabricante.</p></div>`;
- const photos=`<div class="photo-pair"><figure><figcaption>Referencia del lado · ${esc(p.area)}</figcaption><img src="${p.photo}" alt="Vista del lado donde se ubica ${esc(p.tag)}"></figure></div><p class="muted">Foto de contexto del PDF (lado donde está la bomba). Placa y foto propias de la bomba, más abajo en “Imágenes del equipo”.</p>`;
+ const photos=`<div class="photo-pair"><figure><figcaption>Referencia del lado · ${esc(p.area)}</figcaption><img ${p.photo?`src="${p.photo}"`:"hidden"} alt="Vista del lado donde se ubica ${esc(p.tag)}"></figure></div><p class="muted">Foto de contexto del PDF (lado donde está la bomba). Placa y foto propias de la bomba, más abajo en “Imágenes del equipo”.</p>`;
  $('#panel').innerHTML=`${componentCard}<p class="eyebrow">EXPEDIENTE DE ${esc(p.tag)}</p><h2>${p.inactive?'B22 · SIN USO':esc(p.marca)+' '+esc(p.modelo)}</h2>${p.enUso===false?'<p class="notice warn"><strong>Sin uso.</strong> Está instalada en la torre pero no opera (confirmado por el usuario, 13-oct-2026). Los datos son los de su placa.</p>':''}<p class="notice">${p.inactive?'Equipo marcado SIN USO en el Excel. Exterior ilustrativo de bomba azul con cubierta roja, según la foto asociada a la fila 25. Modelo, dimensiones y componentes sin identificar; se conserva la posición aproximada existente.':'Datos del Excel y confirmaciones del usuario. Las proporciones 3D son aproximadas; los ejemplos de o-rings e historial están marcados DEMO.'}</p>${photos}${imagenes}${fieldRows([['Ubicación (tanque conectado)',p.nombre],['Lado',p.area],['Fabricante',p.marca],['Modelo',p.modelo],['Tamaño',p.size],['Fluido',p.servicio],['Fuente',p.source],...p.specs])}<div class="block interactive-part-block" data-part="9" title="Ver motor eléctrico en el 3D"><h3>Motor <span class="part-badge">Pieza 10 ↗</span></h3>${fieldRows(componentRows(p,9))}</div><div class="block interactive-part-block" data-part="5" title="Ver sello mecánico en el 3D"><h3>${esc(sealTitle(p))} <span class="part-badge">Pieza 06 ↗</span></h3>${state.part===5?'<p>Datos y referencias en la pieza seleccionada, arriba.</p>':sealInfo}</div><div class="block interactive-part-block" data-part="7" title="Ver rodamientos y bancada en el 3D"><h3>Rodamientos registrados <span class="part-badge">Pieza 08 ↗</span></h3>${fieldRows(componentRows(p,7))}</div><div class="block interactive-part-block" data-part="8" title="Ver acople en el 3D"><h3>Acople <span class="part-badge">Pieza 09 ↗</span></h3>${fieldRows(componentRows(p,8))}</div><div class="block"><h3>O-rings ${demo}</h3>${rings||'<p>Sin datos.</p>'}</div>${documentos}<div class="block"><div class="panel-actions"><button type="button" id="download-summary-pdf-bottom" class="primary wide pdf-btn">📄 Descargar resumen técnico de ${esc(p.tag)} (PDF)</button></div></div>`;
  $('#panel').querySelectorAll('.interactive-part-block').forEach(b=>b.onclick=()=>selectPart(Number(b.dataset.part)));
  $('#panel').querySelectorAll('[data-subcomponent]').forEach(b=>b.onclick=()=>{selectPart(state.part,b.dataset.subcomponent);fitAnatomy();});
@@ -942,6 +942,11 @@ function montarIntegrado(g,escena,placed){
   const cajaLocal=b=>{b.updateMatrixWorld(true);const k=new THREE.Box3().setFromObject(b).applyMatrix4(inversaG);return {min:k.min.toArray(),max:k.max.toArray()};};
   const originales={...pumpObjectsInt};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
   const lugaresFoto={};for(const viejo of Object.keys(originales)){const na=asignacion.porLugar.get(claveCuerpo(viejo))?.tag;if(na&&na!==viejo)lugaresFoto[na]=viejo;}
+  // Las imágenes antiguas también siguen al lugar: cada TAG muestra las del lugar donde quedó.
+  const imagenesLugar={};for(const p of state.pumps){const e=expediente[p.tag];imagenesLugar[p.tag]={placas:e?.placas||[],fotos:e?.fotos||[],photo:p.photo,ubicacionCroquis:p.ubicacionCroquis};}
+  if(asignacionData){const conLugar=new Set();
+   for(const viejo of Object.keys(originales)){const na=asignacion.porLugar.get(claveCuerpo(viejo))?.tag,im=imagenesLugar[viejo];if(!na||!conFicha.has(na))continue;conLugar.add(na);const e=expediente[na]||(expediente[na]={placas:[],fotos:[],fab:[],rod:[]}),p=state.pumps.find(x=>x.tag===na);e.placas=im?.placas||[];e.fotos=im?.fotos||[];if(p){p.photo=im?.photo||null;p.ubicacionCroquis=im?.ubicacionCroquis||p.ubicacionCroquis;}}
+   for(const p of state.pumps)if(!conLugar.has(p.tag)){const e=expediente[p.tag];if(e){e.placas=[];e.fotos=[];}p.photo=null;}}
   // Una ficha sin cuerpo propio no debe mostrar fotos de la posición que antes usaba su número.
   ligarFotosAPosicion(lugaresFoto);
   const marcadorDe=t=>markers.find(m=>m.kind==='pump'&&m.area==='integrado'&&m.id===t);
@@ -953,7 +958,7 @@ function montarIntegrado(g,escena,placed){
    // TAG sin ficha completa: conserva el cuerpo y abre los datos del Excel.
    sacarPick();if(m){m.el.remove();markers.splice(markers.indexOf(m),1);}
    const sectorB=b.userData.sectorInt==='torre'?'DUSA':'Sector de tanques';b.userData.sector=sectorB;
-   gruposTag.push({nombre:tituloTag(asignacion,nuevo),sector:sectorB,tagAsignado:nuevo,clave:id,fotoKey:'='+viejo,bombas:[cajaLocal(b)]});
+   gruposTag.push({nombre:tituloTag(asignacion,nuevo),sector:sectorB,tagAsignado:nuevo,clave:id,fotoKey:'='+viejo,imagenesLugar:imagenesLugar[viejo],bombas:[cajaLocal(b)]});
   }
   // Bombas que el usuario agregó en sitios nuevos.
   const dA=alineado?.d||[0,0,0];
@@ -967,7 +972,7 @@ function montarIntegrado(g,escena,placed){
   grupos.push(...gruposTag);
   const numeracion={};
   for(const grupo of grupos)for(const [indice,caja] of grupo.bombas.entries()){
-   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1+(grupo.indiceBase||0)}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1+(grupo.indiceBase||0),sectorClave:grupo.sectorClave,clave:grupo.clave,tagAsignado:grupo.tagAsignado,fotoKey:grupo.fotoKey};
+   const s={...caja,sector:grupo.sector,nombre:grupo.bombas.length>1?`${grupo.nombre} · Bomba ${indice+1+(grupo.indiceBase||0)}`:grupo.nombre,grupo:grupo.nombre,nota:grupo.nota||'',indice:indice+1+(grupo.indiceBase||0),sectorClave:grupo.sectorClave,clave:grupo.clave,tagAsignado:grupo.tagAsignado,fotoKey:grupo.fotoKey,imagenesLugar:grupo.imagenesLugar};
    const asig=asignacion.porLugar.get(clavePendiente(s));
    if(asignacion.quitar.has(clavePendiente(s))){integrado.quitadas.push(s);continue;}
    if(asig?.x!=null){const dx=asig.x+dA[0]-(s.min[0]+s.max[0])/2,dz=asig.z+dA[2]-(s.min[2]+s.max[2])/2;s.min=[s.min[0]+dx,s.min[1],s.min[2]+dz];s.max=[s.max[0]+dx,s.max[1],s.max[2]+dz];(integrado.mover||(integrado.mover=[])).push({nombre:grupo.nombre,dx,dz});}
@@ -979,8 +984,6 @@ function montarIntegrado(g,escena,placed){
    el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);el.dataset.nombre=s.nombre;
    const fichaTag=s.tagAsignado&&conFicha.has(s.tagAsignado)?s.tagAsignado:null;
    if(fichaTag)lugaresFoto[fichaTag]=clavePendiente(s);
-   // Las fotos antiguas siguen el número del Excel viejo; en esta posición no corresponden a la bomba.
-   if(fichaTag&&expediente[fichaTag]){const e=expediente[fichaTag];if((e.placas?.length||e.fotos?.length)){e.placas=[];e.fotos=[];e.nota='Las fotos antiguas del Excel se retiraron de esta ficha porque no corresponden a esta posición. Valen las fotos de campo.';}}
    el.onclick=()=>{if(fichaTag)selectPump(fichaTag);else selectPendingPump(s);};
    $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector),ref:s});
    const size=s.max.map((v,i)=>v-s.min[i]);
@@ -1182,7 +1185,7 @@ async function montarFotos(p,exp){
   document.getElementById('fotos-actualizar')?.remove();
   document.getElementById('fuentes-'+tag).insertAdjacentHTML('afterend',htmlFotos(p,orig,act,{writable:!!state.writable}));
   const photoRoot=document.getElementById('fotos-actualizar');bindPhotoTransfers(photoRoot,tag,{writable:!!state.writable,token:state.token},pintar);if(photoError){photoRoot.querySelector('#fotos-error').textContent=photoError;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=pintar;photoRoot.querySelector('#fotos-error').after(retry);}
-  if(act.posicion){const ref=document.querySelector('#panel .photo-pair img');if(ref)ref.src=act.posicion.url;}
+  if(act.posicion){const ref=document.querySelector('#panel .photo-pair img');if(ref){ref.src=act.posicion.url;ref.hidden=false;}}
 
   document.querySelectorAll('#fotos-actualizar input[data-slot]').forEach(input=>input.onchange=async()=>{
    const file=input.files?.[0];if(!file)return;const label=input.closest('label');label.classList.add('saving');
