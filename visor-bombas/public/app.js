@@ -6,7 +6,7 @@ import {createFirstFloorView} from './primera-planta.js';
 import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
-import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
+import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105e';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
 import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
