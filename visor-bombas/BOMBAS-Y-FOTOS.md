@@ -34,7 +34,7 @@ Las fotos de una bomba nueva o con TAG cambiado no se renombran ni se mueven en 
 
 - Ejecutar `supabase/review/preparar-bombas.sql` en Supabase: falta la tabla `vocatus_pump_visibility`. Sin ella, ocultar o quitar bombas no se comparte entre usuarios.
 - El usuario ordena las posiciones a mano. No reordenarlas sin que lo pida.
-- Sin lugar en el 3D: B10, B15, B16, B22, B73, B75 a B80.
+- Sin lugar en el 3D: B10, B15, B16, B22, B73, B76 a B80.
 - Sector distinto al área del Excel: B1, B2, B61, B62, B67, B68, B81, B82, B83.
 - B17, B18 y B20: la placa antigua dice Titan y el Excel dice Durco. Confirmar en campo.
 - B41: la ficha dice Goulds 15SH06K6. Confirmar con la foto de campo de su placa.
@@ -47,4 +47,6 @@ Las fotos de una bomba nueva o con TAG cambiado no se renombran ni se mueven en 
 
 ## Bombas horizontales de calderas
 
-B72 y B74 se dibujan según las fotos de campo en `public/bombas-calderas.js`. El campo `modelo` de cada lugar nuevo en `asignacion-bombas.json` elige el dibujo. Las medidas son aproximadas.
+Son tres en fila, dibujadas según las fotos de campo en `public/bombas-calderas.js`: B72 (panel al extremo), B75 (motor azul y correa) y B74 (panel atrás). El campo `modelo` de cada lugar nuevo en `asignacion-bombas.json` elige el dibujo. Las medidas son aproximadas.
+
+Por confirmar: según el Excel y las fotos, las horizontales serían B74, B75 y B76 (búnker), y las cinco verticales B69 a B73.

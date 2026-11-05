@@ -12,8 +12,8 @@ function piezas(THREE){
 
 function bastidor(caja,largo){
  caja(.86,.06,largo,COLOR.azul,0,.03,0);
- for(const x of [-.4,.4])for(const z of [-largo/2+.05,largo/2-.05])caja(.07,.22,.07,COLOR.azul,x,.17,z);
- caja(.8,.06,largo-.08,COLOR.turquesa,0,.31,0);
+ for(const x of [-.36,.36])for(const z of [-largo/2+.05,largo/2-.05])caja(.07,.2,.07,COLOR.azul,x,.16,z);
+ caja(.76,.06,largo-.06,COLOR.turquesa,0,.29,0);
 }
 
 function motor(cil,caja,color,x,y,z,r,l){
@@ -27,37 +27,48 @@ function tuberia(cil,caja,x,z,base){
  cil(.03,1.55-base,COLOR.negro,x,(1.55+base)/2,z,'y');
  caja(.13,.03,.13,COLOR.hierro,x,1.2,z);
  cil(.03,x+.42,COLOR.negro,(x-.42)/2,1.55,z,'x');
- cil(.05,2.66,COLOR.negro,-.42,1.55,0);
+ cil(.05,1.34,COLOR.negro,-.42,1.55,0);
 }
 
-// Motor gris y bomba pequeña, con la caja turquesa detrás.
-export function bombaCaja(THREE){
+// Izquierda: motor gris y panel turquesa alto en el extremo.
+export function bombaPanel(THREE){
  const {g,caja,cil}=piezas(THREE);
- bastidor(caja,1.3);
- caja(.1,.62,1.15,COLOR.turquesa,-.33,.65,0);
- motor(cil,caja,COLOR.gris,.08,.5,.16,.14,.5);
- caja(.3,.12,.34,COLOR.turquesa,.08,.4,-.36);
- cil(.09,.16,COLOR.hierro,.08,.54,-.34);
- cil(.05,.16,COLOR.hierro,.08,.54,-.2);
- tuberia(cil,caja,.08,-.42,.6);
+ bastidor(caja,1.05);
+ caja(.72,.72,.09,COLOR.turquesa,0,.68,-.42);
+ motor(cil,caja,COLOR.gris,.12,.49,.02,.13,.56);
+ cil(.09,.14,COLOR.hierro,.12,.49,-.32);
+ cil(.05,.18,COLOR.hierro,-.2,.5,-.3,'y');
+ tuberia(cil,caja,-.2,-.3,.6);
  return g;
 }
 
-// Motor azul abajo y polea grande arriba, con guarda azul y malla.
+// Centro: motor azul adelante, guarda azul en arco y bomba oscura junto a la pared.
 export function bombaCorrea(THREE){
  const {g,caja,cil}=piezas(THREE);
- bastidor(caja,1.3);
- motor(cil,caja,COLOR.azulMotor,.14,.5,.2,.13,.46);
- caja(.05,.5,.72,COLOR.malla,-.03,.72,.04,{transparent:true,opacity:.55});
- const polea=cil(.25,.05,COLOR.blanco,-.1,.86,-.08,'x');polea.material.metalness=.5;
- caja(.03,.08,.8,COLOR.azul,-.02,1.1,.03);
- caja(.03,.5,.08,COLOR.azul,-.02,.72,.43);
- caja(.2,.5,.06,COLOR.azul,-.14,.72,-.36);
- cil(.11,.24,COLOR.azul,-.14,.84,-.47,'x');
- cil(.05,.3,COLOR.azul,-.14,.72,-.47,'y');
- tuberia(cil,caja,-.14,-.47,.98);
+ bastidor(caja,1.05);
+ motor(cil,caja,COLOR.azulMotor,.2,.47,.04,.11,.4);
+ caja(.72,.1,.1,COLOR.azul,-.02,.38,-.34);
+ const arco=new THREE.Mesh(new THREE.TorusGeometry(.3,.05,10,24,Math.PI),new THREE.MeshStandardMaterial({color:COLOR.azul,metalness:.25,roughness:.65}));arco.rotation.y=Math.PI/2;arco.position.set(-.08,.72,-.34);g.add(arco);
+ for(const x of [.22,-.38])caja(.1,.34,.1,COLOR.azul,x,.55,-.34);
+ const polea=cil(.25,.04,COLOR.blanco,-.08,.72,-.28,'z');polea.material.metalness=.5;
+ cil(.07,.3,COLOR.hierro,-.3,.55,-.05,'y');
+ cil(.05,.28,COLOR.azul,-.3,.52,-.05,'x');
+ tuberia(cil,caja,-.3,-.05,.7);
  return g;
 }
 
-const MODELOS={'caldera-caja':bombaCaja,'caldera-correa':bombaCorrea};
+// Derecha: motor gris con ventilador, panel turquesa atrás y bomba azul pequeña.
+export function bombaFondo(THREE){
+ const {g,caja,cil}=piezas(THREE);
+ bastidor(caja,1.05);
+ caja(.09,.56,1,COLOR.turquesa,-.34,.6,0);
+ caja(.42,.56,.09,COLOR.turquesa,-.13,.6,-.48);
+ motor(cil,caja,COLOR.gris,.14,.48,-.08,.13,.46);
+ cil(.13,.05,COLOR.malla,.14,.48,.18);
+ cil(.09,.14,COLOR.azul,-.14,.5,.34,'y');
+ tuberia(cil,caja,-.14,.34,.56);
+ return g;
+}
+
+const MODELOS={'caldera-panel':bombaPanel,'caldera-correa':bombaCorrea,'caldera-fondo':bombaFondo};
 export const crearModeloCaldera=(THREE,nombre)=>MODELOS[nombre]?.(THREE)||null;
