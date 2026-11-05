@@ -7,7 +7,7 @@ import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera} from './bombas-calderas.js';
-import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105e';
+import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105f';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
 import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
@@ -867,7 +867,7 @@ function selectPendingPump(reference){
  state.part=null;state.tab='ficha';
  document.dispatchEvent(new CustomEvent('vocatus:referencia',{detail:reference}));
  $('#selected-tag').textContent='Sin TAG';$('#selected-name').textContent=reference.nombre;
- $('#source-status').textContent='IDENTIFICACIÓN PENDIENTE · GEOMETRÍA DE REFERENCIA';
+ $('#source-status').textContent=reference.excel?'DATOS DEL EXCEL · GEOMETRÍA DE REFERENCIA':'IDENTIFICACIÓN PENDIENTE · GEOMETRÍA DE REFERENCIA';
  $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
  $('#back').hidden=false;
  const show=()=>{if(ticket!==state.loading)return;state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
@@ -978,6 +978,7 @@ function montarIntegrado(g,escena,placed){
    if(asignacion.quitar.has(clavePendiente(s))){integrado.quitadas.push(s);continue;}
    if(asig?.x!=null){const dx=asig.x+dA[0]-(s.min[0]+s.max[0])/2,dz=asig.z+dA[2]-(s.min[2]+s.max[2])/2;s.min=[s.min[0]+dx,s.min[1],s.min[2]+dz];s.max=[s.max[0]+dx,s.max[1],s.max[2]+dz];(integrado.mover||(integrado.mover=[])).push({nombre:grupo.nombre,dx,dz});}
    if(asig?.tag)s.tagAsignado=asig.tag;
+   s.excel=s.tagAsignado?asignacion.excel[s.tagAsignado]:null;
    const etiquetaFija=s.tagAsignado||asig?.nombre||null;
    s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
    const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
