@@ -24,12 +24,14 @@ export async function abrirFichaPendiente(panel,s){
  panel.querySelector('#maquina-pendiente').onsubmit=e=>{e.preventDefault();try{const data={nombre:pumpNames.nameOf(key),...Object.fromEntries(new FormData(e.currentTarget))};localStorage.setItem(key,JSON.stringify(data));abrirFichaPendiente(panel,s).then(()=>{if(panel.querySelector('#maquina-pendiente')?.dataset.reference===key)panel.querySelector('#maquina-estado').textContent='Datos guardados en este navegador.';});}catch{panel.querySelector('#maquina-estado').textContent='No se pudo guardar. Revisá el almacenamiento del navegador.';}};
  const encabezado=()=>{const el=document.getElementById('selected-tag');if(el)el.textContent=pumpNames.nameOf(key)||'Sin TAG';};encabezado();
  const destino=panel.querySelector('#imagenes-pendientes');
+ // Con TAG asignado usa las fotos guardadas de ese número, por categoría; si no, las de este lugar.
+ const fotoKey=s.fotoKey||key;
  async function pintar(){
-  let act={},photoError='';try{act=await fotosActualizadas(key,{writable:false});photoError=act.warning||'';}catch(error){photoError=error.message;}if(!destino.isConnected)return;
-  destino.innerHTML=htmlFotos({tag:s.nombre,photoKey:key},{},act,{writable:false});
-  bindPhotoTransfers(destino,key,{writable:false,reference:true},pintar);
+  let act={},photoError='';try{act=await fotosActualizadas(fotoKey,{writable:false});photoError=act.warning||'';}catch(error){photoError=error.message;}if(!destino.isConnected)return;
+  destino.innerHTML=htmlFotos({tag:s.tagAsignado||s.nombre,photoKey:fotoKey},{},act,{writable:false});
+  bindPhotoTransfers(destino,fotoKey,{writable:false,reference:true},pintar);
   if(photoError){const error=destino.querySelector('#fotos-error');error.textContent=photoError;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=pintar;error.after(retry);}
-  destino.querySelectorAll('input[data-slot]').forEach(input=>input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await photoInputStarted(input);await guardarFoto(key,input.dataset.slot,file,{writable:false});await pintar();}catch(e){setPhotoInputStatus(input,e.message,true);if(destino.isConnected)destino.querySelector('#fotos-error').textContent=e.message;}finally{input.disabled=false;input.value='';}});
+  destino.querySelectorAll('input[data-slot]').forEach(input=>input.onchange=async()=>{const file=input.files?.[0];if(!file)return;input.disabled=true;try{await photoInputStarted(input);await guardarFoto(fotoKey,input.dataset.slot,file,{writable:false});await pintar();}catch(e){setPhotoInputStatus(input,e.message,true);if(destino.isConnected)destino.querySelector('#fotos-error').textContent=e.message;}finally{input.disabled=false;input.value='';}});
  }
  await pintar();
 }

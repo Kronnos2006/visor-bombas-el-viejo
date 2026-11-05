@@ -884,7 +884,7 @@ function renderPendingPanel(){
  const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
  if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
- abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));mostrarFotosDeTag(reference);}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
+ abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
 function montarIntegrado(g,escena,placed){
@@ -969,6 +969,7 @@ function montarIntegrado(g,escena,placed){
    if(asignacion.quitar.has(clavePendiente(s))){integrado.quitadas.push(s);continue;}
    if(asig?.x!=null){const dx=asig.x+dA[0]-(s.min[0]+s.max[0])/2,dz=asig.z+dA[2]-(s.min[2]+s.max[2])/2;s.min=[s.min[0]+dx,s.min[1],s.min[2]+dz];s.max=[s.max[0]+dx,s.max[1],s.max[2]+dz];(integrado.mover||(integrado.mover=[])).push({nombre:grupo.nombre,dx,dz});}
    if(asig?.tag)s.tagAsignado=asig.tag;
+   if(s.tagAsignado)s.fotoKey=entidadFotos(s.tagAsignado)||undefined;
    const etiquetaFija=s.tagAsignado||asig?.nombre||null;
    s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
    const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
@@ -1003,15 +1004,6 @@ function aplicarVisibilidadBombas(){
  aplicarFiltroInt();
 }
 document.addEventListener('vocatus:visibilidad',()=>{aplicarVisibilidadBombas();renderList();document.dispatchEvent(new Event('vocatus:referencias'));});
-// Fotos ya guardadas en la base con el número de esta bomba. Solo lectura: las nuevas se guardan en su ficha.
-async function mostrarFotosDeTag(reference){
- const entidad=entidadFotos(reference.tagAsignado);if(!entidad)return;
- try{
-  const act=await fotosActualizadas(entidad,{writable:false}),fotos=Object.values(act||{}).filter(f=>f?.url);
-  if(!fotos.length||state.pump?.pending!==reference||!$('#datos-excel'))return;
-  $('#datos-excel').insertAdjacentHTML('beforeend','<h3>Fotos guardadas de '+esc(reference.tagAsignado)+'</h3><div class="fotos-tag" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">'+fotos.map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="Foto de ${esc(reference.tagAsignado)}" loading="lazy" style="width:100%;border-radius:8px"></a>`).join('')+'</div>');
- }catch{}
-}
 function pintarBloqueAdmin(key){
  if(!esAdmin()||!$('#panel'))return;$('#panel .admin-bomba')?.remove();$('#panel').insertAdjacentHTML('beforeend',bloqueAdmin(key));
  const box=$('#panel .admin-bomba');box.querySelectorAll('[data-visibilidad]').forEach(b=>b.onclick=async()=>{
