@@ -9,7 +9,7 @@ import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
-import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
+import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo,entidadFotos} from './asignacion-bombas.js';
 import {pumpVisibility,esAdmin,claveTag,bloqueAdmin,explicarErrorVisibilidad,recortarCajas} from './bombas-admin.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -884,7 +884,7 @@ function renderPendingPanel(){
  const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
  if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
- abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
+ abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));mostrarFotosDeTag(reference);}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
 function montarIntegrado(g,escena,placed){
@@ -1003,6 +1003,15 @@ function aplicarVisibilidadBombas(){
  aplicarFiltroInt();
 }
 document.addEventListener('vocatus:visibilidad',()=>{aplicarVisibilidadBombas();renderList();document.dispatchEvent(new Event('vocatus:referencias'));});
+// Fotos ya guardadas en la base con el número de esta bomba. Solo lectura: las nuevas se guardan en su ficha.
+async function mostrarFotosDeTag(reference){
+ const entidad=entidadFotos(reference.tagAsignado);if(!entidad)return;
+ try{
+  const act=await fotosActualizadas(entidad,{writable:false}),fotos=Object.values(act||{}).filter(f=>f?.url);
+  if(!fotos.length||state.pump?.pending!==reference||!$('#datos-excel'))return;
+  $('#datos-excel').insertAdjacentHTML('beforeend','<h3>Fotos guardadas de '+esc(reference.tagAsignado)+'</h3><div class="fotos-tag" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">'+fotos.map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="Foto de ${esc(reference.tagAsignado)}" loading="lazy" style="width:100%;border-radius:8px"></a>`).join('')+'</div>');
+ }catch{}
+}
 function pintarBloqueAdmin(key){
  if(!esAdmin()||!$('#panel'))return;$('#panel .admin-bomba')?.remove();$('#panel').insertAdjacentHTML('beforeend',bloqueAdmin(key));
  const box=$('#panel .admin-bomba');box.querySelectorAll('[data-visibilidad]').forEach(b=>b.onclick=async()=>{

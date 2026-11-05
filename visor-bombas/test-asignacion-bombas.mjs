@@ -6,3 +6,7 @@ test('asignación: un TAG por lugar y 83 bombas de la lista',()=>{
  assert.equal(new Set(tags).size,tags.length);assert.equal(Object.keys(data.excel).length,83);assert.equal(tituloTag(as,'B76'),'B76 · Búnker diario #2');
  assert.match(bloqueExcel(as,'B26'),/Lavados de aceite/);assert.equal(sectorDePosicion(-30,12),'DUSA');
 });
+test('fotos: la numeración nueva lee la anterior sin cruzar bombas distintas',async()=>{
+ const {entidadFotos}=await import('./public/asignacion-bombas.js');
+ assert.equal(entidadFotos('B26'),'B26');assert.equal(entidadFotos('B63'),'B60');assert.equal(entidadFotos('B76'),'B73');assert.equal(entidadFotos('B59'),null);assert.equal(entidadFotos('B61'),null);assert.equal(entidadFotos('B81'),null);
+});

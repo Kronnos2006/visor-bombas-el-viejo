@@ -19,3 +19,10 @@ export function bloqueExcel(as,tag){
  const filas=CAMPOS.filter(([k])=>d[k]).map(([k,l])=>`<div class="field"><dt>${l}</dt><dd>${esc(d[k])}</dd></div>`).join('');
  return `<section class="block" id="datos-excel"><h3>${esc(tag)} · ${esc(d.nombre)}</h3><p>${esc(d.area)}</p>${filas?`<dl class="fields">${filas}</dl>`:'<p>El Excel todavía no tiene datos de esta bomba.</p>'}</section>`;
 }
+// Las fotos ya guardadas usan la numeración anterior del Excel. Solo se leen; no se renombran ni se copian.
+export function entidadFotos(tag){
+ const n=Number(String(tag).slice(1));
+ if(n<=58)return tag;
+ if(n>=63&&n<=80)return 'B'+(n-3);
+ return null;
+}
