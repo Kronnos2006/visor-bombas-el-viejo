@@ -979,6 +979,8 @@ function montarIntegrado(g,escena,placed){
    el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);el.dataset.nombre=s.nombre;
    const fichaTag=s.tagAsignado&&conFicha.has(s.tagAsignado)?s.tagAsignado:null;
    if(fichaTag)lugaresFoto[fichaTag]=clavePendiente(s);
+   // Las fotos antiguas siguen el número del Excel viejo; en esta posición no corresponden a la bomba.
+   if(fichaTag&&expediente[fichaTag]){const e=expediente[fichaTag];if((e.placas?.length||e.fotos?.length)){e.placas=[];e.fotos=[];e.nota='Las fotos antiguas del Excel se retiraron de esta ficha porque no corresponden a esta posición. Valen las fotos de campo.';}}
    el.onclick=()=>{if(fichaTag)selectPump(fichaTag);else selectPendingPump(s);};
    $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector),ref:s});
    const size=s.max.map((v,i)=>v-s.min[i]);
