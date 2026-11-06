@@ -81,7 +81,7 @@ async function savePhoto(tag,slot,file,{writable,token}){
 // Fotos originales del expediente (Excel / PDF) para cada ranura.
 export function originales(p,exp){
  const placas=exp?.placas||[],placa1=placas.find(x=>/-placa\.jpg$/.test(x.src))||null,placa2=placas.find(x=>/-placa2\.jpg$/.test(x.src))||null;
- return {placa1,placa2,bomba:(exp?.fotos||[])[0]||null,posicion:p.photo?{src:p.photo,t:'Referencia de la posición',ref:p.ubicacionCroquis||'Foto del lado (PDF)'}:null};
+ return {placa1,placa2,bomba:(exp?.fotos||[])[0]||null};
 }
 export function htmlFotos(p,orig,act,{writable}){
  const fecha=f=>new Date(f).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'});
