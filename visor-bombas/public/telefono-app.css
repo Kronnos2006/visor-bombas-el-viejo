@@ -599,14 +599,15 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
 
 /* En móvil, el encabezado y el mapa tienen controles en filas separadas. */
 @media(max-width:900px){
- body.app-tel{--alto-enc:64px}
- body.app-tel header{gap:8px;padding-inline:max(12px,env(safe-area-inset-left,0px)) max(12px,env(safe-area-inset-right,0px))}
- body.app-tel header #cab-flujo{display:none}
- body.app-tel header .brand.con-deposito{flex:0 0 48px;width:48px;height:52px;margin-right:auto}
- body.app-tel header .brand.con-deposito .brand-logo{top:8px;left:6px;width:36px;height:36px}
- body.app-tel header>.sesion{min-width:0;max-width:38%;margin:0}
+ body.app-tel{--alto-enc:106px}
+ body.app-tel header{display:grid;grid-template-columns:minmax(48px,1fr) auto minmax(0,auto) auto;grid-template-rows:50px 44px;gap:4px 8px;padding-inline:max(12px,env(safe-area-inset-left,0px)) max(12px,env(safe-area-inset-right,0px))}
+ body.app-tel header #cab-flujo{grid-row:2;grid-column:1/-1;height:44px;width:100%;overflow:hidden}
+ body.app-tel header .brand.con-deposito{grid-row:1;grid-column:1;width:48px;height:50px;margin-right:auto}
+ body.app-tel header .brand.con-deposito .brand-logo{top:7px;left:6px;width:36px;height:36px}
+ body.app-tel header>.cloud-global-control{grid-row:1;grid-column:2}
+ body.app-tel header>.sesion{grid-row:1;grid-column:3;min-width:0;max-width:100%;margin:0}
  body.app-tel header>.sesion summary{display:block;min-height:44px;padding:10px;overflow:hidden;text-overflow:ellipsis;font-size:14px}
- body.app-tel header>#tema-toggle{position:static;inset:auto;flex:0 0 44px;margin:0;padding:0}
+ body.app-tel header>#tema-toggle{grid-row:1;grid-column:4;position:static;inset:auto;width:44px;margin:0;padding:0}
  body.app-tel #tel-ampliar{top:10px;right:auto;left:calc(var(--franja) + 12px);padding-inline:10px}
  body.app-tel #paleta-bombas{top:10px;right:12px;max-height:calc(100% - 22px)}
  body.app-tel #paleta-bombas .paleta-boton{padding-inline:10px}
