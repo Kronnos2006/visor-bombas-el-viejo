@@ -596,3 +596,21 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
 #paleta-filas .paleta-fila strong{display:block;font-size:15px}
 #paleta-filas .paleta-fila small{display:block;font-size:12px;opacity:.8}
 #paleta-filas p{margin:6px;font-size:14px}
+
+/* En móvil, el encabezado y el mapa tienen controles en filas separadas. */
+@media(max-width:900px){
+ body.app-tel{--alto-enc:64px}
+ body.app-tel header{gap:8px;padding-inline:max(12px,env(safe-area-inset-left,0px)) max(12px,env(safe-area-inset-right,0px))}
+ body.app-tel header #cab-flujo{display:none}
+ body.app-tel header .brand.con-deposito{flex:0 0 48px;width:48px;height:52px;margin-right:auto}
+ body.app-tel header .brand.con-deposito .brand-logo{top:8px;left:6px;width:36px;height:36px}
+ body.app-tel header>.sesion{min-width:0;max-width:38%;margin:0}
+ body.app-tel header>.sesion summary{display:block;min-height:44px;padding:10px;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+ body.app-tel header>#tema-toggle{position:static;inset:auto;flex:0 0 44px;margin:0;padding:0}
+ body.app-tel #tel-ampliar{top:10px;right:auto;left:calc(var(--franja) + 12px);padding-inline:10px}
+ body.app-tel #paleta-bombas{top:10px;right:12px;max-height:calc(100% - 22px)}
+ body.app-tel #paleta-bombas .paleta-boton{padding-inline:10px}
+ body.app-tel #paleta-cuerpo{margin-top:10px}
+ body.app-tel #model-load{top:auto;bottom:12px;left:12px;right:12px;z-index:5}
+ body.app-tel #torre-planta-tools:not([hidden]){top:62px}
+}
