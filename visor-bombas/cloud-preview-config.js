@@ -2,7 +2,9 @@
 export const ACCOUNT_PREVIEW_BRANCH='codex/cuentas-vercel';
 export function assertAccountPreviewScope(env){
  if(env.VOCATUS_CLOUD_ACCOUNTS!=='1')return false;
- if(env.VERCEL_ENV!=='preview'||env.VERCEL_GIT_COMMIT_REF!==ACCOUNT_PREVIEW_BRANCH)
-  throw Error('Las cuentas nuevas solo se habilitan en Preview de la rama '+ACCOUNT_PREVIEW_BRANCH+'.');
+ const preview=env.VERCEL_ENV==='preview'&&env.VERCEL_GIT_COMMIT_REF===ACCOUNT_PREVIEW_BRANCH;
+ const production=env.VERCEL_ENV==='production'&&env.VERCEL_GIT_COMMIT_REF==='main';
+ if(!preview&&!production)
+  throw Error('Las cuentas solo se habilitan en producción desde main o en Preview de la rama '+ACCOUNT_PREVIEW_BRANCH+'.');
  return true;
 }

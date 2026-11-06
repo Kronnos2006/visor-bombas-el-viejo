@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {assertAccountPreviewScope} from './cloud-preview-config.js';
-test('el acceso nuevo solo se activa en Preview de la rama autorizada',()=>{
+test('el acceso nuevo solo se activa en producción desde main o en Preview de la rama autorizada',()=>{
  assert.equal(assertAccountPreviewScope({VOCATUS_CLOUD_ACCOUNTS:'1',VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'codex/cuentas-vercel'}),true);
+ assert.equal(assertAccountPreviewScope({VOCATUS_CLOUD_ACCOUNTS:'1',VERCEL_ENV:'production',VERCEL_GIT_COMMIT_REF:'main'}),true);
 });
-test('producción, main, otras ramas y metadatos ausentes fallan cerrados',()=>{
+test('producción de otra rama, otras ramas y metadatos ausentes fallan cerrados',()=>{
  for(const env of [
   {VERCEL_ENV:'production',VERCEL_GIT_COMMIT_REF:'codex/cuentas-vercel'},
   {VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'main'},
