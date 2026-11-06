@@ -7,7 +7,7 @@ const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_pro
 const repo=fileURLToPath(new URL('../..',import.meta.url)),out=process.env.UI_SCREENSHOTS_DIR||path.join(require('node:os').tmpdir(),'vocatus-interfaz');fs.mkdirSync(out,{recursive:true});
 async function freePort(){return new Promise(ok=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const port=s.address().port;s.close(()=>ok(port));});});}
 (async()=>{
- const port=await freePort(),env={...process.env,PORT:String(port),VOCATUS_DEMO:'1'};delete env.GEMINI_API_KEY;delete env.OBSIDIAN_VAULT;
+ const port=await freePort(),env={...process.env,PORT:String(port),VOCATUS_DEMO:'1',VISOR_AUTH:'0'};delete env.GEMINI_API_KEY;delete env.OBSIDIAN_VAULT;
  const srv=cp.spawn(process.execPath,[repo+'/visor-bombas/server.mjs'],{env,stdio:['ignore','pipe','pipe'],windowsHide:true});let browser;
  try{
   const base='http://127.0.0.1:'+port;for(let i=0;i<60;i++){try{if((await fetch(base+'/api/bootstrap')).ok)break;}catch{}await new Promise(r=>setTimeout(r,250));}
