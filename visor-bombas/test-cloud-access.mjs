@@ -96,11 +96,11 @@ test('sync rechaza una sesión revocada y no permite regenerar su cookie',async(
  assert.equal((await route(access,'sync',{body:{access_token:'old-token'}})).status,401);
 });
 
-function profileBackend({conflict=false,existingMember=false,viewer=false}={}){
+function profileBackend({conflict=false,existingMember=false,viewer=false,metadata}={}){
  let account=null;const calls=[];
  const session={access_token:'verified-token',refresh_token:'refresh-test',expires_in:3600};
  const factory=(_url,key)=>({
-  auth:{getUser:async()=>({data:{user:identity}}),
+  auth:{getUser:async()=>({data:{user:{...identity,user_metadata:metadata}}}),
    signInWithPassword:async()=>({data:{user:identity,session}}),
    signUp:async()=>({data:{user:identity,session}})},
   rpc:async(name,input)=>{
@@ -147,4 +147,24 @@ test('miembro de consulta recibe un error claro y conserva su membresía sin cre
  const result=await route(access,'request-profile',{body:{username:'lector',name:'Lector'}});
  assert.equal(result.status,409);assert.match(result.data.error,/acceso de consulta sigue vigente/);
  assert.equal(calls.some(x=>x.key==='server-test'),false);
+});
+
+test('confirmar correo crea la solicitud una sola vez y conserva la aprobación administrativa',async()=>{
+ const {access,calls}=profileBackend({metadata:{requested_username:'solicitante',requested_name:'Solicitante',role:'admin'}});
+ const body={access_token:'verified-token',completeRequest:true};
+ assert.equal((await route(access,'sync',{body:{access_token:body.access_token}})).status,401);
+ for(let attempt=0;attempt<2;attempt++){
+  const result=await route(access,'sync',{body});
+  assert.equal(result.status,200);
+  assert.equal(result.data.user.status,'pending');
+  assert.equal(result.data.user.role,'usuario');
+ }
+ assert.equal(calls.filter(call=>call.name==='vocatus_request_access').length,1);
+ assert.equal(calls.some(call=>call.key==='server-test'),false);
+});
+
+test('confirmar con un usuario ocupado permite completar el perfil con otro nombre',async()=>{
+ const {access}=profileBackend({conflict:true,metadata:{requested_username:'ocupado',requested_name:'Solicitante'}});
+ assert.equal((await route(access,'sync',{body:{access_token:'verified-token',completeRequest:true}})).status,200);
+ assert.equal((await route(access,'state',{method:'GET'})).data.needsProfile,true);
 });

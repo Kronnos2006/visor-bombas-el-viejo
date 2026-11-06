@@ -64,7 +64,7 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
    const post=()=>{if(req.method!=='POST')throw error('Método no permitido.',405);};
    const cookie=(session=null)=>res.setHeader('Set-Cookie',`${CLOUD_COOKIE}=${session?.access_token||''}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${session?Math.min(session.expires_in||3600,3600):0}`);
    let ctx=await context(cloudToken(req));
-   if(path==='state'&&req.method==='GET')return send(res,200,{cloud:true,setup:false,setupAllowed:false,user:ctx?.account||null});
+   if(path==='state'&&req.method==='GET')return send(res,200,{cloud:true,setup:false,setupAllowed:false,user:ctx?.account||null,needsProfile:!!ctx&&!ctx.account});
    if(path==='me'&&req.method==='GET')return approved(ctx)?send(res,200,{user:ctx.account}):send(res,401,{code:'AUTH_REQUIRED',error:'Sin sesión aprobada.'});
    if(path==='login'){post();const result=await login(body.identifier,body.password);cookie(result.session);return send(res,200,{user:result.ctx?.account||null,session:result.session,needsProfile:!!result.needsProfile});}
    if(path==='request'){post();
@@ -78,7 +78,22 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
     if(!ctx?.identity||ctx.account)throw error('Entrá con tu cuenta antes de completar una solicitud nueva.',403);
     const account=await requestAccount(ctx.token,body);return send(res,201,{pending:account.status==='pending',user:account});
    }
-   if(path==='sync'){post();ctx=await context(body.access_token);if(!ctx?.account||ctx.account.sessionValid!==true)throw error('Sin sesión.',401);cookie({access_token:body.access_token,expires_in:3600});return send(res,200,{user:ctx.account});}
+   if(path==='sync'){post();
+    ctx=await context(body.access_token);
+    if(!ctx)throw error('Sin sesión.',401);
+    const completeRequest=body.completeRequest===true;
+    if(!ctx.account&&completeRequest){
+     const {requested_username:username,requested_name:name}=ctx.identity.user_metadata||{};
+     if(username&&name){
+      try{await requestAccount(ctx.token,{username,name});}
+      catch(e){if(e.code==='MEMBER_PROFILE_REVIEW')throw e;}
+      ctx=await context(body.access_token);
+     }
+    }
+    if(!ctx||(ctx.account?ctx.account.sessionValid!==true:!completeRequest))throw error('Sin sesión.',401);
+    cookie({access_token:body.access_token,expires_in:3600});
+    return send(res,200,{user:ctx.account});
+   }
    if(path==='logout'){post();if(ctx)unwrap(await service.auth.admin.signOut(ctx.token,'global'));cookie();return send(res,200,{ok:true});}
    if(!ctx?.account)throw error('Tu sesión terminó.',401,'AUTH_REQUIRED');
    if(path==='change-password'){post();

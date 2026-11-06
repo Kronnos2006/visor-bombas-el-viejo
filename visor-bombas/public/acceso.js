@@ -85,17 +85,19 @@ enviar('f-request',async d=>{
  const result=await post(completingProfile?'/api/auth/request-profile':'/api/auth/request',completingProfile?{username:d.username,name:d.name}:d);
  if(result.needsProfile){mostrarSolicitud(true);aviso('Completá tu solicitud con un nombre de usuario disponible.');return;}
  if(result.user?.status==='approved'){location.replace(destino());return;}
- mostrar('f-login','Solicitud enviada',result.confirmEmail?'Confirmá tu correo y luego entrá para completar la solicitud.':'Tu solicitud está pendiente de aprobación.');
+ mostrar('f-login','Solicitud enviada',result.confirmEmail?'Abrí el enlace de confirmación que te enviamos. Si volvés a la pantalla de entrada, usá tu correo y contraseña.':'Tu solicitud está pendiente de aprobación.');
 },'Enviando…');
 let state=null;
 try{state=await (await fetch('/api/auth/state')).json();}catch{mostrar('sin-permiso','Sin conexión',SIN_CONEXION);$('sin-permiso').hidden=true;}
 if(state){
  if(state.cloud){
-  try{const {startCloudAccount}=await import('./cloud-session.js');if(await startCloudAccount())state=await(await fetch('/api/auth/state')).json();}catch{}
+  try{const {startCloudAccount}=await import('./cloud-session.js');if(await startCloudAccount({completeRequest:true}))state=await(await fetch('/api/auth/state')).json();}catch{}
   $('request-access').hidden=false;
  }
  if(state.cloud&&state.user&&(state.user.active===false||state.user.sessionValid===false)){
   mostrar('f-login','Entrar',state.user.active===false?'Tu cuenta está desactivada. Consultá a un administrador.':'Tu sesión terminó. Volvé a entrar.');
+ }else if(state.needsProfile){
+  mostrarSolicitud(true);
  }else if(state.user?.status&&state.user.status!=='approved'){
   mostrar('f-login',state.user.status==='pending'?'Solicitud pendiente':'Solicitud rechazada','Un administrador debe aprobar tu acceso.');
  }else
