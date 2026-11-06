@@ -62,3 +62,13 @@ test('selectores nativos visibles tienen nombre único por categoría y equipo',
  assert.match(html,/aria-label="Sello mecánico de B30"/);
  assert.match(html,/aria-label="Cargar archivo de fotos para B30"/);
 });
+
+test('el enlace de transferencia conserva el elemento del editor al resolver el TAG',async()=>{
+ const {bindPhotoTransfers,ligarFotosAPosicion}=await import('./public/fotos-bomba.js');
+ const queries=[];
+ const root={querySelectorAll(selector){queries.push(selector);return [];},querySelector(selector){queries.push(selector);return null;}};
+ ligarFotosAPosicion({B3:'B2'});
+ try{bindPhotoTransfers(root,'B3',{writable:true});}
+ finally{ligarFotosAPosicion({});}
+ assert.deepEqual(queries,['input[type=file]','.photo-transfer']);
+});
