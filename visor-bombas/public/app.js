@@ -148,7 +148,7 @@ function rebuildPlant(){
    const el=document.createElement('button');el.className='label area-label '+area.estado;
    const nombres={tanques:'Tanques',torre:'Torre',area1:'1 · Oficina',area7:'7 · Bodega',area4:'4 · Baños',area5:'5 · Eléctrico',area6:'6 · Químicos'};
    el.textContent=nombres[area.id]||area.corto;el.title=area.nombre;el.setAttribute('aria-label','Ver '+area.nombre);
-   el.onclick=()=>setArea(area.id);$('#labels').append(el);markers.push({obj:a,el,kind:'area',area:'planta'});}
+   el.onclick=()=>chooseArea(area.id);$('#labels').append(el);markers.push({obj:a,el,kind:'area',area:'planta'});}
   for(const p of PENDIENTES){const [x,z]=pxAMundo(p.px,p.py),a=new THREE.Object3D();a.position.set(x,1,z);plant.add(a);etiqueta(a,`Área ${p.n} · por modelar`,'pending-area','planta');}
   document.querySelector('.sidebar footer p').textContent=`${placed.filter(p=>areaOf(p)==='tanques').length} en el sector de tanques · ${placed.filter(p=>areaOf(p)==='torre').length} en la torre de destilación.`;
   applyArea();
@@ -232,7 +232,7 @@ function initScene(){
   if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
   const r=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
   const hits=raycaster.intersectObjects(state.view==='plant'?[...pickables,...areaPickables]:(state.sector&&state.detail==='exterior'?[]:componentGroups),true);
-  const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant'){if(o.userData.pending)selectPendingPump(o.userData.pending);else if(o.userData.areaId)setArea(o.userData.areaId);else if(o.userData.tag)selectPump(o.userData.tag);}else if(o.userData.part!==undefined)selectPart(o.userData.part,o.userData.subcomponent||null);}
+  const visibleHits=hits.filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return state.view==='plant'||anatomy.visibleHit(h);});if(visibleHits.length){const o=visibleHits[0].object;if(state.view==='plant'){if(o.userData.pending)selectPendingPump(o.userData.pending);else if(o.userData.areaId)chooseArea(o.userData.areaId);else if(o.userData.tag)selectPump(o.userData.tag);}else if(o.userData.part!==undefined)selectPart(o.userData.part,o.userData.subcomponent||null);}
  });
  renderer.setAnimationLoop(()=>{
   if(document.hidden||!viewport.clientWidth||!viewport.clientHeight)return;
@@ -952,12 +952,13 @@ function montarIntegrado(g,escena,placed){
    for(const p of state.pumps)if(!conLugar.has(p.tag)){const e=expediente[p.tag];if(e){e.placas=[];e.fotos=[];}p.photo=null;}}
   // Una ficha sin cuerpo propio no debe mostrar fotos de la posición que antes usaba su número.
   ligarFotosAPosicion(lugaresFoto);
-  const marcadorDe=t=>markers.find(m=>m.kind==='pump'&&m.area==='integrado'&&m.id===t);
+  // Guardar cada marcador por su lugar original antes de reasignar los TAG.
+  const marcadoresPorLugar=new Map(markers.filter(m=>m.kind==='pump'&&m.area==='integrado').map(m=>[m.id,m]));
   for(const [viejo,b] of Object.entries(originales)){
-   const id=claveCuerpo(viejo),a=asignacion.porLugar.get(id),quitar=asignacion.quitar.has(id),nuevo=a?.tag||(asignacionData?null:viejo),m=marcadorDe(viejo);
+   const id=claveCuerpo(viejo),a=asignacion.porLugar.get(id),quitar=asignacion.quitar.has(id),nuevo=a?.tag||(asignacionData?null:viejo),m=marcadoresPorLugar.get(viejo);
    const sacarPick=()=>b.traverse(o=>{if(o.isMesh){delete o.userData.tag;const i=pickables.indexOf(o);if(i>=0)pickables.splice(i,1);}});
    if(quitar||!nuevo){sacarPick();if(m){m.el.remove();markers.splice(markers.indexOf(m),1);}if(quitar||!b.children.length)b.visible=false;b.userData.quitada=quitar||!b.children.length;if(!b.userData.quitada)b.userData.sector=b.userData.sectorInt==='torre'?'DUSA':'Sector de tanques';continue;}
-   if(conFicha.has(nuevo)){b.userData.tag=nuevo;b.traverse(o=>{if(o.isMesh)o.userData.tag=nuevo;});pumpObjectsInt[nuevo]=b;if(m){m.id=nuevo;m.el.textContent=nuevo;m.el.title=tituloTag(asignacion,nuevo);m.el.onclick=()=>selectPump(nuevo);}continue;}
+   if(conFicha.has(nuevo)){b.userData.tag=nuevo;b.traverse(o=>{if(o.isMesh)o.userData.tag=nuevo;});pumpObjectsInt[nuevo]=b;if(m){m.id=nuevo;m.el.textContent=nuevo;m.el.title=tituloTag(asignacion,nuevo);m.el.setAttribute('aria-label','Acercarse a '+nuevo);m.el.onclick=()=>selectPump(nuevo);}continue;}
    // TAG sin ficha completa: conserva el cuerpo y abre los datos del Excel.
    sacarPick();if(m){m.el.remove();markers.splice(markers.indexOf(m),1);}
    const sectorB=b.userData.sectorInt==='torre'?'DUSA':'Sector de tanques';b.userData.sector=sectorB;
