@@ -311,7 +311,7 @@ function renderPanel(){
   if(state.tab==='ficha'){paintPumpSummary(p);$('#panel').prepend($('#pump-resumen'));} const meta=$('#pump-meta');if(meta){const copy=document.createElement('div');copy.className='mobile-pump-meta';copy.innerHTML=meta.innerHTML;$('#panel').prepend(copy);}
   else $('#pump-resumen')?.remove();
  }
- renderEditingAccess();
+ const photosReady=renderEditingAccess();
  if(matchMedia("(max-width:900px)").matches&&state.tab==="ficha"&&$("#pump-resumen"))$("#panel").prepend($("#pump-resumen"));
  if(matchMedia('(max-width:900px)').matches&&$('#pump-links')){
   const actions=document.createElement('section');actions.id='mobile-actions';actions.className='block';
@@ -321,6 +321,7 @@ function renderPanel(){
  const editAccess=$('#editar-equipo');if(editAccess)$('#panel').prepend(editAccess);
  if(p&&!state.pump.pending&&['ficha','historial'].includes(state.tab)){const local=savedSurveyHTML(state.pump.tag);if(local){if(editAccess)editAccess.insertAdjacentHTML('afterend',local);else $('#panel').insertAdjacentHTML('afterbegin',local);}}
  inspectorUI.enhance();
+ return photosReady;
 }
 function renderPanelContent(){
  if(state.pump?.pending){renderPendingPanel();return;}
@@ -481,7 +482,7 @@ function selectPhotoPump(tag){
 
 async function downloadPumpPDF(tag){
  if(!tag) return;
- const btns=[$('#download-summary-pdf-header'),$('#download-summary-pdf-bottom'),$('#download-summary-pdf')].filter(Boolean);
+ const btns=[$('#download-summary-pdf-header'),$('#download-summary-pdf')].filter(Boolean);
  btns.forEach(b=>{b.disabled=true;b.dataset.prevText=b.textContent;b.textContent='Generando PDF…';});
  toast('Generando resumen técnico en PDF…');
  try{
@@ -554,9 +555,15 @@ function paintPumpLinks(p){
  if(!p){el.hidden=true;el.innerHTML='';$('#pump-meta')?.remove();return;}
  paintPumpMeta(p);
  el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'';
- el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu"><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button>${L?`<a href="${esc(L.planos.u)}" target="_blank" rel="noopener noreferrer">Planos${familia}</a>`:''}<a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
+ el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu"><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button><a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
  el.querySelector('[data-quick=locate]').onclick=locateSelectedPump;
- el.querySelector('[data-quick=photos]').onclick=()=>{state.tab='ficha';renderPanel();inspectorUI.show($('#fuentes-'+p.tag));};
+ el.querySelector('[data-quick=photos]').onclick=async()=>{
+  state.tab='ficha';
+  const photosReady=renderPanel(),anchor=$('#fuentes-'+p.tag);
+  inspectorUI.show(anchor);
+  await photosReady;
+  if(anchor?.isConnected)inspectorUI.show($('#fotos-actualizar'));
+ };
  el.querySelector('[data-quick=maintenance]').onclick=()=>{state.tab='historial';renderPanel();inspectorUI.show($('#rep-form')||$('#new-report'));};
  $('#download-summary-pdf-header').onclick=()=>downloadPumpPDF(p.tag);
 }
@@ -686,10 +693,9 @@ function renderPhotoPanel(){
  const docLinks=[...(exp.fab||[]).flatMap(k=>k==='weg'&&p.motor?.catalogo!=='00218XT3E145T'?[enlaces.weg[0]]:enlaces[k]||[]),...(exp.rod||[]).map(k=>enlaces.skf[k]).filter(Boolean).map(l=>({...l,k:'rodamiento · CAD'}))];
  const imagenes=`<div class="block exp-block" id="fuentes-${esc(p.tag)}"><h3>Imágenes del equipo</h3>${exp.pendiente?`<p class="notice pending-source"><strong>PENDIENTE · ${esc(p.tag)}</strong><br>${esc(exp.pendiente)}</p>`:''}<p><a class="doc" href="/#${esc(p.tag)}">Vínculo directo al expediente ${esc(p.tag)}</a></p><p class="eyebrow">PLACA DE CARACTERÍSTICAS</p>${figs(exp.placas,'Sin foto de placa asociada en el Excel.')}<p class="eyebrow">FOTO DE LA BOMBA</p>${figs(exp.fotos,'Sin foto individual asociada en el Excel.')}${exp.nota?`<p class="notice">${esc(exp.nota)}</p>`:''}<p class="muted">Imágenes tomadas de “Libro1 bomba2.xlsx”, asociadas por la fila donde estaban ancladas. Cada pie conserva su fila de origen; no se asignan placas por semejanza.</p></div>`;
  const documentos=`<div class="block exp-block"><h3>Catálogos, fichas y CAD del fabricante</h3>${docLinks.length?`<ul class="doc-links">${linkRows(docLinks)}</ul>`:'<p class="muted">Sin fabricante identificado: no hay documentación asociada.</p>'}<p class="muted">Enlaces públicos a fabricantes y distribuidores. “CAD” = ficha de producto donde el fabricante lo ofrece; el despiece 3D de esta app no es CAD del fabricante.</p></div>`;
- $('#panel').innerHTML=`${componentCard}<p class="eyebrow">EXPEDIENTE DE ${esc(p.tag)}</p><h2>${p.inactive?'B22 · SIN USO':esc(p.marca)+' '+esc(p.modelo)}</h2>${p.enUso===false?'<p class="notice warn"><strong>Sin uso.</strong> Está instalada en la torre pero no opera (confirmado por el usuario, 13-oct-2026). Los datos son los de su placa.</p>':''}<p class="notice">${p.inactive?'Equipo marcado SIN USO en el Excel. Exterior ilustrativo de bomba azul con cubierta roja, según la foto asociada a la fila 25. Modelo, dimensiones y componentes sin identificar; se conserva la posición aproximada existente.':'Datos del Excel y confirmaciones del usuario. Las proporciones 3D son aproximadas; los ejemplos de o-rings e historial están marcados DEMO.'}</p>${imagenes}${fieldRows([['Ubicación (tanque conectado)',p.nombre],['Lado',p.area],['Fabricante',p.marca],['Modelo',p.modelo],['Tamaño',p.size],['Fluido',p.servicio],['Fuente',p.source],...p.specs])}<div class="block interactive-part-block" data-part="9" title="Ver motor eléctrico en el 3D"><h3>Motor <span class="part-badge">Pieza 10 ↗</span></h3>${fieldRows(componentRows(p,9))}</div><div class="block interactive-part-block" data-part="5" title="Ver sello mecánico en el 3D"><h3>${esc(sealTitle(p))} <span class="part-badge">Pieza 06 ↗</span></h3>${state.part===5?'<p>Datos y referencias en la pieza seleccionada, arriba.</p>':sealInfo}</div><div class="block interactive-part-block" data-part="7" title="Ver rodamientos y bancada en el 3D"><h3>Rodamientos registrados <span class="part-badge">Pieza 08 ↗</span></h3>${fieldRows(componentRows(p,7))}</div><div class="block interactive-part-block" data-part="8" title="Ver acople en el 3D"><h3>Acople <span class="part-badge">Pieza 09 ↗</span></h3>${fieldRows(componentRows(p,8))}</div><div class="block"><h3>O-rings ${demo}</h3>${rings||'<p>Sin datos.</p>'}</div>${documentos}<div class="block"><div class="panel-actions"><button type="button" id="download-summary-pdf-bottom" class="primary wide pdf-btn">📄 Descargar resumen técnico de ${esc(p.tag)} (PDF)</button></div></div>`;
+ $('#panel').innerHTML=`${componentCard}<p class="eyebrow">EXPEDIENTE DE ${esc(p.tag)}</p><h2>${p.inactive?'B22 · SIN USO':esc(p.marca)+' '+esc(p.modelo)}</h2>${p.enUso===false?'<p class="notice warn"><strong>Sin uso.</strong> Está instalada en la torre pero no opera (confirmado por el usuario, 13-oct-2026). Los datos son los de su placa.</p>':''}<p class="notice">${p.inactive?'Equipo marcado SIN USO en el Excel. Exterior ilustrativo de bomba azul con cubierta roja, según la foto asociada a la fila 25. Modelo, dimensiones y componentes sin identificar; se conserva la posición aproximada existente.':'Datos del Excel y confirmaciones del usuario. Las proporciones 3D son aproximadas; los ejemplos de o-rings e historial están marcados DEMO.'}</p>${imagenes}${fieldRows([['Ubicación (tanque conectado)',p.nombre],['Lado',p.area],['Fabricante',p.marca],['Modelo',p.modelo],['Tamaño',p.size],['Fluido',p.servicio],['Fuente',p.source],...p.specs])}<div class="block interactive-part-block" data-part="9" title="Ver motor eléctrico en el 3D"><h3>Motor <span class="part-badge">Pieza 10 ↗</span></h3>${fieldRows(componentRows(p,9))}</div><div class="block interactive-part-block" data-part="5" title="Ver sello mecánico en el 3D"><h3>${esc(sealTitle(p))} <span class="part-badge">Pieza 06 ↗</span></h3>${state.part===5?'<p>Datos y referencias en la pieza seleccionada, arriba.</p>':sealInfo}</div><div class="block interactive-part-block" data-part="7" title="Ver rodamientos y bancada en el 3D"><h3>Rodamientos registrados <span class="part-badge">Pieza 08 ↗</span></h3>${fieldRows(componentRows(p,7))}</div><div class="block interactive-part-block" data-part="8" title="Ver acople en el 3D"><h3>Acople <span class="part-badge">Pieza 09 ↗</span></h3>${fieldRows(componentRows(p,8))}</div><div class="block"><h3>O-rings ${demo}</h3>${rings||'<p>Sin datos.</p>'}</div>${documentos}`;
  $('#panel').querySelectorAll('.interactive-part-block').forEach(b=>b.onclick=()=>selectPart(Number(b.dataset.part)));
  $('#panel').querySelectorAll('[data-subcomponent]').forEach(b=>b.onclick=()=>{selectPart(state.part,b.dataset.subcomponent);fitAnatomy();});
- $('#download-summary-pdf-bottom')?.addEventListener('click',()=>downloadPumpPDF(p.tag));
 
 }
 document.querySelector('.compass').textContent='LADOS FIJOS · Frontal B–C · Izquierdo C–D · Trasero D–A · Derecho A–B';
@@ -1213,7 +1219,7 @@ function renderEditingAccess(){
  const group={5:'sello',7:'componentes',8:'componentes',9:'motor'}[state.part];
  if(group&&$('#component-detail'))$('#component-detail').insertAdjacentHTML('afterbegin','<a class="button-link" href="'+href(group)+'">Actualizar datos de este componente</a>');
  if(!$('#fuentes-'+tag))$('#panel').insertAdjacentHTML('beforeend','<div class="block" id="fuentes-'+tag+'"><h3>Imágenes del equipo</h3></div>');
- montarFotos({...selection.data,tag},expedienteDe({...selection.data,tag}));
+ return montarFotos({...selection.data,tag},expedienteDe({...selection.data,tag}));
 }
 
 // Puente para la app de teléfono (telefono-app.js). Solo expone acciones que el visor ya hace.
