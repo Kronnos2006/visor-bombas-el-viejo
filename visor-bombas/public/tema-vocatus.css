@@ -246,7 +246,7 @@ body.claro .area-menu button[aria-pressed=true],body.claro #parts-rail .rail-ite
 
 /* Resumen móvil directo: datos primero y acceso persistente al volver al 3D. */
 .sheet-preview{display:none}
-@media(min-width:901px){.secondary-menu>summary{display:none}}
+.secondary-menu>summary{cursor:pointer}
 @media(max-width:900px){
  body .inspector,body .inspector.is-fullscreen{height:68dvh;max-height:calc(100dvh - 150px - env(safe-area-inset-bottom))}
  body .sheet-bar{padding:6px 8px;gap:6px}

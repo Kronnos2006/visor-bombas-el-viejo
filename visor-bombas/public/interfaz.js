@@ -15,7 +15,7 @@ export function createInspectorUI({getSelection,onPart,onSummary,onLayout}){
   panel.scrollTo({top:0,behavior:'auto'});
  }
  bar.querySelectorAll('[data-sheet]').forEach(b=>b.onclick=()=>b.dataset.sheet==='open'?openSummary():setSheet(b.dataset.sheet));reopen.onclick=openSummary;
- function adapt(){fichaTab.innerHTML=mobile.matches?'<b aria-hidden="true">📄</b>Resumen':originalTab;document.querySelectorAll('.secondary-menu').forEach(menu=>menu.open=!mobile.matches);const filters=document.querySelector('details.filtros');if(filters)filters.open=!mobile.matches;setSheet(sheet);}
+ function adapt(){fichaTab.innerHTML=mobile.matches?'<b aria-hidden="true">📄</b>Resumen':originalTab;const filters=document.querySelector('details.filtros');if(filters)filters.open=!mobile.matches;setSheet(sheet);}
  mobile.addEventListener('change',()=>{adapt();onLayout?.();});
  fichaTab.addEventListener('click',()=>{if(mobile.matches)openSummary();});
  function enhance(){
