@@ -7,5 +7,5 @@ export function documentationProgress(row){
  return {...row,checks,done,total,percent:total?Math.round(done/total*100):0,verification:v.scopes?v:verificationOf({verificado_por:v.author,fecha_verificacion:v.date})};
 }
 export function filterProgress(rows,{kind='',only='',verified=''}={}){
- return rows.map(documentationProgress).filter(r=>(!kind||r.kind===kind)&&(!only||(only==='done')===(r.done===r.total))&&(!verified||(verified==='yes')===r.verification.verified));
+ return rows.map(documentationProgress).filter(r=>(!kind||r.kind===kind)&&(!only||(only==='photos'?r.fotos?.completo===false:(only==='done')===(r.done===r.total)))&&(!verified||(verified==='yes')===r.verification.verified));
 }

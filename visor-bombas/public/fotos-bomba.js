@@ -79,7 +79,7 @@ export function originales(p,exp){
 export function htmlFotos(p,orig,act,{writable}){
  const fecha=f=>new Date(f).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'});
  return `<div class="block exp-block" id="fotos-actualizar"><h3>Actualizar fotos</h3><p class="muted">${writable?'La foto nueva sustituye a la anterior en el expediente y se guarda en la bóveda (00-Proyecto/fotos-campo/'+esc(p.tag)+'/expediente). La anterior queda en el historial.':(cloudEnabled()?'Con tu cuenta autorizada, las fotos nuevas se comparten automáticamente. Sin conexión quedan pendientes en este navegador. Las fotos antiguas se comparten con el botón correspondiente.':'Guardadas solo en este navegador: no aparecen automáticamente en otro teléfono o PC. Descargá las fotos aquí y cargá ese archivo en el otro equipo. No borres los datos del sitio.')}</p>${photoTransferHTML(p.photoKey||p.tag,{writable,reference:!!p.photoKey,displayName:p.tag})}<div class="foto-grid">${RANURAS.map(([slot,nombre])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src||'';
-  return `<figure class="foto-slot"><div class="foto-img">${src?`<a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(nombre)} de ${esc(p.tag)}" loading="lazy"></a>`:'<span>Sin foto</span>'}</div><figcaption><strong>${esc(nombre)}</strong><small>${a?`Actualizada ${fecha(a.fecha)}${a.cloud||a.cloudRevision?' · confirmada en línea':a.local?' · guardada en este navegador':''}${a.cloudPending?' · pendiente de compartir':''}`:o?esc(o.ref||'Original'):'Pendiente'}</small></figcaption><label class="foto-btn">${src?'Actualizar':'Agregar'} ${esc(nombre.toLowerCase())}<input class="foto-file" type="file" accept="image/*" aria-label="${esc(nombre)} de ${esc(p.tag)}" data-slot="${slot}"></label></figure>`;}).join('')}</div><p class="form-error" id="fotos-error"></p></div>`;
+  return `<figure class="foto-slot"><div class="foto-img">${src?`<a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(nombre)} de ${esc(p.tag)}" loading="lazy"></a>`:'<span>Sin foto</span>'}</div><figcaption><strong>${esc(nombre)}</strong><small>${a?`Actualizada ${fecha(a.fecha)}${a.cloud||a.cloudRevision?' · confirmada en línea':a.local?' · guardada en este navegador':''}${a.cloudPending?' · pendiente de compartir':''}`:o?esc(o.ref||'Original'):'Pendiente'}</small></figcaption><label class="foto-btn">${src?'Actualizar':'Agregar'} ${esc(nombre.toLowerCase())}<input class="foto-file" type="file" accept="image/*" aria-label="${esc(nombre)} de ${esc(p.tag)}" data-slot="${slot}"></label><label class="foto-btn">Tomar foto<input class="foto-file" type="file" accept="image/*" capture="environment" aria-label="Tomar foto: ${esc(nombre)} de ${esc(p.tag)}" data-slot="${slot}"></label></figure>`;}).join('')}</div><p class="form-error" id="fotos-error"></p></div>`;
 }
 
 
@@ -107,6 +107,15 @@ export async function importPhotoPackage(data){
 export function bindPhotoTransfers(root,tag,options,onChange){
  if(!options.writable)bindCloudPhotoControls(root,tag,{refresh:async()=>{if(root.dataset.photoPicking||root.querySelector('input[type=file]:disabled'))return;try{await flushCloudPhotos(tag);}catch{}await onChange?.();},flush:()=>flushCloudPhotos(tag,true),resolve:resolveCloudPhoto,details:()=>cloudDetails(tag)});
  for(const input of root.querySelectorAll('input[type=file]')){input.addEventListener('click',()=>{root.dataset.photoPicking='1';});for(const event of ['change','cancel'])input.addEventListener(event,()=>{delete root.dataset.photoPicking;});}
+ for(const img of root.querySelectorAll('.foto-slot img')){
+  const showError=()=>{
+   const notice=document.createElement('span');
+   notice.textContent='La foto registrada no se pudo abrir';
+   img.closest('a')?.replaceWith(notice);
+  };
+  img.addEventListener('error',showError,{once:true});
+  if(img.complete&&!img.naturalWidth)showError();
+ }
  const box=root.querySelector('.photo-transfer');if(!box)return;
  const status=box.querySelector('[data-photo-status]');
  const message=text=>{const target=currentStatus();if(target)target.textContent=text;};

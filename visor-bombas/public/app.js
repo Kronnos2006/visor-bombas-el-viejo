@@ -302,7 +302,7 @@ function renderPanel(){
   if(state.tab==='ficha'){paintPumpSummary(p);$('#panel').prepend($('#pump-resumen'));} const meta=$('#pump-meta');if(meta){const copy=document.createElement('div');copy.className='mobile-pump-meta';copy.innerHTML=meta.innerHTML;$('#panel').prepend(copy);}
   else $('#pump-resumen')?.remove();
  }
- renderEditingAccess();
+ const photosReady=renderEditingAccess();
  if(matchMedia("(max-width:900px)").matches&&state.tab==="ficha"&&$("#pump-resumen"))$("#panel").prepend($("#pump-resumen"));
  if(matchMedia('(max-width:900px)').matches&&$('#pump-links')){
   const actions=document.createElement('section');actions.id='mobile-actions';actions.className='block';
@@ -312,6 +312,7 @@ function renderPanel(){
  const editAccess=$('#editar-equipo');if(editAccess)$('#panel').prepend(editAccess);
  if(p&&!state.pump.pending&&['ficha','historial'].includes(state.tab)){const local=savedSurveyHTML(state.pump.tag);if(local){if(editAccess)editAccess.insertAdjacentHTML('afterend',local);else $('#panel').insertAdjacentHTML('afterbegin',local);}}
  inspectorUI.enhance();
+ return photosReady;
 }
 function renderPanelContent(){
  if(state.pump?.pending){renderPendingPanel();return;}
@@ -554,9 +555,15 @@ function paintPumpLinks(p){
  if(!p){el.hidden=true;el.innerHTML='';$('#pump-meta')?.remove();return;}
  paintPumpMeta(p);
  el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'';
- el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu" open><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button>${L?`<a href="${esc(L.planos.u)}" target="_blank" rel="noopener noreferrer">Planos${familia}</a>`:''}<a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
+ el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Tomar fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu" open><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button>${L?`<a href="${esc(L.planos.u)}" target="_blank" rel="noopener noreferrer">Planos${familia}</a>`:''}<a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
  el.querySelector('[data-quick=locate]').onclick=locateSelectedPump;
- el.querySelector('[data-quick=photos]').onclick=()=>{state.tab='ficha';renderPanel();inspectorUI.show($('#fuentes-'+p.tag));};
+ el.querySelector('[data-quick=photos]').onclick=async()=>{
+  state.tab='ficha';
+  const photosReady=renderPanel(),anchor=$('#fuentes-'+p.tag);
+  inspectorUI.show(anchor);
+  await photosReady;
+  if(anchor?.isConnected)inspectorUI.show($('#fotos-actualizar'));
+ };
  el.querySelector('[data-quick=maintenance]').onclick=()=>{state.tab='historial';renderPanel();inspectorUI.show($('#rep-form')||$('#new-report'));};
  $('#download-summary-pdf-header').onclick=()=>downloadPumpPDF(p.tag);
 }
@@ -1099,7 +1106,7 @@ async function montarFotos(p,exp){
   document.querySelectorAll('#fotos-actualizar input[data-slot]').forEach(input=>input.onchange=async()=>{
    const file=input.files?.[0];if(!file)return;const label=input.closest('label');label.classList.add('saving');
    try{input.disabled=true;await photoInputStarted(input);await guardarFoto(tag,input.dataset.slot,file,{writable:!!state.writable,token:state.token});toast(state.writable?'Foto guardada en Obsidian para '+tag+'.':'Foto guardada en este dispositivo para '+tag+'. Revisá su confirmación en línea.');await pintar();}
-   catch(e){setPhotoInputStatus(input,e.message,true);const err=document.getElementById('fotos-error');if(err)err.textContent=e.message;}finally{input.disabled=false;input.value='';label.classList.remove('saving');}
+   catch(e){setPhotoInputStatus(input,e.message,true);const err=photoRoot.querySelector('#fotos-error');if(err)err.textContent=e.message;}finally{input.disabled=false;input.value='';label.classList.remove('saving');}
   });
  };
  await pintar();
@@ -1114,7 +1121,7 @@ function renderEditingAccess(){
  const group={5:'sello',7:'componentes',8:'componentes',9:'motor'}[state.part];
  if(group&&$('#component-detail'))$('#component-detail').insertAdjacentHTML('afterbegin','<a class="button-link" href="'+href(group)+'">Actualizar datos de este componente</a>');
  if(!$('#fuentes-'+tag))$('#panel').insertAdjacentHTML('beforeend','<div class="block" id="fuentes-'+tag+'"><h3>Imágenes del equipo</h3></div>');
- montarFotos({...selection.data,tag},expedienteDe({...selection.data,tag}));
+ return montarFotos({...selection.data,tag},expedienteDe({...selection.data,tag}));
 }
 
 // Puente para la app de teléfono (telefono-app.js). Solo expone acciones que el visor ya hace.
