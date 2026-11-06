@@ -50,9 +50,14 @@ test('selecciones consecutivas de una categoría se guardan en orden y una falla
 test('selectores nativos visibles tienen nombre único por categoría y equipo',()=>{
  const html=htmlFotos({tag:'B30'},{},{},{writable:false});
  const inputs=[...html.matchAll(/<input\b[^>]*>/g)].map(match=>match[0]);
- assert.equal(inputs.length,11);
- assert.equal(new Set(inputs.map(input=>input.match(/aria-label="([^"]+)"/)?.[1])).size,11);
+ assert.equal(inputs.length,21);
+ assert.equal(new Set(inputs.map(input=>input.match(/aria-label="([^"]+)"/)?.[1])).size,21);
  for(const input of inputs){assert.match(input,/class="foto-file"/);assert.match(input,/type="file"/);assert.match(input,/aria-label="[^"]+B30"/);assert.doesNotMatch(input,/\shidden(?:[\s=>]|$)/);}
+ for(const slot of new Set(inputs.map(input=>input.match(/data-slot="([^"]+)"/)?.[1]).filter(Boolean))){
+  const selectors=inputs.filter(input=>input.includes('data-slot="'+slot+'"'));
+  assert.equal(selectors.length,2);
+  assert.equal(selectors.filter(input=>input.includes('capture="environment"')).length,1);
+ }
  assert.doesNotMatch(html,/role="button"|tabindex="0"/);
  assert.match(html,/aria-label="Sello mecánico de B30"/);
  assert.match(html,/aria-label="Cargar archivo de fotos para B30"/);
