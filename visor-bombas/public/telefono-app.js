@@ -148,7 +148,6 @@ function iniciar() {
   const actual = V()?.pump?.tag;
   franja.innerHTML = lista.map(p => `<button type="button" data-tag="${esc(p.tag)}" aria-pressed="${p.tag === actual}" class="${enReparacion.has(p.tag) ? 'en-rep' : ''}" title="${esc(p.nombre || '')}${enReparacion.has(p.tag) ? ' · En reparación' : ''}">${esc(p.tag)}</button>`).join('');
   franja.querySelectorAll('[data-tag]').forEach(b => b.onclick = () => elegirBomba(b.dataset.tag));
-  document.body.classList.toggle('franja-vacia', !lista.length);
   const cuenta = $('#tel-cuenta'); if (!cuenta) return;
   const nombreArea = area === 'planta' ? 'toda la planta' : (V()?.areaNombre(area) || area);
   const filtrando = q || fluido || marca;

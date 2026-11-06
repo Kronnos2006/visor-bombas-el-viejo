@@ -23,7 +23,7 @@
  /* Franja de códigos al costado del 3D (Áreas y cuando se elige una bomba). */
  body.app-tel{--franja:70px}
  body.app-tel #tel-franja{position:absolute;left:0;top:0;bottom:0;width:var(--franja);z-index:30;display:none;flex-direction:column;gap:4px;padding:6px 6px 10px;overflow-y:auto;background:color-mix(in srgb,var(--fondo) 82%,transparent);border-right:1px solid var(--borde)}
- body.app-tel[data-tel-seccion="areas"] #tel-franja,body.app-tel.tel-eligiendo #tel-franja{display:flex}
+ body.app-tel.tel-eligiendo #tel-franja{display:flex}
  body.app-tel #tel-franja button{flex:0 0 40px;font:600 14px var(--datos,monospace);color:var(--tinta);background:var(--superficie);border:1px solid var(--borde);border-radius:8px;padding:0}
  body.app-tel #tel-franja button[aria-pressed="true"]{background:var(--accent);color:var(--fondo);border-color:var(--accent)}
  body.app-tel #tel-franja button.en-rep{border-style:dashed;border-color:#f08a80;color:#f08a80;position:relative}
@@ -35,10 +35,10 @@
  body.app-tel :is(#tel-franja,#tel-contenido,.tel-pends)::-webkit-scrollbar-track{background:transparent}
  body.app-tel :is(#tel-franja,#tel-contenido,.tel-pends)::-webkit-scrollbar-thumb{background:var(--borde-fuerte);border-radius:3px}
  body.app-tel #tel-franja button:hover{border-color:var(--borde-fuerte)}
- body.app-tel.franja-vacia:not(.tel-eligiendo) #tel-franja{display:none!important}
+ body.app-tel:not(.tel-eligiendo){--franja:0px}
  /* Aviso de carga y de error del 3D: corridos para no quedar debajo de la franja. */
- body.app-tel[data-tel-seccion="areas"]:not(.franja-vacia) #model-load,body.app-tel.tel-eligiendo #model-load{left:calc(var(--franja) + 12px)!important}
- body.app-tel[data-tel-seccion="areas"]:not(.franja-vacia) #scene-error,body.app-tel.tel-eligiendo #scene-error{left:calc(var(--franja) + 20px)!important}
+ body.app-tel.tel-eligiendo #model-load{left:calc(var(--franja) + 12px)!important}
+ body.app-tel.tel-eligiendo #scene-error{left:calc(var(--franja) + 20px)!important}
  body.app-tel .tel-cuenta{margin:0;font-size:15px;color:var(--tinta-2)}
  body.app-tel.tel-eligiendo main{outline:3px solid var(--accent);outline-offset:-3px}
 
