@@ -248,7 +248,7 @@ function initScene(){
  }catch(e){show3DError(e);}
 }
 function normalize(s){return normalizeSearch(s); }
-function renderList(){const q=normalize($('#search').value),area=state.area,tipo=$('#tipo').value,marca=$('#marca').value;const selectedArea=area;const list=state.pumps.filter(p=>(esAdmin()||pumpVisibility.stateOf(claveTag(p.tag))!=='quitada')&&(state.area!=='integrado'||!state.filtroInt||(integrado?.asignacion?(pumpObjectsInt[p.tag]?.userData.sectorInt===state.filtroInt):areaOf(p)===state.filtroInt))&&(!selectedArea||areaOf(p)===selectedArea||selectedArea==='integrado')&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&searchPump(p,q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(pumpNames.nameOf(claveTag(p.tag))||integrado?.asignacion?.excel[p.tag]?.nombre||p.nombre||p.servicio)} · ${esc(areaName(areaOf(p)))}${pumpVisibility.stateOf(claveTag(p.tag))?' · '+pumpVisibility.stateOf(claveTag(p.tag)):''}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;const pendientes=(state.area==='integrado'?integrado?.references||[]:[]).filter(p=>(esAdmin()||pumpVisibility.stateOf(clavePendiente(p))!=='quitada')&&(!state.filtroInt||sectorDe(p.sector)===state.filtroInt)&&(!tipo&&!marca)&&normalize(`${p.nombre} ${SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre||''}`).includes(q));
+function renderList(){const q=normalize($('#search').value),area=state.area,tipo=$('#tipo').value,marca=$('#marca').value;const selectedArea=area;const list=state.pumps.filter(p=>(esAdmin()||pumpVisibility.stateOf(claveTag(p.tag))!=='quitada')&&(state.area!=='integrado'||!state.filtroInt||(integrado?.asignacion?(pumpObjectsInt[p.tag]?.userData.sectorInt===state.filtroInt):areaOf(p)===state.filtroInt))&&(!selectedArea||areaOf(p)===selectedArea||selectedArea==='integrado')&&(!tipo||tipoDe(p).includes(tipo))&&(!marca||p.marca===marca)&&searchPump(p,q));$('#pump-list').innerHTML=list.map(p=>`<button class="pump-row ${state.pump?.tag===p.tag?'active':''}" data-tag="${esc(p.tag)}"><i>↗</i><strong>${esc(p.tag)}</strong><small>${esc(pumpNames.nameOf(claveTag(p.tag))||integrado?.asignacion?.excel[p.tag]?.nombre||p.nombre||p.servicio)} · ${esc(areaName(areaEnMapa(p)))}${pumpVisibility.stateOf(claveTag(p.tag))?' · '+pumpVisibility.stateOf(claveTag(p.tag)):''}</small></button>`).join('')||`<p class="muted">${area&&AREA(area)?.modelo?'No hay bombas registradas en esta área.':'No hay coincidencias.'}</p>`;const pendientes=(state.area==='integrado'?integrado?.references||[]:[]).filter(p=>!p.fichaTag&&(esAdmin()||pumpVisibility.stateOf(clavePendiente(p))!=='quitada')&&(!state.filtroInt||sectorDe(p.sector)===state.filtroInt)&&(!tipo&&!marca)&&normalize(`${p.tagAsignado||''} ${p.nombre} ${SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre||''}`).includes(q));
  if(pendientes.length){if(!list.length)$('#pump-list').innerHTML='';$('#pump-list').insertAdjacentHTML('beforeend',pendientes.map(p=>`<button class="pump-row ${state.pump?.pending===p?'active':''}" data-pending="${integrado.references.indexOf(p)}"><i>↗</i><strong>${esc(p.tagAsignado||pumpNames.nameOf(clavePendiente(p))||'Bomba '+p.numero)}</strong><small>${esc(SECTORES_INT.find(x=>x.id===sectorDe(p.sector))?.nombre)}${p.tagAsignado?' · '+(integrado.asignacion?.excel[p.tagAsignado]?.nombre||''):' · sin TAG'}${pumpVisibility.stateOf(clavePendiente(p))?' · '+pumpVisibility.stateOf(clavePendiente(p)):''}</small></button>`).join(''));$('#pump-list').querySelectorAll('[data-pending]').forEach(b=>b.onclick=()=>selectPendingPump(integrado.references[Number(b.dataset.pending)]));}
  $('#count').textContent=`${list.length+pendientes.length} de ${state.pumps.length+(state.area==='integrado'?(integrado?.references.length||0):0)}`;$('#count').title=state.pumps.length+' equipos con TAG'+(state.area==='integrado'?' + '+(integrado?.references.length||0)+' referencias 3D sin TAG':'');$('#count-breakdown').textContent=list.length+' con TAG + '+pendientes.length+' referencias sin TAG en esta vista';$('#clear-filters').hidden=!(q||tipo||marca||state.filtroInt||state.area!=='integrado');$('#pump-list').querySelectorAll('button[data-tag]').forEach(b=>b.onclick=()=>selectPump(b.dataset.tag));document.dispatchEvent(new CustomEvent('vocatus:lista'));}
 async function selectPump(tag){
@@ -568,9 +568,10 @@ function paintPumpMeta(p){
 }
 function locateSelectedPump(){
  const p=state.pump?.data;if(!p)return;
+ if(integrado?.asignacion&&!pumpObjectsInt[p.tag]){toast(p.tag+' no tiene una posición asignada en el mapa.');return;}
  ++state.loading;detailFlightTicket=null;detailOrigin=null;state.view='plant';state.tab='ficha';state.explode=0;
  if(photoDetail)photoDetail.visible=false;
- if(plant&&camera){plant.visible=true;pumpGroup.visible=false;state.area=pumpObjectsInt[p.tag]?'integrado':areaOf(p);state.filtroInt=state.area==='integrado'?areaOf(p):null;aplicarFiltroInt();applyArea();const w=pumpWorld(p.tag);if(w){controls.minDistance=.5;fly([w.x+5,w.y+7,w.z+6],[w.x,w.y+1,w.z],600);resaltarBomba(p.tag);}}
+ if(plant&&camera){plant.visible=true;pumpGroup.visible=false;state.area=pumpObjectsInt[p.tag]?'integrado':areaOf(p);state.filtroInt=state.area==='integrado'?areaEnMapa(p):null;aplicarFiltroInt();applyArea();const w=pumpWorld(p.tag);if(w){controls.minDistance=.5;fly([w.x+5,w.y+7,w.z+6],[w.x,w.y+1,w.z],600);resaltarBomba(p.tag);}}
  $('#explode').disabled=true;$('#explode-all').disabled=true;$('#back').hidden=false;
  markers.forEach(m=>m.el.classList.toggle('located',m.kind==='pump'&&m.id===p.tag));
  renderList();renderPanel();toast(p.tag+' ubicada; su ficha permanece abierta.');
@@ -805,7 +806,7 @@ function etiqueta(obj,text,cls,area,title=''){const el=document.createElement('s
 function claveDeMarcador(m){return m.ref?clavePendiente(m.ref):m.kind==='pump'&&m.id?claveTag(m.id):null;}
 function markerInArea(m){
  if(!m.area)return true;
- {const k=claveDeMarcador(m);if(k&&pumpVisibility.stateOf(k))return false;}
+ {const k=claveDeMarcador(m);if((k&&pumpVisibility.stateOf(k))||(m.ref&&m.id&&pumpVisibility.stateOf(claveTag(m.id))))return false;}
  if(m.kind==='area'||m.area==='planta')return state.area==='planta';
  if(state.area==='planta')return false;
  if(m.area!==state.area)return false;
@@ -818,7 +819,8 @@ function markerInArea(m){
  return true;
 }
 function torreFila(p){return [...plantPumps].filter(q=>q.areaId==='torre'&&Math.abs(q.z-p.z)<.5).sort((a,b)=>a.x-b.x).findIndex(q=>q.tag===p.tag);}
-function pumpWorld(tag){const g=(state.area==='integrado'&&pumpObjectsInt[tag])||pumpObjects[tag];return g?g.getWorldPosition(new THREE.Vector3()):null;}
+function areaEnMapa(p){return pumpObjectsInt[p.tag]?.userData.sectorInt||areaOf(p);}
+function pumpWorld(tag){const g=state.area==='integrado'&&integrado?.asignacion?pumpObjectsInt[tag]:pumpObjects[tag];return g?g.getWorldPosition(new THREE.Vector3()):null;}
 const tipoDe=p=>{const s=normalize(p.servicio);return [/alcohol/.test(s)&&'alcohol',/agua/.test(s)&&'agua',/mosto|vinaza/.test(s)&&'mosto',(/sin uso/.test(s)||p.enUso===false)&&'sin-uso'].filter(Boolean);};
 function fillFilters(){
  const area=$('#area').value,marca=$('#marca').value;
@@ -987,10 +989,10 @@ function montarIntegrado(g,escena,placed){
    const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
    const el=document.createElement('button');el.className='label pending-label sin-ficha';s.labelBase=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;s.labelEl=el;if(etiquetaFija)s.labelBase=etiquetaFija;el.textContent=nombreVisible(s);el.title=s.tagAsignado?tituloTag(asignacion,s.tagAsignado):s.nombre;
    el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);el.dataset.nombre=s.nombre;
-   const fichaTag=s.tagAsignado&&conFicha.has(s.tagAsignado)?s.tagAsignado:null;
-   if(fichaTag)lugaresFoto[fichaTag]=clavePendiente(s);
+   const fichaTag=s.fichaTag=s.tagAsignado&&conFicha.has(s.tagAsignado)?s.tagAsignado:null;
+   if(fichaTag){lugaresFoto[fichaTag]=clavePendiente(s);el.classList.remove('pending-label','sin-ficha');el.setAttribute('aria-label','Acercarse a '+fichaTag);}
    el.onclick=()=>{if(fichaTag)selectPump(fichaTag);else selectPendingPump(s);};
-   $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector),ref:s});
+   $('#labels').append(el);markers.push({obj:a,el,kind:'pump',area:'integrado',sectorInt:sectorDe(s.sector),id:fichaTag,ref:s});
    const size=s.max.map((v,i)=>v-s.min[i]);
    const hit=new THREE.Mesh(new THREE.BoxGeometry(size[0],size[1],size[2]),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
    hit.position.set(...s.min.map((v,i)=>(v+s.max[i])/2));if(fichaTag){hit.userData.tag=fichaTag;hit.userData.sectorInt=sectorDe(s.sector);pumpObjectsInt[fichaTag]=hit;}else hit.userData.pending=s;hit.userData.sector=s.sector;hit.userData.hitProxy=true;g.add(hit);pickables.push(hit);s.hit=hit;
@@ -1218,7 +1220,7 @@ function renderEditingAccess(){
 
 // Puente para la app de teléfono (telefono-app.js). Solo expone acciones que el visor ya hace.
 window.vocatus={
- get references(){return [...(integrado?.references||[]),...extraReferences];},
+ get references(){return [...(integrado?.references||[]).filter(r=>!r.fichaTag),...extraReferences];},
  get pumps(){return state.pumps;},get pump(){return state.pump;},get token(){return state.token;},get writable(){return !!state.writable;},get demo(){return !!state.demo;},
  select:tag=>selectPhotoPump(tag),
  selectReference:reference=>selectPendingPump(reference),
@@ -1232,7 +1234,7 @@ window.vocatus={
  get listo(){return state.view==='pump'&&detailFlightTicket!==state.loading;},
  corte:()=>$('#anatomy-cut').click(),transparente:()=>$('#anatomy-transparent').click(),get anatomia(){return anatomy?{...anatomy.state}:{};},
  vista:t=>{if(!camera||state.view==='plant')return;const ex=state.explode>30,k=document.body.classList.contains('app-tel')&&ex?1.5:1;const P={tres:[10,8,ex?21:12],frente:[0,1.2,ex?22:13],arriba:[0,ex?30:22,.1]}[t];if(P)fly(P.map(v=>v*k),[0,0,0],650);},
- areaDe:p=>areaOf(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
+ areaDe:p=>areaEnMapa(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
  ensure3D:ensurePlant,api
 };
 document.dispatchEvent(new Event('vocatus:listo'));
