@@ -27,3 +27,11 @@ Fuente: `PLANTA_COMPLETA_ABRIR_EN_REVIT_2026.rvt` (copia de `Tanque de Agua.rvt`
 - **Bombas sin ficha:** las 18 bombas modeladas en el FBX que no tienen TAG llevan la etiqueta «Sin ficha» con su nombre.
 - Las 12 bombas del sector de tanques todavía no se ubican sobre el modelo integrado: falta confirmar a qué parte del modelo corresponde ese sector.
 - Medidas provisionales, según el propio respaldo: no es levantamiento exacto.
+
+## Naves del plano de conjunto A15 (9-nov-2026)
+
+Archivo: `public/naves-sitio.js`. Se agregan sobre el modelo de Blender (vista por defecto) y entran en el sector **Edificios**.
+
+- **Área 3 · Nave pequeña** — láminas A16 y A17 (S3 Ingenieros, abril 2024): ejes 7,97 × 13,65 m, columnas en ejes A–D (4,5 + 4,5 + 4,65 m), alero +4,65 m, cumbrera +6,012 m, portón 3,88 × 4,17 m en el eje A, losa 9,8 × 17,5 m, cubierta y paredes en lámina esmaltada.
+- **Nave grande existente** — sin planos propios: huella medida en A15 (escala 1:500) de 26,9 × 18,1 m, columnas cada ≈3,84 m en los lados largos. Alero 6 m, cumbrera 7,8 m, muro en el lado grueso del plano y lados abiertos son **supuestos**. Los 77 cuadros del plano se dibujan como contenedores de ≈1 m: confirmar en campo qué son.
+- **Ubicación:** A15 se ajusta al modelo con los cinco edificios FBX (semejanza 2D; error máximo 0,23 m). Como el resto del modelo no sigue A15 al pie de la letra, una nave se aparta si pisa equipos y se acerca a la planta si su losa queda fuera del terreno (`window.__navesSitio.apartadas`, en metros).

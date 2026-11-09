@@ -7,6 +7,7 @@ import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera} from './bombas-calderas.js';
+import {agregarNaves} from './naves-sitio.js?v=20261109a';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105g';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
@@ -947,6 +948,8 @@ function montarIntegrado(g,escena,placed){
   const retirados=new Set(cambios.removedMeshes);for(let i=pickables.length-1;i>=0;i--)if(retirados.has(pickables[i]))pickables.splice(i,1);
   for(const body of Object.values(tankBodies))body.traverse(o=>{if(o.isMesh&&!pickables.includes(o))pickables.push(o);});
   window.__cambiosCampo={...cambios,removedMeshes:undefined};
+  // Área 3 · Nave pequeña (A16/A17) y nave grande a escala de A15.
+  if(escena.userData.blenderLocal)window.__navesSitio=agregarNaves(THREE,escena);
   // Lista del usuario: cada cuerpo con ficha pasa a mostrar el TAG que él le asignó.
   const conFicha=new Set(state.pumps.map(p=>p.tag)),inversaG=new THREE.Matrix4().copy(g.matrixWorld).invert(),gruposTag=[];
   const cajaLocal=b=>{b.updateMatrixWorld(true);const k=new THREE.Box3().setFromObject(b).applyMatrix4(inversaG);return {min:k.min.toArray(),max:k.max.toArray()};};
