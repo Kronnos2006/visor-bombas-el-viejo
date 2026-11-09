@@ -38,3 +38,10 @@ test('agrega las naves en el sector Edificios', ()=>{
  for(const n of naves)assert.equal(sectorDe(n.userData.sector),'edificios');
  assert.equal(agregarNaves(THREE,escena),r,'no duplica');
 });
+
+test('tanque con dique junto a la nave pequeña', async()=>{
+ const {tanqueNave}=await import('./public/naves-sitio.js');
+ const s=tam(tanqueNave(THREE));
+ assert.ok(Math.abs(s.x-12.3)<.6&&Math.abs(s.z-12.3)<.6,'dique Ø12,3');
+ assert.ok(s.y>12&&s.y<14,'altura '+s.y);
+});

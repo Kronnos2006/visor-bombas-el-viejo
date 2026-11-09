@@ -63,8 +63,33 @@ export function navePequena(T){
  caja(.06,4.168,.03,AZUL,dx+L/2+.07,yb+2.084,0);
  for(const z of [-1.97,1.97])caja(.08,4.25,.1,AZUL,dx+L/2+.05,yb+2.125,z);caja(.08,.1,4.04,AZUL,dx+L/2+.05,yb+4.2,0);
  // Puertas de servicio (0,95 × 2,1 m).
- caja(.95,2.1,.06,PUERTA,dx+L/2-1.6,yb+1.05,-A/2-.04);
+ caja(.95,2.1,.06,PUERTA,dx+L/2-1.6,yb+1.05,A/2+.04);
  caja(.06,2.1,.95,PUERTA,dx-L/2-.04,yb+1.05,A/2-1.4);
+ return g;
+}
+
+// Tanque vertical junto a la nave pequeña (círculo existente en A15, Ø 12,3 m) con dique circular de
+// bloques y escalera helicoidal, según fotos del 9-nov-2026. Ø del tanque ≈10 m y altura ≈12 m estimados.
+// Distancia a la nave según las fotos (≈1,8 m de pasillo), no según A15 (≈4,5 m).
+export const TANQUE_NAVE3={x:.22,z:-11.9,diametroDique:12.3,alturaDique:2.6,diametro:10,altura:12};
+export function tanqueNave(T,t=TANQUE_NAVE3){
+ const g=new T.Group();g.name='Tanque junto a la nave pequeña';
+ const mat=(c,o={})=>new T.MeshStandardMaterial({color:c,roughness:.6,metalness:.3,side:T.DoubleSide,...o});
+ const rD=t.diametroDique/2,r=t.diametro/2;
+ const dique=new T.Mesh(new T.CylinderGeometry(rD,rD,t.alturaDique,64,1,true),mat(0x8d877b,{roughness:.95,metalness:0}));dique.position.y=t.alturaDique/2;g.add(dique);
+ const corona=new T.Mesh(new T.RingGeometry(rD-.2,rD,64),mat(0x9a9488,{roughness:.95,metalness:0}));corona.rotation.x=-Math.PI/2;corona.position.y=t.alturaDique;g.add(corona);
+ const piso=new T.Mesh(new T.CircleGeometry(rD-.2,64),mat(0xa9a59c,{roughness:1,metalness:0}));piso.rotation.x=-Math.PI/2;piso.position.y=.05;g.add(piso);
+ const cuerpo=new T.Mesh(new T.CylinderGeometry(r,r,t.altura,64),mat(0xd5d9dc,{metalness:.45,roughness:.4}));cuerpo.position.y=t.altura/2+.1;g.add(cuerpo);
+ const techo=new T.Mesh(new T.ConeGeometry(r+.05,.8,64),mat(0xc9cdd0,{metalness:.45,roughness:.45}));techo.position.y=t.altura+.5;g.add(techo);
+ for(let i=1;i<6;i++){const anillo=new T.Mesh(new T.TorusGeometry(r+.01,.025,6,64),mat(0xaeb3b6));anillo.rotation.x=Math.PI/2;anillo.position.y=.1+i*t.altura/6;g.add(anillo);}
+ // Escalera helicoidal: una vuelta casi completa, baranda amarilla.
+ const vuelta=1.6*Math.PI,a0=-Math.PI*.3,curva=(dr,dy)=>new T.CatmullRomCurve3(Array.from({length:41},(_,i)=>{const k=i/40,a=a0+k*vuelta;return new T.Vector3(Math.cos(a)*(r+dr),.3+k*(t.altura-.3)+dy,Math.sin(a)*(r+dr));}));
+ g.add(new T.Mesh(new T.TubeGeometry(curva(.45,0),200,.06,6),mat(0x3d4246)));
+ g.add(new T.Mesh(new T.TubeGeometry(curva(.85,1),200,.035,6),mat(0xe0b52a,{metalness:.2})));
+ for(let i=0;i<=60;i++){const k=i/60,a=a0+k*vuelta,y=.3+k*(t.altura-.3);const e=new T.Mesh(new T.BoxGeometry(.8,.04,.25),mat(0x3d4246));
+  e.position.set(Math.cos(a)*(r+.45),y,Math.sin(a)*(r+.45));e.rotation.y=-a;g.add(e);
+  if(i%3===0){const p=new T.Mesh(new T.CylinderGeometry(.02,.02,1,6),mat(0xe0b52a,{metalness:.2}));p.position.set(Math.cos(a)*(r+.85),y+.5,Math.sin(a)*(r+.85));g.add(p);}}
+ g.traverse(o=>{if(o.isMesh){o.castShadow=o.receiveShadow=true;}});
  return g;
 }
 
@@ -117,7 +142,8 @@ export function agregarNaves(T,escena){
   while(terreno.length&&alAire()&&pasoT<60){grupo.position.addScaledVector(adentro,.5);pasoT++;}
   movidos[sector]=(paso-pasoT)*.5;
  };
- poner(navePequena(T),NAVE3.centro,NAVE3.frente,'FBX Nave pequena');
+ const nave3=navePequena(T),tanque=tanqueNave(T);tanque.position.set(TANQUE_NAVE3.x,0,TANQUE_NAVE3.z);nave3.add(tanque);
+ poner(nave3,NAVE3.centro,NAVE3.frente,'FBX Nave pequena');
  poner(naveGrande(T),GRANDE.centro,GRANDE.eje,'REF Bodega de ron');
  escena.updateWorldMatrix(true,true);
  return escena.userData.navesSitio={error:ajuste.error,escala:ajuste.escala,edificios:claves.length,apartadas:movidos};
