@@ -13,11 +13,10 @@ test('nave pequeña respeta las cotas de A16 y A17', ()=>{
  assert.ok(Math.abs(s.y-(6.012+.15+.06))<.12,'cumbrera +6,012 m sobre la losa');
 });
 
-test('nave grande con la huella medida en A15', ()=>{
+test('bodega de ron con la huella de A15 y las alturas de las fotos', ()=>{
  const s=tam(naveGrande(THREE));
- assert.ok(Math.abs(s.x-27.47)<.35);assert.ok(Math.abs(s.z-19.1)<.35);
- let contenedores=0;naveGrande(THREE).traverse(o=>{if(o.name==='Contenedor (según A15)')contenedores++;});
- assert.equal(contenedores,77);
+ assert.ok(Math.abs(s.x-27.87)<.4,'largo '+s.x);assert.ok(Math.abs(s.z-19.3)<.5,'ancho '+s.z);
+ assert.ok(s.y>10.3&&s.y<10.7,'cumbrera ≈10,3 m: '+s.y);
 });
 
 test('el ajuste del plano coincide con los edificios FBX', ()=>{

@@ -1,8 +1,8 @@
 // Naves del plano de conjunto (lámina A15, S3 Ingenieros, abril 2024) que faltaban en el modelo.
 // · Área 3 · Nave pequeña: medidas de las láminas A16 y A17 (ejes 7,97 × 13,65 m, alero +4,65 m,
 //   cumbrera +6,012 m, portón 3,88 × 4,17 m, losa 9,8 × 17,5 m).
-// · Nave grande existente: sin planos propios; huella medida en A15 a escala 1:500 (26,9 × 18,1 m).
-//   Alturas, cerramientos y contenido son supuestos de presentación: confirmar en campo.
+// · Nave grande existente («Bodega de ron»): sin planos; huella medida en A15 a escala 1:500
+//   (26,9 × 18,1 m) y alturas estimadas con fotos de campo del 9-nov-2026.
 // Ubicación: A15 se ajusta al modelo con los cinco edificios FBX (semejanza 2D, error ≈ 0,2 m).
 // Si una nave cae sobre equipos ya modelados (el resto del modelo no sigue A15), se aparta hacia afuera.
 
@@ -13,9 +13,6 @@ export const PLANO_A15={
 };
 const NAVE3={centro:[3355.9,1984.0],frente:[-Math.cos(60.46*Math.PI/180),-Math.sin(60.46*Math.PI/180)]};
 const GRANDE={centro:[3668.8,1415.6],eje:[Math.cos(-29.39*Math.PI/180),Math.sin(-29.39*Math.PI/180)]};
-// Contenedores dibujados en A15 dentro de la nave grande (≈1,05 m): 6 filas junto al lado largo norte y una junto al sur.
-const COLUMNAS_CONT=[-3.72,-2.12,-.32,1.38,3.08,4.48,6.08,7.66,9.07,10.78,12.36];
-const FILAS_CONT=[-8.07,-6.87,-5.53,-4.33,-2.97,-1.77,8.25];
 
 // Semejanza 2D por mínimos cuadrados (Umeyama, sin reflexión): plano → [x,z] del modelo.
 export function ajustarSemejanza(origen,destino){
@@ -48,39 +45,44 @@ function utiles(T,g){
 }
 
 // Local: +X hacia el portón (eje A), Z a lo ancho, origen en el centro de la losa.
+// Aspecto según fotos de campo (9-nov-2026): lámina blanca, esquineros azules, cubierta gris oscuro
+// con aleros, portón de dos hojas en el frente y puertas grises en un costado y en el fondo.
 export function navePequena(T){
  const g=new T.Group();g.name='Área 3 · Nave pequeña';
- const {caja,fronton,cubierta}=utiles(T,g),PARED=0xdde2e4,TECHO=0x9fa9ae,ACERO=0x5d666c,CONCRETO=0xb9b6ae;
- const L=13.65,A=7.97,H=4.65,HC=6.012,dx=-.97; // la losa sobresale 2,9 m al frente y 1 m atrás
+ const {caja,fronton,cubierta}=utiles(T,g),PARED=0xeef1f3,TECHO=0x3b4146,AZUL=0x2b4f8c,PUERTA=0x7c8287,CONCRETO=0xb9b6ae;
+ const L=13.65,A=7.97,H=4.65,HC=6.012,dx=-.97,yb=.15; // la losa sobresale 2,9 m al frente y 1 m atrás
  caja(17.5,.15,9.8,CONCRETO,0,.075,0);
- const yb=.15,ejes=[L/2,L/2-4.5,L/2-9,-L/2].map(x=>x+dx);
- for(const x of ejes)for(const z of [-A/2,A/2])caja(.15,H,.15,ACERO,x,yb+H/2,z);
- for(const z of [-A/2,A/2])caja(L,H,.04,PARED,dx,yb+H/2,z);
+ for(const z of [-A/2,A/2])caja(L,H,.05,PARED,dx,yb+H/2,z);
  const front=fronton(A,H,HC,PARED,dx+L/2,[3.88,4.168]);front.position.y=yb;
  const back=fronton(A,H,HC,PARED,dx-L/2);back.position.y=yb;
+ for(const x of [dx-L/2,dx+L/2])for(const z of [-A/2,A/2])caja(.14,H,.14,AZUL,x,yb+H/2,z);
  const techo=new T.Group();techo.position.set(dx,yb,0);g.add(techo);
  cubierta(L+1.8,A,H,HC,TECHO,techo,.5);
- // Portón: marco oscuro para que se lea la abertura.
- caja(.12,4.168,.12,ACERO,dx+L/2,yb+2.084,-1.94);caja(.12,4.168,.12,ACERO,dx+L/2,yb+2.084,1.94);caja(.12,.12,3.88,ACERO,dx+L/2,yb+4.168,0);
+ // Portón de dos hojas con marco azul.
+ for(const z of [-.97,.97])caja(.05,4.1,1.92,PARED,dx+L/2+.04,yb+2.05,z);
+ caja(.06,4.168,.03,AZUL,dx+L/2+.07,yb+2.084,0);
+ for(const z of [-1.97,1.97])caja(.08,4.25,.1,AZUL,dx+L/2+.05,yb+2.125,z);caja(.08,.1,4.04,AZUL,dx+L/2+.05,yb+4.2,0);
+ // Puertas de servicio (0,95 × 2,1 m).
+ caja(.95,2.1,.06,PUERTA,dx+L/2-1.6,yb+1.05,-A/2-.04);
+ caja(.06,2.1,.95,PUERTA,dx-L/2-.04,yb+1.05,A/2-1.4);
  return g;
 }
 
-// Local: X a lo largo (26,9 m), Z a lo ancho (18,1 m), origen al centro. −X = muro grueso del plano.
+// «Bodega de ron» existente. Huella de A15 (26,9 × 18,1 m); alturas estimadas de las fotos de campo:
+// alero ≈8,6 m, cumbrera ≈10,3 m, zócalo de concreto ≈1,3 m, lámina plateada, ventanal alto en
+// ambos frentes y portón ≈5,4 × 3,6 m con puerta peatonal. Lado del portón: supuesto (lado +X).
 export function naveGrande(T){
- const g=new T.Group();g.name='Nave grande existente (a escala del plano)';
- const {caja,fronton,cubierta}=utiles(T,g),MURO=0xcfc8bb,TECHO=0x8e989d,ACERO=0x4f585e,CONCRETO=0xbdbab2,CONT=0xe9ecee,MARCO=0x6c7378;
- const L=26.87,A=18.1,H=6,HC=7.8; // alturas supuestas (sin planos)
+ const g=new T.Group();g.name='Bodega de ron (nave grande)';
+ const {caja,fronton,cubierta}=utiles(T,g),LAMINA=0xb7bcc0,ZOCALO=0xa8a49b,TECHO=0x33383c,VIDRIO=0x1d2833,MARCO=0xe4e7e9,PORTON=0xa4aaae,PUERTA=0x6f767b,CONCRETO=0xbdbab2;
+ const L=26.87,A=18.1,H=8.6,HC=10.3,Z=1.3,yb=.15;
  caja(L,.15,A,CONCRETO,0,.075,0);
- const yb=.15;
- for(let i=0;i<=7;i++){const x=-L/2+i*L/7;for(const z of [-A/2,A/2])caja(.3,H,.3,ACERO,x,yb+H/2,z);}
- for(let i=1;i<3;i++)caja(.3,H,.3,ACERO,L/2,yb+H/2,-A/2+i*A/3);
- const muro=fronton(A,H,HC,MURO,-L/2);muro.position.y=yb;
- for(const z of [-A/2,A/2])caja(L,.35,.25,ACERO,0,yb+H,z); // vigas de alero
- const techo=new T.Group();techo.position.y=yb;g.add(techo);cubierta(L+.6,A,H,HC,TECHO,techo,.5);
- for(const v of FILAS_CONT)for(const u of COLUMNAS_CONT){
-  const c=new T.Group();c.name='Contenedor (según A15)';c.position.set(u,yb,v);g.add(c);
-  caja(1,1.05,1,CONT,0,.6,0,c,{transparent:true,opacity:.85});caja(1.05,.12,1.05,MARCO,0,.06,0,c);
- }
+ for(const z of [-A/2,A/2]){caja(L,Z,.2,ZOCALO,0,yb+Z/2,z);caja(L,H-Z,.06,LAMINA,0,yb+Z+(H-Z)/2,z);}
+ for(const x of [-L/2,L/2]){caja(.2,Z,A,ZOCALO,x,yb+Z/2,0);const f=fronton(A,H-Z,HC-Z,LAMINA,x);f.position.y=yb+Z;
+  caja(.12,1.45,5.6,MARCO,x+Math.sign(x)*.05,yb+6.5,0);caja(.14,1.25,5.4,VIDRIO,x+Math.sign(x)*.06,yb+6.5,0);}
+ const techo=new T.Group();techo.position.y=yb;g.add(techo);cubierta(L+1,A,H,HC,TECHO,techo,.6);
+ caja(.12,3.6,5.4,PORTON,L/2+.08,yb+1.8,.4);
+ caja(.1,2.1,.95,PUERTA,L/2+.08,yb+1.05,-3.6);
+ caja(.95,2.1,.1,PUERTA,-2,yb+1.05,-A/2-.12);
  return g;
 }
 
@@ -116,7 +118,7 @@ export function agregarNaves(T,escena){
   movidos[sector]=(paso-pasoT)*.5;
  };
  poner(navePequena(T),NAVE3.centro,NAVE3.frente,'FBX Nave pequena');
- poner(naveGrande(T),GRANDE.centro,GRANDE.eje,'REF Nave grande');
+ poner(naveGrande(T),GRANDE.centro,GRANDE.eje,'REF Bodega de ron');
  escena.updateWorldMatrix(true,true);
  return escena.userData.navesSitio={error:ajuste.error,escala:ajuste.escala,edificios:claves.length,apartadas:movidos};
 }

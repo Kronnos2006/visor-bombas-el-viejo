@@ -7,7 +7,7 @@ import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera} from './bombas-calderas.js';
-import {agregarNaves} from './naves-sitio.js?v=20261109a';
+import {agregarNaves} from './naves-sitio.js?v=20261109b';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105g';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
