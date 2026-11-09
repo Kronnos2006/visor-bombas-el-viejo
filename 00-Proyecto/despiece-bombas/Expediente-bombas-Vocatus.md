@@ -1312,6 +1312,9 @@ La referencia 15SH06K6 del inventario identifica el conjunto hidráulico. El rec
 
 ## B39 · Tanque Producción Diaria Hindú
 
+**Revisión 2026-11-09 · Goulds B39–B43.** Según la guía de kits PeSHKITRF, 15SH06K6 es el kit de extremo de bomba 1½ × 2½–6 (el de 2 × 2½–6 es 02SH06K6), así que el Excel tiene código y modelo cruzados: hay que medir la brida de descarga. Los rodamientos 6309/6206 son del motor JM. Números de pedido: [tabla Goulds](Goulds-eSH-15SH06-tabla-piezas-y-pendientes.md).
+
+
 **CAD comparativo Goulds** [DXF de las dos variantes candidatas](Documentos-bombas-Vocatus/Goulds-eSH-15SH06-02SH06-comparacion.dxf). Cotas L de catálogo para bastidor 213/215 y contornos esquemáticos. Asociación al equipo pendiente de confirmar.
 
 **Comparación dimensional Goulds** [Ficha e-SH, pág. impresa 53](Documentos-bombas-Vocatus/Goulds-eSH-ficha.pdf). Ambos tamaños tienen succión de 2½″. El 15SH06 tiene descarga de 1½″ y cota L de 11⅜″ con bastidor 213/215. El 02SH06 tiene descarga de 2″ y L de 12⅛″. Verificar placa y descarga de la bomba antes de seleccionar hoja de datos y CAD. [Guía Goulds PeSHKITRF](https://d1pkofokfruj4.cloudfront.net/media/upload/resource/z/Goulds-e-SH-Pump-Kit-Reference-Guide-PeSHKITRF_021422.pdf): 15SH06K6 identifica el conjunto hidráulico de 1½ × 2½–6; el impulsor tiene su propio número de pedido. No identifica el impulsor instalado. Confirmar código de la bomba completa.
