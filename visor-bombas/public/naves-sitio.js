@@ -4,6 +4,7 @@
 // · Nave grande existente («Bodega de ron»): sin planos; huella medida en A15 a escala 1:500
 //   (26,9 × 18,1 m) y alturas estimadas con fotos de campo del 9-nov-2026.
 // Ubicación: A15 se ajusta al modelo con los cinco edificios FBX (semejanza 2D, error ≈ 0,2 m).
+// Las naves quedan rectas con los ejes del modelo (pedido del usuario), no con el giro de A15.
 // Si una nave cae sobre equipos ya modelados (el resto del modelo no sigue A15), se aparta hacia afuera.
 
 // Centros en A15 a 150 ppp (px, y hacia abajo).
@@ -95,7 +96,7 @@ export function tanqueNave(T,t=TANQUE_NAVE3){
 
 // «Bodega de ron» existente. Huella de A15 (26,9 × 18,1 m); alturas estimadas de las fotos de campo:
 // alero ≈8,6 m, cumbrera ≈10,3 m, zócalo de concreto ≈1,3 m, lámina plateada, ventanal alto en
-// ambos frentes y portón ≈5,4 × 3,6 m con puerta peatonal. Lado del portón: supuesto (lado +X).
+// ambos frentes y portón ≈5,4 × 3,6 m con puerta peatonal en el frente −X (corregido por el usuario).
 export function naveGrande(T){
  const g=new T.Group();g.name='Bodega de ron (nave grande)';
  const {caja,fronton,cubierta}=utiles(T,g),LAMINA=0xb7bcc0,ZOCALO=0xa8a49b,TECHO=0x33383c,VIDRIO=0x1d2833,MARCO=0xe4e7e9,PORTON=0xa4aaae,PUERTA=0x6f767b,CONCRETO=0xbdbab2;
@@ -105,8 +106,8 @@ export function naveGrande(T){
  for(const x of [-L/2,L/2]){caja(.2,Z,A,ZOCALO,x,yb+Z/2,0);const f=fronton(A,H-Z,HC-Z,LAMINA,x);f.position.y=yb+Z;
   caja(.12,1.45,5.6,MARCO,x+Math.sign(x)*.05,yb+6.5,0);caja(.14,1.25,5.4,VIDRIO,x+Math.sign(x)*.06,yb+6.5,0);}
  const techo=new T.Group();techo.position.y=yb;g.add(techo);cubierta(L+1,A,H,HC,TECHO,techo,.6);
- caja(.12,3.6,5.4,PORTON,L/2+.08,yb+1.8,.4);
- caja(.1,2.1,.95,PUERTA,L/2+.08,yb+1.05,-3.6);
+ caja(.12,3.6,5.4,PORTON,-L/2-.08,yb+1.8,-.4);
+ caja(.1,2.1,.95,PUERTA,-L/2-.08,yb+1.05,3.6);
  caja(.95,2.1,.1,PUERTA,-2,yb+1.05,-A/2-.12);
  return g;
 }
@@ -127,12 +128,12 @@ export function agregarNaves(T,escena){
   const b=new T.Box3().setFromObject(o).applyMatrix4(inv);if(b.max.y-b.min.y>.6)ocupado.push(b);});
  const centroPlanta=new T.Vector3();for(const b of ocupado)centroPlanta.add(b.getCenter(new T.Vector3()));if(ocupado.length)centroPlanta.divideScalar(ocupado.length);
  const movidos={},rayo=new T.Raycaster(),terreno=[];escena.traverse(o=>{if(o.userData.sector?.trim()==='Entorno'&&/suelo|terreno/i.test(o.userData.original_name||o.name))o.traverse(m=>{if(m.isMesh)terreno.push(m);});});
- const poner=(grupo,centro,dir,sector)=>{
+ const poner=(grupo,centro,dir,sector,holgura=.5)=>{
   const [x,z]=ajuste.punto(centro),[dx,dz]=ajuste.direccion(dir);
-  grupo.position.set(x,suelo,z);grupo.rotation.y=Math.atan2(-dz,dx);
+  grupo.position.set(x,suelo,z);grupo.rotation.y=Math.round(Math.atan2(-dz,dx)/(Math.PI/2))*(Math.PI/2); // recta con los ejes de la planta
   grupo.userData.sector=sector;grupo.userData.presentationOnly=true;escena.add(grupo);
   const fuera=new T.Vector3(x-centroPlanta.x,0,z-centroPlanta.z).normalize();let paso=0;
-  const choca=()=>{grupo.updateMatrixWorld(true);const b=new T.Box3().setFromObject(grupo).applyMatrix4(inv).expandByScalar(.5);return ocupado.some(o=>o.intersectsBox(b));};
+  const choca=()=>{grupo.updateMatrixWorld(true);const b=new T.Box3().setFromObject(grupo).applyMatrix4(inv).expandByScalar(holgura);return ocupado.some(o=>o.intersectsBox(b));};
   while(ocupado.length&&choca()&&paso<120){grupo.position.addScaledVector(fuera,.5);paso++;}
   // Que la losa quede sobre el terreno del modelo: si una esquina queda al aire, se acerca a la planta.
   const adentro=fuera.clone().negate();let pasoT=0;
@@ -144,7 +145,7 @@ export function agregarNaves(T,escena){
  };
  const nave3=navePequena(T),tanque=tanqueNave(T);tanque.position.set(TANQUE_NAVE3.x,0,TANQUE_NAVE3.z);nave3.add(tanque);
  poner(nave3,NAVE3.centro,NAVE3.frente,'FBX Nave pequena');
- poner(naveGrande(T),GRANDE.centro,GRANDE.eje,'REF Bodega de ron');
+ poner(naveGrande(T),GRANDE.centro,GRANDE.eje,'REF Bodega de ron',8); // pedido: más separada de la planta
  escena.updateWorldMatrix(true,true);
  return escena.userData.navesSitio={error:ajuste.error,escala:ajuste.escala,edificios:claves.length,apartadas:movidos};
 }
