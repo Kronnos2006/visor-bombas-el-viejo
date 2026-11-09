@@ -42,6 +42,8 @@ La tabla agrupa **73 TAG en 15 referencias de trabajo**. Los códigos Durco 6239
 **Conteo por modelo.** La tabla contiene 14 referencias de modelo o familia con código y una fila PACO con solo marca. Los otros 10 TAG sin código hidráulico identificado son B22, B56, B58, B62, B74–B76 y B81–B83. B22 tiene placa Hidromac candidata. El número definitivo de modelos depende de resolver esos TAG y las discrepancias de placa.
 
 
+**Cotejo con placas del visor (2026-11-09).** B29 = 2196 A20 MTO; B20 y B21 = Titan; B51 = Hidromac LL-124; la placa del lugar tag:B41 es de B24 (2196 LF 210771-3); los rodamientos del Excel son del motor. [Detalle](Placas-visor-cotejo-2026-11-09.md).
+
 ## Cruce histórico para equipos sin código hidráulico
 
 La numeración de las fichas de Libro1.xlsx corresponde a ese inventario. Los cruces siguientes se verificaron por ubicación y descripción del equipo.

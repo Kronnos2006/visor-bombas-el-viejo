@@ -43,3 +43,4 @@ Fuentes: **TSM1400** = Viking TSM 1400, serie 124A/4124A (sucesora de LL124), co
 ## Registro de sesión
 
 - **2026-11-09** · LL-124, B51–B52. Resuelto: número de anillos (6), eje en el empaque (1-7/16″) y holgura axial estándar (0,127 mm) de la serie 124A sucesora; DXF nuevo `B51-B52-Viking-LL124-empaque-y-eje.dxf` (mm, sin errores). Se dejó anotado que la serie 220106-2 tiene formato Hidromac y que está duplicada. Siguiente: **PACO B60**.
+- **2026-11-09 (placas del visor)** · **B51 = Hidromac Colombia, MOD LL-124 3X3, SER 220106-2, MAT'L ASTM A48.** La marca es Hidromac (diseño Viking). B52: placa ilegible; falta una foto nítida para su serie.

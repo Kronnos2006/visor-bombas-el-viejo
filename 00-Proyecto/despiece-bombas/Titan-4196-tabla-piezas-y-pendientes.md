@@ -50,3 +50,4 @@ Variantes:
 ## Registro de sesión
 
 - **2026-11-09** · Titan 4196 (ST B13, MT B63–B68, A20 serie 064311). Resuelto: patrón de pies y extremo de eje por designación B73.1 (DXF nuevo `Titan-4196-patas-y-extremo-eje-B73.dxf`, mm, auditoría sin errores). Los rodamientos del inventario se marcan como probables de motor. Bloqueo: el manual Titan público es un escaneo sin texto; se necesitan las páginas 41–43 y 51–52 del PDF local para rodamientos, materiales y piezas internas. Siguiente: **Durco Mark 3 62391/62392 (B17–B21)**.
+- **2026-11-09 (placas del visor)** · B64: A40, serie 064183, 275 psi; B65: A40, serie 064182. B66 ilegible. B63: Titan con máximo 13; motor Siemens. **B20 y B21 son Titan** (ver tabla Durco).

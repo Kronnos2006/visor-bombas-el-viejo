@@ -46,3 +46,4 @@ Las posiciones del despiece AZ no tienen número en la fuente consultada (Manual
 ## Registro de sesión
 
 - **2026-11-09** · AZ 80-315A, B44–B45. Resuelto: montaje de eje libre; tabla de soportes IIIA/IVA (eje, camisa, chaveta, rodamientos, entre centros); sello 1½″ coherente con la camisa; rodamientos del inventario atribuidos de forma probable al motor; SM = sello mecánico. Archivos: `Hidromac-AZ-80-315A-eje-rodamientos-IIIA-IVA.dxf` (nuevo, mm, auditoría sin errores), esta tabla y una nota en el expediente. Pendiente clave: decidir IIIA o IVA con el rodamiento del soporte. Siguiente: **Titan 4196 (B13, B63–B68)**.
+- **2026-11-09 (placas del visor)** · B45: AZ 3X4X12A **SMCDV**, N° 220100-2, Ø305, «R. INOX»; B44: N° 220100-1. Placa del motor WEG 324/6T con **6312-C3 / 6212-C3**: rodamientos del motor confirmados. El soporte IIIA/IVA sigue pendiente.

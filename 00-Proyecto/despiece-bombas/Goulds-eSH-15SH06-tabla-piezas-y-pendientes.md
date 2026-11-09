@@ -46,3 +46,4 @@ Fuentes: **RP** = Goulds e-SH Repair Parts ReSHSMGR (316SS, 60 Hz, agosto 2019),
 ## Registro de sesión
 
 - **2026-11-09** · Goulds e-SH, B39–B43. Resuelto: 15SH06K6 es el kit de extremo de bomba para 1½ × 2½–6. Se agregaron números de pedido Goulds para la carcasa, el impulsor por diámetro, el anillo, el sello y las juntas. Rodamientos atribuidos al motor. Sin DXF nuevo; sigue el comparativo existente. Falta medir la brida de descarga. Siguiente: **LL-124 Viking (B51–B52)**.
+- **2026-11-09 (placas del visor)** · B39 y B41: motor Nidec/US Motors de 7,5 HP con **6309-2Z-J/C3 / 6206-2Z-J/C3** en la placa; adaptador inoxidable de motor directo. **B41 resuelta:** la placa Hidromac era del lugar tag:B41, hoy B24. Falta la brida de descarga.

@@ -52,3 +52,4 @@ Revisión 2026-11-09. Modelo 4 de 7. Unidades en mm. TAG: B17–B21 (Destilació
 ## Registro de sesión
 
 - **2026-11-09** · Durco Mark 3, B17–B21. Resuelto: los cinco TAG son tamaño AA según B73.1, así que el montaje es igual aunque sean Durco o Titan; se vinculan al DXF compartido ST/AA (no hizo falta un DXF nuevo). Se consolidaron los repuestos internos de Durco Grupo 1 desde el manual Flowserve y se registró el sello Cartex de B19. Los planos y hojas de LCEC no se pudieron leer (escaneos o bloqueo). Siguiente: **Goulds 15SH06K6 (B39–B43)**.
+- **2026-11-09 (placas del visor)** · **B20 = Titan 4196 1X1.5-6 ST**, serial 022165 (probable). **B21 = Titan 4196 1X1.5-8 ST AA**, serial 027167 (probable), 316SS, Ø7.1875″. Para B20 y B21 se piden repuestos Titan, no Durco. B19 sigue Durco. B17 y B18: falta una placa nueva junto al lugar.
