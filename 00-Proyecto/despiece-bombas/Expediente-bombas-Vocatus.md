@@ -1568,6 +1568,8 @@ Como cotejo del accionamiento, 1.768 rpm de motor requerirían una relación apr
 
 **Contraste con Hidromac EN.** El catálogo histórico Hidromac sí documenta bombas EN de engranajes con dos piñones y dos ejes. Su tabla dimensional enumera bocas iguales de ½, 1, 1½, 2½ y 4 pulgadas. La tabla revisada carece de una variante 3 × 3 y de la denominación LL-124. Para separar las opciones en campo, fotografiar la placa de la carcasa y registrar el diámetro nominal real de ambas bocas. La evidencia disponible favorece Viking como referencia por código y tamaño, con la marca instalada pendiente. [Catálogo Hidromac, tabla de dimensiones EN](https://es.scribd.com/document/422542785/Catalogo-de-Bombas-Hydromac-pdf).
 
+**Revisión 2026-11-09 · LL-124.** Según TSM 1400 (serie 124A, sucesora): tamaño LL con 6 anillos de empaque, eje de 1-7/16″ en el empaque y holgura axial estándar de 0,127 mm. La serie 220106-2 tiene formato Hidromac y se repite en B51 y B52. [DXF empaque y eje](Documentos-bombas-Vocatus/B51-B52-Viking-LL124-empaque-y-eje.dxf) · [Tabla LL-124](Viking-LL124-tabla-piezas-y-pendientes.md).
+
 ### Despiece Viking LL-124 con empaquetadura
 
 | Posiciones | Componentes de la vista explotada |
@@ -1717,6 +1719,8 @@ La vista corresponde a la LL-124 empacada y sirve como referencia para B51 y B52
 - **CAD** CAD pendiente. Confirmar fabricante, modelo y sufijo.
 
 ## B60 · Tanque Verde (en desuso) - CIP Destilería
+
+**Revisión 2026-11-09 · B60.** Pendiente de campo. Por estimación, 480 GPM a 105 ft no es compatible con 7,5 HP a 1.160 rpm y Ø298,7 mm (unos 45–55 ft a esa velocidad); no usar «105» para elegir la curva. [Pendientes B60](PACO-B60-tabla-y-pendientes.md).
 
 **Cruce de inventarios y fotos.** La PACO de Tanque Verde es B60 en Bombas.xlsx y B58 en Libro1.xlsx. La ficha histórica coincide en ubicación, 480 GPM, HD 105 e impulsor de 11,76 pulgadas, y figura sin placa asociada. El B60 de Libro1.xlsx es una TITAN de la torre de enfriamiento. En la búsqueda de fotos, usar ubicación y marca junto con el TAG de la fuente. [Ficha histórica PACO B58](../cuentas-vercel/00-Proyecto/equipos/B58.md) · [Ficha histórica TITAN B60](../cuentas-vercel/00-Proyecto/equipos/B60.md).
 
