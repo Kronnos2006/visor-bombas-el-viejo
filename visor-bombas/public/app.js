@@ -40,6 +40,7 @@ import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js';
 import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
+import {vigilarPestanas} from './pestanas-visor.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const primeraPlanta=createFirstFloorView(THREE);
@@ -200,16 +201,31 @@ function show3DError(error){
  $('#model-load').hidden=true;$('#scene-error').hidden=false;
  $('#scene-error-text').textContent='No se pudo cargar el 3D. Las fichas siguen disponibles. '+(error?.message||error||'');
 }
+// Suelta toda la memoria de video de esta pestaña (geometrías, materiales, texturas y contexto WebGL).
+let observerVista=null,contexto3DPerdido=false;
+function liberar3D(){
+ if(!renderer)return;
+ renderer.setAnimationLoop(null);observerVista?.disconnect();observerVista=null;controls?.dispose();cameraFlight=null;
+ if(scene){const vistos=new Set();scene.traverse(o=>{o.geometry?.dispose();for(const m of(o.material?[].concat(o.material):[])){for(const k in m){const t=m[k];if(t?.isTexture&&!vistos.has(t)){vistos.add(t);t.dispose();}}m.dispose();}});if(scene.environment?.isTexture)scene.environment.dispose();scene.clear();}
+ renderer.dispose();try{if(!renderer.getContext().isContextLost())renderer.forceContextLoss();}catch{}renderer.domElement.remove();
+ renderer=null;camera=null;scene=null;plant=null;pumpGroup=null;anatomy=null;render3D=null;integrado=null;torre=null;areaGroups={};
+ markers.forEach(m=>{m.el.remove();m.leader?.remove();});markers.length=0;componentGroups.length=0;pickables.length=0;areaPickables.length=0;
+}
+function reiniciar3D(){
+ document.body.classList.remove('fichas-only');$('#scene-error').hidden=true;contexto3DPerdido=false;
+ liberar3D();initScene();
+ if(renderer&&plant){reportModelProgress({loaded:0,total:0});rebuildPlant();if(state.view==='pump'&&state.pump?.tag)selectPump(state.pump.tag);}
+}
 $('#scene-retry').onclick=()=>{
  document.body.classList.remove('fichas-only');$('#scene-error').hidden=true;
- if(!renderer||!scene||!plant){
-  renderer?.setAnimationLoop(null);controls?.dispose();renderer?.dispose();renderer?.domElement?.remove();
-  renderer=null;camera=null;scene=null;plant=null;pumpGroup=null;anatomy=null;render3D=null;
-  markers.forEach(m=>{m.el.remove();m.leader?.remove();});markers.length=0;componentGroups.length=0;
-  initScene();
- }
- if(renderer&&plant){integrado=null;reportModelProgress({loaded:0,total:0});rebuildPlant();}
+ if(!renderer||!scene||!plant||contexto3DPerdido){reiniciar3D();return;}
+ integrado=null;reportModelProgress({loaded:0,total:0});rebuildPlant();
 };
+vigilarPestanas({
+ liberar:()=>{if(renderer&&!contexto3DPerdido)liberar3D();},
+ recargar:()=>{if(!document.body.classList.contains('fichas-only'))reiniciar3D();},
+ avisar:n=>toast(`El visor está abierto en ${n} pestañas. Para que no se trabe, cierre las que no use.`)
+});
 $('#scene-sheets').onclick=()=>{document.body.classList.add('fichas-only');$('#scene-error-text').textContent='Modo fichas: elegí un equipo en el explorador. Podés reintentar el 3D cuando quieras.';};
 document.querySelectorAll('#camera-tools [data-camera]').forEach(button=>button.onclick=()=>{
  if(!camera||!controls){toast('El 3D no está disponible; podés seguir consultando fichas.');return;}
@@ -222,12 +238,13 @@ document.querySelectorAll('#camera-tools [data-camera]').forEach(button=>button.
 function initScene(){
  try{
  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);renderer.localClippingEnabled=true;if(new URLSearchParams(location.search).has('medir'))window.__visor={renderer,get scene(){return scene;},get camera(){return camera;}};viewport.prepend(renderer.domElement);
+ renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();contexto3DPerdido=true;renderer?.setAnimationLoop(null);$('#model-load').hidden=true;$('#scene-error').hidden=false;$('#scene-error-text').textContent='El 3D se detuvo porque la computadora se quedó sin memoria de video. Suele pasar con muchas pestañas del visor abiertas. Cierre las que no use y pulse Reintentar. Las fichas siguen disponibles.';},{once:true});
  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(43,1,.1,600);camera.position.set(-18,85,80);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=190;controls.maxPolarAngle=Math.PI*.49;controls.target.set(-18,0,8);controls.addEventListener('start',()=>cameraFlight=null);
  scene.add(new THREE.HemisphereLight(0xd8efe6,0x263c40,2.5));const light=new THREE.DirectionalLight(0xffecd5,3.5);light.position.set(-5,12,8);scene.add(light);const rim=new THREE.DirectionalLight(0x95bcde,2);rim.position.set(5,3,-7);scene.add(rim);
  plant=new THREE.Group();pumpGroup=new THREE.Group();scene.add(plant,pumpGroup);pumpGroup.visible=false;buildPump();
  try{render3D=aplicarRealismo({THREE,renderer,scene,camera});}catch(err){console.warn('Realismo no aplicado:',err.message);}
  anatomy=createAnatomyView({THREE,root:pumpGroup,renderer});anatomy.register(componentGroups);
- let resizeTimer=null,previousSize=null;const observer=new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(!w||!h)return;const changed=previousSize&&(previousSize[0]!==w||previousSize[1]!==h);previousSize=[w,h];renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(changed){clearTimeout(resizeTimer);resizeTimer=setTimeout(refitCurrentView,120);}});observer.observe(viewport);
+ let resizeTimer=null,previousSize=null;const observer=observerVista=new ResizeObserver(()=>{if(!renderer)return;const w=viewport.clientWidth,h=viewport.clientHeight;if(!w||!h)return;const changed=previousSize&&(previousSize[0]!==w||previousSize[1]!==h);previousSize=[w,h];renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(changed){clearTimeout(resizeTimer);resizeTimer=setTimeout(refitCurrentView,120);}});observer.observe(viewport);
  let down=null;renderer.domElement.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);renderer.domElement.addEventListener('pointerup',e=>{
   if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
   const r=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
