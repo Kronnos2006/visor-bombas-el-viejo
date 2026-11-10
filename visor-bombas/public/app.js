@@ -922,7 +922,7 @@ function renderPendingPanel(){
 }
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
- Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261110c').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([info,gruposBase,gruposCampo,asignacionData])=>{
+ Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261110d').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([info,gruposBase,gruposCampo,asignacionData])=>{
   const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];
   if(g.parent!==plant)return;integrado.info=info;
   // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
