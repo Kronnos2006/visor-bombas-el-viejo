@@ -80,8 +80,8 @@
   "motor": "WEG W22 2 HP · 6205-2RS / 6204-2RS",
   "fuente": "Excel",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B14": {
@@ -109,16 +109,16 @@
   "motor": "Baldor-Reliance 5 HP",
   "fuente": "Placa",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B18": {
   "placa": "Titan 4196 1X1.5-6 ST · AA · Ø 4,75″ · 316SS · SER 027164",
   "fuente": "Placa",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B19": {
@@ -133,16 +133,16 @@
   "placa": "Titan 4196 1X1.5-6 ST · AA · Ø 4,75″ · 316SS · SER 027165",
   "fuente": "Placa",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B21": {
   "placa": "Titan 4196 1X1.5-8 ST · AA · Ø 7,1875″ (máx 8″) · 316SS · SER 027167",
   "fuente": "Placa",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B22": {
@@ -258,14 +258,14 @@
   "motor": "Nidec/US Motors 7,5 HP 3.510 rpm · 6309-2Z-J/C3 / 6206-2Z-J/C3",
   "fuente": "Placa motor",
   "manual": {
-   "texto": "Goulds e-SH (folleto técnico)",
-   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+   "texto": "Goulds e-SH (manual IM321 Rev 2)",
+   "url": "https://amp.xylem.com/m/5ebcdd02e3b7a6f3/original/Model-e-SH-Close-coupled-and-Frame-Mounted-End-Suction-Pumps-IOM-EN-FR-ES-IM321-Rev2.pdf"
   }
  },
  "B40": {
   "manual": {
-   "texto": "Goulds e-SH (folleto técnico)",
-   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+   "texto": "Goulds e-SH (manual IM321 Rev 2)",
+   "url": "https://amp.xylem.com/m/5ebcdd02e3b7a6f3/original/Model-e-SH-Close-coupled-and-Frame-Mounted-End-Suction-Pumps-IOM-EN-FR-ES-IM321-Rev2.pdf"
   }
  },
  "B41": {
@@ -273,8 +273,8 @@
   "motor": "Nidec/US Motors 7,5 HP 3.510 rpm · 6309-2Z-J/C3 / 6206-2Z-J/C3",
   "fuente": "Placa motor",
   "manual": {
-   "texto": "Goulds e-SH (folleto técnico)",
-   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+   "texto": "Goulds e-SH (manual IM321 Rev 2)",
+   "url": "https://amp.xylem.com/m/5ebcdd02e3b7a6f3/original/Model-e-SH-Close-coupled-and-Frame-Mounted-End-Suction-Pumps-IOM-EN-FR-ES-IM321-Rev2.pdf"
   }
  },
  "B42": {
@@ -282,8 +282,8 @@
   "motor": "Nidec/US Motors XJ7P1BM 213JM 7,5 HP 3.510 rpm · 6309-2Z-J/C3",
   "fuente": "Placa motor",
   "manual": {
-   "texto": "Goulds e-SH (folleto técnico)",
-   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+   "texto": "Goulds e-SH (manual IM321 Rev 2)",
+   "url": "https://amp.xylem.com/m/5ebcdd02e3b7a6f3/original/Model-e-SH-Close-coupled-and-Frame-Mounted-End-Suction-Pumps-IOM-EN-FR-ES-IM321-Rev2.pdf"
   }
  },
  "B43": {
@@ -291,8 +291,8 @@
   "motor": "Nidec/US Motors XJ7P1BM 213JM 7,5 HP 3.510 rpm · 6309-2Z-J/C3",
   "fuente": "Placa motor",
   "manual": {
-   "texto": "Goulds e-SH (folleto técnico)",
-   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+   "texto": "Goulds e-SH (manual IM321 Rev 2)",
+   "url": "https://amp.xylem.com/m/5ebcdd02e3b7a6f3/original/Model-e-SH-Close-coupled-and-Frame-Mounted-End-Suction-Pumps-IOM-EN-FR-ES-IM321-Rev2.pdf"
   }
  },
  "B44": {
@@ -403,6 +403,10 @@
   "manual": {
    "texto": "Goulds NPE (manual IM013)",
    "url": "https://res.cloudinary.com/aquifer-distribution/raw/upload/Aquifer/Documents/1265_1287_Goulds_1ST1C1E4_Instruction_Installation_Manual.pdf"
+  },
+  "repuestos": {
+   "texto": "Goulds NPE/NPE-F (despiece y repuestos RNPE)",
+   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/parts/npe-repair-parts--rnpe-r7-2-21--web.pdf"
   }
  },
  "B57": {
@@ -418,8 +422,8 @@
   "placa": "PACO LF · CAT 11-30121-1A6L01-285? · SER 00X0004202-B · 480 GPM · 105 ft · Ø 11,76″",
   "fuente": "Placa (manda sobre Excel)",
   "manual": {
-   "texto": "PACO LF (manual Grundfos)",
-   "url": "https://www.manualslib.com/manual/3874561/Grundfos-Lf.html"
+   "texto": "PACO LF (manual de instalación y operación Grundfos)",
+   "url": "https://www.hurleyengineering.com/hubfs/Paco%20Literature%202025/Operations%20Manual/Grundfos-PACO-LC-LCV-LF-LCS-End-Suction-Pumps-Installation-Operation-Manual.pdf"
   }
  },
  "B59": {
@@ -433,8 +437,8 @@
  },
  "B60": {
   "manual": {
-   "texto": "PACO LF (manual Grundfos)",
-   "url": "https://www.manualslib.com/manual/3874561/Grundfos-Lf.html"
+   "texto": "PACO LF (manual de instalación y operación Grundfos)",
+   "url": "https://www.hurleyengineering.com/hubfs/Paco%20Literature%202025/Operations%20Manual/Grundfos-PACO-LC-LCV-LF-LCS-End-Suction-Pumps-Installation-Operation-Manual.pdf"
   }
  },
  "B61": {
@@ -442,8 +446,8 @@
   "motor": "Siemens 1LE0102-2AB4 200L 33,5 kW 1.765 rpm · 6212 Z C3 ambos",
   "fuente": "Placa (manda sobre Excel)",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B62": {
@@ -451,8 +455,8 @@
   "motor": "Siemens 1LE0102-2AB4 200L 33,5 kW 1.765 rpm · 6212 Z C3 ambos",
   "fuente": "Placa (manda sobre Excel)",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B63": {
@@ -460,48 +464,48 @@
   "motor": "Siemens 30 kW",
   "fuente": "Copia de B64/B65",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B64": {
   "placa": "Titan 4196 3X4-13 MT A40 · SER 064183 · 275 psi",
   "fuente": "Placa",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B65": {
   "placa": "Titan 4196 3X4-13 MT A40 · SER 064182",
   "fuente": "Placa",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B66": {
   "placa": "Titan 4196 3X4-13 MT A40 (placa borrada; copiado de B64/B65)",
   "fuente": "Copia de B64/B65",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B67": {
   "placa": "Titan 4196 3X4-13 MT A40 (copiado de B64/B65)",
   "fuente": "Copia de B64/B65",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B68": {
   "placa": "Titan 4196 3X4-13 MT A40 (copiado de B64/B65)",
   "fuente": "Copia de B64/B65",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B69": {
@@ -543,8 +547,8 @@
   "placa": "— (no tiene placa)",
   "fuente": "Excel + catálogo KSB",
   "manual": {
-   "texto": "KSB Movitec (manual)",
-   "url": "https://www.pumpa.eu/-/media/Files/commerce/MAS00/06/19/01_EN_Movitec.pdf"
+   "texto": "KSB Movitec (manual de instalación y operación)",
+   "url": "https://www.bluetec.com.tr/wp-content/uploads/2024/03/KSB-Movitec-Isletme-Talimati.pdf"
   }
  },
  "B74": {
@@ -608,8 +612,8 @@
   "motor": "Marathon TerraMAX 15 HP 1.755 rpm 160M · 6309-2Z/C3 / 6209-2Z/C3",
   "fuente": "Placa",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  },
  "B82": {
@@ -625,8 +629,8 @@
   "motor": "Marathon TerraMAX",
   "fuente": "Placa",
   "manual": {
-   "texto": "Titan 4196 (descargas)",
-   "url": "https://titanpumpsinc.com/download"
+   "texto": "Titan 4196 (manual de instalación, operación y mantenimiento)",
+   "url": "https://www.titanpumpsinc.com/titan_pdfs/TITAN_Manual_Series%20T4196%20%26%204796_v2.pdf"
   }
  }
 }

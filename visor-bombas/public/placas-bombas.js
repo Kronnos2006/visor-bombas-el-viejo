@@ -2,7 +2,7 @@
 // Si la placa contradice al Excel, manda la placa. El archivo se arma desde la tabla completa de bombas.
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let datos={},carga=null;
-export function cargarPlacas(url='/modelos/placas-bombas.json?v=20261110b'){
+export function cargarPlacas(url='/modelos/placas-bombas.json?v=20261110c'){
  carga??=fetch(url).then(r=>r.ok?r.json():{}).then(j=>{datos=j&&typeof j==='object'?j:{};return datos;}).catch(()=>{carga=null;return datos;});
  return carga;
 }
