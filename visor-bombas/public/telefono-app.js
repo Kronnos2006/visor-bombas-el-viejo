@@ -125,6 +125,11 @@ function iniciar() {
   <h2 class="tel-sub">Herramientas</h2><div id="tel-herramientas"></div>`;
  const areaMenu = $('#area-menu'), camara = $('#camera-tools');
  if (areaMenu) $('#tel-areas').append(areaMenu);
+ // Al cambiar de área en el teléfono, el título de la lista queda completo a la vista.
+ areaMenu?.addEventListener('click',event=>{
+  if(!movil.matches||!event.target.closest('[data-area]'))return;
+  requestAnimationFrame(()=>{const heading=$('#tel-areas').previousElementSibling;contenido.scrollTop+=heading.getBoundingClientRect().top-contenido.getBoundingClientRect().top-16;});
+ });
  if (camara) $('#tel-herramientas').append(camara);
  $('#tel-buscar').oninput = pintarFranja;
  $('#tel-fluido').onchange = pintarFranja; $('#tel-marca').onchange = pintarFranja;

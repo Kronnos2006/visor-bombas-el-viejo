@@ -597,21 +597,35 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
 #paleta-filas .paleta-fila small{display:block;font-size:12px;opacity:.8}
 #paleta-filas p{margin:6px;font-size:14px}
 
-/* En móvil, el encabezado y el mapa tienen controles en filas separadas. */
+/* Teléfono: cabecera legible y niveles en una sola fila, sin tapar el modelo. */
 @media(max-width:900px){
- body.app-tel{--alto-enc:106px}
- body.app-tel header{display:grid;grid-template-columns:minmax(48px,1fr) auto minmax(0,auto) auto;grid-template-rows:50px 44px;gap:4px 8px;padding-inline:max(12px,env(safe-area-inset-left,0px)) max(12px,env(safe-area-inset-right,0px))}
- body.app-tel header #cab-flujo{grid-row:2;grid-column:1/-1;height:44px;width:100%;overflow:hidden}
- body.app-tel header .brand.con-deposito{grid-row:1;grid-column:1;width:48px;height:50px;margin-right:auto}
- body.app-tel header .brand.con-deposito .brand-logo{top:7px;left:6px;width:36px;height:36px}
- body.app-tel header>.cloud-global-control{grid-row:1;grid-column:2}
- body.app-tel header>.sesion{grid-row:1;grid-column:3;min-width:0;max-width:100%;margin:0}
- body.app-tel header>.sesion summary{display:block;min-height:44px;padding:10px;overflow:hidden;text-overflow:ellipsis;font-size:14px}
- body.app-tel header>#tema-toggle{grid-row:1;grid-column:4;position:static;inset:auto;width:44px;margin:0;padding:0}
- body.app-tel #tel-ampliar{top:10px;right:auto;left:calc(var(--franja) + 12px);padding-inline:10px}
- body.app-tel #paleta-bombas{top:10px;right:12px;max-height:calc(100% - 22px)}
- body.app-tel #paleta-bombas .paleta-boton{padding-inline:10px}
- body.app-tel #paleta-cuerpo{margin-top:10px}
- body.app-tel #model-load{top:auto;bottom:12px;left:12px;right:12px;z-index:5}
- body.app-tel #torre-planta-tools:not([hidden]){top:62px}
+ body.app-tel{--alto-enc:62px}
+ body.app-tel[data-tel-seccion="areas"]:not(.tel-con-ficha){--escena:clamp(240px,36dvh,330px)}
+ body.app-tel header{display:grid;grid-template-columns:44px minmax(0,1fr) 44px minmax(0,80px) 44px;grid-template-rows:1fr;gap:6px;padding-inline:max(10px,env(safe-area-inset-left,0px)) max(10px,env(safe-area-inset-right,0px))}
+ body.app-tel header #cab-flujo{position:absolute;visibility:hidden;pointer-events:none;width:1px;height:1px;min-height:0;overflow:hidden;clip-path:inset(50%)}
+ body.app-tel header .brand.con-deposito{grid-row:1;grid-column:1;width:44px;height:50px;margin:0}
+ body.app-tel header .brand.con-deposito .brand-logo{top:7px;left:4px;width:36px;height:36px}
+ body.app-tel header #tel-titulo{position:static!important;grid-row:1;grid-column:2;min-width:0;width:auto;height:auto;overflow:hidden;clip-path:none;white-space:nowrap;text-overflow:ellipsis;font:600 18px/1.3 var(--texto,system-ui);letter-spacing:0}
+ body.app-tel header>.cloud-global-control{grid-row:1;grid-column:3}
+ body.app-tel header #cloud-photos-all{width:44px;min-height:44px}
+ body.app-tel header>.sesion{grid-row:1;grid-column:4;min-width:0;max-width:100%;margin:0}
+ body.app-tel header>.sesion summary{display:block;min-height:44px;padding:10px 6px;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+ body.app-tel header>#tema-toggle{grid-row:1;grid-column:5;position:static;inset:auto;width:44px;margin:0;padding:0}
+ body.app-tel #tel-ampliar{top:10px;right:auto;left:calc(var(--franja) + 10px);padding-inline:10px;font-size:13px}
+ body.app-tel #paleta-bombas{top:10px;right:10px;max-height:calc(100% - 68px);max-width:calc(100% - var(--franja) - 20px);width:min(270px,72vw);gap:6px}
+ body.app-tel #paleta-bombas .paleta-boton{min-height:42px;padding:8px 10px;font-size:13px}
+ body.app-tel #paleta-cuerpo{margin-top:0;overflow:hidden;flex:1;min-height:0}
+ body.app-tel #paleta-buscar{flex:none}
+ body.app-tel #model-load{top:auto;bottom:60px;left:12px;right:12px;z-index:5}
+ body.app-tel #torre-planta-tools:not([hidden]){top:auto;bottom:0;left:0;right:0;padding:6px 10px;background:var(--fondo);border-top:1px solid var(--borde);pointer-events:auto}
+ body.app-tel #torre-planta-botones{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;gap:6px;padding-bottom:2px}
+ body.app-tel #torre-planta-botones button{flex:0 0 auto;min-height:40px;white-space:nowrap;font-size:13px;padding:6px 12px}
+ body.app-tel #tel-contenido{scroll-padding-top:16px;overflow-x:hidden}
+ body.app-tel #tel-areas .area-menu{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.app-tel #tel-areas .area-menu button{min-width:0;white-space:normal;overflow-wrap:break-word}
+}
+@media(max-width:360px){body.app-tel header{grid-template-columns:40px minmax(0,1fr) 44px 62px 44px;gap:4px}body.app-tel header #tel-titulo{font-size:16px}}
+@media(max-width:900px) and (max-height:560px){
+ body.app-tel[data-tel-seccion="areas"]:not(.tel-con-ficha){--escena:min(40dvh,180px)}
+ body.app-tel #paleta-bombas{max-height:calc(100% - 60px)}
 }
