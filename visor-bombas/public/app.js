@@ -12,6 +12,7 @@ import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=2026110
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
 import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
+import {cargarPlacas,bloquePlaca} from './placas-bombas.js';
 import {pumpVisibility,esAdmin,claveTag,bloqueAdmin,explicarErrorVisibilidad,recortarCajas} from './bombas-admin.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -322,6 +323,12 @@ function selectPart(index,subcomponent=null){
 function fields(entries){return '<dl class="fields">'+entries.map(([label,key])=>{const v=state.pump.data[key],missing=v===undefined||v===null||v==='';return `<div class="field"><dt>${esc(label)}</dt><dd class="${missing?'missing':''}">${missing?'Sin levantar':esc(typeof v==='object'?JSON.stringify(v):v)}</dd></div>`;}).join('')+'</dl>';}
 window.addEventListener('pageshow',event=>{if(event.persisted&&state.pump)renderPanel();});
 window.addEventListener('storage',event=>{if(state.pump&&event.key==='vocatus-survey-local-v1:'+state.pump.tag)renderPanel();});
+function ponerPlaca(){
+ const tag=state.pump&&!state.pump.pending&&state.tab==='ficha'?state.pump.tag:null;
+ if(!tag||$('#placa-manual'))return;const html=bloquePlaca(tag);if(!html)return;
+ const ancla=$('#pump-resumen');if(ancla&&$('#panel').contains(ancla))ancla.insertAdjacentHTML('afterend',html);else $('#panel').insertAdjacentHTML('afterbegin',html);
+}
+cargarPlacas().then(()=>{if(state.pump)ponerPlaca();});
 function renderPanel(){
  const previousLinks=$("#pump-links");if(previousLinks&&$("#panel").contains(previousLinks))$("#source-status").after(previousLinks);
  const requestLink=document.querySelector('header a[href^="/solicitud.html"]');if(requestLink)requestLink.href="/solicitud.html"+(state.pump?.tag?"?tag="+encodeURIComponent(state.pump.tag):"");
@@ -340,6 +347,7 @@ function renderPanel(){
  }
  const editAccess=$('#editar-equipo');if(editAccess)$('#panel').prepend(editAccess);
  if(p&&!state.pump.pending&&['ficha','historial'].includes(state.tab)){const local=savedSurveyHTML(state.pump.tag);if(local){if(editAccess)editAccess.insertAdjacentHTML('afterend',local);else $('#panel').insertAdjacentHTML('afterbegin',local);}}
+ ponerPlaca();
  inspectorUI.enhance();
  return photosReady;
 }
@@ -917,7 +925,7 @@ function renderPendingPanel(){
  const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
  if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
- abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
+ abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
 function montarIntegrado(g,escena,placed){

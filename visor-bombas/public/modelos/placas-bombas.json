@@ -1,0 +1,628 @@
+{
+ "B1": {
+  "placa": "Hidromac 2196 1.5X3-8 STO I · SER 210772-1 · aceite",
+  "motor": "WEG W21X 7,5 HP 3.515 rpm · 6308-2RS / 6207-2RS",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B2": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B3": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B4": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B5": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B6": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B7": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B8": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B9": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B10": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B11": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B12": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B13": {
+  "placa": "— (solo se fotografió el motor)",
+  "motor": "WEG W22 2 HP · 6205-2RS / 6204-2RS",
+  "fuente": "Excel",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B14": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B15": {
+  "manual": {
+   "texto": "Multisteel (descargas)",
+   "url": "https://bombasmultisteel.com.br/en/downloads/"
+  }
+ },
+ "B16": {
+  "manual": {
+   "texto": "Multisteel (descargas)",
+   "url": "https://bombasmultisteel.com.br/en/downloads/"
+  }
+ },
+ "B17": {
+  "placa": "Titan 4196 1X1.5-6 ST · AA · Ø 5,4375″ (máx 6″) · 316SS · SER 027166",
+  "motor": "Baldor-Reliance 5 HP",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B18": {
+  "placa": "Titan 4196 1X1.5-6 ST · AA · Ø 4,75″ · 316SS · SER 027164",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B19": {
+  "placa": "Durco 1K 1.5×1 LF-82 · 62392 · CF8 · «139» (prob. Ø mm) · sello Cartex C/SiC · 2,5 m³/h · 31,3 m · 3.500 rpm",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Durco Mark 3 (manual Flowserve)",
+   "url": "https://www.flowserve.com/sites/default/files/dam/documents/PUIOM000712_EN_AQ.pdf"
+  }
+ },
+ "B20": {
+  "placa": "Titan 4196 1X1.5-6 ST · AA · Ø 4,75″ · 316SS · SER 027165",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B21": {
+  "placa": "Titan 4196 1X1.5-8 ST · AA · Ø 7,1875″ (máx 8″) · 316SS · SER 027167",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B22": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B23": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B24": {
+  "placa": "Hidromac 2196 1X1.5-8 LF · SER 210771-3 · aceite",
+  "motor": "WEG W22 2 HP · 6205-2RS / 6204-2RS",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B25": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B26": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B27": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B28": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B29": {
+  "placa": "Hidromac 2196 1.5X3-13 MTO · A20 · SER 220353-2 · 316SS · 200 GPM · 21,3 m · 1.750 rpm · Ø290 (máx 330)",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B30": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B31": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B32": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B33": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B34": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B35": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B36": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B37": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B38": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B39": {
+  "placa": "— (sin placa de bomba en fotos)",
+  "motor": "Nidec/US Motors 7,5 HP 3.510 rpm · 6309-2Z-J/C3 / 6206-2Z-J/C3",
+  "fuente": "Placa motor",
+  "manual": {
+   "texto": "Goulds e-SH (folleto técnico)",
+   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+  }
+ },
+ "B40": {
+  "manual": {
+   "texto": "Goulds e-SH (folleto técnico)",
+   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+  }
+ },
+ "B41": {
+  "placa": "— (sin placa de bomba en fotos)",
+  "motor": "Nidec/US Motors 7,5 HP 3.510 rpm · 6309-2Z-J/C3 / 6206-2Z-J/C3",
+  "fuente": "Placa motor",
+  "manual": {
+   "texto": "Goulds e-SH (folleto técnico)",
+   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+  }
+ },
+ "B42": {
+  "placa": "— (sin placa de bomba en fotos)",
+  "motor": "Nidec/US Motors XJ7P1BM 213JM 7,5 HP 3.510 rpm · 6309-2Z-J/C3",
+  "fuente": "Placa motor",
+  "manual": {
+   "texto": "Goulds e-SH (folleto técnico)",
+   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+  }
+ },
+ "B43": {
+  "placa": "— (sin placa de bomba en fotos)",
+  "motor": "Nidec/US Motors XJ7P1BM 213JM 7,5 HP 3.510 rpm · 6309-2Z-J/C3",
+  "fuente": "Placa motor",
+  "manual": {
+   "texto": "Goulds e-SH (folleto técnico)",
+   "url": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/technical-brochure/bssh-r6.pdf"
+  }
+ },
+ "B44": {
+  "placa": "Hidromac AZ 3X4X12A SMCDV · N° 220100-1 · 550 GPM · 1.750 rpm · Ø305",
+  "motor": "WEG W22 324/6T 40 HP · 6312-C3 / 6212-C3 (igual a B45)",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac AZ (catálogo)",
+   "url": "https://equinter.co/wp-content/uploads/2020/01/Cata%CC%81logo-Hidromac.pdf"
+  }
+ },
+ "B45": {
+  "placa": "Hidromac AZ 3X4X12A SMCDV · N° 220100-2 · 550 GPM · 48 m · 1.750 rpm · 40 HP · Ø305 · rodete inox",
+  "motor": "WEG W22 324/6T 40 HP 1.770 rpm · 6312-C3 / 6212-C3",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac AZ (catálogo)",
+   "url": "https://equinter.co/wp-content/uploads/2020/01/Cata%CC%81logo-Hidromac.pdf"
+  }
+ },
+ "B46": {
+  "placa": "Hidromac 2196 1.5X3-8 STO I · SER 210773-1 · aceite",
+  "motor": "WEG 3 HP · 6307-2RS / 6206-2RS",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B47": {
+  "placa": "Hidromac 2196 1.5X3-8 STO I · SER 210773-2 · aceite",
+  "motor": "WEG 3 HP · 6307-2RS / 6206-2RS",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B48": {
+  "placa": "Multisteel RA 65/300 · O.S.B. 8469 · 09/19 · 25 m³/h · 20 m · 5 cv · 1.750 rpm · Ø220 · soporte NU 308 / 3308",
+  "motor": "WEG W22 7,5 HP 1.765 rpm · 6308-ZZ / 6207-ZZ",
+  "fuente": "Placa (manda sobre Excel)",
+  "manual": {
+   "texto": "Multisteel (descargas)",
+   "url": "https://bombasmultisteel.com.br/en/downloads/"
+  }
+ },
+ "B49": {
+  "placa": "Hidromac 2196 2X3-8 MTO · Ø178 (máx 211) · 12,1 m · 1.750 rpm · 316SS",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B50": {
+  "placa": "Hidromac 2196 2X3-8 MTO · SER 220352-2 · aceite · Ø178 (máx 211)",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B51": {
+  "placa": "Hidromac LL-124 3X3 · SER 220106-2 · ASTM A48",
+  "motor": "SEW-Eurodrive DRN132S4/FG",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Viking serie 124 (TSM 1400)",
+   "url": "https://arroyoprocess.com/wp-content/uploads/2023/09/TSM_1400-EN.pdf"
+  }
+ },
+ "B52": {
+  "placa": "Hidromac LL-124 3X3 · SER 220106-1 · ASTM A48",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Viking serie 124 (TSM 1400)",
+   "url": "https://arroyoprocess.com/wp-content/uploads/2023/09/TSM_1400-EN.pdf"
+  }
+ },
+ "B53": {
+  "placa": "Hidromac 2196 3X4-7 MTO",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B54": {
+  "manual": {
+   "texto": "Hidromac 2196 (manual)",
+   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+  }
+ },
+ "B55": {
+  "placa": "Multisteel RA 65/300 · 11/21 · 25 m³/h · 20 m · 5 cv · 1.750 rpm · Ø≈219 · soporte NU 308 / 3308",
+  "motor": "Siemens GP100 15 HP 1.760 rpm 254T · 6209 ZZ C3 / 6209 ZZ C3",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Multisteel (descargas)",
+   "url": "https://bombasmultisteel.com.br/en/downloads/"
+  }
+ },
+ "B56": {
+  "placa": "Goulds NPE (modelo a mano «NPE 1S1…») · Ø 5,19″ · «ZEBOL»",
+  "motor": "US Motors 3 HP 3.450 rpm 56J",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Goulds NPE (manual IM013)",
+   "url": "https://res.cloudinary.com/aquifer-distribution/raw/upload/Aquifer/Documents/1265_1287_Goulds_1ST1C1E4_Instruction_Installation_Manual.pdf"
+  }
+ },
+ "B57": {
+  "placa": "Multisteel RSA 32/205 · O.S.B. 8473 · 09/19 · 16 m³/h · 88 m · 20 cv · 3.500 rpm · Ø210 · soporte NU 306 / 3306",
+  "motor": "WEG W22 15 HP 3.540 rpm 160M · 6309-ZZ-C3 / 6209-ZZ-C3",
+  "fuente": "Placa (manda sobre Excel)",
+  "manual": {
+   "texto": "Multisteel (descargas)",
+   "url": "https://bombasmultisteel.com.br/en/downloads/"
+  }
+ },
+ "B58": {
+  "placa": "PACO LF · CAT 11-30121-1A6L01-285? · SER 00X0004202-B · 480 GPM · 105 ft · Ø 11,76″",
+  "fuente": "Placa (manda sobre Excel)",
+  "manual": {
+   "texto": "PACO LF (manual Grundfos)",
+   "url": "https://www.manualslib.com/manual/3874561/Grundfos-Lf.html"
+  }
+ },
+ "B59": {
+  "placa": "SB 15-5(M) · SQBV · 7,5 kW · 3.450 rpm · 22 m³/h a 75 m (Hmáx 100,5 m) · V2200044859-0004 · logo «Zeta»?",
+  "motor": "10 HP 7,5 kW 2 polos IE2 (2024)",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "SB vertical (manual STAIRS)",
+   "url": "https://static-ru.insales.ru/files/1/1125/12846181/original/STAIRS_EN_VSC-SB_%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%86%D0%B8%D1%8F.pdf"
+  }
+ },
+ "B60": {
+  "manual": {
+   "texto": "PACO LF (manual Grundfos)",
+   "url": "https://www.manualslib.com/manual/3874561/Grundfos-Lf.html"
+  }
+ },
+ "B61": {
+  "placa": "Titan 4196 3X4-13 MT · Ø13″ (máx 13″) · hierro dúctil · SER 063258",
+  "motor": "Siemens 1LE0102-2AB4 200L 33,5 kW 1.765 rpm · 6212 Z C3 ambos",
+  "fuente": "Placa (manda sobre Excel)",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B62": {
+  "placa": "Titan 4196 3X4-13 MT · Ø13″ (máx 13″) · hierro dúctil · SER 063259",
+  "motor": "Siemens 1LE0102-2AB4 200L 33,5 kW 1.765 rpm · 6212 Z C3 ambos",
+  "fuente": "Placa (manda sobre Excel)",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B63": {
+  "placa": "Titan 4196 3X4-13 MT A40 · Ø13″ (copiado de B64/B65)",
+  "motor": "Siemens 30 kW",
+  "fuente": "Copia de B64/B65",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B64": {
+  "placa": "Titan 4196 3X4-13 MT A40 · SER 064183 · 275 psi",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B65": {
+  "placa": "Titan 4196 3X4-13 MT A40 · SER 064182",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B66": {
+  "placa": "Titan 4196 3X4-13 MT A40 (placa borrada; copiado de B64/B65)",
+  "fuente": "Copia de B64/B65",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B67": {
+  "placa": "Titan 4196 3X4-13 MT A40 (copiado de B64/B65)",
+  "fuente": "Copia de B64/B65",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B68": {
+  "placa": "Titan 4196 3X4-13 MT A40 (copiado de B64/B65)",
+  "fuente": "Copia de B64/B65",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B69": {
+  "placa": "Ebara AEVMSU5-9F0500T3S · Ø 3,58″ · serie C154827/1/1",
+  "motor": "WEG W22 5 HP 12822267 · 6207 ZZ / 6206 ZZ",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Ebara EVMSU (manual)",
+   "url": "https://www.pumpsebara.com/wp-content/uploads/EVMSU_iom.pdf"
+  }
+ },
+ "B70": {
+  "placa": "Ebara AEVMSU5-9F0500T3S · Ø 3,58″ · serie C154827/1/2",
+  "motor": "WEG W22 5 HP 12822267 · 6207 ZZ / 6206 ZZ",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Ebara EVMSU (manual)",
+   "url": "https://www.pumpsebara.com/wp-content/uploads/EVMSU_iom.pdf"
+  }
+ },
+ "B71": {
+  "placa": "Grundfos CR15-6 K-GJ-A-E-HQQE-NX2 · n.º producto 97786834 · SN 10000132 · 90,3 GPM · 336/415 ft · Ø 4,13″",
+  "motor": "Baldor Super-E 15 HP · 7309 / 6208",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Grundfos CR (manual)",
+   "url": "https://api.grundfos.com/literature/Grundfosliterature-6135.pdf"
+  }
+ },
+ "B72": {
+  "placa": "Grundfos CR15-6 K-GJ-A-E-HQQE-NX2 · 97786834 (copiado de B71)",
+  "fuente": "Copia de B71",
+  "manual": {
+   "texto": "Grundfos CR (manual)",
+   "url": "https://api.grundfos.com/literature/Grundfosliterature-6135.pdf"
+  }
+ },
+ "B73": {
+  "placa": "— (no tiene placa)",
+  "fuente": "Excel + catálogo KSB",
+  "manual": {
+   "texto": "KSB Movitec (manual)",
+   "url": "https://www.pumpa.eu/-/media/Files/commerce/MAS00/06/19/01_EN_Movitec.pdf"
+  }
+ },
+ "B74": {
+  "placa": "— (bomba sin identificar)",
+  "motor": "Marathon 56T17F5321J (G581) ½ HP 1.725 rpm 56C",
+  "fuente": "Excel + catálogo motor",
+  "manual": {
+   "texto": "Sin manual: bomba sin identificar"
+  }
+ },
+ "B75": {
+  "placa": "— (bomba sin identificar)",
+  "motor": "ECHTOP T 801-4 · 0,55 kW (0,75 HP) · 4 polos",
+  "fuente": "Excel",
+  "manual": {
+   "texto": "Sin manual: bomba sin identificar"
+  }
+ },
+ "B76": {
+  "placa": "— (bomba sin identificar)",
+  "motor": "Marathon 56T17F5321J (G581) ½ HP 1.725 rpm 56C",
+  "fuente": "Excel + catálogo motor",
+  "manual": {
+   "texto": "Sin manual: bomba sin identificar"
+  }
+ },
+ "B77": {
+  "placa": "No instalada",
+  "fuente": "Fuera de la lista",
+  "manual": {
+   "texto": "SB vertical (manual STAIRS)",
+   "url": "https://static-ru.insales.ru/files/1/1125/12846181/original/STAIRS_EN_VSC-SB_%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%86%D0%B8%D1%8F.pdf"
+  }
+ },
+ "B78": {
+  "placa": "No instalada",
+  "fuente": "Fuera de la lista",
+  "manual": {
+   "texto": "SB vertical (manual STAIRS)",
+   "url": "https://static-ru.insales.ru/files/1/1125/12846181/original/STAIRS_EN_VSC-SB_%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%86%D0%B8%D1%8F.pdf"
+  }
+ },
+ "B79": {
+  "placa": "No instalada",
+  "fuente": "Fuera de la lista",
+  "manual": {
+   "texto": "SB vertical (manual STAIRS)",
+   "url": "https://static-ru.insales.ru/files/1/1125/12846181/original/STAIRS_EN_VSC-SB_%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%86%D0%B8%D1%8F.pdf"
+  }
+ },
+ "B80": {
+  "placa": "No instalada",
+  "fuente": "Fuera de la lista",
+  "manual": {
+   "texto": "SB vertical (manual STAIRS)",
+   "url": "https://static-ru.insales.ru/files/1/1125/12846181/original/STAIRS_EN_VSC-SB_%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%86%D0%B8%D1%8F.pdf"
+  }
+ },
+ "B81": {
+  "placa": "Titan 4196 1.5X3-13 A20 · SER 064311 · máx 13″",
+  "motor": "Marathon TerraMAX 15 HP 1.755 rpm 160M · 6309-2Z/C3 / 6209-2Z/C3",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ },
+ "B82": {
+  "placa": "— (no tiene placa)",
+  "motor": "Placa corroída",
+  "fuente": "Sin datos",
+  "manual": {
+   "texto": "Sin manual: sin placa"
+  }
+ },
+ "B83": {
+  "placa": "Titan 4196 1.5X3-13 MT · A20 · hierro dúctil · Ø13″ · SER 064310",
+  "motor": "Marathon TerraMAX",
+  "fuente": "Placa",
+  "manual": {
+   "texto": "Titan 4196 (descargas)",
+   "url": "https://titanpumpsinc.com/download"
+  }
+ }
+}
