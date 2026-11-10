@@ -884,6 +884,8 @@ Las series sin TAG confirmado se incluyen para recuperar documentación por conf
 
 ## B15 · Alimentación Mosto Fermentado Hindú
 
+**Despiece y cotas de campo** [Tabla RSA 25/205 de B15 y B16](Multisteel-RSA-25-205-tabla-piezas-y-pendientes.md). DXF parcial de piezas nominales e interfaces, auditado en mm. Vinculación de placas pendiente por lugar.
+
 **Área** 2. DESTILACIÓN PLANTA PRAJ
 
 - **Líquido o estado** Mosto
@@ -897,6 +899,8 @@ Las series sin TAG confirmado se incluyen para recuperar documentación por conf
 - **CAD** CAD pendiente. Confirmar tamaño y serie.
 
 ## B16 · Alimentación Mosto Fermentado Hindú
+
+**Despiece y cotas de campo** [Tabla RSA 25/205 de B15 y B16](Multisteel-RSA-25-205-tabla-piezas-y-pendientes.md). Cotejar placas y montaje de esta unidad antes de vincular un CAD de conjunto.
 
 **Área** 2. DESTILACIÓN PLANTA PRAJ
 
