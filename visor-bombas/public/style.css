@@ -387,3 +387,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(max-width:900px){body.facil .inspector,body:not(.facil) .inspector{background:var(--superficie-solida)}body .sheet-bar{background:var(--superficie-solida)}}
 
 @media(max-width:900px){body.sheet-open #viewport{position:fixed;z-index:44;top:78px;bottom:calc(60dvh + 93px + env(safe-area-inset-bottom));left:8px;right:8px;height:auto!important;min-height:80px;margin:0!important}body.sheet-open .sidebar{visibility:hidden}body.sheet-open #parts-rail,body.sheet-open .compass,body.sheet-open .scene-badge,body.sheet-open #scene-help{display:none}}
+
+#lineas-etiquetas{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#lineas-etiquetas line{stroke:#c6ed86;stroke-width:1.5;opacity:.75}
+#lineas-etiquetas circle{fill:#c6ed86;opacity:.9}
+#lineas-etiquetas .sin-ficha line{stroke:#f5d7a1;stroke-dasharray:4 3}
+#lineas-etiquetas .sin-ficha circle{fill:#f5d7a1}
+#paleta-bombas .paleta-nombres{margin-bottom:6px;font-size:13px;min-height:36px}
