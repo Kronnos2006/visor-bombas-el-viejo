@@ -925,7 +925,7 @@ function renderPendingPanel(){
  const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
  if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
- abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
+ abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;if(!$('#datos-excel'))$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));if(!$('#placa-manual'))$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
 function montarIntegrado(g,escena,placed){
