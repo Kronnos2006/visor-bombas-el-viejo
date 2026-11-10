@@ -87,3 +87,7 @@ supabase/.temp/
 **/Respaldos-supabase/
 **/VocatusBackups/
 /work/
+
+# Despiece de bombas: el usuario pidio subir DXF y Excel de esta carpeta (2026-11-10)
+!00-Proyecto/despiece-bombas/**/*.dxf
+!00-Proyecto/despiece-bombas/*.xlsx
