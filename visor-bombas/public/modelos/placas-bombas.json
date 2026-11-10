@@ -57,9 +57,10 @@
   }
  },
  "B10": {
+  "placa": "No está en la planta",
+  "fuente": "Fuera de la lista",
   "manual": {
-   "texto": "Hidromac 2196 (manual)",
-   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+   "texto": "No está en la planta"
   }
  },
  "B11": {
@@ -90,15 +91,17 @@
   }
  },
  "B15": {
+  "placa": "No está en la planta",
+  "fuente": "Fuera de la lista",
   "manual": {
-   "texto": "Multisteel (descargas)",
-   "url": "https://bombasmultisteel.com.br/en/downloads/"
+   "texto": "No está en la planta"
   }
  },
  "B16": {
+  "placa": "No está en la planta",
+  "fuente": "Fuera de la lista",
   "manual": {
-   "texto": "Multisteel (descargas)",
-   "url": "https://bombasmultisteel.com.br/en/downloads/"
+   "texto": "No está en la planta"
   }
  },
  "B17": {
@@ -143,9 +146,10 @@
   }
  },
  "B22": {
+  "placa": "No está en la planta",
+  "fuente": "Fuera de la lista",
   "manual": {
-   "texto": "Hidromac 2196 (manual)",
-   "url": "https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html"
+   "texto": "No está en la planta"
   }
  },
  "B23": {
