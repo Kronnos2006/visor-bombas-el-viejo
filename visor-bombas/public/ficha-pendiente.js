@@ -38,7 +38,7 @@ export async function abrirFichaPendiente(panel,s){
  const encabezado=()=>{const el=document.getElementById('selected-tag');if(el)el.textContent=s.tagAsignado||pumpNames.nameOf(key)||'Sin TAG';};encabezado();
  const destino=panel.querySelector('#imagenes-pendientes');
  // Las fotos pertenecen a este lugar, aunque cambie su TAG.
- const fotoKey=s.fotoKey||key;
+ const fotoKey=s.fotoKey||(s.tagAsignado&&key==='nuevo:'+s.tagAsignado?'='+s.tagAsignado:key);
  async function pintar(){
   let act={},photoError='';try{act=await fotosActualizadas(fotoKey,{writable:false});photoError=act.warning||'';}catch(error){photoError=error.message;}if(!destino.isConnected)return;
   destino.innerHTML=htmlFotos({tag:s.tagAsignado||s.nombre,photoKey:fotoKey,photo:s.imagenesLugar?.photo,ubicacionCroquis:s.imagenesLugar?.ubicacionCroquis},s.imagenesLugar?originales(s.imagenesLugar,s.imagenesLugar):{},act,{writable:false});

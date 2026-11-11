@@ -13,8 +13,24 @@ let connection=null;
 function db(){
  if(!connection)connection=new Promise((ok,ko)=>{
   if(!globalThis.indexedDB){ko(new Error('Este navegador no permite leer las fotos guardadas.'));return;}
-  const r=indexedDB.open('vocatus-fotos',1);
-  r.onupgradeneeded=()=>r.result.createObjectStore('fotos');
+  const r=indexedDB.open('vocatus-fotos',2);
+  r.onupgradeneeded=event=>{
+   if(event.oldVersion===0){r.result.createObjectStore('fotos');return;}
+   const store=r.transaction.objectStore('fotos'),scan=store.openCursor();
+   scan.onsuccess=()=>{
+    const cursor=scan.result;
+    if(!cursor)return;
+    const legacy=cursor.key;
+    const key=typeof legacy==='string'&&legacy.startsWith('nuevo:')?legacy.slice(6):null;
+    if(key&&storagePhotoIdentity(key)?.tag&&cursor.value?.blob){
+     const current=store.get(key),{blob,fecha}=cursor.value;
+     current.onsuccess=()=>{
+      if(!current.result)store.add({blob,fecha,pending:true,revision:crypto.randomUUID()},key);
+      cursor.continue();
+     };
+    }else cursor.continue();
+   };
+  };
   r.onsuccess=()=>{r.result.onversionchange=()=>{r.result.close();connection=null;};ok(r.result);};
   r.onerror=()=>{connection=null;ko(r.error||new Error('No se pudieron leer las fotos.'));};
  });
