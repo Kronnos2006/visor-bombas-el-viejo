@@ -7,3 +7,5 @@ El código ejecutable está en `visor-bombas`. En la instalación local, los lan
 No subir credenciales, informes reales de mantenimiento ni adjuntos privados. Respetar `.gitignore`. Mantener separadas las fichas documentales y los ejemplos DEMO.
 
 Para cambios en el visor ejecutar `npm test`. Para cambios del exportador ejecutar también `python -B 00-Proyecto/scripts/test_exportar_cmms.py`. Las pruebas de persistencia deben usar bóvedas de prueba, nunca crear intervenciones ficticias en una bóveda real.
+
+Para actualizaciones del visor, seguir la verificación de despliegue y fotos compartidas en [la auditoría B1–B83](00-Proyecto/auditorias/2026-11-11-fotos-b1-b83.md). Revisar claves por bomba, dominio de producción y lectura desde una segunda cuenta autorizada.
