@@ -638,3 +638,4 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
 /* «Ocultar nombres» y «Bombas» dentro de Herramientas (antes flotaban sobre el 3D). */
 #tel-herramientas #paleta-bombas{position:static;width:100%;max-height:none;align-items:stretch;margin:0 0 10px;pointer-events:auto;flex-direction:column;gap:8px}
 #tel-herramientas #paleta-bombas .paleta-boton{width:100%;justify-content:center}
+#tel-herramientas #paleta-filas{max-height:340px;overflow:auto;width:100%}
