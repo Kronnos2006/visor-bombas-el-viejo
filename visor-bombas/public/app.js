@@ -8,7 +8,7 @@ import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPis
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera} from './bombas-calderas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
-import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261111-fotos';
+import {abrirFichaPendiente,clavePendiente,bombaParaResumen} from './ficha-pendiente.js?v=20261111-ficha';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {startPumpData} from './pump-data.js';
 import {crearPaleta} from './paleta-bombas.js';
@@ -547,7 +547,7 @@ async function downloadPumpPDF(tag){
 function demoTemperature(tag){
  try{return rangoTemperaturaTrabajo(JSON.parse(localStorage.getItem('vocatus-temperatura-demo-'+tag)||'null')||{});}catch{return null;}
 }
-function paintPumpSummary(p){
+function paintPumpSummary(p,opts={}){
  let el=document.getElementById('pump-resumen');
  if(!el){el=document.createElement('div');el.id='pump-resumen';$('#source-status').after(el);}
  if(!p){el.hidden=true;el.innerHTML='';return;}
@@ -558,12 +558,13 @@ function paintPumpSummary(p){
  const motor=[m.marca,m.potencia,m.rpm].filter(ok).join(' · ');
  const sello=[se.tipo,ok(se.diametro)?'eje '+se.diametro:''].filter(ok).join(' · ');
  const recorded=rangoTemperaturaTrabajo(p),temperature=state.demo?demoTemperature(p.tag)||recorded:recorded;
+ const tempTexto=opts.pendiente&&!temperature?p.temperaturaTexto:'';
  const tempNote=state.demo?'DEMO · Guardado solo en este navegador; esta edición no aparece en el PDF.':temperature?.fuente?`Fuente declarada: ${esc(temperature.fuente)} · Ficha ${esc(p.tag)}.`:`Sin rango documentado para ${esc(p.tag)}.`;
- const tempEditor=`<div class="rs-temperature"><button type="button" class="rs-edit" data-temp-edit aria-expanded="false">${temperature?'Actualizar':'Agregar'} rango de temperatura</button><form class="rs-temp-form" hidden><label>Mínima °C<input name="min" type="number" step="any" min="-273.15" value="${temperature?.min??''}" required></label><label>Máxima °C<input name="max" type="number" step="any" min="-273.15" value="${temperature?.max??''}" required></label><label>Fuente del dato<input name="source" maxlength="160" value="${esc(temperature?.fuente||'')}" placeholder="Medición, informe o placa" required></label><label>Registrado por<input name="author" maxlength="100" placeholder="Nombre" required></label><p class="rs-temp-error" role="alert"></p><button type="submit" class="primary">Guardar rango</button></form><p class="rs-src">${tempNote}</p></div>`;
+ const tempEditor=`<div class="rs-temperature"><button type="button" class="rs-edit" data-temp-edit aria-expanded="false">${temperature?'Actualizar':'Agregar'} rango de temperatura</button><form class="rs-temp-form" hidden><label>Mínima °C<input name="min" type="number" step="any" min="-273.15" value="${temperature?.min??''}" required></label><label>Máxima °C<input name="max" type="number" step="any" min="-273.15" value="${temperature?.max??''}" required></label><label>Fuente del dato<input name="source" maxlength="160" value="${esc(temperature?.fuente||'')}" placeholder="Medición, informe o placa" required></label><label>Registrado por<input name="author" maxlength="100" placeholder="Nombre" required></label><p class="rs-temp-error" role="alert"></p><button type="submit" class="primary">Guardar rango</button></form><p class="rs-src">${tempNote}</p></div>`,tempBlock=opts.pendiente?'':tempEditor;
  el.hidden=false;
- el.innerHTML=`<div class="rs-card"><h4>Resumen de la bomba${p.enUso===false||p.inactive?' <span class="rs-off">SIN USO</span>':''}</h4><dl>${fila('Servicio',p.servicio)}${fila('Ubicación',p.nombre)}${fila('Tamaño',p.size)}${fila('Caudal',spec('Caudal'))}${fila('Altura',spec('Altura'))}${fila('Velocidad',spec('Velocidad de bomba'))}${fila('Impulsor',spec('Impulsor'))}${fila('Temperatura de trabajo',formatoRangoTemperatura(temperature))}${fila('Motor',motor,9)}</dl>${tempEditor}</div><div class="rs-card"><h4>Componentes críticos</h4><dl>${fila('Sello mecánico',sello,5)}${fila('Elastómero eje (acople)',p.acople,8)}${fila('Rol delantero',ro.delantero,7)}${fila('Rol trasero',ro.trasero,7)}${ok(p.observaciones)?fila('Observaciones',p.observaciones):''}</dl><p class="rs-src">Componentes según la ficha y el Excel; los campos vacíos siguen pendientes.</p></div>`;
+ el.innerHTML=`<div class="rs-card"><h4>Resumen de la bomba${p.enUso===false||p.inactive?' <span class="rs-off">SIN USO</span>':''}</h4><dl>${fila('Servicio',p.servicio)}${fila('Ubicación',p.nombre)}${fila('Tamaño',p.size)}${fila('Caudal',spec('Caudal'))}${fila('Altura',spec('Altura'))}${fila('Velocidad',spec('Velocidad de bomba'))}${fila('Impulsor',spec('Impulsor'))}${fila('Temperatura de trabajo',tempTexto||formatoRangoTemperatura(temperature))}${fila('Motor',motor,9)}</dl>${tempBlock}</div><div class="rs-card"><h4>Componentes críticos</h4><dl>${fila('Sello mecánico',sello,5)}${fila('Elastómero eje (acople)',p.acople,8)}${fila('Rol delantero',ro.delantero,7)}${fila('Rol trasero',ro.trasero,7)}${ok(p.observaciones)?fila('Observaciones',p.observaciones):''}</dl><p class="rs-src">${opts.pendiente?'Datos del Excel y de lo registrado en campo; los vacíos siguen pendientes.':'Componentes según la ficha y el Excel; los campos vacíos siguen pendientes.'}</p></div>`;
  el.querySelectorAll('[data-part]').forEach(r=>r.onclick=()=>{if(typeof selectPart==='function')selectPart(Number(r.dataset.part));});
- const edit=el.querySelector('[data-temp-edit]'),form=el.querySelector('.rs-temp-form');
+ const edit=el.querySelector('[data-temp-edit]'),form=el.querySelector('.rs-temp-form');if(!edit)return;
  const tempField=name=>form.elements.namedItem(name);
  edit.onclick=()=>{form.hidden=!form.hidden;edit.setAttribute('aria-expanded',String(!form.hidden));if(!form.hidden)tempField('min').focus();};
  form.onsubmit=async event=>{
@@ -927,7 +928,7 @@ function renderPendingPanel(){
  const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
  if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
- abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;if(!$('#datos-excel'))$('#panel').insertAdjacentHTML('afterbegin',bloqueExcel(integrado.asignacion,reference.tagAsignado));if(!$('#placa-manual'))$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
+ abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;const hueco=$('#resumen-pendiente');if(hueco){paintPumpSummary(bombaParaResumen(reference),{pendiente:true});hueco.replaceWith($('#pump-resumen'));}const despues=$('#pump-resumen')||$('#editar-equipo');if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;if(!$('#datos-excel'))despues?.insertAdjacentHTML('afterend',bloqueExcel(integrado.asignacion,reference.tagAsignado));if(!$('#placa-manual'))$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
 function montarIntegrado(g,escena,placed){
