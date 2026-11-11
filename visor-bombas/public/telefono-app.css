@@ -629,3 +629,6 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
  body.app-tel[data-tel-seccion="areas"]:not(.tel-con-ficha){--escena:min(40dvh,180px)}
  body.app-tel #paleta-bombas{max-height:calc(100% - 60px)}
 }
+
+/* Teléfono: la lista flotante y «Ocultar nombres» tapan el 3D; solo se muestran en PC. */
+body.app-movil #paleta-bombas{display:none!important}
