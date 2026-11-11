@@ -1,6 +1,6 @@
 import {SECTORES_INT, sectorDe} from './planta-integrada.js';
-import {originales, htmlFotos, fotosActualizadas, guardarFoto, bindPhotoTransfers} from './fotos-bomba.js';
-import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js';
+import {originales, htmlFotos, fotosActualizadas, guardarFoto, bindPhotoTransfers} from './fotos-bomba.js?v=20261111-fotos-v2';
+import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js?v=20261111-fotos-v2';
 import {pumpNames} from './pump-names.js';
 import {pumpData,MENSAJE_GUARDADO} from './pump-data.js';
 import {datosDeExcel} from './asignacion-bombas.js';

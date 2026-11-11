@@ -1,4 +1,4 @@
-import {actualizarTodasFotos} from './fotos-bomba.js';
+import {actualizarTodasFotos} from './fotos-bomba.js?v=20261111-fotos-v2';
 import {cloudEnabled,connectCloudPhotos} from './cloud-photos.js';
 
 // Un único control general; los controles de cada ficha conservan su alcance.
