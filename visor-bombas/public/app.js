@@ -10,6 +10,7 @@ import {crearModeloCaldera} from './bombas-calderas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
 import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105g';
 import {pumpNames,startPumpNames} from './pump-names.js';
+import {startPumpData} from './pump-data.js';
 import {crearPaleta} from './paleta-bombas.js';
 import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
 import {cargarPlacas,bloquePlaca} from './placas-bombas.js';
@@ -631,6 +632,7 @@ const nombreVisible=s=>juntarNombre(s.tagAsignado,pumpNames.nameOf(clavePendient
 function nombreDeTag(tag){return juntarNombre(tag,pumpNames.nameOf(claveTag(tag)));}
 document.addEventListener('vocatus:nombres',()=>{for(const s of integrado?.references||[])if(s.labelEl)s.labelEl.textContent=nombreVisible(s);for(const m of markers)if(m.kind==='pump'&&m.id&&!m.ref)m.el.textContent=nombreDeTag(m.id);renderList();document.dispatchEvent(new Event('vocatus:referencias'));});
 startPumpNames();
+startPumpData();
 montarPaleta();
 document.addEventListener('vocatus:storage-ready',()=>{if($('#history-load-error')&&state.tab==='historial'&&state.pump){if($('#rep-list'))refreshPhotoHistory(state.pump);else{$('#history-load-error').remove();mountHistoryChart(state.pump);}}});
 async function mountHistoryChart(pump,reports){
