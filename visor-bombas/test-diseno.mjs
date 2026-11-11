@@ -45,3 +45,8 @@ test('la tabla del diseño solo deja guardar a administradores y no permite borr
 test('el editor es página de administrador',async()=>{
  for(const f of ['auth.mjs','cloud-identity.mjs','cloud-edge-access.js'])assert.match(await readFile(new URL('./'+f,import.meta.url),'utf8'),/\/diseno\.html/,f);
 });
+test('la vista previa del editor puede cargarse solo desde la misma web',async()=>{
+ const cfg=JSON.parse(await readFile(new URL('./vercel.json',import.meta.url),'utf8'));
+ const h=cfg.headers.flatMap(x=>x.headers).find(x=>x.key==='X-Frame-Options');
+ assert.equal(h.value,'SAMEORIGIN');
+});
