@@ -86,10 +86,10 @@ export function cssDeColores(cfg){
 
 function textoNodo(el){for(const n of el.childNodes)if(n.nodeType===3&&n.textContent.trim())return n;return null;}
 function ponerTexto(el,modo,valor){
- if(modo==='todo'){if(el.dataset.disenoOrig==null)el.dataset.disenoOrig=el.innerHTML;if(valor==null)el.innerHTML=el.dataset.disenoOrig;else el.textContent=valor;return;}
+ if(modo==='todo'){if(el.dataset.disenoOrig==null)el.dataset.disenoOrig=el.innerHTML;if(valor==null){if(el.innerHTML!==el.dataset.disenoOrig)el.innerHTML=el.dataset.disenoOrig;}else if(el.textContent!==valor)el.textContent=valor;return;}
  const destino=modo==='nodo'?textoNodo(el):el.querySelector(modo);if(!destino)return;
  if(destino.disenoOrig==null)destino.disenoOrig=destino.textContent;
- destino.textContent=valor==null?destino.disenoOrig:(modo==='nodo'?valor+' ':valor);
+ const nuevo=valor==null?destino.disenoOrig:(modo==='nodo'?valor+' ':valor);if(destino.textContent!==nuevo)destino.textContent=nuevo;
 }
 
 // Se puede llamar muchas veces: siempre parte del diseño original y aplica encima.
@@ -97,15 +97,16 @@ export function aplicarDiseno(doc,raw){
  const cfg=limpiarDiseno(raw);
  let style=doc.getElementById('diseno-vocatus');
  if(!style){style=doc.createElement('style');style.id='diseno-vocatus';doc.head.append(style);}
- style.textContent=cssDeColores(cfg);
+ const css=cssDeColores(cfg);if(style.textContent!==css)style.textContent=css;
  for(const e of ELEMENTOS)for(const el of doc.querySelectorAll(e.sel)){
-  el.dataset.disenoId=e.id;
-  el.classList.toggle('diseno-oculto',cfg.ocultos.includes(e.id));
+  if(el.dataset.disenoId!==e.id)el.dataset.disenoId=e.id;
+  const oculto=cfg.ocultos.includes(e.id);if(el.classList.contains('diseno-oculto')!==oculto)el.classList.toggle('diseno-oculto',oculto);
   if(e.texto)ponerTexto(el,e.texto,cfg.textos[e.id]??null);
-  el.style.order='';
+  if(el.style.order)el.style.order='';
  }
  const nav=doc.getElementById('tel-barra');
  if(nav){
+  const firma=JSON.stringify(cfg.menu);if(nav.dataset.disenoMenu!==firma||nav.querySelectorAll('[data-diseno-extra]').length!==cfg.menu.length){nav.dataset.disenoMenu=firma;
   nav.querySelectorAll('[data-diseno-extra]').forEach(a=>a.remove());
   cfg.menu.forEach((m,i)=>{
    const b=doc.createElement('button');b.type='button';b.dataset.disenoExtra='1';b.dataset.disenoId='extra-'+i;b.title=m.enlace;
@@ -113,17 +114,17 @@ export function aplicarDiseno(doc,raw){
    const t=doc.createElement('span');t.textContent=m.texto;b.append(pill,t);
    b.addEventListener('click',()=>{if(m.nueva)doc.defaultView.open(m.enlace,'_blank','noopener');else doc.defaultView.location.assign(m.enlace);});
    nav.append(b);
-  });
+  });}
   // En celular la barra va abajo en columnas: una por botón visible.
   const visibles=[...nav.children].filter(x=>!x.classList.contains('diseno-oculto')).length;
-  nav.style.setProperty('--diseno-n',String(visibles||1));
+  if(nav.style.getPropertyValue('--diseno-n')!==String(visibles||1))nav.style.setProperty('--diseno-n',String(visibles||1));
  }
  for(const [g,ids] of Object.entries(cfg.orden)){
   const cont=doc.querySelector(g==='menu'?'#tel-barra':'#tabs');if(!cont)continue;
-  ids.forEach((id,i)=>{const el=cont.querySelector(`[data-diseno-id="${id}"]`);if(el)el.style.order=String(i+1);});
-  for(const el of cont.children)if(!ids.includes(el.dataset.disenoId))el.style.order=String(ids.length+1);
+  ids.forEach((id,i)=>{const el=cont.querySelector(`[data-diseno-id="${id}"]`);if(el&&el.style.order!==String(i+1))el.style.order=String(i+1);});
+  for(const el of cont.children)if(!ids.includes(el.dataset.disenoId)&&el.style.order!==String(ids.length+1))el.style.order=String(ids.length+1);
  }
  const logo=doc.querySelector('.brand-logo');
- if(logo){if(logo.dataset.disenoOrig==null)logo.dataset.disenoOrig=logo.getAttribute('src');logo.setAttribute('src',cfg.logo||logo.dataset.disenoOrig);}
+ if(logo){if(logo.dataset.disenoOrig==null)logo.dataset.disenoOrig=logo.getAttribute('src');const src=cfg.logo||logo.dataset.disenoOrig;if(logo.getAttribute('src')!==src)logo.setAttribute('src',src);}
  return cfg;
 }
