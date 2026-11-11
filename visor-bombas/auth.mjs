@@ -115,7 +115,7 @@ export function delicateAction(method,pathname,body={}){
 }
 
 const PUBLIC_PATHS=new Set(['/login.html','/acceso.js','/acceso.css','/marca/vocatus.png','/favicon.ico']);
-const ADMIN_PAGES=new Set(['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js']);
+const ADMIN_PAGES=new Set(['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/diseno.html','/diseno-editor.js']);
 const readCookie=(req,name)=>{for(const part of String(req.headers.cookie||'').split(';')){const i=part.indexOf('=');if(i>0&&part.slice(0,i).trim()===name)return part.slice(i+1).trim();}return '';};
 const isLoopback=req=>['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket?.remoteAddress);
 const isPage=pathname=>pathname==='/'||pathname.endsWith('.html');

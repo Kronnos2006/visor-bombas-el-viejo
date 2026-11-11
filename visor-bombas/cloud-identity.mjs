@@ -2,7 +2,7 @@
 // Los adaptadores deben proporcionar auth.getUser y una lectura protegida de la cuenta actual.
 import {delicateAction} from './auth.mjs';
 
-export const CLOUD_ADMIN_PAGES=new Set(['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js']);
+export const CLOUD_ADMIN_PAGES=new Set(['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/diseno.html','/diseno-editor.js']);
 const denied=(message,status=403,code='ADMIN_ONLY')=>Object.assign(new Error(message),{status,code});
 
 export function accountIdentity(authUser,account){

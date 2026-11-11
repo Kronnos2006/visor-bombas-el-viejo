@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/marca/vocatus.png"><title>Editar diseño · Vocatus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="/acceso.css">
+<style>
+body{margin:0;font-family:'Plus Jakarta Sans',sans-serif;background:var(--fondo);color:var(--tinta)}
+.editor{display:grid;grid-template-columns:minmax(320px,420px) 1fr;height:100vh}
+.panel{display:flex;flex-direction:column;border-right:1px solid var(--borde);min-height:0}
+.panel-top{padding:16px 18px 8px}.panel-top h1{font-family:Fraunces,serif;margin:0 0 6px;font-size:24px}
+.panel-top p{margin:0;color:var(--tinta-2);font-size:13px}
+.pestanas{display:flex;flex-wrap:wrap;gap:6px;padding:8px 18px}
+.pestanas button{flex:1 1 auto;padding:9px 10px;border-radius:8px;border:1px solid var(--borde);background:transparent;color:var(--tinta);font:inherit;font-size:13px;cursor:pointer}
+.pestanas button[aria-selected=true]{background:var(--accent);color:var(--sobre-accent);font-weight:700}
+.contenido{overflow:auto;padding:8px 18px 18px;flex:1}
+.contenido h2{font-size:15px;margin:18px 0 8px;color:var(--accent)}
+.fila{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--borde);font-size:14px}
+.fila label{flex:1}.fila input[type=text],.fila input[type=url]{flex:1.4;min-width:0}
+input[type=text],input[type=url]{background:var(--superficie);color:var(--tinta);border:1px solid var(--borde);border-radius:7px;padding:9px;font:inherit;font-size:14px}
+input[type=color]{width:46px;height:34px;border:0;background:none;padding:0;cursor:pointer}
+.mini{padding:6px 10px;border-radius:7px;border:1px solid var(--borde);background:transparent;color:var(--tinta);cursor:pointer;font:inherit;font-size:13px}
+.mini:disabled{opacity:.35;cursor:default}
+.extra{border:1px solid var(--borde);border-radius:10px;padding:10px;margin:10px 0;display:grid;gap:8px}
+.barra{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--borde);flex-wrap:wrap}
+.barra button,.barra a{flex:1;text-align:center;padding:12px;border-radius:9px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none}
+.guardar{background:var(--accent);color:var(--sobre-accent);border:0}
+.secundario{background:transparent;color:var(--tinta);border:1px solid var(--borde)}
+#estado{width:100%;margin:0;font-size:13px;color:var(--tinta-2);min-height:1.2em}
+.vista{display:flex;flex-direction:column;min-width:0}
+.vista-top{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--borde);font-size:13px;color:var(--tinta-2)}
+.vista iframe{flex:1;border:0;width:100%;background:#120f0b}
+input[type=checkbox]{width:20px;height:20px;margin:0;flex:none;accent-color:var(--accent);cursor:pointer}
+.vista-top label,.extra label{display:inline-flex;align-items:center;gap:8px;font-weight:500;margin:0;font-size:13px;color:var(--tinta)}
+.ayuda{font-size:13px;color:var(--tinta-2);line-height:1.5}
+@media(max-width:900px){.editor{grid-template-columns:1fr;height:auto}.vista{height:70vh}}
+</style></head>
+<body>
+<div class="editor">
+ <section class="panel">
+  <div class="panel-top"><h1>Editar diseño</h1><p>Los cambios se ven a la derecha. Nadie más los ve hasta que tocás <b>Guardar para todos</b>.</p></div>
+  <div class="pestanas" role="tablist">
+   <button role="tab" data-p="colores" aria-selected="true">🎨 Colores</button>
+   <button role="tab" data-p="textos" aria-selected="false">✏️ Textos</button>
+   <button role="tab" data-p="mostrar" aria-selected="false">👁 Mostrar y ordenar</button>
+   <button role="tab" data-p="menu" aria-selected="false">➕ Menú y logo</button>
+   <button role="tab" data-p="archivo" aria-selected="false">💾 Archivo</button>
+  </div>
+  <div class="contenido" id="contenido"></div>
+  <div class="barra">
+   <p id="estado" role="status"></p>
+   <button class="guardar" id="guardar" type="button">Guardar para todos</button>
+   <button class="secundario" id="descartar" type="button">Descartar cambios</button>
+   <a class="secundario" href="/">Volver al visor</a>
+  </div>
+ </section>
+ <section class="vista">
+  <div class="vista-top">Vista previa · <label><input type="checkbox" id="vista-claro"> Ver en modo claro</label></div>
+  <iframe id="vista" title="Vista previa del visor"></iframe>
+ </section>
+</div>
+<script type="module" src="/diseno-editor.js?v=diseno-20261111a"></script>
+</body></html>

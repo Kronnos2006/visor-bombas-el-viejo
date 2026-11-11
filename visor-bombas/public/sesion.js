@@ -9,7 +9,7 @@
   const resumen=document.createElement('summary');resumen.textContent='👤 '+user.name.split(' ')[0];resumen.title='Tu cuenta';box.append(resumen);
   const menu=document.createElement('div');menu.className='sesion-menu';
   const quien=document.createElement('p');quien.textContent=`${user.name} · ${user.role==='admin'?'Administrador':'Usuario'}`;menu.append(quien);
-  if(user.role==='admin'){const a=document.createElement('a');a.href='/usuarios.html';a.textContent='Usuarios';menu.append(a);}
+  if(user.role==='admin'){const a=document.createElement('a');a.href='/usuarios.html';a.textContent='Usuarios';const d=document.createElement('a');d.href='/diseno.html';d.textContent='Editar diseño';menu.append(a,d);}
   const clave=document.createElement('a');clave.href='/login.html?cambiar=1&next='+encodeURIComponent(location.pathname+location.search);clave.textContent='Cambiar contraseña';menu.append(clave);
   const salir=document.createElement('button');salir.type='button';salir.textContent='Salir';
   salir.onclick=async()=>{

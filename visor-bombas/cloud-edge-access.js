@@ -19,7 +19,7 @@ export async function cloudPageAccess(request,{url,key,fetcher=fetch}){
   const account=await response.json();
   if(!account||account.id!==identity.id||account.status!=='approved'||account.active!==true||account.sessionValid!==true)return deny(403,'Tu cuenta todavía no tiene acceso aprobado.');
   if(account.mustChange)return new Response(null,{status:302,headers:{Location:'/login.html?cambiar=1','Cache-Control':'no-store'}});
-  if(['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js'].includes(path)&&account.role!=='admin')return deny(403,'Solo un administrador puede usar esta parte.');
+  if(['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/diseno.html','/diseno-editor.js'].includes(path)&&account.role!=='admin')return deny(403,'Solo un administrador puede usar esta parte.');
   return null;
  }catch{return deny(503,'No se pudo comprobar el permiso.');}
 }
