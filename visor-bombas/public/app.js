@@ -8,7 +8,7 @@ import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPis
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera} from './bombas-calderas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
-import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261105g';
+import {abrirFichaPendiente,clavePendiente} from './ficha-pendiente.js?v=20261111-fotos';
 import {pumpNames,startPumpNames} from './pump-names.js';
 import {crearPaleta} from './paleta-bombas.js';
 import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
