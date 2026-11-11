@@ -107,10 +107,10 @@ function init(){
  $('.tel-ficha .tel-volver').after(modelAccess);
  let modelTicket=0,modelTag='';
  async function openPumpModel(exploded){
-  const tag=V()?.pump?.tag,pump=V()?.pump?.data;if(!tag||V().pump.pending)return;
+  const tag=V()?.pump?.tag,pump=V()?.pump?.data||{},nombre=V()?.pump?.pending?.tagAsignado||tag;if(!tag)return;
   if(exploded&&(pump.inactive||pump.enUso===false)){notify('Este equipo está sin uso; su despiece no está identificado.');return;}
   const ticket=++modelTicket;modelTag=tag;document.body.classList.add('hist-model-open','mejora-model-open');
-  const status=modelAccess.querySelector('[data-model-status]');status.hidden=false;status.textContent='Preparando el modelo de '+tag+'…';
+  const status=modelAccess.querySelector('[data-model-status]');status.hidden=false;status.textContent='Preparando el modelo de '+nombre+'…';
   window.dispatchEvent(new Event('resize'));V()?.ensure3D?.();
   for(let n=0;n<300;n++){
    if(ticket!==modelTicket||V()?.pump?.tag!==tag||!document.body.classList.contains('tel-con-ficha'))return;
@@ -128,7 +128,7 @@ function init(){
   status.textContent='El modelo sigue cargando. Podés volver a pulsar cuando termine.';
  }
  modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.onclick=()=>openPumpModel(button.dataset.modelMode==='exploded'));
- const enableModelAccess=()=>{const p=V()?.pump;modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.disabled=!p?.tag||!!p.pending||(button.dataset.modelMode==='exploded'&&(p.data?.inactive||p.data?.enUso===false)));};document.addEventListener('vocatus:bomba',enableModelAccess);document.addEventListener('vocatus:referencia',enableModelAccess);enableModelAccess();
+ const enableModelAccess=()=>{const p=V()?.pump;modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.disabled=!p?.tag||(button.dataset.modelMode==='exploded'&&(p.data?.inactive||p.data?.enUso===false)));};document.addEventListener('vocatus:bomba',enableModelAccess);document.addEventListener('vocatus:referencia',enableModelAccess);enableModelAccess();
  document.addEventListener('vocatus:bomba',event=>{if(event.detail!==modelTag){++modelTicket;document.body.classList.remove('mejora-model-open');modelAccess.querySelector('[data-model-status]').hidden=true;modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.setAttribute('aria-pressed','false'));}});
  document.addEventListener('click',event=>{if(event.target.closest('#history-model'))setTimeout(()=>{if(!document.body.classList.contains('hist-model-open')){++modelTicket;document.body.classList.remove('mejora-model-open');modelAccess.querySelector('[data-model-status]').hidden=true;modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.setAttribute('aria-pressed','false'));window.dispatchEvent(new Event('resize'));}},0);});
  createResizer();load();paintReportLink();
