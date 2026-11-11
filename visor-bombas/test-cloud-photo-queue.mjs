@@ -12,8 +12,8 @@ const original=await readFile(new URL('./public/fotos-bomba.js',import.meta.url)
 
 // Ejecuta el módulo de producción: sustituye únicamente sus dependencias de
 // navegador/red por memoria sintética. No copia la implementación de la cola.
-function fixture({legacy=false}={}){
- const records=new Map(slots.map(slot=>[entity+':'+slot,{
+function fixture({legacy=false,initialRecords,oldVersion}={}){
+ const records=initialRecords||new Map(slots.map(slot=>[entity+':'+slot,{
   blob:new Blob(['synthetic '+slot],{type:'image/jpeg'}),fecha:'2026-10-28T20:00:00Z',
   ...(legacy?{}:{revision:'local-'+slot,cloudPending:true,cloudBase:0})
  }]));
@@ -25,10 +25,29 @@ function fixture({legacy=false}={}){
   getAllKeys:()=>request([...records.keys()]),
   getAll:()=>request([...records.values()]),
   get:key=>request(records.get(key)),
-  put(value,key){records.set(key,value);return request(key);}
+  put(value,key){records.set(key,value);return request(key);},
+  add(value,key){assert.ok(!records.has(key));return store.put(value,key);},
+  openCursor(){
+   const keys=records.keys(),r={};
+   function advance(){
+    const {value:key,done}=keys.next();
+    r.result=done?null:{key,value:records.get(key),continue:advance};
+    queueMicrotask(()=>r.onsuccess?.());
+   }
+   advance();
+   return r;
+  }
  };
  const database={transaction(){const t={objectStore:()=>store};setTimeout(()=>t.oncomplete?.(),0);return t;}};
- const indexedDB={open(){const r={result:database};queueMicrotask(()=>r.onsuccess?.());return r;}};
+ const indexedDB={open(name,version){
+  assert.equal(name,'vocatus-fotos');
+  const r={result:database,transaction:{objectStore:()=>store}};
+  queueMicrotask(()=>{
+   if(oldVersion!==undefined&&version>oldVersion)r.onupgradeneeded?.({oldVersion});
+   setTimeout(()=>r.onsuccess?.(),0);
+  });
+  return r;
+ }};
  const transport={userId:'synthetic-user',
   async upload(path,blob){uploaded.push({path,blob});},
   async publish(key,slot,expected,path){published.push({key,slot,expected,path});return {revision:1,object_path:path};},
@@ -43,6 +62,30 @@ function fixture({legacy=false}={}){
  const {flushCloudPhotos}=new Function(...Object.keys(dependencies),source+'\nreturn {flushCloudPhotos};')(...Object.values(dependencies));
  return {flushCloudPhotos,records,uploaded,published,release,get transportCalls(){return transportCalls;}};
 }
+
+test('B76 recupera una captura anterior, la publica por TAG y permite leerla sin respaldo local',async()=>{
+ const blob=new Blob(['foto sintética B76'],{type:'image/jpeg'});
+ const fecha='2026-11-11T15:00:00.000Z';
+ const saved={blob,fecha,cloudPending:true};
+ const existing={blob:new Blob(['placa existente']),fecha,cloudPending:false,cloudRevision:1};
+ const records=new Map([['nuevo:B76:bomba',saved],['nuevo:B76:placa1',saved],['B76:placa1',existing]]);
+ const f=fixture({initialRecords:records,oldVersion:1});
+ f.release();
+ assert.match(await f.flushCloudPhotos('B76',true),/^1 fotos confirmadas/);
+ assert.deepEqual(f.published.map(({key,slot,expected})=>({key,slot,expected})),[{key:'B76',slot:'bomba',expected:0}]);
+ assert.equal(records.get('nuevo:B76:bomba'),saved);
+ assert.equal(records.get('B76:placa1'),existing);
+ assert.equal(records.get('B76:bomba').cloudPending,false);
+ assert.equal(records.get('B76:bomba').cloudRevision,1);
+
+ const remote=await core.loadSharedPhotoRows({
+  rows:f.published.filter(row=>row.key==='B76'),isCurrent:()=>true,
+  download:async row=>({cloud:true,blob:f.uploaded.find(file=>file.path===row.path)?.blob})
+ });
+ const reader=await core.loadPhotoView({loadLocal:async()=>({}),loadShared:async()=>remote,enabled:true});
+ assert.equal(reader.bomba?.cloud,true);
+ assert.equal(await reader.bomba?.blob?.text(),await blob.text());
+});
 
 function assertFourConfirmed(f){
  assert.equal(f.uploaded.length,4);
