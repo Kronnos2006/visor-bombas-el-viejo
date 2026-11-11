@@ -19,7 +19,7 @@ function iniciar(){
  // El visor arma la barra y los paneles después de cargar y los redibuja al navegar:
  // se vuelve a aplicar (con pausa) cada vez que cambia la página. Se desconecta mientras aplica para no repetirse.
  let actual={},espera=0;
- const observador=new MutationObserver(()=>{clearTimeout(espera);espera=setTimeout(()=>poner(actual),200);});
+ const observador=new MutationObserver(()=>{if(!espera)espera=setTimeout(()=>{espera=0;poner(actual);},200);});
  const poner=cfg=>{actual=cfg;observador.disconnect();try{aplicarDiseno(document,cfg);}catch{}observador.observe(document.body,{childList:true,subtree:true});};
  try{poner(JSON.parse(localStorage.getItem(CACHE)||'{}'));}catch{}
  // Vista previa del editor: recibe el borrador sin guardar nada.
