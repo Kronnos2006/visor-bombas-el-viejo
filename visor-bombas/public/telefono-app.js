@@ -121,6 +121,7 @@ function iniciar() {
   <div class="tel-dos"><div class="tel-campo"><label for="tel-fluido">Fluido</label><select id="tel-fluido"><option value="">Todos</option><option value="alcohol">Alcohol</option><option value="agua">Agua</option><option value="mosto">Mosto / vinaza</option><option value="sin-uso">Sin uso</option></select></div>
   <div class="tel-campo"><label for="tel-marca">Marca</label><select id="tel-marca"><option value="">Todas</option></select></div></div>
   <p id="tel-cuenta" class="tel-cuenta" aria-live="polite"></p>
+  <div id="tel-resultados" class="tel-resultados" hidden></div>
   <h2 class="tel-sub">Áreas de la planta</h2><div id="tel-areas"></div>
   <h2 class="tel-sub">Herramientas</h2><div id="tel-herramientas"></div>`;
  const areaMenu = $('#area-menu'), camara = $('#camera-tools');
@@ -131,6 +132,9 @@ function iniciar() {
   requestAnimationFrame(()=>{const heading=$('#tel-areas').previousElementSibling;contenido.scrollTop+=heading.getBoundingClientRect().top-contenido.getBoundingClientRect().top-16;});
  });
  if (camara) $('#tel-herramientas').append(camara);
+ // «Ocultar nombres» y la lista «Bombas» van en Herramientas, no encima del 3D.
+ const moverPaleta=()=>{const paleta=$('#paleta-bombas');if(!paleta)return false;if(paleta.parentElement!==$('#tel-herramientas'))$('#tel-herramientas').prepend(paleta);return true;};
+ if(!moverPaleta()){const espera=new MutationObserver(()=>{if(moverPaleta())espera.disconnect();});espera.observe(document.body,{childList:true,subtree:true});}
  $('#tel-buscar').oninput = pintarFranja;
  $('#tel-fluido').onchange = pintarFranja; $('#tel-marca').onchange = pintarFranja;
  document.addEventListener('vocatus:lista', pintarFranja);
@@ -150,6 +154,7 @@ function iniciar() {
   const enArea = bombas().filter(p => area === 'planta' || V()?.areaDe(p) === area);
   const lista = enArea.filter(p => (!q || (p.tag + (p.nombre || '') + (p.marca || '')).toUpperCase().replace(/[\s-]/g, '').includes(q))
    && (!fluido || (V()?.tipos(p) || []).includes(fluido)) && (!marca || String(p.marca || '').trim() === marca));
+  pintarResultados(q, lista, area);
   const actual = V()?.pump?.tag;
   franja.innerHTML = lista.map(p => `<button type="button" data-tag="${esc(p.tag)}" aria-pressed="${p.tag === actual}" class="${enReparacion.has(p.tag) ? 'en-rep' : ''}" title="${esc(p.nombre || '')}${enReparacion.has(p.tag) ? ' · En reparación' : ''}">${esc(p.tag)}</button>`).join('');
   franja.querySelectorAll('[data-tag]').forEach(b => b.onclick = () => elegirBomba(b.dataset.tag));
@@ -160,7 +165,24 @@ function iniciar() {
   cuenta.textContent = !enArea.length ? `${nombreArea}: todavía no hay bombas con TAG y ficha. Las que se ven en el 3D están pendientes de identificar.`
    : !lista.length ? 'Ninguna bomba coincide con los filtros.'
    : `${lista.length} ${lista.length === 1 ? 'bomba' : 'bombas'}${filtrando ? ` de ${enArea.length}` : ''} en ${nombreArea}.`;
+  if(q)cuenta.textContent=`${cuenta.dataset.resultados||0} ${cuenta.dataset.resultados==='1'?'bomba encontrada':'bombas encontradas'} en ${nombreArea}.`;
   if(!filtrando&&sinTag)cuenta.textContent=`${enArea.length} con TAG + ${sinTag} referencias sin TAG en ${nombreArea}. Tocá una bomba del 3D para completar su ficha.`;
+ }
+ // Resultados del buscador: bombas con ficha y bombas del 3D con número asignado (todas las de la planta).
+ function pintarResultados(q, lista, area) {
+  const caja = $('#tel-resultados'); if (!caja) return;
+  if (!q) { caja.hidden = true; caja.replaceChildren(); return; }
+  const limpio = t => String(t || '').toUpperCase().replace(/[\s-]/g, '');
+  const refs = (V()?.references || []).filter(r => (area === 'planta' || (r.standalone ? 'torre' : sectorDe(r.sector)) === area)
+   && limpio((r.tagAsignado || '') + (r.excel?.nombre || '') + (r.nombre || '') + (r.excel?.bomba || '')).includes(q));
+  const items = [...lista.map(p => ({tag: p.tag, nombre: p.nombre || p.ubicacion || '', abrir: () => abrirFicha(p.tag, 'ficha')})),
+   ...refs.map(r => ({tag: r.tagAsignado || 'Sin TAG', nombre: r.excel?.nombre || r.nombre || '', abrir: () => abrirFicha('', 'ficha', r)}))]
+   .sort((a, b) => (parseInt(a.tag.slice(1)) || 999) - (parseInt(b.tag.slice(1)) || 999));
+  caja.hidden = false;
+  if (!items.length) { caja.innerHTML = '<p class="tel-cuenta">Ninguna bomba coincide con la búsqueda.</p>'; return; }
+  caja.replaceChildren(...items.slice(0, 40).map(it => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tel-resultado';
+   const t = document.createElement('b'); t.textContent = it.tag; const n = document.createElement('span'); n.textContent = it.nombre; b.append(t, n); b.onclick = it.abrir; return b; }));
+  const cuenta = $('#tel-cuenta'); if (cuenta) cuenta.dataset.resultados = String(items.length);
  }
  function opciones(sel = '') {
   return '<option value="">Elegí la bomba…</option>' + bombas().map(p => `<option value="${esc(p.tag)}" ${p.tag === sel ? 'selected' : ''}>${esc(p.tag)} · ${esc(p.nombre || p.ubicacion || '')}</option>`).join('');

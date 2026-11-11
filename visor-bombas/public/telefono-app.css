@@ -630,5 +630,11 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
  body.app-tel #paleta-bombas{max-height:calc(100% - 60px)}
 }
 
-/* Teléfono: la lista flotante y «Ocultar nombres» tapan el 3D; solo se muestran en PC. */
-body.app-movil #paleta-bombas{display:none!important}
+/* Buscador: lista de resultados bajo la caja de búsqueda. */
+.tel-resultados{display:grid;gap:6px;margin:4px 0 16px;max-height:340px;overflow:auto}
+.tel-resultado{display:flex;gap:12px;align-items:center;min-height:48px;padding:10px 14px;text-align:left;border:1px solid var(--borde-fuerte);border-radius:10px;background:var(--superficie);color:var(--tinta);font:inherit;cursor:pointer}
+.tel-resultado b{min-width:44px;color:var(--accent);font-family:var(--datos,monospace)}
+.tel-resultado span{color:var(--tinta-2);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* «Ocultar nombres» y «Bombas» dentro de Herramientas (antes flotaban sobre el 3D). */
+#tel-herramientas #paleta-bombas{position:static;width:100%;max-height:none;align-items:stretch;margin:0 0 10px;pointer-events:auto;flex-direction:column;gap:8px}
+#tel-herramientas #paleta-bombas .paleta-boton{width:100%;justify-content:center}
