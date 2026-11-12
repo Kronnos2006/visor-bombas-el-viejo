@@ -17,3 +17,9 @@ Chromium de prueba, contextos nuevos sin cuentas ni acceso a Supabase: mismo rec
 La única excepción nueva de imagen en .gitignore es el fondo del editor extraído del HTML aportado; SHA256 `834e4db47b1e125787d3bcead2d6696ffb09254f7f5e226f1f7b2356d5b9212d`. No se incorpora el archivo original completo ni adjuntos de mantenimiento.
 
 Publicación en dominio habitual y lectura de fotos con segunda cuenta: no verificadas, fuera del alcance del artefacto. El editor no reasigna ni sube fotografías.
+
+## Corrección de apertura directa del archivo
+
+El usuario mostró una captura abriendo `public/ubicar-bombas.html` por file://, sin estilos ni plano: la versión web dependía de rutas absolutas e importaciones/fetch. Se corrigió ese mismo archivo para distribuirlo autónomo, tanto en web como con doble clic. La plantilla editable pasa a `tools/ubicar-bombas.template.html`; el generador incorpora CSS, imagen, datos y módulos en `public/ubicar-bombas.html` por defecto. En file:// se retira el enlace al visor; en HTTP se conserva. El HTML exportado en outputs también fue regenerado.
+
+Se repitió el recorrido Chromium contra la ruta exacta de la captura, abierta mediante file://: alta, asignación, recarga, movimiento, nombre, deshacer, exportar/importar y tamaños 1440/390/320 px aprobados, sin errores JS. Suite requerida: 354/354. Captura móvil inspeccionada. La prueba usa un contexto nuevo, sin escribir datos reales.
