@@ -67,3 +67,39 @@ select:disabled + .elegir-3d{display:none}
 .elegir-3d-barra span{overflow:hidden;text-overflow:ellipsis}
 .elegir-3d-barra .mini-boton{padding:6px 12px;border-radius:999px}
 body.app-movil .elegir-3d-barra{bottom:calc(var(--barra,64px) + 10px + env(safe-area-inset-bottom,0px));font-size:13px}
+
+/* ---------- Reparaciones y trabajos (gráficos) ---------- */
+.estadisticas{--est-barra:#b8862e;--est-pista:color-mix(in srgb,var(--tinta) 8%,transparent);margin:8px 0 24px}
+body.claro .estadisticas{--est-barra:#a0660a}
+.est-periodo{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
+.est-periodo button{padding:8px 12px;border-radius:999px;border:1px solid var(--borde-fuerte);background:transparent;color:var(--tinta);font:inherit;font-size:13px;cursor:pointer}
+.est-periodo button[aria-pressed="true"]{background:var(--accent);color:var(--sobre-accent,#120f0b);border-color:var(--accent);font-weight:700}
+.est-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:6px}
+.est-tiles div{padding:14px;border:1px solid var(--borde);border-radius:14px;background:var(--superficie-solida)}
+.est-tiles b{display:block;font-size:30px;line-height:1.1;color:var(--tinta)}
+.est-tiles span{color:var(--tinta-2);font-size:13px}
+.est-sub{margin:18px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
+.est-atencion{display:grid;gap:8px}
+.est-alerta{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--orange,#f08a4b) 55%,transparent);background:color-mix(in srgb,var(--orange,#f08a4b) 8%,transparent);color:var(--tinta)}
+.est-alerta>span{color:var(--orange,#f08a4b);font-size:18px}.est-alerta small{display:block;color:var(--tinta-2)}
+.est-grilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-top:14px}
+.est-grafico{padding:16px;border:1px solid var(--borde);border-radius:14px;background:var(--superficie-solida);min-width:0}
+.est-grafico h3{margin:0 0 2px;font-size:16px;color:var(--tinta)}
+.est-ayuda{margin:0 0 12px;color:var(--tinta-2);font-size:13px}
+.est-barras{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.est-barras li{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;align-items:center;gap:10px;min-height:28px}
+.est-etiqueta{color:var(--tinta);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.est-pista{height:18px;border-radius:0 4px 4px 0;background:var(--est-pista);overflow:hidden}
+.est-pista i{display:block;height:100%;background:var(--est-barra);border-radius:0 4px 4px 0}
+.est-barras b{min-width:2ch;text-align:right;color:var(--tinta);font-variant-numeric:tabular-nums}
+.est-columnas{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:end;height:170px;border-bottom:1px solid var(--borde)}
+.est-columnas>div{display:grid;grid-template-rows:auto 1fr auto;height:100%;text-align:center;gap:4px}
+.est-columnas b{font-size:13px;color:var(--tinta);min-height:1em}
+.est-col{display:flex;align-items:flex-end;justify-content:center}
+.est-col i{display:block;width:min(24px,70%);background:var(--est-barra);border-radius:4px 4px 0 0}
+.est-columnas small{color:var(--tinta-2);font-size:12px;padding-bottom:4px}
+.est-tabla{margin-top:10px;font-size:13px;color:var(--tinta-2)}
+.est-tabla summary{cursor:pointer}
+.est-tabla table{width:100%;margin-top:6px;border-collapse:collapse}
+.est-tabla td,.est-tabla th{padding:4px 6px;border-bottom:1px solid var(--borde);text-align:left;color:var(--tinta)}
+.est-tabla td:last-child,.est-tabla th:last-child{text-align:right}

@@ -4,6 +4,7 @@
 // selección, 3D, ficha ni guardado. Con ?vista=clasica se usa el visor anterior.
 import {selectionIdentity} from './selection-core.js';
 import {sectorDe} from './planta-integrada.js';
+import {iniciarEstadisticas} from './estadisticas.js';
 import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
@@ -365,28 +366,10 @@ function iniciar() {
   const n = pendientes.available ? (pendientes.repairs || []).length + (pendientes.sinFuncionar || []).length : 0, g = barra.querySelector('.tel-globo');
   if (g) { g.hidden = !n; g.textContent = n > 99 ? '99+' : String(n); g.setAttribute('aria-label', n + ' pendientes'); }
  }
+ // Pendientes: en vez de contadores de fichas, gráficos de reparaciones y trabajos (estadisticas.js).
  function pintarPendientes() {
-  const lista = $('#pend-lista'); if (!lista) return;
-  if (pendientes.loading || !bombas().length) { lista.innerHTML = '<div class="tel-contadores"><span class="tel-silueta"></span><span class="tel-silueta"></span><span class="tel-silueta"></span></div><span class="tel-silueta fila"></span><span class="tel-silueta fila"></span>'; return; }
-  const nombre = tag => esc(bombas().find(p => p.tag === tag)?.nombre || '');
-  const flecha = icono('<path d="M9 6l6 6-6 6"/>', 20);
-  const fila = (tag, linea, tipo, tab = 'ficha') => `<button type="button" class="tel-pend" data-tag="${esc(tag)}" data-tab="${tab}"><i class="tel-punto ${tipo}" aria-hidden="true"></i><span><strong>${esc(tag)}</strong><small>${linea}</small></span>${flecha}</button>`;
-  const grupo = (titulo, items, vacio) => `<details class="tel-grupo"><summary><span>${titulo}</span><b>${items.length}</b></summary>${items.length ? `<div class="tel-pends">${items.join('')}</div>` : `<p class="tel-vacio">${vacio}</p>`}</details>`;
-  const repairs = pendientes.repairs || [], sinFun = pendientes.sinFuncionar || [];
-  const incompletas = bombas().map(p => [p, completeness(p)]).filter(([, c]) => c.done < c.total).sort((a, b) => a[1].done / a[1].total - b[1].done / b[1].total);
-  const sinVer = bombas().filter(p => !verificationOf(p).verified);
-  const atencion = [...repairs.map(r => fila(r.tag, `En reparación desde ${esc(r.desde || '—')} · ${esc(r.motivo)}`, 'rojo')),
-   ...sinFun.map(r => fila(r.tag, `Último mantenimiento ${esc(r.date)}: no quedó funcionando`, 'ambar', 'historial'))];
-  lista.innerHTML = `<div class="tel-contadores">
-    <div class="tel-contador rojo"><b>${pendientes.available?repairs.length:'—'}</b><span>Fuera de su lugar</span></div>
-    <div class="tel-contador ambar"><b>${pendientes.available?sinFun.length:'—'}</b><span>Quedó sin funcionar</span></div>
-    <div class="tel-contador"><b>${incompletas.length}</b><span>Fichas por completar</span></div></div>`
-   + (pendientes.available?'':`<p class="tel-storage-note">${pendientes.loading?'Consultando el estado de planta…':pendientes.error?'No se pudo consultar el estado de planta. Reintentá cuando vuelva la conexión.':'Estado de planta no disponible: este alojamiento no está sincronizado con Obsidian.'}</p>`)
-   + `<h2 class="tel-sub">Atención ahora</h2>` + (!pendientes.available?'<p class="tel-vacio">No se puede confirmar si hay equipos fuera de su lugar o sin funcionar.</p>':atencion.length?`<div class="tel-pends">${atencion.join('')}</div>`:`<div class="tel-vacio-ilus">${ILUS.listo}<p>Sin equipos fuera de su lugar o sin funcionar en la última consulta a Obsidian.</p></div>`)
-   + `<h2 class="tel-sub">Revisión de fichas</h2>`
-   + grupo('Fichas incompletas', incompletas.map(([p, c]) => fila(p.tag, `${nombre(p.tag)} · Completa ${c.done}/${c.total}`, 'gris')), 'Todas las fichas están completas.')
-   + grupo('Sin verificar en campo', sinVer.map(p => { const v = verificationOf(p); return fila(p.tag, `${nombre(p.tag)} · ${v.legacy ? 'Registro antiguo' : v.partial ? 'Verificación parcial' : 'Sin verificar'}`, 'gris'); }), 'Todas las fichas están verificadas.');
-  lista.querySelectorAll('.tel-pend').forEach(b => b.onclick = () => abrirFicha(b.dataset.tag, b.dataset.tab));
+  if (!$('#pend-lista')) return;
+  iniciarEstadisticas();
  }
 
  // Regreso de una bomba en reparación: se registra desde su ficha.
