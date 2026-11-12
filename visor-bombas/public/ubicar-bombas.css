@@ -1,0 +1,51 @@
+
+/* Plano real de la planta visto desde arriba con cada lugar marcado; lista del Excel al lado. Apariencia oscura como el visor. */
+:root{color-scheme:dark;--bg:#14100a;--panel:#1f180e;--line:#5d4a26;--fg:#f5ead6;--muted:#b9a988;--accent:#e8ae45;--accent-ink:#241703;--cambio:#2f9e5f;--falta:#c9472f;--display:"Fraunces",Georgia,serif;--body:"Plus Jakarta Sans",system-ui,sans-serif;--data:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.45 var(--body);margin:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+main{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.obra>*{min-width:0}
+h1{font:600 clamp(26px,4vw,34px)/1.1 var(--display);margin:0}
+h2{font-size:17px;margin:0}p{margin:0}
+#guia{color:var(--muted);max-width:75ch}
+#resumen{display:flex;flex-wrap:wrap;gap:6px 18px;font:500 14px var(--data);font-variant-numeric:tabular-nums}
+#resumen b{color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button,.acciones button{min-height:42px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--fg);font:600 14px var(--body);cursor:pointer}
+.chips button[aria-pressed=true],.acciones .fuerte{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.obra{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;align-items:start}
+@media(max-width:900px){.obra{grid-template-columns:minmax(0,1fr)}}
+#marco{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:12px;background:#000}
+#plano{position:relative;cursor:crosshair;overflow:hidden}
+#fondo{position:absolute;max-width:none;display:block;pointer-events:none;user-select:none}
+.lugar{position:absolute;transform:translate(-50%,calc(-100% - 9px));min-width:34px;height:24px;padding:0 5px;border-radius:6px;border:1.5px solid #000;background:var(--accent);color:var(--accent-ink);font:700 12px var(--data);cursor:pointer;touch-action:manipulation;white-space:nowrap}
+.lugar{overflow:visible!important}
+.lugar::after{content:"";position:absolute;left:50%;bottom:-11px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:inherit;border:1.5px solid #000}
+.lugar:hover,.lugar:focus-visible{z-index:4}
+.lugar.sin{background:#fff;color:var(--falta);border-color:var(--falta)}
+.lugar.cambio{background:var(--cambio);color:#fff}
+.lugar.nuevo{border-style:dashed}
+.lugar.elegido{outline:3px solid #fff;outline-offset:2px;z-index:3}
+.lugar.sobre{outline:3px solid #fff}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px;min-width:0}
+#filtro-texto,#filtro-area{width:100%;min-height:42px;padding:6px 10px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;font:15px var(--body)}
+#tags{display:grid;grid-auto-rows:max-content;gap:5px;max-height:56vh;overflow-y:auto}
+.tag{display:grid;grid-template-columns:48px minmax(0,1fr);gap:8px;align-items:center;min-height:44px;text-align:left;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--fg);font:13px var(--body);cursor:pointer}
+.tag b{font:700 15px var(--data)}.tag em{font-style:normal;font-size:12px;display:block;color:var(--muted)}
+.tag.falta em{color:#f08a73;font-weight:700}
+.tag.elegido{background:var(--accent);color:var(--accent-ink)}.tag.elegido em{color:var(--accent-ink)}
+#resultado{display:grid;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+#lista{width:100%;min-height:120px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px;font:13px/1.5 var(--data);resize:vertical}
+.acciones{display:flex;flex-wrap:wrap;gap:8px}
+#estado{color:var(--accent);font-weight:600;min-height:24px}
+#detalle{color:var(--muted);font-size:14px;min-height:22px}
+#editor{display:grid;gap:6px;background:var(--panel);border:2px solid var(--accent);border-radius:12px;padding:12px;margin-bottom:8px}
+#editor[hidden]{display:none}
+#editor input,#editor select{width:100%;min-height:44px;padding:6px 10px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;font:16px var(--body)}
+#editor label{font-size:13px;color:var(--muted)}
+.lugar{touch-action:none;max-width:170px;overflow:hidden;text-overflow:ellipsis;user-select:none;-webkit-user-select:none}
+.lugar.movida{box-shadow:0 0 0 2px #fff}
+#agregar[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.volver{color:var(--accent)}.form-nueva{display:grid;gap:8px}.form-nueva label{display:grid;gap:4px;font-size:13px;color:var(--muted)}.form-nueva input{min-width:0;width:100%;min-height:44px;padding:8px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;font:inherit}button:disabled{opacity:.45;cursor:default}.acciones a{color:var(--accent)}#error{color:#ffb5a6}#editor .acciones button{min-height:44px}#plano:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}#ayuda-teclado{font-size:13px;color:var(--muted)}

@@ -31,6 +31,7 @@ node_modules/
 !visor-bombas/public/expediente/
 !visor-bombas/public/expediente/*.jpg
 !visor-bombas/public/sector-verificacion-2.png
+!visor-bombas/public/modelos/plano-bombas.jpg
 
 # respaldos y temporales
 *.respaldo

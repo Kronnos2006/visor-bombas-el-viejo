@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ubicar y añadir bombas · Vocatus</title><link rel="stylesheet" href="/ubicar-bombas.css"></head><body>
+<main>
+<a class="volver" href="/?s=areas">← Volver al visor</a>
+<h1>Bombas de toda la planta</h1>
+<p id="guia">Selecciona una bomba de la lista y toca su sitio en el plano. Para registrar otra, usa «Añadir al catálogo». Puedes mover los puntos, asignarles un TAG o quitar su posición. Este es un borrador de ubicaciones: no cambia el modelo 3D ni las fotos.</p>
+<p id="referencia">La imagen es una referencia. Las posiciones añadidas o movidas después en el 3D no se trasladan automáticamente aquí. «Falta ubicar» significa que falta su posición en este plano.</p>
+<div id="resumen"></div>
+<div class="chips" id="sectores" role="group" aria-label="Sectores"></div>
+<p id="estado" role="status" aria-live="polite">Cargando plano…</p><p id="error" role="alert"></p>
+<div class="obra">
+ <div><div class="chips" style="margin-bottom:8px" role="group" aria-label="Plano"><button type="button" id="deshacer">Deshacer</button><button type="button" id="borrar-todas">Vaciar posiciones</button><button type="button" id="agregar" aria-pressed="false">+ Crear punto</button><button type="button" data-zoom="1">Normal</button><button type="button" data-zoom="1.6">Cerca</button><button type="button" data-zoom="2.4">Muy cerca</button></div>
+ <form id="editor" hidden aria-label="Editar bomba"><h2 id="editor-titulo"></h2><label for="ed-nombre">Nombre o número</label><input id="ed-nombre" maxlength="60" autocomplete="off" placeholder="Ej.: 14 o Alambique UQ"><label for="ed-tag">TAG del Excel</label><select id="ed-tag"></select><div class="acciones"><button type="submit" class="fuerte">Listo</button><button type="button" id="ed-quitar">Quitar esta bomba</button></div></form>
+ <div id="marco"><div id="plano" tabindex="0" aria-label="Plano de la planta"><img id="fondo" alt="Planta vista desde arriba" src="/modelos/plano-bombas.jpg"></div></div>
+ <p id="detalle"></p></div>
+ <aside aria-label="Bombas del Excel"><h2>Bombas por colocar</h2>
+  <input id="filtro-texto" type="search" placeholder="Buscar TAG o servicio" aria-label="Buscar TAG o servicio">
+  <select id="filtro-area" aria-label="Filtrar por área"></select>
+  <div class="chips" role="group" aria-label="Mostrar"><button type="button" id="solo-faltan" aria-pressed="false">Solo las que faltan</button></div>
+  <details><summary>Añadir al catálogo</summary><form id="nueva-bomba" class="form-nueva"><label>TAG<input id="nuevo-tag" required pattern="B[1-9][0-9]{0,3}" maxlength="5" placeholder="B84" autocomplete="off"></label><label>Nombre<input id="nuevo-nombre" required maxlength="100" autocomplete="off"></label><label>Área<input id="nuevo-area" required maxlength="100" autocomplete="off"></label><div class="acciones"><button type="submit">Añadir y ubicar</button></div></form></details><div id="tags"></div></aside>
+</div>
+<section id="resultado"><h2>Cuando termines</h2><p style="color:var(--muted)">Copia esta lista y pégala en el chat. El visor no cambia hasta que me la envíes. Tu avance queda guardado en este navegador. Descarga un respaldo para llevarlo a otro dispositivo.</p>
+ <textarea id="lista" readonly aria-label="Lista de cambios"></textarea>
+ <div class="acciones"><button type="button" class="fuerte" id="copiar">Copiar lista</button><button type="button" id="descargar">Descargar respaldo</button><button type="button" id="importar">Cargar respaldo</button><input id="archivo" type="file" accept="application/json,.json" hidden><button type="button" id="restaurar" hidden></button><button type="button" id="reiniciar">Empezar de nuevo</button></div>
+</section>
+<p id="ayuda-teclado">Teclado: selecciona una bomba y pulsa Enter sobre el plano para colocarla en el centro. En un punto, usa las flechas para moverlo; Escape cancela la selección.</p></main>
+<script type="module" src="/ubicar-bombas.js"></script></body></html>

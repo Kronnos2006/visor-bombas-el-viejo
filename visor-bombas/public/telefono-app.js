@@ -134,6 +134,7 @@ function iniciar() {
   requestAnimationFrame(()=>{const heading=$('#tel-areas').previousElementSibling;contenido.scrollTop+=heading.getBoundingClientRect().top-contenido.getBoundingClientRect().top-16;});
  });
  if (camara) $('#tel-herramientas').append(camara);
+ const ubicar=document.createElement('a');ubicar.href='/ubicar-bombas.html';ubicar.className='tel-sec';ubicar.textContent='Ubicar y añadir bombas';$('#tel-herramientas').append(ubicar);
  // «Ocultar nombres» y la lista «Bombas» van en Herramientas, no encima del 3D.
  const moverPaleta=()=>{const paleta=$('#paleta-bombas');if(!paleta)return false;if(paleta.parentElement!==$('#tel-herramientas'))$('#tel-herramientas').prepend(paleta);return true;};
  if(!moverPaleta()){const espera=new MutationObserver(()=>{if(moverPaleta())espera.disconnect();});espera.observe(document.body,{childList:true,subtree:true});}
