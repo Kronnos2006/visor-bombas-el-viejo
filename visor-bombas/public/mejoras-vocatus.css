@@ -105,3 +105,12 @@ body.claro .estadisticas{--est-barra:#a0660a}
 .est-tabla td:last-child,.est-tabla th:last-child{text-align:right}
 .orden-card.orden-abierta{border-style:dashed;border-color:var(--accent)}
 .orden-acciones .orden-aceptar{background:var(--accent);color:var(--sobre-accent,#120f0b);border-color:var(--accent);font-weight:700}
+/* ---------- Mover bombas (administrador) ---------- */
+.mover-activar{width:100%;margin-bottom:8px}
+.mover-activar[aria-pressed="true"]{background:var(--accent);color:var(--sobre-accent,#120f0b);border-color:var(--accent);font-weight:700}
+body.moviendo-bombas #viewport canvas{cursor:grab}
+.mover-barra{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9998;display:flex;align-items:center;gap:6px;padding:6px 8px 6px 14px;border-radius:999px;border:1px solid var(--accent);background:color-mix(in srgb,var(--superficie-solida,#1a1610) 94%,transparent);color:var(--tinta);font-size:14px;font-weight:600;box-shadow:0 6px 18px #0006;max-width:calc(100vw - 16px);overflow-x:auto;white-space:nowrap}
+.mover-barra .mini-boton{padding:6px 10px;border-radius:999px}
+.mover-barra .mover-guardar:not(:disabled){background:var(--accent);color:var(--sobre-accent,#120f0b);border-color:var(--accent)}
+.mover-barra #mover-nombre{max-width:34vw;overflow:hidden;text-overflow:ellipsis}
+body.app-movil .mover-barra{bottom:calc(var(--barra,64px) + 10px + env(safe-area-inset-bottom,0px));font-size:13px}

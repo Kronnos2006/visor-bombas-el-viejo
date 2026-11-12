@@ -1035,7 +1035,7 @@ function montarIntegrado(g,escena,placed){
    s.excel=s.tagAsignado?asignacion.excel[s.tagAsignado]:null;
    const etiquetaFija=s.tagAsignado||asig?.nombre||null;
    s.numero=(numeracion[sectorDe(s.sector)]=(numeracion[sectorDe(s.sector)]||0)+1);integrado.references.push(s);
-   const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);
+   const a=new THREE.Object3D();a.position.set((s.min[0]+s.max[0])/2,s.max[1]+1.2,(s.min[2]+s.max[2])/2);g.add(a);s.anclaEtiqueta=a;
    const el=document.createElement('button');el.className='label pending-label sin-ficha';s.labelBase=`Bomba ${s.numero} · ${SECTORES_INT.find(x=>x.id===sectorDe(s.sector))?.nombre||s.sector}`;s.labelEl=el;if(etiquetaFija)s.labelBase=etiquetaFija;el.textContent=nombreVisible(s);el.title=s.tagAsignado?tituloTag(asignacion,s.tagAsignado):s.nombre;
    el.setAttribute('aria-label','Bomba sin ficha: '+s.nombre);el.dataset.nombre=s.nombre;
    const fichaTag=s.fichaTag=s.tagAsignado&&conFicha.has(s.tagAsignado)?s.tagAsignado:null;
@@ -1048,7 +1048,7 @@ function montarIntegrado(g,escena,placed){
   }
   if(gruposCampo.length)new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/modelos/bombas-campo.glb').then(({scene:campo})=>{
    if(g.parent!==plant)return;if(alineado)campo.position.set(...alineado.d);
-   campo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});for(const mv of integrado.mover||[])campo.traverse(o=>{if(o.isMesh&&o.userData.bomba===mv.nombre){o.position.x+=mv.dx;o.position.z+=mv.dz;}});g.add(campo);aplicarVisibilidadBombas();
+   campo.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});for(const mv of integrado.mover||[])campo.traverse(o=>{if(o.isMesh&&o.userData.bomba===mv.nombre){o.position.x+=mv.dx;o.position.z+=mv.dz;}});g.add(campo);integrado.campo=campo;aplicarVisibilidadBombas();document.dispatchEvent(new Event('vocatus:campo-listo'));
   }).catch(err=>console.warn('Sin geometría de bombas nuevas',err));
   realzarBombas(g);
   ligarFotosAPosicion(lugaresFoto);
@@ -1272,6 +1272,8 @@ function renderEditingAccess(){
 
 // Puente para la app de teléfono (telefono-app.js). Solo expone acciones que el visor ya hace.
 window.vocatus={
+ // Para «Mover bombas» (mover-bombas.js, solo administrador): acceso a la escena sin cambiar cómo se arma.
+ get mover3D(){return integrado?.g?{THREE,g:integrado.g,escena:integrado.escena,campo:integrado.campo||null,refs:integrado.references,cuerpos:pumpObjectsInt,camera,controls,renderer,pickables,raycaster}:null;},
  get references(){return [...(integrado?.references||[]).filter(r=>!r.fichaTag),...extraReferences];},
  get pumps(){return state.pumps;},get pump(){return state.pump;},get token(){return state.token;},get writable(){return !!state.writable;},get demo(){return !!state.demo;},
  select:tag=>selectPhotoPump(tag),

@@ -2,6 +2,7 @@
 // la campana muestra los avisos de cada persona en tiempo real. La base de datos decide los permisos.
 import {surveyConnection} from './cloud-surveys.js';
 import {cloudWorkflow} from './cloud-workflow.js';
+import {iniciarMoverBombas} from './mover-bombas.js?v=20261112a';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
@@ -303,6 +304,8 @@ async function iniciar(){
  if(iniciado)return;iniciado=true;
  montarCampana();cargarAsignacion();
  const conectado=await conectar();
+ // Posiciones guardadas de las bombas: se aplican para todos; mover arrastrando, solo el administrador.
+ iniciarMoverBombas({admin:conectado&&yo.admin});
  // La sección de órdenes la arma otro módulo cuando cargan las bombas: se espera a que aparezca una sola vez.
  const enganchar=()=>{
   if(!$('#reportes-planta')&&$('#ordenes-trabajo')){montarReportes();mejorarFormularioOrden();pintarReportes();if(conexion)cargarReportes();}
