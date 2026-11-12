@@ -643,5 +643,6 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
 @media (min-width:901px){
  body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) #tel-contenido{grid-template-columns:minmax(0,1fr)!important}
  body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) .tel-detalle-vacio.tel-vacio-ilus{display:none!important}
- body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) .tel-panel[data-s="pendientes"]{max-width:1100px}
+ body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) :is(#ordenes-lista,#reportes-lista){display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;align-items:start}
+ body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) :is(#ordenes-lista,#reportes-lista) > .orden-card{margin:0}
 }
