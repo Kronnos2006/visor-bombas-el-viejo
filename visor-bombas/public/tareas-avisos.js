@@ -173,17 +173,27 @@ function crearOrdenDesde(r){
 function mejorarFormularioOrden(){
  const form=$('#orden-form');if(!form||form.dataset.equipo)return;form.dataset.equipo='1';
  const texto=form.elements.assignee,etiqueta=texto.closest('label');
- const elegir=document.createElement('select');elegir.name='assigneeId';elegir.id='orden-responsable';
+ const elegir=document.createElement('select');elegir.id='orden-responsable';
+ // Lo que se envía: id del responsable o «abierta» (Para todos).
+ const idOculto=document.createElement('input');idOculto.type='hidden';idOculto.name='assigneeId';
+ const abiertaOculta=document.createElement('input');abiertaOculta.type='hidden';abiertaOculta.name='abierta';
+ form.append(idOculto,abiertaOculta);
  const ayuda=document.createElement('small');ayuda.className='tel-nota';
  etiqueta.append(elegir,ayuda);
  const pintar=()=>{
   if(!equipo.length){elegir.hidden=true;elegir.required=false;texto.hidden=false;texto.required=true;ayuda.textContent='';return;}
-  elegir.innerHTML='<option value="">Elegí quién la hace…</option>'+equipo.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.role==='admin'?' (administrador)':''} · ${esc(p.username)}</option>`).join('');
+  elegir.innerHTML='<option value="">Elegí quién la hace…</option><option value="__todos__">👥 Para todos (la toma quien la acepte)</option>'+equipo.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.role==='admin'?' (administrador)':''} · ${esc(p.username)}</option>`).join('');
   elegir.hidden=false;texto.hidden=true;texto.required=false;elegir.required=true;
-  const igual=equipo.find(p=>p.name===texto.value);elegir.value=igual?.id||'';
-  ayuda.textContent='Le llega un aviso a esa persona al guardar.';
+  const igual=equipo.find(p=>p.name===texto.value);elegir.value=texto.value==='Para todos'?'__todos__':igual?.id||'';
+  sincronizar();
  };
- elegir.onchange=()=>{const p=equipo.find(x=>x.id===elegir.value);texto.value=p?p.name:'';};
+ const sincronizar=()=>{
+  const todos=elegir.value==='__todos__',p=equipo.find(x=>x.id===elegir.value);
+  idOculto.value=todos?'':(p?.id||'');abiertaOculta.value=equipo.length?String(todos):'';
+  if(todos)texto.value='Para todos';else if(p)texto.value=p.name;else if(equipo.length)texto.value='';
+  ayuda.textContent=todos?'Les llega un aviso a todos; la primera persona que la acepte queda como responsable.':equipo.length?'Le llega un aviso a esa persona al guardar.':'';
+ };
+ elegir.onchange=sincronizar;
  // Cada vez que se abre el diálogo, se sincroniza con el responsable actual.
  new MutationObserver(()=>{if($('#orden-dialog').open&&!eligiendo3D)setTimeout(()=>{pintar();ordenarEquiposOrden();},0);}).observe($('#orden-dialog'),{attributes:true,attributeFilter:['open']});
  botonElegir3D(form.elements.tag,$('#orden-dialog'));
@@ -206,6 +216,21 @@ function marcarMias(){
    catch(e){aviso(FALTA_SQL.test(e?.message||'')||/vocatus_delete_work_order/.test(e?.message||'')?'Falta preparar la base: corré el SQL «tareas y avisos».':e?.message||'No se pudo borrar.');b.disabled=false;}
   };
   acciones.append(b);
+ });
+ // Órdenes «Para todos»: cualquiera puede aceptarla; la primera persona queda como responsable.
+ document.querySelectorAll('#ordenes-lista .orden-card').forEach(card=>{
+  const dd=[...card.querySelectorAll('dt')].find(dt=>dt.textContent==='Responsable')?.nextElementSibling;
+  const abierta=dd?.textContent.trim()==='Para todos'&&!card.querySelector('.orden-estado')?.textContent.match(/complet/i);
+  card.classList.toggle('orden-abierta',!!abierta);
+  const acciones=card.querySelector('.orden-acciones');if(!abierta||!acciones||acciones.querySelector('[data-aceptar]'))return;
+  acciones.querySelectorAll('[data-order-action="start"]').forEach(b=>b.hidden=true);
+  const b=document.createElement('button');b.type='button';b.dataset.aceptar='1';b.className='orden-aceptar';b.textContent='✋ Aceptar orden';
+  b.onclick=async()=>{
+   b.disabled=true;
+   try{await cloudWorkflow().acceptOrder(card.dataset.order);aviso('Orden aceptada: ahora sos el responsable.');$('#ordenes-actualizar')?.click();}
+   catch(e){aviso(/vocatus_accept_work_order|PGRST20[25]/.test(e?.message||'')?'Falta preparar la base: corré el SQL «órdenes para todos».':e?.message||'No se pudo aceptar.');b.disabled=false;}
+  };
+  acciones.prepend(b);
  });
  if(!yo.nombre)return;
  document.querySelectorAll('#ordenes-lista .orden-card').forEach(card=>{

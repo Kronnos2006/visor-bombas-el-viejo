@@ -103,3 +103,5 @@ body.claro .estadisticas{--est-barra:#a0660a}
 .est-tabla table{width:100%;margin-top:6px;border-collapse:collapse}
 .est-tabla td,.est-tabla th{padding:4px 6px;border-bottom:1px solid var(--borde);text-align:left;color:var(--tinta)}
 .est-tabla td:last-child,.est-tabla th:last-child{text-align:right}
+.orden-card.orden-abierta{border-style:dashed;border-color:var(--accent)}
+.orden-acciones .orden-aceptar{background:var(--accent);color:var(--sobre-accent,#120f0b);border-color:var(--accent);font-weight:700}

@@ -55,3 +55,13 @@ test('la lista de equipos incluye las bombas de la asignación aunque el 3D no h
  assert.ok(n.every((v,i)=>!i||v>n[i-1]),'ordenadas de menor a mayor');
  assert.equal(lista[0][0],'B1');
 });
+test('órdenes «Para todos»: se avisa a todos, la primera persona que acepta queda como responsable',async()=>{
+ const s=await readFile(new URL('../supabase/migrations/20261112150000_vocatus_ordenes_para_todos.sql',import.meta.url),'utf8');
+ assert.match(s,/function public\.vocatus_accept_work_order[\s\S]*for update[\s\S]*ya la aceptó otra persona[\s\S]*'abierta',false,'assigneeId',auth\.uid\(\)/);
+ assert.match(s,/abierta and not abiertaAntes[\s\S]*notify_all/);
+ assert.match(s,/aceptó la orden/);
+ assert.match(s,/Primero aceptá la orden/);
+ assert.match(s,/'assigneeId',assignee_id,'abierta',abierta,/);
+ const js=await readFile(new URL('./public/tareas-avisos.js',import.meta.url),'utf8');
+ assert.match(js,/__todos__/);assert.match(js,/acceptOrder/);
+});

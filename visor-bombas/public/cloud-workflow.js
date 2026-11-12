@@ -13,6 +13,7 @@ export function createWorkflowTransport(provider){
   connection:()=>provider(),
   async orders(){const c=await provider();if(!c)return {orders:[],writable:false,cloud:true,connected:false};return {orders:(await pages('vocatus_work_orders',q=>q.order('id'))).filter(r=>!r.archived_at).map(r=>r.data),writable:c.writable,cloud:true,connected:true};},
   saveOrder:input=>rpc('vocatus_save_work_order',input),
+  async acceptOrder(id){const c=await requireConnection(true),r=await c.client.rpc('vocatus_accept_work_order',{p_id:id});if(r.error)throw r.error;return r.data;},
   async deleteOrder(id){const c=await requireConnection(true),r=await c.client.rpc('vocatus_delete_work_order',{p_id:id});if(r.error)throw r.error;},
   async reports(tag){return Promise.all((await pages('vocatus_work_reports',q=>q.eq('tag',tag).is('archived_at',null).order('created_at').order('source_id'))).map(read));},
   async saveReport(rec){const c=await requireConnection(true),evidence=[];for(const photo of normalizeEvidence(rec.evidence||[])){const bytes=Uint8Array.from(atob(photo.base64),x=>x.charCodeAt(0));evidence.push(await upload(c,rec.tag+':'+rec.id,bytes,photo.mime,photo.name));}let pdf=null;if(rec.pdf?.blob)pdf=await upload(c,rec.tag+':'+rec.id,await rec.pdf.blob.arrayBuffer(),'application/pdf',rec.pdf.name);const data=await rpc('vocatus_save_work_report',{...rec,evidence,pdf});return {...data,evidence:rec.evidence||[],pdf:rec.pdf||null,source:'supabase'};},
