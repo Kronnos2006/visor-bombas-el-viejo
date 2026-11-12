@@ -46,3 +46,12 @@ test('solo el administrador borra órdenes; se archivan y el responsable recibe 
  const wf=await readFile(new URL('./public/cloud-workflow.js',import.meta.url),'utf8');
  assert.match(wf,/filter\(r=>!r\.archived_at\)/);
 });
+test('la lista de equipos incluye las bombas de la asignación aunque el 3D no haya cargado',async()=>{
+ const {tagsDeAsignacion}=await import('./public/tareas-avisos.js');
+ const asig=JSON.parse(await readFile(new URL('./public/modelos/asignacion-bombas.json',import.meta.url),'utf8'));
+ const lista=tagsDisponibles([{tag:'B30',nombre:'Tanque LW1'}],[],tagsDeAsignacion(asig));
+ const n=lista.map(x=>parseInt(x[0].slice(1)));
+ assert.ok(lista.length>=70,'deben salir casi todas las bombas: '+lista.length);
+ assert.ok(n.every((v,i)=>!i||v>n[i-1]),'ordenadas de menor a mayor');
+ assert.equal(lista[0][0],'B1');
+});
