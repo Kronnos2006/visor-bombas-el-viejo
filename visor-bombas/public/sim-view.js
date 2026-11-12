@@ -8,10 +8,10 @@ const VISUAL=.025; // fracción de las rpm reales que se dibuja, para poder ver 
 
 const firstName=o=>{if(o.isMesh)return o.name;let n='';o.traverse(c=>{if(!n&&c.isMesh)n=c.name;});return n;};
 
-export function createSimRig(THREE,components){
+export function createSimRig(THREE,components,visual){
  const spinners=[];
  const addSpin=o=>spinners.push({o,rx:o.rotation.x,y:o.position.y,z:o.position.z});
- components.forEach((g,i)=>{for(const child of g.children){const name=firstName(child);if(i===2||i===6||i===8||(i===5&&SEAL_ROT.test(name))||(i===9&&MOTOR_ROT.test(name)))addSpin(child);}});
+ components.forEach((g,i)=>{for(const child of g.children){const name=firstName(child);const spindle=visual?visual.spinner(child):(i===2||i===6||i===8||(i===5&&SEAL_ROT.test(name))||(i===9&&MOTOR_ROT.test(name)))?child:null;if(spindle)addSpin(spindle);}});
  // Trazadores: succión axial → ojo del impulsor → espiral en la voluta → descarga superior.
  const casing=components[0],N=70,path=u=>{
   if(u<.3){const t=u/.3;return [-1.35+1.1*t,0,0];}
@@ -29,6 +29,7 @@ export function createSimRig(THREE,components){
   const speed=reduced?0:.28*Math.min(2.2,d.q/sim.model.params.Qd),base=sim.inputs.fluid==='etanol'?alcohol:water;
   for(let k=0;k<N;k++){phase[k]=(phase[k]+speed*dt)%1;const [x,y,z]=path(phase[k]),[jy,jz]=jitter[k],axial=phase[k]<.3||phase[k]>=.75;
    pos[k*3]=x+(axial&&phase[k]>=.75?jy:0);pos[k*3+1]=y+(axial&&phase[k]<.3?jy:0);pos[k*3+2]=z+jz;
+   if(visual)for(let axis=0;axis<3;axis++)pos[k*3+axis]=pos[k*3+axis]*visual.flowScale[axis]+visual.flowOffset[axis];
    const c=d.cavitation&&phase[k]>.25&&phase[k]<.45&&k%3===0?bubble:base;col[k*3]=c.r;col[k*3+1]=c.g;col[k*3+2]=c.b;}
   geometry.attributes.position.needsUpdate=true;geometry.attributes.color.needsUpdate=true;
  }
