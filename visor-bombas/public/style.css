@@ -151,9 +151,6 @@ button.pdf-btn.primary{background:#255047;border-color:var(--accent);color:#dcfc
 .anatomy-heading strong{font-size:14px;color:var(--accent)}
 .anatomy-heading span,.anatomy-tools p{font-size:10px;line-height:1.5;color:var(--muted)}
 .anatomy-actions{display:flex;flex-wrap:wrap;gap:7px}
-#cad-tools .anatomy-actions{align-items:center}
-#cad-parts{max-width:100%;padding:7px;border:1px solid #3c5652;border-radius:6px;background:#12201f;color:#dce8e1}
-.explosion[hidden]{display:none}
 .anatomy-actions button{padding:9px 11px;border:1px solid #3c5652;border-radius:6px;background:#12201f;color:#dce8e1;font-size:11px;cursor:pointer;min-height:36px}
 .anatomy-actions button:hover:not(:disabled),.anatomy-actions button[aria-pressed=true]{background:#294332;border-color:var(--accent);color:var(--accent)}
 .anatomy-actions button:disabled{opacity:.4;cursor:default}
