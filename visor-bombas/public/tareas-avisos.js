@@ -233,11 +233,13 @@ function terminarElegir3D(tag){
   e.dialog.showModal();if(tag)aviso(`Equipo elegido: ${tag}.`);
  },350);
 }
+if(typeof document!=='undefined'){
 document.addEventListener('vocatus:bomba',ev=>{if(eligiendo3D&&ev.detail)terminarElegir3D(ev.detail);});
 document.addEventListener('vocatus:referencia',ev=>{
  if(!eligiendo3D)return;const tag=ev.detail?.tagAsignado;
  if(tag)terminarElegir3D(tag);else{const s=$('#elegir-3d-barra span');if(s)s.textContent='Esa bomba todavía no tiene número. Tocá otra o cancelá.';}
 });
+}
 
 // Lista de equipos del formulario de órdenes: todas las bombas con número, de menor a mayor.
 function ordenarEquiposOrden(){
