@@ -102,6 +102,7 @@ function montarReportes(){
  <div class="orden-form-acciones"><button type="button" id="reporte-cancelar">Cancelar</button><button type="submit" class="orden-primary">Enviar aviso</button></div></form></dialog>`);
  const form=$('#reporte-form');
  form.elements.tag.onchange=()=>{$('#reporte-lugar').hidden=!!form.elements.tag.value;};
+ botonElegir3D(form.elements.tag,$('#reporte-dialog'));
  $('#reporte-nuevo').onclick=()=>{
   form.reset();$('#reporte-error').textContent='';
   form.elements.tag.innerHTML='<option value="">Otro lugar (no es una bomba)</option>'+tagsDisponibles(V()?.pumps||[],V()?.references||[]).map(([t,n])=>`<option value="${esc(t)}">${esc(t)}${n?' · '+esc(n):''}</option>`).join('');
@@ -176,7 +177,8 @@ function mejorarFormularioOrden(){
  };
  elegir.onchange=()=>{const p=equipo.find(x=>x.id===elegir.value);texto.value=p?p.name:'';};
  // Cada vez que se abre el diálogo, se sincroniza con el responsable actual.
- new MutationObserver(()=>{if($('#orden-dialog').open)setTimeout(pintar,0);}).observe($('#orden-dialog'),{attributes:true,attributeFilter:['open']});
+ new MutationObserver(()=>{if($('#orden-dialog').open&&!eligiendo3D)setTimeout(()=>{pintar();ordenarEquiposOrden();},0);}).observe($('#orden-dialog'),{attributes:true,attributeFilter:['open']});
+ botonElegir3D(form.elements.tag,$('#orden-dialog'));
  let enviado=false;form.addEventListener('submit',()=>{enviado=true;},true);
  $('#orden-dialog').addEventListener('close',()=>{
   const r=incidenteParaOrden;incidenteParaOrden=null;
@@ -203,6 +205,46 @@ function marcarMias(){
   const mia=dd&&dd.textContent.trim()===yo.nombre;card.classList.toggle('orden-mia',!!mia);
   if(mia&&!card.querySelector('.orden-mia-sello')){const s=document.createElement('span');s.className='orden-mia-sello';s.textContent='Asignada a vos';card.querySelector('.orden-meta')?.append(s);}
  });
+}
+
+// ---------- Elegir la bomba tocándola en el 3D ----------
+// Cierra el formulario, lleva al 3D (Áreas), espera que se toque una bomba y vuelve con su número.
+let eligiendo3D=null;
+function botonElegir3D(select,dialog){
+ if(!select||select.dataset.elegir3d)return;select.dataset.elegir3d='1';
+ const b=document.createElement('button');b.type='button';b.className='mini-boton elegir-3d';b.textContent='📍 Elegir en el 3D';
+ b.title='Si no sabés el número, tocá la bomba en el modelo';
+ b.onclick=()=>empezarElegir3D(select,dialog);
+ select.after(b);
+}
+function empezarElegir3D(select,dialog){
+ const origen=document.body.dataset.telSeccion||'pendientes';
+ dialog.close();eligiendo3D={select,dialog,origen};document.body.classList.add('eligiendo-3d');
+ let barra=$('#elegir-3d-barra');
+ if(!barra){barra=document.createElement('div');barra.id='elegir-3d-barra';barra.className='elegir-3d-barra';barra.innerHTML='<span>📍 Tocá la bomba en el 3D</span><button type="button" class="mini-boton">Cancelar</button>';document.body.append(barra);barra.querySelector('button').onclick=()=>terminarElegir3D(null);}
+ barra.hidden=false;barra.querySelector('span').textContent='📍 Tocá la bomba en el 3D';
+ $('#tel-barra [data-s="areas"]')?.click();
+}
+function terminarElegir3D(tag){
+ const e=eligiendo3D;if(!e)return;eligiendo3D=null;document.body.classList.remove('eligiendo-3d');$('#elegir-3d-barra').hidden=true;
+ $(`#tel-barra [data-s="${e.origen}"]`)?.click();
+ setTimeout(()=>{
+  if(tag){if(![...e.select.options].some(o=>o.value===tag))e.select.add(new Option(tag,tag));e.select.value=tag;e.select.dispatchEvent(new Event('change'));}
+  e.dialog.showModal();if(tag)aviso(`Equipo elegido: ${tag}.`);
+ },350);
+}
+document.addEventListener('vocatus:bomba',ev=>{if(eligiendo3D&&ev.detail)terminarElegir3D(ev.detail);});
+document.addEventListener('vocatus:referencia',ev=>{
+ if(!eligiendo3D)return;const tag=ev.detail?.tagAsignado;
+ if(tag)terminarElegir3D(tag);else{const s=$('#elegir-3d-barra span');if(s)s.textContent='Esa bomba todavía no tiene número. Tocá otra o cancelá.';}
+});
+
+// Lista de equipos del formulario de órdenes: todas las bombas con número, de menor a mayor.
+function ordenarEquiposOrden(){
+ const sel=$('#orden-form')?.elements.tag;if(!sel||sel.disabled)return;
+ const actual=sel.value,activas=(V()?.pumps||[]).filter(p=>!p.inactive&&p.enUso!==false);
+ sel.innerHTML='<option value="">Elegí el equipo…</option>'+tagsDisponibles(activas,V()?.references||[]).map(([t,n])=>`<option value="${esc(t)}">${esc(t)}${n?' · '+esc(n):''}</option>`).join('');
+ sel.value=actual;
 }
 
 // ---------- Avisos breves en pantalla ----------
