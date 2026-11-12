@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bomba N 32-125 · Despiece CAD</title>
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101a1d; color: #e7eeef; }
+    body { margin: 0; padding: clamp(1rem, 3vw, 2rem); }
+    h1 { margin: .6rem 0 0; }
+    p { color: #bdcdd0; }
+    a { color: #a5e9db; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); gap: 1rem; }
+    #viewport { height: clamp(22rem, 66vh, 50rem); background: #18292e; border-radius: .75rem; overflow: hidden; }
+    canvas { display: block; }
+    aside { display: grid; gap: .75rem; align-content: start; }
+    button, select { font: inherit; padding: .5rem; max-width: 100%; }
+    @media (max-width: 700px) { main { grid-template-columns: minmax(0, 1fr); } }
+  </style>
+</head>
+<body>
+  <a href="/">Volver al visor</a>
+  <h1>Bomba N 32-125</h1>
+  <p>Vista explosionada del conjunto de Inventor, disponible como referencia de mantenimiento.</p>
+  <main>
+    <div id="viewport" aria-label="Modelo 3D de la bomba N 32-125"></div>
+    <aside>
+      <label for="parts">Pieza del conjunto</label>
+      <select id="parts" disabled><option value="">Conjunto completo</option></select>
+      <button id="fit" type="button" disabled>Centrar vista</button>
+      <p id="status" role="status">Cargando el modelo CAD…</p>
+    </aside>
+  </main>
+  <script type="module" src="./bomba-n32-125.js"></script>
+</body>
+</html>
