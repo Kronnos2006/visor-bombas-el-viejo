@@ -40,3 +40,23 @@ body.app-tel .mejora-model-access p{grid-column:1/-1;margin:0;color:var(--tinta-
    no debe desplazar el número fuera del punto que se está pulsando. */
 body #labels .label:not(.selected-marker):is(:hover,:focus-visible,:active){transform:translate(-50%,-50%)}
 body #labels .label.part-label.hover-marker:not(.selected-marker){transform:translate(-50%,-50%) scale(1.15)}
+
+/* ---------- Tareas y avisos ---------- */
+.avisos-campana{position:relative;display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;border:1px solid var(--borde-fuerte);background:var(--superficie);color:var(--tinta);font-size:18px;cursor:pointer}
+.avisos-campana b{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--orange,#f08a4b);color:#120f0b;font:700 12px/20px var(--sans,inherit);text-align:center}
+.avisos-cabeza{display:flex;justify-content:space-between;align-items:center;gap:12px}.avisos-cabeza h2{margin:0}
+.avisos-acciones{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.mini-boton{padding:8px 12px;border-radius:9px;border:1px solid var(--borde-fuerte);background:transparent;color:var(--tinta);font:inherit;font-size:13px;cursor:pointer}
+.avisos-lista{display:grid;gap:8px}
+.aviso{display:grid;gap:4px;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--borde);background:var(--superficie);color:var(--tinta);font:inherit;cursor:pointer}
+.aviso.sin-leer{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.aviso span{color:var(--tinta-2);font-size:13px}.aviso small{color:var(--tinta-2);font-size:12px}
+.reportes-planta{margin:0 0 22px}
+.orden-card.orden-mia{border-color:var(--accent)}
+.orden-mia-sello{padding:2px 8px;border-radius:999px;background:var(--accent);color:var(--sobre-accent,#120f0b);font-size:11px;font-weight:700}
+#reporte-dialog label,#reporte-dialog select,#reporte-dialog input,#reporte-dialog textarea{display:block;width:100%}
+#reporte-dialog label{margin:10px 0}
+/* Conectado con la sesión: no hace falta el botón de conectar. */
+body.vocatus-conectado #ordenes-conectar{display:none!important}
+/* Solo los administradores crean y editan órdenes. */
+body.vocatus-no-admin #orden-nueva,body.vocatus-no-admin [data-order-action="edit"]{display:none!important}
