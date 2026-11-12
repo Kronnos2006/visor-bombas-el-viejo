@@ -4,7 +4,7 @@
 // selección, 3D, ficha ni guardado. Con ?vista=clasica se usa el visor anterior.
 import {selectionIdentity} from './selection-core.js';
 import {sectorDe} from './planta-integrada.js';
-import {iniciarEstadisticas} from './estadisticas.js';
+import {iniciarEstadisticas} from './estadisticas.js?v=20261112b';
 import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';

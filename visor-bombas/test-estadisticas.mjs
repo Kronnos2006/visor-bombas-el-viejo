@@ -28,3 +28,13 @@ test('el período deja afuera los trabajos viejos',()=>{
  const r=calcular({reports:[{tag:'B1',data:{date:'2026-01-01'}},{tag:'B2',data:{date:'2026-11-10'}}]},{desde:'2026-10-13',hoy:'2026-11-12'});
  assert.equal(r.trabajos,1);assert.deepEqual(r.bombas,[['B2',1]]);
 });
+test('lee los informes con el formato guardado en la nube (texto, síntomas, repuestos en una línea)',async()=>{
+ const {repuestosDe}=await import('./public/estadisticas.js');
+ assert.deepEqual(repuestosDe('Código 456875 · sello'),['sello']);
+ assert.deepEqual(repuestosDe('Código 1 · Rodamiento 6308; Código 2 · Sello tipo 21'),['Rodamiento 6308','Sello tipo 21']);
+ assert.deepEqual(repuestosDe([{code:'X',name:'O-ring'}]),['O-ring']);
+ assert.deepEqual(repuestosDe(undefined),[]);
+ const r=calcular({reports:[{tag:'B41',data:{date:'2026-11-05',title:'Fuga',symptoms:'gotea por el sello',parts:'Código 456875 · sello',operativo:'no',retirado:true}}]},{hoy:'2026-11-12'});
+ assert.equal(r.trabajos,1);assert.deepEqual(r.bombas,[['B41',1]]);assert.deepEqual(r.problemas[0],['Sello / fuga',1]);
+ assert.deepEqual(r.repuestos,[['Sello',1]]);assert.ok(r.atencion[0].retirada&&r.atencion[0].sinFuncionar);
+});

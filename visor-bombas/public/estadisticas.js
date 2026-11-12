@@ -24,6 +24,15 @@ export function categoriasDe(texto){
 }
 const contar=(items,clave)=>{const m=new Map();for(const it of items){const k=clave(it);if(k)m.set(k,(m.get(k)||0)+1);}return [...m].sort((a,b)=>b[1]-a[1]||String(a[0]).localeCompare(String(b[0]),'es',{numeric:true}));};
 const fechaDe=r=>String(r.data?.date||r.created_at||'').slice(0,10);
+// Los informes guardados en la nube usan title/symptoms/text; los del formulario, problema/comentario.
+const textoDe=d=>[d?.title,d?.symptoms,d?.problema,d?.text,d?.comentario].map(x=>Array.isArray(x)?x.join(' '):typeof x==='string'?x:'').join(' ');
+const si=v=>v===true||/^(si|sí|true|1)$/i.test(String(v??'').trim());
+const no=v=>v===false||/^(no|false|0)$/i.test(String(v??'').trim());
+// Repuestos: lista [{code,name}] o texto «Código 456875 · sello; …».
+export function repuestosDe(parts){
+ const lista=Array.isArray(parts)?parts.map(p=>typeof p==='string'?p:(p?.name||p?.code||'')):typeof parts==='string'?parts.split(/[;\n]+/):[];
+ return lista.map(x=>String(x).split('·').pop().replace(/^\s*c[oó]digo\s*\S+\s*/i,'').trim().replace(/\s+/g,' ')).filter(x=>x.length>1);
+}
 export function calcular({reports=[],orders=[],incidents=[]},{desde=null,hoy=new Date().toISOString().slice(0,10)}={}){
  const dentro=f=>!desde||(f&&f>=desde);
  const informes=reports.filter(r=>!r.archived_at&&dentro(fechaDe(r)));
@@ -31,16 +40,17 @@ export function calcular({reports=[],orders=[],incidents=[]},{desde=null,hoy=new
  const avisos=incidents.filter(i=>dentro(String(i.created_at||'').slice(0,10)));
  const ordenesPeriodo=ordenes.filter(o=>dentro(String(o.created||o.due||'').slice(0,10)));
  // Problemas: lo que dicen informes, avisos y órdenes correctivas (cada registro cuenta una vez por categoría).
- const textos=[...informes.map(r=>`${r.data?.problema||''} ${r.data?.comentario||''}`),...avisos.map(i=>`${i.title} ${i.details||''}`),...ordenesPeriodo.filter(o=>o.type==='correctivo').map(o=>`${o.title} ${o.component||''}`)];
+ const textos=[...informes.map(r=>textoDe(r.data)),...avisos.map(i=>`${i.title} ${i.details||''}`),...ordenesPeriodo.filter(o=>o.type==='correctivo').map(o=>`${o.title} ${o.component||''}`)];
  const problemas=contar(textos.flatMap(t=>categoriasDe(t).map(c=>({c}))),x=>x.c);
  const bombas=contar([...informes.map(r=>r.tag),...avisos.map(i=>i.tag)].map(t=>({t})),x=>x.t);
- const repuestos=contar(informes.flatMap(r=>(r.data?.parts||[]).map(p=>({n:String(p.name||p.code||'').trim().replace(/\s+/g,' ')}))).filter(x=>x.n),x=>x.n.toLowerCase().replace(/^./,c=>c.toUpperCase()));
+ const repuestos=contar(informes.flatMap(r=>repuestosDe(r.data?.parts).map(n=>({n}))),x=>x.n.toLowerCase().replace(/^./,c=>c.toUpperCase()));
  // Trabajos por mes: últimos 6 meses (siempre los 6, aunque tengan 0).
  const meses=[];const base=new Date(hoy+'T12:00:00Z');for(let i=5;i>=0;i--){const d=new Date(Date.UTC(base.getUTCFullYear(),base.getUTCMonth()-i,1));meses.push([d.toISOString().slice(0,7),0]);}
  for(const r of reports.filter(r=>!r.archived_at)){const m=fechaDe(r).slice(0,7),fila=meses.find(x=>x[0]===m);if(fila)fila[1]++;}
  // Atención: último informe de cada bomba dice que no quedó funcionando o que se retiró.
  const ultimo=new Map();for(const r of reports.filter(r=>!r.archived_at))if(!ultimo.has(r.tag)||fechaDe(r)>fechaDe(ultimo.get(r.tag)))ultimo.set(r.tag,r);
- const atencion=[...ultimo.values()].filter(r=>r.data?.operativo==='no'||r.data?.retiro==='si').map(r=>({tag:r.tag,fecha:fechaDe(r),sinFuncionar:r.data?.operativo==='no',retirada:r.data?.retiro==='si',problema:r.data?.problema||''})).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+ const retirada=d=>si(d?.retiro)||si(d?.retirado);
+ const atencion=[...ultimo.values()].filter(r=>no(r.data?.operativo)||retirada(r.data)).map(r=>({tag:r.tag,fecha:fechaDe(r),sinFuncionar:no(r.data?.operativo),retirada:retirada(r.data),problema:(r.data?.title||r.data?.problema||textoDe(r.data)).trim()})).sort((a,b)=>b.fecha.localeCompare(a.fecha));
  const abiertas=ordenes.filter(o=>o.status!=='completada');
  return {trabajos:informes.length,abiertas:abiertas.length,vencidas:abiertas.filter(o=>o.due&&o.due<hoy).length,avisosAbiertos:incidents.filter(i=>i.status!=='resuelto').length,
   bombas:bombas.slice(0,8),problemas:problemas.slice(0,8),repuestos:repuestos.slice(0,8),meses,atencion,
@@ -78,7 +88,7 @@ function columnasMes(meses){
 const TIPO={preventivo:'Preventivo',correctivo:'Correctivo',inspeccion:'Inspección'};
 function pintar(){
  const caja=$('#pend-lista');if(!caja)return;
- const r=calcular(datos,{desde:desdePeriodo()});
+ let r;try{r=calcular(datos,{desde:desdePeriodo()});}catch(e){console.warn('Estadísticas',e);r=calcular({},{});error='Algún registro tiene un formato raro; se muestra lo que se pudo leer.';}
  const filtro=`<div class="est-periodo" role="group" aria-label="Período">${[['30','Último mes'],['90','3 meses'],['180','6 meses'],['todo','Todo']].map(([v,t])=>`<button type="button" data-periodo="${v}" aria-pressed="${v===periodo}">${t}</button>`).join('')}<button type="button" data-est-actualizar>↻ Actualizar</button></div>`;
  const atencion=r.atencion.length?`<div class="est-atencion">${r.atencion.map(a=>`<div class="est-alerta"><span aria-hidden="true">⚠</span><div><strong>${esc(a.tag)}</strong> · ${a.retirada?'Retirada de su lugar':'Quedó sin funcionar'}<small>${esc(a.fecha)}${a.problema?' · '+esc(a.problema.slice(0,120)):''}</small></div></div>`).join('')}</div>`
   :'<p class="tel-vacio">Ninguna bomba quedó sin funcionar ni retirada en su último informe.</p>';
