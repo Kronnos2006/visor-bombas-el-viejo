@@ -11,7 +11,7 @@ const safeJson=s=>s.replace(/</g,'\\u003c');
 let js=script.replace(/^import .*?;\r?\n/,'');
 js=js.replace("[D,base]=await Promise.all([fetchJson('/modelos/plano-bombas.json'),fetchJson('/modelos/asignacion-bombas.json')]);",`[D,base]=[${safeJson(points)},${safeJson(map)}];`);
 const bundled=core.replace(/\bexport /g,'')+'\n'+js+"\nif(location.protocol==='file:')document.querySelector('.volver')?.remove();";
-const html=page.replace('<link rel="stylesheet" href="/ubicar-bombas.css">',`<style>${css}</style>`)
+const html=page.replace(/<script data-editor-entry>[\s\S]*?<\/script>\r?\n/,'').replace('<link rel="stylesheet" href="/ubicar-bombas.css">',`<style>${css}</style>`)
  .replace('/modelos/plano-bombas.jpg','data:image/jpeg;base64,'+image.toString('base64'))
  .replace('<script type="module" src="/ubicar-bombas.js"></script>',()=>`<script type="module">${bundled.replace(/<\/script/gi,'<\\/script')}</script>`);
 const target=path.resolve(process.argv[2]||path.join(pub,'ubicar-bombas.html'));
