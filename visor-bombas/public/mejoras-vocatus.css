@@ -105,3 +105,18 @@ body.claro .estadisticas{--est-barra:#a0660a}
 .est-tabla td:last-child,.est-tabla th:last-child{text-align:right}
 .orden-card.orden-abierta{border-style:dashed;border-color:var(--accent)}
 .orden-acciones .orden-aceptar{background:var(--accent);color:var(--sobre-accent,#120f0b);border-color:var(--accent);font-weight:700}
+/* ---------- Bodega en línea ---------- */
+.pedido-items{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}
+.pedido-items li{display:grid;gap:2px;color:var(--tinta)}
+.pedido-items li span{color:var(--tinta-2)}
+.pedido-items small{color:var(--tinta-2);font-size:12px}
+.pedido-items.editable li{grid-template-columns:1fr 64px auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--borde)}
+.pedido-items.editable span{color:var(--tinta);display:grid}
+.pedido-items.editable input{width:64px;padding:6px;border-radius:8px;border:1px solid var(--borde-fuerte);background:var(--superficie);color:var(--tinta);font:inherit}
+.pedido-estado{padding:2px 10px;border-radius:999px;border:1px solid var(--borde-fuerte);font-size:12px;font-weight:700;color:var(--tinta)}
+.pedido-estado.preparado{border-color:var(--accent);color:var(--accent)}
+.pedido-estado.entregado{border-color:var(--cana);color:var(--cana)}
+.pedido-estado.cancelado{opacity:.6}
+#bod-dialog label,#bod-dialog textarea,#bod-manual-dialog label,#bod-manual-dialog input{display:block;width:100%}
+#bod-dialog label,#bod-manual-dialog label{margin:10px 0}
+button.tel-primario,button.tel-manual{font:inherit;cursor:pointer}
