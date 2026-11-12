@@ -282,6 +282,18 @@ function ordenarEquiposOrden(){
  sel.value=actual;
 }
 
+// Mensaje corto cuando otra persona cambia una orden (la lista se actualiza sola).
+export function cambioDeOrden(fila){
+ const d=fila?.data||{},t=`«${String(d.title||'una orden').slice(0,60)}»`;
+ if(fila?.archived_at)return `Se borró la orden ${t}.`;
+ if(d.status==='completada')return `Se cerró la orden ${t}.`;
+ const ultimo=(d.events||[]).at(-1)||{};
+ if(ultimo.type==='aceptada')return `${ultimo.by||'Alguien'} aceptó la orden ${t}.`;
+ if(ultimo.type==='iniciada')return `${ultimo.by||'Alguien'} inició la orden ${t}.`;
+ if(ultimo.type==='creada')return `Nueva orden ${t}.`;
+ return `Se actualizó la orden ${t}.`;
+}
+
 // ---------- Avisos breves en pantalla ----------
 function aviso(t){const el=$('#mejora-aviso');if(el){el.textContent=t;el.hidden=false;clearTimeout(aviso.t);aviso.t=setTimeout(()=>el.hidden=true,6500);}}
 
@@ -301,13 +313,22 @@ async function iniciar(){
  if(!conectado){$('#avisos-campana').hidden=true;pintarReportes();return;}
  await Promise.all([cargarAvisos(),cargarReportes()]);
  if(sinSql)$('#avisos-campana').hidden=!yo.admin;
+ // ---------- Actualización automática ----------
+ // Cuando alguien borra, acepta, inicia o cierra un trabajo, todas las pantallas se actualizan solas.
+ // Los cambios seguidos se juntan (0,8 s) para no recargar de más; si el tiempo real se corta, se consulta cada minuto.
+ let pendienteOrdenes=false,esperaOrdenes=0,esperaReportes=0,enVivo=false;
+ const recargarOrdenes=()=>{clearTimeout(esperaOrdenes);esperaOrdenes=setTimeout(()=>{if($('#orden-dialog')?.open){pendienteOrdenes=true;return;}pendienteOrdenes=false;$('#ordenes-actualizar')?.click();},800);};
+ const recargarReportes=()=>{clearTimeout(esperaReportes);esperaReportes=setTimeout(cargarReportes,800);};
+ $('#orden-dialog')?.addEventListener('close',()=>{if(pendienteOrdenes)recargarOrdenes();});
  const canal=conexion.client.channel?.('vocatus-avisos-'+yo.id);
  if(canal){
   canal.on('postgres_changes',{event:'INSERT',schema:'public',table:'vocatus_notifications',filter:`user_id=eq.${yo.id}`},p=>{avisos.unshift(p.new);avisos=avisos.slice(0,40);pintarAvisos();avisoDelNavegador(p.new);aviso(p.new.title);})
-   .on('postgres_changes',{event:'*',schema:'public',table:'vocatus_incidents'},()=>cargarReportes())
-   .on('postgres_changes',{event:'*',schema:'public',table:'vocatus_work_orders'},()=>{if(!$('#orden-dialog')?.open)$('#ordenes-actualizar')?.click();})
-   .subscribe();
+   .on('postgres_changes',{event:'*',schema:'public',table:'vocatus_incidents'},recargarReportes)
+   .on('postgres_changes',{event:'*',schema:'public',table:'vocatus_work_orders'},p=>{const quien=p.new?.archived_by||p.new?.updated_by;if(quien&&quien!==yo.id){const m=cambioDeOrden(p.new);if(m)aviso(m);}recargarOrdenes();})
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'vocatus_work_reports'},recargarOrdenes)
+   .subscribe(estado=>{enVivo=estado==='SUBSCRIBED';});
  }
+ setInterval(()=>{if(!enVivo&&document.visibilityState==='visible'){cargarAvisos();recargarReportes();recargarOrdenes();}},60000);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){cargarAvisos();cargarReportes();}});
 }
 if(typeof document!=='undefined'){

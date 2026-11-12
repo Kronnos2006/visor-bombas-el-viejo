@@ -65,3 +65,17 @@ test('órdenes «Para todos»: se avisa a todos, la primera persona que acepta q
  const js=await readFile(new URL('./public/tareas-avisos.js',import.meta.url),'utf8');
  assert.match(js,/__todos__/);assert.match(js,/acceptOrder/);
 });
+test('describe en palabras simples lo que otra persona cambió en una orden',async()=>{
+ const {cambioDeOrden}=await import('./public/tareas-avisos.js');
+ assert.equal(cambioDeOrden({archived_at:'x',data:{title:'Cambiar sello'}}),'Se borró la orden «Cambiar sello».');
+ assert.equal(cambioDeOrden({data:{title:'A',status:'completada'}}),'Se cerró la orden «A».');
+ assert.equal(cambioDeOrden({data:{title:'A',status:'pendiente',events:[{type:'creada'},{type:'aceptada',by:'Genesis'}]}}),'Genesis aceptó la orden «A».');
+ assert.equal(cambioDeOrden({data:{title:'A',status:'en-curso',events:[{type:'iniciada',by:'Luis'}]}}),'Luis inició la orden «A».');
+});
+test('la base tiene índices en sus relaciones y limpia avisos viejos sola',async()=>{
+ const s=await readFile(new URL('../supabase/migrations/20261112170000_vocatus_rendimiento.sql',import.meta.url),'utf8');
+ for(const i of ['vocatus_incidents_order_idx','vocatus_work_orders_archived_by_idx','vocatus_audit_actor_idx','vocatus_notifications_unread_idx'])assert.match(s,new RegExp(i));
+ assert.match(s,/delete from public\.vocatus_notifications[\s\S]*90 days[\s\S]*365 days/);
+ assert.doesNotMatch(s,/delete from public\.vocatus_(work|incidents|photos|pump)/);
+ assert.match(s,/add table public\.vocatus_work_reports/);
+});
