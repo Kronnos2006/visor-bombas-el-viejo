@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bomba N 32-125 · Visor de prueba</title>
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101a1d; color: #e7eeef; }
+    body { margin: 0; padding: clamp(1rem, 3vw, 2rem); }
+    h1 { margin: .6rem 0 0; }
+    p { color: #bdcdd0; }
+    a { color: #a5e9db; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem); gap: 1rem; }
+    #viewport { height: clamp(22rem, 66vh, 50rem); background: #18292e; border-radius: .75rem; overflow: hidden; touch-action: none; }
+    canvas { display: block; }
+    aside { display: grid; gap: .75rem; align-content: start; }
+    button, select { font: inherit; padding: .5rem; max-width: 100%; }
+    .primary { background: #a5e9db; border: 0; border-radius: .35rem; color: #101a1d; font-weight: 650; }
+    @media (max-width: 700px) { main { grid-template-columns: minmax(0, 1fr); } }
+  </style>
+</head>
+<body>
+  <h1>Bomba N 32-125</h1>
+  <p>Visor de prueba del cuerpo de bomba. Montaje reconstruido a partir de la lámina 2 y despiece original de Inventor.</p>
+  <main>
+    <div id="viewport" aria-label="Modelo 3D de la bomba N 32-125"></div>
+    <aside>
+      <button id="explode" class="primary" type="button" aria-pressed="false" disabled>Separar piezas</button>
+      <label for="parts">Pieza del conjunto</label>
+      <select id="parts" disabled><option value="">Conjunto completo</option></select>
+      <button id="fit" type="button" disabled>Centrar vista</button>
+      <p id="status" role="status">Cargando el modelo CAD…</p>
+    </aside>
+  </main>
+  <script type="module" src="./bomba-n32-125.js"></script>
+</body>
+</html>
