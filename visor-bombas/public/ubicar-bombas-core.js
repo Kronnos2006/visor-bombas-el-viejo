@@ -44,5 +44,7 @@ export function changes(s,base){
   if(p.removed){if(b&&!b.removed)lines.push(`QUITAR [${p.id}]`);continue;}
   if(!b||p.x!==b.x||p.y!==b.y||p.tag!==b.tag||p.name!==b.name||p.removed!==b.removed)lines.push(`${b?'UBICAR':'AGREGAR'} ${label} · px ${Math.round(p.x)},${Math.round(p.y)} [${p.id}]`);
  }
- return ['Borrador de ubicaciones · imagen 2800 × 2504 px (no son coordenadas 3D)',...lines.length?lines:['Sin cambios respecto al mapa de referencia.']].join('\n');
+ const positions=s.points.filter(p=>!p.removed).map(p=>`POSICIÓN ${p.tag||'Sin TAG'}${p.name?' · '+p.name:''} · px ${Math.round(p.x)},${Math.round(p.y)} · ${p.sec} [${p.id}]`);
+ const missing=s.catalog.filter(t=>!s.points.some(p=>!p.removed&&p.tag===t.tag)).map(t=>t.tag);
+ return ['Registro completo · imagen 2800 × 2504 px (no son coordenadas 3D)','POSICIONES ACTUALES',...positions,'SIN POSICIÓN: '+(missing.join(', ')||'ninguna'),'CAMBIOS RESPECTO A LA REFERENCIA',...lines.length?lines:['Sin cambios respecto al mapa de referencia.']].join('\n');
 }

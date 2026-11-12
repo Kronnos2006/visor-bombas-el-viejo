@@ -10,6 +10,15 @@ test('el plano conserva catálogo y asignaciones actuales, sin inventar conversi
  assert.equal(s.points.find(p=>p.id==='tag:B2').tag,'B3');
  assert.ok(s.points.every(p=>p.x>=0&&p.x<=2800&&p.y>=0&&p.y<=2504));
 });
+test('el registro incluye las bombas ya colocadas aunque no haya cambios',()=>{
+ const s=start(),report=changes(s,structuredClone(s));
+ const placed=s.points.filter(p=>!p.removed&&p.tag);
+ assert.ok(placed.length>0);
+ for(const p of placed)assert.ok(report.includes(`POSICIÓN ${p.tag}${p.name?' · '+p.name:''} · px ${Math.round(p.x)},${Math.round(p.y)}`),p.tag+' debe figurar con su posición');
+ assert.match(report,/Sin cambios respecto al mapa de referencia/);
+ const removed=s.points.find(p=>p.tag==='B3');removed.removed=true;
+ assert.doesNotMatch(changes(s,start()),/POSICIÓN B3 ·/);
+});
 test('añadir y reubicar una bomba no duplica TAG ni intercambia otra bomba',()=>{
  const s=start(),original=structuredClone(s);assert.equal(addPump(s,{tag:'B84',nombre:'Bomba adicional',area:'Prueba'}),'B84');
  assert.throws(()=>addPump(s,{tag:'B84',nombre:'Otra',area:'Prueba'}),/ya está/);
