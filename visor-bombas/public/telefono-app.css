@@ -19,6 +19,10 @@
  body.app-tel main{position:fixed;top:var(--alto-enc);left:0;right:0;height:var(--escena);margin:0;padding:0;overflow:hidden;z-index:2;background:var(--fondo-2)}
  body.app-tel #viewport{position:absolute!important;inset:0;margin:0!important;height:100%!important;min-height:0!important;border-radius:0;border:0;visibility:visible!important}
  body.app-tel #scene-help,body.app-tel #parts-rail,body.app-tel .compass{display:none}
+ body.app-tel #cad-tools:not([hidden]){position:absolute;z-index:12;left:calc(var(--franja) + 6px);right:6px;bottom:4px;margin:0;padding:5px 8px;background:var(--fondo-2)}
+ body.app-tel #cad-tools .anatomy-heading{margin:0 0 4px}
+ body.app-tel #cad-tools .anatomy-heading span,body.app-tel #cad-tools label,body.app-tel #cad-fit{display:none}
+ body.app-tel #cad-parts{flex:1;min-width:0}
 
  /* Franja de códigos al costado del 3D (Áreas y cuando se elige una bomba). */
  body.app-tel{--franja:70px}
