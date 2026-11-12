@@ -2,8 +2,6 @@
 // la campana muestra los avisos de cada persona en tiempo real. La base de datos decide los permisos.
 import {surveyConnection} from './cloud-surveys.js';
 import {cloudWorkflow} from './cloud-workflow.js';
-import {tagsDisponibles,tagsDeAsignacion,cargarAsignacion,asignacionCargada} from './lista-bombas.js';
-export {tagsDisponibles,tagsDeAsignacion};
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
@@ -15,6 +13,20 @@ const fecha=t=>{try{return new Date(t).toLocaleString('es-CR',{day:'numeric',mon
 let conexion=null,yo={id:null,nombre:'',admin:false},equipo=[],avisos=[],reportes=[],filtroReportes='abiertos',sinSql=false,incidenteParaOrden=null;
 
 // ---------- Utilidades sin pantalla (también se prueban) ----------
+// Bombas que están en la planta según la lista de asignación (no depende de que el 3D ya esté cargado).
+export function tagsDeAsignacion(asig){
+ if(!asig)return [];const nombre=t=>asig.excel?.[t]?.nombre||'';
+ return [...(asig.A||[]),...(asig.N||[])].map(x=>x?.tag).filter(t=>/^B\d+$/.test(t||'')).map(t=>[t,nombre(t)]);
+}
+let asignacion=null;
+async function cargarAsignacion(){if(asignacion)return asignacion;try{asignacion=await(await fetch('/modelos/asignacion-bombas.json')).json();}catch{asignacion={};}return asignacion;}
+export function tagsDisponibles(pumps=[],references=[],extra=[]){
+ const tags=new Map();
+ for(const p of pumps)if(/^B\d+$/.test(p.tag||''))tags.set(p.tag,p.nombre||p.servicio||'');
+ for(const r of references)if(/^B\d+$/.test(r.tagAsignado||'')&&!tags.has(r.tagAsignado))tags.set(r.tagAsignado,r.excel?.nombre||r.nombre||'');
+ for(const [t,n] of extra)if(!tags.has(t))tags.set(t,n||'');
+ return [...tags].sort((a,b)=>parseInt(a[0].slice(1))-parseInt(b[0].slice(1)));
+}
 export function limpiarReporte(raw={}){
  const t=String(raw.tag||'').trim(),titulo=String(raw.title||'').trim().slice(0,200);
  if(titulo.length<3)throw Error('Escribí qué pasó (al menos 3 letras).');
@@ -101,7 +113,7 @@ function montarReportes(){
  botonElegir3D(form.elements.tag,$('#reporte-dialog'));
  $('#reporte-nuevo').onclick=()=>{
   form.reset();$('#reporte-error').textContent='';
-  form.elements.tag.innerHTML='<option value="">Otro lugar (no es una bomba)</option>'+tagsDisponibles(V()?.pumps||[],V()?.references||[],tagsDeAsignacion(asignacionCargada())).map(([t,n])=>`<option value="${esc(t)}">${esc(t)}${n?' · '+esc(n):''}</option>`).join('');
+  form.elements.tag.innerHTML='<option value="">Otro lugar (no es una bomba)</option>'+tagsDisponibles(V()?.pumps||[],V()?.references||[],tagsDeAsignacion(asignacion)).map(([t,n])=>`<option value="${esc(t)}">${esc(t)}${n?' · '+esc(n):''}</option>`).join('');
   const actual=V()?.pump?.tag||V()?.pump?.pending?.tagAsignado;if(actual&&[...form.elements.tag.options].some(o=>o.value===actual))form.elements.tag.value=actual;
   $('#reporte-lugar').hidden=!!form.elements.tag.value;$('#reporte-dialog').showModal();
  };
@@ -266,7 +278,7 @@ document.addEventListener('vocatus:referencia',ev=>{
 function ordenarEquiposOrden(){
  const sel=$('#orden-form')?.elements.tag;if(!sel||sel.disabled)return;
  const actual=sel.value,activas=(V()?.pumps||[]).filter(p=>!p.inactive&&p.enUso!==false);
- sel.innerHTML='<option value="">Elegí el equipo…</option>'+tagsDisponibles(activas,V()?.references||[],tagsDeAsignacion(asignacionCargada())).map(([t,n])=>`<option value="${esc(t)}">${esc(t)}${n?' · '+esc(n):''}</option>`).join('');
+ sel.innerHTML='<option value="">Elegí el equipo…</option>'+tagsDisponibles(activas,V()?.references||[],tagsDeAsignacion(asignacion)).map(([t,n])=>`<option value="${esc(t)}">${esc(t)}${n?' · '+esc(n):''}</option>`).join('');
  sel.value=actual;
 }
 

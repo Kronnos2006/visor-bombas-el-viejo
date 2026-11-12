@@ -5,8 +5,6 @@
 import {selectionIdentity} from './selection-core.js';
 import {sectorDe} from './planta-integrada.js';
 import {iniciarEstadisticas} from './estadisticas.js?v=20261112b';
-import {iniciarBodega,repuestosDeExcel} from './bodega.js?v=20261112a';
-import {tagsDisponibles,tagsDeAsignacion,cargarAsignacion,asignacionCargada} from './lista-bombas.js';
 import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
@@ -229,9 +227,10 @@ function iniciar() {
 
  paneles.bodega.innerHTML = `<div class="tel-campo"><label for="bod-bomba">Bomba</label><select id="bod-bomba"></select></div>
   <h2 class="tel-sub">Repuestos de la ficha</h2><div id="bod-lista"><p class="tel-vacio">Elegí una bomba para ver sus repuestos.</p></div>
-  <button type="button" class="tel-sec tel-manual" id="bod-manual">+ Otro repuesto a mano</button>
-  <h2 class="tel-sub">Pedidos de repuestos</h2><div id="bod-pedidos"><p class="tel-vacio">Cargando pedidos…</p></div>
-  <div class="tel-accion"><div class="tel-accion-fila"><span id="bod-cuenta"></span><button type="button" class="tel-primario" id="bod-ir">Revisar y enviar</button></div></div>`;
+  <a class="tel-sec tel-manual" id="bod-manual" href="/solicitud.html">+ Otro repuesto a mano</a>
+  <h2 class="tel-sub">Otras herramientas</h2>
+  <div class="tel-atajos"><a href="/levantamiento.html">Actualizar datos</a><a href="/avance.html">Avance</a><a href="/equipo.html">Mover o cambiar</a></div>
+  <div class="tel-accion"><div class="tel-accion-fila"><span id="bod-cuenta"></span><a class="tel-primario" id="bod-ir" href="/solicitud.html">Completar solicitud</a></div></div>`;
  // Carrito compartido con /solicitud.html (misma clave y formato).
  const carrito = { leer() { try { return JSON.parse(localStorage.getItem('vocatus-solicitud')) || []; } catch { return []; } }, guardar(c) { try { localStorage.setItem('vocatus-solicitud', JSON.stringify(c)); } catch {} } };
  const mismo = (a, b) => a.tag === b.tag && a.pieza === b.pieza && (a.codigo || '') === (b.codigo || '') && (a.detalle || '') === (b.detalle || '');
@@ -239,12 +238,14 @@ function iniciar() {
  function pintarBodega() {
   pintarResumen();
   const tag = $('#bod-bomba').value, c = carrito.leer();
-  $('#bod-cuenta').textContent = c.length ? `${c.length} ${c.length === 1 ? 'repuesto' : 'repuestos'} en el pedido` : 'El pedido está vacío';
+  $('#bod-cuenta').textContent = c.length ? `${c.length} ${c.length === 1 ? 'repuesto' : 'repuestos'} en la solicitud` : 'La solicitud está vacía';
+  const q = tag ? '?tag=' + encodeURIComponent(tag) : '';
+  $('#bod-ir').href = '/solicitud.html' + q; $('#bod-manual').href = '/solicitud.html' + q;
   const lista = $('#bod-lista');
   if (!tag) { lista.innerHTML = `<div class="tel-vacio-ilus">${ILUS.caja}<p>Elegí una bomba para ver sus repuestos.</p></div>`; return; }
   if (!repuestosFicha.length) { lista.innerHTML = `<p class="tel-vacio">La ficha de ${esc(tag)} todavía no tiene sello, rodamientos ni o-rings registrados.</p>`; return; }
   lista.innerHTML = '<div class="tel-repuestos">' + repuestosFicha.map((r, i) => { const en = c.some(x => mismo(x, r));
-   return `<div class="tel-rep-fila"><span><strong>${esc(r.tag)} · ${esc(r.pieza)}${r.cantidad > 1 ? ' ×' + r.cantidad : ''}</strong><small>${esc(r.codigo || r.detalle || 'sin código en la ficha')}</small></span>${en ? `<button type="button" class="tel-en" data-quitar="${i}" aria-label="Quitar ${esc(r.pieza)} del pedido">✓ En el pedido</button>` : `<button type="button" class="tel-sec" data-agregar="${i}">+ Agregar</button>`}</div>`; }).join('') + '</div>';
+   return `<div class="tel-rep-fila"><span><strong>${esc(r.tag)} · ${esc(r.pieza)}${r.cantidad > 1 ? ' ×' + r.cantidad : ''}</strong><small>${esc(r.codigo || r.detalle || 'sin código en la ficha')}</small></span>${en ? `<button type="button" class="tel-en" data-quitar="${i}" aria-label="Quitar ${esc(r.pieza)} de la solicitud">✓ En la solicitud</button>` : `<button type="button" class="tel-sec" data-agregar="${i}">+ Agregar</button>`}</div>`; }).join('') + '</div>';
   lista.querySelectorAll('[data-agregar]').forEach(b => b.onclick = () => { const r = repuestosFicha[Number(b.dataset.agregar)]; if(!r||r.tag!==$('#bod-bomba').value){aviso('mant','La ficha cambió; volvé a seleccionar la bomba.','error');return;}carrito.guardar([...carrito.leer(), {...r, id: crypto.randomUUID?.() || String(Date.now() + Math.random())}]); pintarBodega(); });
   lista.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { const r = repuestosFicha[Number(b.dataset.quitar)]; carrito.guardar(carrito.leer().filter(x => !mismo(x, r))); pintarBodega(); });
  }
@@ -252,18 +253,11 @@ function iniciar() {
   const tag=$('#bod-bomba').value,current=bodegaGate.begin();repuestosFicha=[];
   if(!tag){pintarBodega();return;}
   $('#bod-lista').innerHTML='<p class="tel-vacio">Leyendo ficha…</p>';
-  // Bombas sin ficha completa: repuestos del Excel de la asignación.
-  if(!bombas().some(p=>p.tag===tag)){repuestosFicha=repuestosDeExcel(tag,await cargarAsignacion());if(current()&&tag===$('#bod-bomba').value)pintarBodega();return;}
   try{const pump=await V().api('/api/pump?tag='+encodeURIComponent(tag));if(!current()||tag!==$('#bod-bomba').value)return;
    if(pump.tag!==tag)throw new Error('La respuesta pertenece a otro equipo.');repuestosFicha=partsOf(pump);pintarBodega();
   }catch(error){if(current()&&tag===$('#bod-bomba').value)$('#bod-lista').innerHTML=`<p class="tel-vacio">${esc(error.message)}</p>`;}
  }
  $('#bod-bomba').onchange = elegirBodega;
- // Pedido en línea (Supabase) en vez de la solicitud de la versión de computadora.
- iniciarBodega({carrito,pintarBodega,aviso:t=>{const el=$('#mejora-aviso');if(el){el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,6500);}else aviso('mant',t,'ok');}});
- // Bodega ofrece todas las bombas de la planta (B1→B83), no solo las que tienen ficha completa.
- const opcionesBodega=sel=>{const lista=tagsDisponibles(bombas(),V()?.references||[],tagsDeAsignacion(asignacionCargada()));return '<option value="">Elegí la bomba…</option>'+lista.map(([t,n])=>`<option value="${esc(t)}" ${t===sel?'selected':''}>${esc(t)}${n?' · '+esc(n):''}</option>`).join('');};
- cargarAsignacion().then(()=>{const b=$('#bod-bomba');if(b){const v=b.value;b.innerHTML=opcionesBodega(v);}});
 
  for (const id of ['mant']) { $(`#${id}-autor`).value = leer('vocatus-responsable'); $(`#${id}-fecha`).value = hoy(); $(`#${id}-autor`).onchange = e => guardar('vocatus-responsable', e.target.value.trim()); }
  const repuestoFila = (value={}) => { const d = document.createElement('div'); d.className = 'tel-repuesto'; d.innerHTML = '<input placeholder="Código de bodega" maxlength="60" aria-label="Código de bodega"><input placeholder="Nombre del repuesto" maxlength="120" aria-label="Nombre del repuesto"><button type="button" aria-label="Quitar este repuesto">×</button>'; const inputs=d.querySelectorAll('input');inputs[0].value=value.code||'';inputs[1].value=value.name||'';d.querySelector('button').onclick=()=>{d.remove();saveReportDraft();};$('#mant-repuestos').append(d); };
@@ -513,7 +507,7 @@ function iniciar() {
   if(!V()?.pumps?.length)return;
   pintarMarcas(); pintarFranja(); leerPendientes();
   const sel=V()?.pump?.tag||'',previous=reportTag||leer('vocatus-reporte-tag')||sel;
-  const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(previous);$('#bod-bomba').innerHTML=opcionesBodega(bodega||sel);
+  const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(previous);$('#bod-bomba').innerHTML=opciones(bodega||sel);
   if(!draftRestored){setReportTag($('#mant-bomba').value,true);draftRestored=true;}else if(previous!==reportTag)setReportTag($('#mant-bomba').value);else pintarElegida('mant-bomba');
   if($('#bod-bomba').value)elegirBodega();storageMode();
   if(seccion==='historial'){pintarHistorial();if(V()?.pump&&!viendoFicha){if(V().pump.pending)abrirFicha('','ficha',V().pump.pending);else if(V().pump.tag)abrirFicha(V().pump.tag,'historial');}}
