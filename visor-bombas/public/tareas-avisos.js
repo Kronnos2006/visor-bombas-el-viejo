@@ -1,6 +1,7 @@
 // Tareas y avisos: el administrador asigna órdenes a cuentas activas; cualquier cuenta avisa problemas de planta;
 // la campana muestra los avisos de cada persona en tiempo real. La base de datos decide los permisos.
 import {surveyConnection} from './cloud-surveys.js';
+import {cloudWorkflow} from './cloud-workflow.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
@@ -182,8 +183,20 @@ function mejorarFormularioOrden(){
   if(r&&enviado&&!$('#orden-error')?.textContent)cambiarReporte(r,'visto');enviado=false;
  });
 }
-// Marca en la lista las órdenes asignadas a la persona que usa el visor.
+// Marca en la lista las órdenes asignadas a la persona que usa el visor y agrega «Borrar» para el administrador.
 function marcarMias(){
+ if(yo.admin)document.querySelectorAll('#ordenes-lista .orden-card').forEach(card=>{
+  const acciones=card.querySelector('.orden-acciones');if(!acciones||acciones.querySelector('[data-borrar]'))return;
+  const b=document.createElement('button');b.type='button';b.dataset.borrar='1';b.className='orden-borrar';b.textContent='🗑 Borrar orden';
+  b.onclick=async()=>{
+   const titulo=card.querySelector('h3')?.textContent||'esta orden';
+   if(!confirm(`¿Borrar «${titulo}»? Deja de verse para todos. Si tenía responsable, le llega un aviso.`))return;
+   b.disabled=true;
+   try{await cloudWorkflow().deleteOrder(card.dataset.order);aviso('Orden borrada.');$('#ordenes-actualizar')?.click();}
+   catch(e){aviso(FALTA_SQL.test(e?.message||'')||/vocatus_delete_work_order/.test(e?.message||'')?'Falta preparar la base: corré el SQL «tareas y avisos».':e?.message||'No se pudo borrar.');b.disabled=false;}
+  };
+  acciones.append(b);
+ });
  if(!yo.nombre)return;
  document.querySelectorAll('#ordenes-lista .orden-card').forEach(card=>{
   const dd=[...card.querySelectorAll('dt')].find(dt=>dt.textContent==='Responsable')?.nextElementSibling;

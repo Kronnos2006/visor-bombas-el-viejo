@@ -60,3 +60,4 @@ body #labels .label.part-label.hover-marker:not(.selected-marker){transform:tran
 body.vocatus-conectado #ordenes-conectar{display:none!important}
 /* Solo los administradores crean y editan órdenes. */
 body.vocatus-no-admin #orden-nueva,body.vocatus-no-admin [data-order-action="edit"]{display:none!important}
+.orden-acciones .orden-borrar{border-color:color-mix(in srgb,var(--orange,#f08a4b) 60%,transparent);color:var(--orange,#f08a4b)}

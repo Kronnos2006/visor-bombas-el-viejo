@@ -28,7 +28,7 @@ test('los avisos solo los crea la base y cada persona ve los suyos',()=>{
 test('los reportes los ve quien los envió o un administrador; solo el administrador cambia su estado',()=>{
  assert.match(sql,/incidents_read[\s\S]*created_by=\(select auth\.uid\(\)\) or \(select vocatus_access\.current_is_admin\(\)\)/);
  assert.match(sql,/incidents_update[\s\S]*current_is_admin/);
- assert.doesNotMatch(sql,/grant[^;]*delete/i);
+ assert.doesNotMatch(sql,/grant[^;]*\bdelete\s*(,|on)/i);
 });
 test('reporte nuevo avisa a los administradores y orden asignada avisa al responsable',()=>{
  assert.match(sql,/incident_after[\s\S]*notify_admins\(new\.created_by,'reporte'/);
@@ -38,4 +38,11 @@ test('reporte nuevo avisa a los administradores y orden asignada avisa al respon
 test('la funcion de órdenes no lee la tabla de cuentas directamente (corre con permisos del usuario)',()=>{
  const f=sql.slice(sql.indexOf('create or replace function public.vocatus_save_work_order'),sql.indexOf('grant execute on function public.vocatus_save_work_order'));
  assert.doesNotMatch(f,/from vocatus_access\.accounts/);
+});
+test('solo el administrador borra órdenes; se archivan y el responsable recibe aviso',async()=>{
+ assert.match(sql,/function public\.vocatus_delete_work_order[\s\S]*current_is_admin[\s\S]*archived_at=now\(\)/);
+ assert.match(sql,/new\.archived_at is not null and old\.archived_at is null[\s\S]*Se borró la orden/);
+ assert.match(sql,/previous\.archived_at is not null then raise exception 'La orden fue borrada'/);
+ const wf=await readFile(new URL('./public/cloud-workflow.js',import.meta.url),'utf8');
+ assert.match(wf,/filter\(r=>!r\.archived_at\)/);
 });

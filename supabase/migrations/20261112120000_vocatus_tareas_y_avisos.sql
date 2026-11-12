@@ -131,6 +131,19 @@ create trigger vocatus_incident_before before insert or update on public.vocatus
 drop trigger if exists vocatus_incident_after on public.vocatus_incidents;
 create trigger vocatus_incident_after after insert or update on public.vocatus_incidents for each row execute function vocatus_access.incident_after();
 
+-- Borrar orden (solo administrador): se archiva y deja de verse; no se pierde el historial ni sus informes.
+alter table public.vocatus_work_orders add column if not exists archived_at timestamptz;
+alter table public.vocatus_work_orders add column if not exists archived_by uuid references auth.users(id);
+create or replace function public.vocatus_delete_work_order(p_id uuid) returns void
+language plpgsql security definer set search_path='' as $$
+begin
+ if not vocatus_access.current_is_admin() then raise exception 'Solo un administrador puede borrar órdenes.' using errcode='42501'; end if;
+ update public.vocatus_work_orders set archived_at=now(),archived_by=auth.uid() where id=p_id and archived_at is null;
+ if not found then raise exception 'La orden no existe o ya fue borrada.'; end if;
+end; $$;
+revoke all on function public.vocatus_delete_work_order(uuid) from public,anon;
+grant execute on function public.vocatus_delete_work_order(uuid) to authenticated;
+
 -- 4. Órdenes: solo un administrador crea o edita y elige el responsable entre las cuentas activas.
 -- El responsable (u otra cuenta, si la orden es antigua y no tiene responsable de la lista) puede iniciarla.
 -- Cerrar sigue siendo con el informe (vocatus_save_work_report), sin cambios.
@@ -146,6 +159,7 @@ begin
   order_id:=(p_input->>'id')::uuid;
   select * into previous from public.vocatus_work_orders where id=order_id for update;
   if not found or previous.tag<>tag then raise exception 'Orden no encontrada para este equipo'; end if;
+  if previous.archived_at is not null then raise exception 'La orden fue borrada'; end if;
   if previous.data->>'status'='completada' then raise exception 'La orden ya está completada'; end if;
   if (p_input->>'version')::integer is distinct from previous.revision then raise exception 'La orden cambió en otra ventana. Actualizá antes de editar.'; end if;
  else order_id:=pg_catalog.gen_random_uuid(); end if;
@@ -184,6 +198,12 @@ returns trigger language plpgsql security definer set search_path='' as $$
 declare nuevo text:=nullif(new.data->>'assigneeId',''); antes text:=case when tg_op='UPDATE' then nullif(old.data->>'assigneeId','') end;
  etiqueta text:=coalesce(new.data->>'code','')||' · '||new.tag;
 begin
+ if tg_op='UPDATE' and new.archived_at is not null and old.archived_at is null then
+  if nuevo is not null and nuevo<>coalesce(auth.uid()::text,'') then
+   perform vocatus_access.notify(nuevo::uuid,'orden','Se borró la orden: '||coalesce(new.data->>'title',''),etiqueta||' · ya no hay que hacerla',new.id::text,new.tag);
+  end if;
+  return null;
+ end if;
  if nuevo is not null and nuevo is distinct from antes and nuevo<>coalesce(auth.uid()::text,'') then
   perform vocatus_access.notify(nuevo::uuid,'orden','Te asignaron una orden: '||coalesce(new.data->>'title',''),
    etiqueta||' · para el '||coalesce(new.data->>'due','')||' · prioridad '||coalesce(new.data->>'priority','media'),new.id::text,new.tag);
