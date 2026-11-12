@@ -229,8 +229,8 @@ function empezarElegir3D(select,dialog){
  const origen=document.body.dataset.telSeccion||'pendientes';
  dialog.close();eligiendo3D={select,dialog,origen};document.body.classList.add('eligiendo-3d');
  let barra=$('#elegir-3d-barra');
- if(!barra){barra=document.createElement('div');barra.id='elegir-3d-barra';barra.className='elegir-3d-barra';barra.innerHTML='<span>📍 Tocá la bomba en el 3D</span><button type="button" class="mini-boton">Cancelar</button>';document.body.append(barra);barra.querySelector('button').onclick=()=>terminarElegir3D(null);}
- barra.hidden=false;barra.querySelector('span').textContent='📍 Tocá la bomba en el 3D';
+ if(!barra){barra=document.createElement('div');barra.id='elegir-3d-barra';barra.className='elegir-3d-barra';barra.innerHTML='<span>📍 Tocá la bomba</span><button type="button" class="mini-boton">Cancelar</button>';document.body.append(barra);barra.querySelector('button').onclick=()=>terminarElegir3D(null);}
+ barra.hidden=false;barra.querySelector('span').textContent='📍 Tocá la bomba';
  $('#tel-barra [data-s="areas"]')?.click();
 }
 function terminarElegir3D(tag){
@@ -245,7 +245,7 @@ if(typeof document!=='undefined'){
 document.addEventListener('vocatus:bomba',ev=>{if(eligiendo3D&&ev.detail)terminarElegir3D(ev.detail);});
 document.addEventListener('vocatus:referencia',ev=>{
  if(!eligiendo3D)return;const tag=ev.detail?.tagAsignado;
- if(tag)terminarElegir3D(tag);else{const s=$('#elegir-3d-barra span');if(s)s.textContent='Esa bomba todavía no tiene número. Tocá otra o cancelá.';}
+ if(tag)terminarElegir3D(tag);else{const s=$('#elegir-3d-barra span');if(s)s.textContent='Sin número, tocá otra';}
 });
 }
 
