@@ -192,7 +192,7 @@
  body.app-tel #tabs{position:static!important;padding:0 0 10px!important}
 
  /* Barra de secciones. */
- body.app-tel #tel-barra{position:fixed;left:0;right:0;bottom:0;z-index:60;height:var(--barra);display:grid;grid-template-columns:1fr 1.15fr 1fr 1fr 1.4fr;padding:4px max(4px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(4px,env(safe-area-inset-left,0px));background:var(--fondo);border-top:1px solid var(--borde-fuerte)}
+ body.app-tel #tel-barra{position:fixed;left:0;right:0;bottom:0;z-index:60;height:var(--barra);display:grid;grid-template-columns:1fr 1.15fr 1fr 1.4fr;padding:4px max(4px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(4px,env(safe-area-inset-left,0px));background:var(--fondo);border-top:1px solid var(--borde-fuerte)}
  body.app-tel #tel-barra button,body.app-tel #tel-barra button:hover{background:none;border:0}
  body.app-tel #tel-barra button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;padding:4px 2px;font:600 12px/1.15 var(--texto,system-ui);color:var(--tinta-2);background:none;border:0;border-radius:10px;position:relative;white-space:nowrap}
  body.app-tel #tel-barra button span{max-width:100%;text-align:center}
@@ -646,3 +646,6 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
  body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) :is(#ordenes-lista,#reportes-lista){display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;align-items:start}
  body.app-tel[data-tel-seccion="pendientes"]:not(.tel-con-ficha) :is(#ordenes-lista,#reportes-lista) > .orden-card{margin:0}
 }
+
+/* Bodega fuera de servicio: sin botón «Pedir repuestos» en las órdenes. */
+[data-order-action="parts"]{display:none!important}

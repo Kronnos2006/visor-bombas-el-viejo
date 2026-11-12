@@ -17,7 +17,8 @@ const SECCIONES = [
  {id: 'areas', nombre: 'Áreas', icono: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6"/>'},
  {id: 'pendientes', nombre: 'Pendientes', icono: '<path d="M9 3h6v3H9z"/><path d="M9 4.5H6V21h12V4.5h-3"/><path d="M9 12.5l2 2 4-4"/>'},
  {id: 'historial', nombre: 'Historial', icono: '<path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8.5"/>'},
- {id: 'bodega', nombre: 'Bodega', icono: '<path d="M3 8l9-5 9 5v10l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v10"/>'},
+ // Bodega quedó fuera de servicio (pedido del usuario): no aparece en la barra ni se puede abrir.
+ {id: 'bodega', oculta: true, nombre: 'Bodega', icono: '<path d="M3 8l9-5 9 5v10l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v10"/>'},
  {id: 'mantenimiento', nombre: 'Reportar', icono: '<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>'},
 ];
 // Dibujos simples para pantallas vacías (línea dorada, sin texto).
@@ -45,7 +46,7 @@ function iniciar() {
  const $ = s => document.querySelector(s);
  const V = () => window.vocatus;
  const requestedSection = new URLSearchParams(location.search).get('s');
- let seccion = SECCIONES.some(s=>s.id===requestedSection) ? requestedSection : 'areas';
+ let seccion = SECCIONES.some(s=>s.id===requestedSection&&!s.oculta) ? requestedSection : 'areas';
  if (seccion === 'reparacion') seccion = 'pendientes';
  if (!SECCIONES.some(s => s.id === seccion)) seccion = 'areas';
  let eligiendo = null; // campo que espera una bomba tocada en el 3D o en la franja
@@ -102,7 +103,7 @@ function iniciar() {
  const contenido = document.createElement('section'); contenido.id = 'tel-contenido';
  document.body.append(contenido);
  const barra = document.createElement('nav'); barra.id = 'tel-barra'; barra.setAttribute('aria-label', 'Secciones');
- barra.innerHTML = SECCIONES.map(s => `<button type="button" data-s="${s.id}"><span class="tel-pill">${icono(s.icono)}</span><span>${s.nombre}</span>${s.id === 'pendientes' ? '<b class="tel-globo" hidden></b>' : ''}</button>`).join('');
+ barra.innerHTML = SECCIONES.filter(s => !s.oculta).map(s => `<button type="button" data-s="${s.id}"><span class="tel-pill">${icono(s.icono)}</span><span>${s.nombre}</span>${s.id === 'pendientes' ? '<b class="tel-globo" hidden></b>' : ''}</button>`).join('');
  document.body.append(barra);
  const paneles = Object.fromEntries(SECCIONES.map(s => { const el = document.createElement('div'); el.className = 'tel-panel'; el.dataset.s = s.id; contenido.append(el); return [s.id, el]; }));
  const ficha = document.createElement('div'); ficha.className = 'tel-ficha'; ficha.hidden = true;
@@ -518,7 +519,7 @@ function iniciar() {
   mostrar('mantenimiento');await setReportTag(order.tag);if($('#tel-mant').dataset.workOrderId&&$('#tel-mant').dataset.workOrderId!==order.id)throw Error('Este equipo tiene un borrador vinculado a otra orden. Guardalo o desvinculalo antes de continuar.');$('#tel-mant').dataset.workOrderId=order.id;
   if(!$('#mant-problema').value)$('#mant-problema').value=order.title;if(!$('#mant-comentario').value)$('#mant-comentario').value=order.details||'';
   if(!$('#mant-autor').value)$('#mant-autor').value=order.assignee;saveReportDraft();resumenMant();
- },bodegaOrder:order=>{mostrar('bodega');$('#bod-bomba').value=order.tag;elegirBodega();},get section(){return seccion;}};
+ },bodegaOrder:()=>{},get section(){return seccion;}};
  document.dispatchEvent(new Event('vocatus:app-lista'));
  document.addEventListener('vocatus:listo', alCargar);
  // El visor puede terminar de cargar antes o después que este módulo: se espera a tener bombas.

@@ -22,7 +22,7 @@ export const ORIGINAL={
 const RAIL=(id,nombre,fija)=>({id:'nav-'+id,grupo:'menu',nombre:'Menú: '+nombre,sel:`#tel-barra [data-s="${id}"]`,texto:'span:not(.tel-pill)',fija});
 const AREAS='.tel-panel[data-s="areas"]';
 export const ELEMENTOS=[
- RAIL('areas','Áreas',true),RAIL('pendientes','Pendientes'),RAIL('historial','Historial'),RAIL('bodega','Bodega'),RAIL('mantenimiento','Reportar'),
+ RAIL('areas','Áreas',true),RAIL('pendientes','Pendientes'),RAIL('historial','Historial'),RAIL('mantenimiento','Reportar'),
  {id:'btn-fotos',grupo:'botones',nombre:'Botón Actualizar todas las fotos',sel:'#cloud-photos-all',texto:'.cloud-global-label'},
  {id:'btn-tema',grupo:'botones',nombre:'Botón Claro/Oscuro',sel:'#tema-toggle'},
  {id:'btn-ampliar',grupo:'botones',nombre:'Botón Ampliar planta',sel:'#tel-ampliar'},
@@ -80,7 +80,7 @@ export function cssDeColores(cfg){
  return [bloque('body:not(.claro)',o),bloque('body.claro',c),
   o.fondo?`html:not(:has(body.claro)){background:${o.fondo}}`:'',c.fondo?`html:has(body.claro){background:${c.fondo}}`:'',
   '.diseno-oculto{display:none!important}',
-  '@media(max-width:900px){body.app-tel #tel-barra{grid-template-columns:repeat(var(--diseno-n,5),1fr)!important}}',
+  '@media(max-width:900px){body.app-tel #tel-barra{grid-template-columns:repeat(var(--diseno-n,4),1fr)!important}}',
   '#tel-barra [data-diseno-extra] .tel-pill{font-size:18px;line-height:1}'].join('\n');
 }
 

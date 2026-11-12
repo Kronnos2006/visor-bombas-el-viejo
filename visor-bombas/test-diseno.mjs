@@ -21,8 +21,8 @@ test('los enlaces solo pueden ser https o páginas del visor',()=>{
  assert.equal(d.menu.length,1);assert.equal(d.logo,'');
 });
 test('el orden solo usa piezas existentes y como máximo 8 botones extra',()=>{
- const d=limpiarDiseno({menu:Array.from({length:12},(_,i)=>({texto:'b'+i,enlace:'/'})),orden:{menu:['nav-bodega','extra-3','extra-20','x'],pestanas:['tab-sim','tab-ficha']}});
- assert.equal(d.menu.length,8);assert.deepEqual(d.orden.menu,['nav-bodega','extra-3']);assert.deepEqual(d.orden.pestanas,['tab-sim','tab-ficha']);
+ const d=limpiarDiseno({menu:Array.from({length:12},(_,i)=>({texto:'b'+i,enlace:'/'})),orden:{menu:['nav-historial','extra-3','extra-20','x'],pestanas:['tab-sim','tab-ficha']}});
+ assert.equal(d.menu.length,8);assert.deepEqual(d.orden.menu,['nav-historial','extra-3']);assert.deepEqual(d.orden.pestanas,['tab-sim','tab-ficha']);
 });
 test('el CSS de colores no deja escapar nada raro',()=>{
  const css=cssDeColores(limpiarDiseno({colores:{oscuro:{accent:'#112233'},claro:{fondo:'#ffffff'}}}));

@@ -20,3 +20,10 @@ test('la ficha sin ficha completa empieza con Datos y fotos y deja el formulario
  const app=await readFile(new URL('./public/app.js',import.meta.url),'utf8');
  assert.match(app,/paintPumpSummary\(bombaParaResumen\(reference\),\{pendiente:true\}\)/);
 });
+test('Bodega quedó fuera: no aparece en la barra ni se puede abrir, y no hay «Pedir repuestos»',async()=>{
+ const app=await readFile(new URL('./public/telefono-app.js',import.meta.url),'utf8');
+ assert.match(app,/\{id: 'bodega', oculta: true/);assert.match(app,/SECCIONES\.filter\(s => !s\.oculta\)\.map/);
+ assert.match(app,/requestedSection&&!s\.oculta/);
+ const css=await readFile(new URL('./public/telefono-app.css',import.meta.url),'utf8');
+ assert.match(css,/\[data-order-action="parts"\]\{display:none!important\}/);
+});

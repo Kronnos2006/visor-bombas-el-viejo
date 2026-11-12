@@ -1,5 +1,5 @@
 // Aplica en el visor el diseño guardado por el administrador y lo actualiza al instante si cambia.
-import {aplicarDiseno,limpiarDiseno} from './diseno-core.js';
+import {aplicarDiseno,limpiarDiseno} from './diseno-core.js?v=20261112a';
 import {surveyConnection} from './cloud-surveys.js';
 export const TABLA='vocatus_site_design',FILA='principal',CACHE='vocatus-diseno';
 
