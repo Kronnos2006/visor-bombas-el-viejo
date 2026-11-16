@@ -41,8 +41,8 @@ import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js?v=montaje-monobloque';
-import {buildN32Unit} from './bomba-n32-125-unidad.js?v=bridas';
-import {pumpReference,buildVerticalReference} from './pump-reference.js?v=todas-las-bombas';
+import {buildN32Unit} from './bomba-n32-125-unidad.js?v=proporciones';
+import {pumpReference,buildVerticalReference} from './pump-reference.js?v=proporciones';
 import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
@@ -206,7 +206,7 @@ function rebuildPlant(){
  if(render3D)render3D.refrescar();
 }
 function buildPump(variant='lf',cad=null,profile=null){
- const model=profile?.kind==='vertical'?buildVerticalReference(THREE,profile.stages):cad?buildN32Unit(THREE,cad,profile):buildPumpModel(THREE,profile?.kind==='compact'?'goulds':variant);
+ const model=profile?.kind==='vertical'?buildVerticalReference(THREE,profile.stages,profile.finish):cad?buildN32Unit(THREE,cad,profile):buildPumpModel(THREE,profile?.kind==='compact'?'goulds':variant);
  activePumpReference=profile;
  n32Model=model.moveExplosion?model:null;
  pumpGroup.rotation.z=model.vertical?Math.PI/2:0;

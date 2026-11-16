@@ -16,6 +16,12 @@ export function buildN32Unit(T, cad, profile) {
   const moving = [];
   const spinning = new Map();
   const frame = new T.Group();
+  const wetScale = profile?.wet ?? 1;
+  const driveScale = profile?.drive ?? 1;
+  const motorLength = profile?.motorLength ?? 1;
+  const motorOffset = (motorLength-1)*.82;
+  const baseWidth = Math.max(wetScale,driveScale);
+  const floorDrop = Math.max(0,1.12*(wetScale-1),.88*(driveScale-1));
   const supportMaterial = new T.MeshStandardMaterial({ color: 0x606b73, metalness: .45, roughness: .58 });
   const guardMaterial = new T.MeshStandardMaterial({ color: 0xdbac27, metalness: .2, roughness: .55 });
 
@@ -94,19 +100,25 @@ export function buildN32Unit(T, cad, profile) {
     group.add(mesh);
     return mesh;
   }
-  // Lámina 1: eje a 227 mm del piso, bancada de 850 × 330 mm y guarda de acople.
-  for (const z of [-1.48, 1.48]) {
-    box(frame, [8.5, .34, .34], [0, -2.10, z], supportMaterial, 'Larguero');
-    for (const x of [-2.25, 2.25]) box(frame, [.5, .09, .5], [x, -2.225, z * 1.16], supportMaterial, 'Oreja de anclaje');
+  // La bancada de la N 32-125 se ajusta a la huella del conjunto representativo.
+  for (const z of [-1.48*baseWidth, 1.48*baseWidth]) {
+    box(frame, [8.5+motorOffset*2, .34, .34], [motorOffset, -2.10-floorDrop, z], supportMaterial, 'Larguero');
+    for (const x of [-2.25, 2.25+motorOffset*2]) box(frame, [.5, .09, .5], [x, -2.225-floorDrop, z * 1.16], supportMaterial, 'Oreja de anclaje');
   }
-  for (const x of [-4.08, -.58, 4.08]) box(frame, [.34, .34, 3], [x, -2.10, 0], supportMaterial, 'Travesaño');
-  for (const [x, y, width, depth] of [[-3.1,-1.52,1.75,1.95],[-.57,-1.52,.54,1.45],[2.2,-1.39,1.48,1.34]]) {
+  for (const x of [-4.08, -.58, 4.08+motorOffset*2]) box(frame, [.34, .34, 3*baseWidth], [x, -2.10-floorDrop, 0], supportMaterial, 'Travesaño');
+  const bottom=-1.93-floorDrop;
+  const pedestals=[
+    [-3.1,-1.11*wetScale,1.75,1.95*wetScale],
+    [-.57,-1.11*wetScale,.54,1.45*wetScale],
+    [2.2+motorOffset,-.85*driveScale,1.48*motorLength,1.34*driveScale],
+  ];
+  for (const [x, top, width, depth] of pedestals) {
     for (const z of [-depth * .36, depth * .36]) {
-      box(frame, [width, 2 * (y + 1.93), depth * .24], [x,y,z], supportMaterial, 'Pedestal de montaje');
-      box(frame, [width+.08,.065,depth*.30], [x,2*y+1.93,z], supportMaterial, 'Placa de apoyo');
+      box(frame, [width, top-bottom, depth * .24], [x,(top+bottom)/2,z], supportMaterial, 'Pedestal de montaje');
+      box(frame, [width+.08,.065,depth*.30], [x,top,z], supportMaterial, 'Placa de apoyo');
       for(const dx of [-width*.32,width*.32]){
         const bolt=new T.Mesh(new T.CylinderGeometry(.067,.067,.046,6),supportMaterial.clone());
-        bolt.position.set(x+dx,2*y+2,z);
+        bolt.position.set(x+dx,top+.07,z);
         bolt.name='Perno de bancada';
         frame.add(bolt);
       }
@@ -127,9 +139,9 @@ export function buildN32Unit(T, cad, profile) {
     coupling.add(lip);
   }
   for (const z of [-.61,.61]) {
-    const skirt=box(coupling,[1.17,1.88,.045],[0,-.94,z],guardMaterial,guard.name);
+    const skirt=box(coupling,[1.17,1.88+floorDrop,.045],[0,-.94-floorDrop/2,z],guardMaterial,guard.name);
     skirt.userData={...guard.userData};
-    const foot=box(coupling,[1.21,.055,.16],[0,-1.88,z*1.10],guardMaterial,'Pestaña de la guarda');
+    const foot=box(coupling,[1.21,.055,.16],[0,-1.88-floorDrop,z*1.10],guardMaterial,'Pestaña de la guarda');
     foot.userData={...guard.userData,subcomponent:foot.name};
   }
   supportMaterial.dispose();
@@ -144,18 +156,20 @@ export function buildN32Unit(T, cad, profile) {
     });
     group.userData.subcomponents = [...names];
   }
-  if (profile) {
-    for (const index of [0,1,2,3,4,5,6,7]) components[index].scale.z *= profile.wet;
-    for (const index of [8,9]) components[index].scale.z *= profile.drive;
-    frame.scale.z = Math.max(profile.wet,profile.drive);
+  for(const index of [0,1,2,3,4,5,6,7]){
+    components[index].scale.y *= wetScale;
+    components[index].scale.z *= wetScale;
   }
+  coupling.scale.z *= driveScale;
+  components[9].scale.multiply(new T.Vector3(motorLength,driveScale,driveScale));
+  components[9].position.x = components[9].userData.base = bases[9]+motorOffset;
   let amount = 0;
   function moveExplosion(target, immediate, isolated) {
     amount = immediate ? target : T.MathUtils.lerp(amount, target, .12);
     for (const {carrier,assembled,exploded} of moving) carrier.position.lerpVectors(assembled, exploded, amount);
     components[1].position.x = bases[1] - amount * .8;
     components[8].position.x = bases[8] + amount * 4.35;
-    components[9].position.x = bases[9] + amount * 4.45;
+    components[9].position.x = bases[9] + motorOffset + amount * 4.45;
     frame.visible = !isolated && amount < .06;
   }
   return {
