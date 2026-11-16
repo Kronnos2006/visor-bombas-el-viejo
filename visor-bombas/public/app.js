@@ -49,7 +49,8 @@ import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const primeraPlanta=createFirstFloorView(THREE);
 let paletaBombas=null;
-const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:VISTA_FBX_AGUA?'agua':null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
+const filtroInicial=new URLSearchParams(location.search).get('sector');
+const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:SECTORES_INT.some(s=>s.id===filtroInicial)?filtroInicial:VISTA_FBX_AGUA?'agua':null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
 const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index),onSummary:()=>{state.tab="ficha";renderPanel();},onLayout:()=>renderPanel()});
 const extraReferences=[];
 let detailOrigin=null,detailFlightTicket=null,bombaResaltada=null;
@@ -1005,6 +1006,17 @@ function renderPendingPanel(){
  abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;const hueco=$('#resumen-pendiente');if(hueco){paintPumpSummary(bombaParaResumen(reference),{pendiente:true});hueco.replaceWith($('#pump-resumen'));}const despues=$('#pump-resumen')||$('#editar-equipo');if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;if(!$('#datos-excel'))despues?.insertAdjacentHTML('afterend',bloqueExcel(integrado.asignacion,reference.tagAsignado));if(!$('#placa-manual'))$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
  if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
+async function cargarDetallesFBX(){
+ const url='/modelos/detalles-fbx-capturas';
+ try{
+  const [{scene},info]=await Promise.all([
+   new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url+'.glb'),
+   fetch(url+'.json').then(r=>{if(!r.ok)throw new Error('No se pudieron cargar las posiciones de los detalles');return r.json();})
+  ]);
+  const grupos=info.bombas.map(({nombre,sector,min,max})=>({nombre,sector,nota:'Referencia del FBX. TAG y ficha por confirmar en planta.',bombas:[{min,max}]}));
+  return {scene,grupos,sectores:info.sectores};
+ }catch(error){console.warn('No se cargaron los detalles del FBX',error);return null;}
+}
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
  if(escena.userData.fbxAgua){
@@ -1012,11 +1024,12 @@ function montarIntegrado(g,escena,placed){
   aplicarFiltroInt();applyArea();renderList();
   return;
  }
- Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261110d').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([info,gruposBase,gruposCampo,asignacionData])=>{
-  const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];
-  if(g.parent!==plant)return;integrado.info=info;
+ Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261110d').then(r=>r.ok?r.json():null).catch(()=>null),cargarDetallesFBX()]).then(([info,gruposBase,gruposCampo,asignacionData,detalles])=>{
+  if(g.parent!==plant)return;
+  const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];integrado.info=info;
   // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
   const grupos=agregarBombaFrente(separarSemilleros(gruposConCampo(gruposBase,gruposCampo)));
+  if(detalles)grupos.push(...detalles.grupos);
   const alineado=escena.userData.blenderLocal?alinearInfoBlender(THREE,escena,info,grupos):null;integrado.desplazamientoBlender=alineado?.d||null;
   moverTorrePequena(escena,info,grupos);
   moverMallasSemilleros(THREE,escena,alineado?.d?.[0]||0);
@@ -1096,6 +1109,15 @@ function montarIntegrado(g,escena,placed){
   }
   // Bombas que el usuario agregó en sitios nuevos.
   const dA=alineado?.d||[0,0,0];
+  if(detalles){
+   detalles.scene.position.set(...dA);
+   detalles.scene.traverse(o=>{if(o.isMesh){o.castShadow=o.userData.sector!=='Suelo VOCATUS';o.receiveShadow=true;}});
+   escena.add(detalles.scene);
+   for(const [sector,caja] of Object.entries(detalles.sectores)){
+    const anterior=info.sectores[sector];
+    info.sectores[sector]={min:caja.min.map((v,i)=>Math.min(v+dA[i],anterior?.min[i]??Infinity)),max:caja.max.map((v,i)=>Math.max(v+dA[i],anterior?.max[i]??-Infinity))};
+   }
+  }
   for(const n of asignacion.nuevas){
    const sectorN=sectorDePosicion(n.x,n.z),b=crearModeloCaldera(THREE,n.modelo)||compactar(THREE,exterior(THREE,.72,'lf'));if(n.giro)b.rotation.y=n.giro;g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
    const k=new THREE.Box3().setFromObject(b),pisoN=alineado?alturaPiso(alineado.pisos,n.x+dA[0],n.z+dA[2],3):null;b.position.y=(pisoN??(.3+dA[1]))-k.min.y;
@@ -1180,7 +1202,8 @@ function flyIntegrado(){
  const a=AREA('integrado'),g=areaGroups.integrado,c=state.filtroInt&&integrado?.info&&cajaSector(integrado.info,state.filtroInt);
  if(!g||!c)return flyArea('integrado');
  g.updateMatrixWorld(true);let box=cajaVisible(THREE,g);if(VISTA_FBX_AGUA||box.isEmpty())box=new THREE.Box3(new THREE.Vector3(...c.min),new THREE.Vector3(...c.max)).applyMatrix4(g.matrixWorld);if(state.filtroInt==='torre'&&state.primeraPlanta&&primeraPlanta.height!==null)box.max.y=Math.min(box.max.y,primeraPlanta.height);ajustarSol(box);
- const [pos,obj]=encuadrar(box,new THREE.Vector3(...a.camara.pos).sub(new THREE.Vector3(...a.camara.obj)),1.15);fly(pos,obj,900);
+ const direccion=state.filtroInt==='millo'?new THREE.Vector3(-7,8,9):new THREE.Vector3(...a.camara.pos).sub(new THREE.Vector3(...a.camara.obj));
+ const [pos,obj]=encuadrar(box,direccion,1.15);fly(pos,obj,900);
 }
 function cajaEdificio(area){
  const [w,d,h]=area.huella,r=Math.hypot(w,d)/2;

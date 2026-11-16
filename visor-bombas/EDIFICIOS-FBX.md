@@ -4,10 +4,13 @@
 
 `/?s=areas&modelo=fbx-agua` abre el FBX convertido con **Agua y enfriamiento** seleccionado. **Toda la planta** muestra el resto del modelo exportado. Las posiciones del FBX están pendientes de vincular a las fichas de bombas.
 
+El visor habitual carga una selección de 25 piezas de ese FBX junto al modelo integrado. **Tanque de millo** muestra el depósito, el muro circular, la bomba exterior, sus conexiones y la nave contigua. **Calderas y nave** muestra las pasarelas de los tanques cafés, sus equipos y el desaireador con sus bombas y ramales. Se conservan los tanques cafés y las naves del modelo integrado. Cuatro bombas quedan seleccionables como referencias pendientes de TAG. Los colores de los detalles son aproximados.
+
 Para regenerar el GLB y sus cajas de sectores desde `visor-bombas`:
 
 ```sh
 node --max-old-space-size=8000 tools/fbx-planta-a-glb.mjs /ruta/TanquedeAgua-3DView-VOCATUS-Modelogeneralcompleto.fbx public/modelos/planta-tanque-agua.glb --conservar-bombas-dusa
+node --max-old-space-size=8000 tools/fbx-planta-a-glb.mjs /ruta/TanquedeAgua-3DView-VOCATUS-Modelogeneralcompleto.fbx public/modelos/detalles-fbx-capturas.glb --detalle-capturas
 ```
 
 ## Edificios de octubre de 2026

@@ -16,7 +16,24 @@ globalThis.self=globalThis;globalThis.window={innerWidth:1000,innerHeight:800};
 THREE.TextureLoader.prototype.load=function(){return new THREE.Texture();};
 const args=process.argv.slice(2);
 const conservarBombasDusa=args.includes('--conservar-bombas-dusa');
-const [src,out,torreJSON]=args.filter(arg=>arg!=='--conservar-bombas-dusa');
+const detalleCapturas=args.includes('--detalle-capturas');
+const [src,out,torreJSON]=args.filter(arg=>!arg.startsWith('--'));
+const detalles=new Map([
+ ...[1244368,1244369,1244370,1244371,1244372,1244378,1244379,1244380,1244381,1245203,1245204,1245205].map(id=>[id,'REF Tanque de millo']),
+ [1244382,'Suelo VOCATUS'],
+ ...[1245167,1245171,1245172,1245173,1245180,1245181,1245188,1245189].map(id=>[id,'REF Detras ADMIN']),
+ ...[1245221,1245222,1245223,1245245].map(id=>[id,'REF Exterior'])
+]);
+const nombresBombas=new Map([
+ [1245171,'Bomba horizontal bajo el desaireador'],[1245172,'Bomba vertical multietapas bajo el desaireador'],
+ [1245204,'Bomba exterior del tanque de millo'],[1245245,'Bomba en la pasarela del tanque café']
+]);
+const coloresDetalle=new Map([
+ [1244370,['lamina',0x82919b]],[1244371,['lamina',0xcbd3d7]],
+ [1244379,['inoxidable',0x74828a]],[1244380,['inoxidable',0xc5cfd4]],[1244381,['inoxidable',0xa9b9c0]],
+ [1245167,['inoxidable',0xd6dee0]],[1245172,['inoxidable',0xa9b9c0]],[1245173,['verde',0x2f7d4a]],
+ [1245188,['inoxidable',0x9da7ab]],[1245203,['concreto',0xa79c87]]
+]);
 const buf=readFileSync(src);
 const root=new FBXLoader().parse(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength),'');root.updateMatrixWorld(true);
 const FT=.3048, M=new THREE.Matrix4().set(FT,0,0,0, 0,0,FT,0, 0,-FT,0,0, 0,0,0,1);
@@ -45,7 +62,7 @@ const CATS=[
 ];
 const OTRO=['otro',0xd0d0cc];
 const doc=new Document();const buffer=doc.createBuffer();const scene=doc.createScene('Planta integrada');
-const mats={};const mat=(cat,color)=>mats[cat]||(mats[cat]=doc.createMaterial(cat).setBaseColorFactor([...new THREE.Color(color).toArray(),1]).setMetallicFactor(['inoxidable','cobre','acero','malla','tuberia'].includes(cat)?.6:.15).setRoughnessFactor(cat==='concreto'?.95:.55).setDoubleSided(['lamina','malla','muro'].includes(cat)));
+const mats={};const mat=(cat,color)=>mats[cat+'|'+color]??=doc.createMaterial(cat).setBaseColorFactor([...new THREE.Color(color).toArray(),1]).setMetallicFactor(['inoxidable','cobre','acero','malla','tuberia'].includes(cat)?.6:.15).setRoughnessFactor(cat==='concreto'?.95:.55).setDoubleSided(['lamina','malla','muro'].includes(cat));
 // La torre DUSA del modelo integrado es la misma del visor (torre-dusa.glb): sus bombas se reemplazan
 // por las bombas con ficha del visor, ubicadas con la alineación calculada abajo.
 const BOMBA_TORRE=/^(Bomba|Cubierta roja de bomba|Cubierta bomba|Conexiones visuales bomba|Conexiones bomba|Conexiones segunda bomba)/;
@@ -54,22 +71,30 @@ const BOMBA=/\bbombas?\b/i, NO_BOMBA=/^(Tuber|Conexi|Colector|Soportes|Canaleta|
 const torreNombre=n=>n.replace(/^_DUSA_(planta_)?-_/,'').replace(/_\d{6,}$/,'').replace(/_/g,' ').trim();
 const caja=new THREE.Box3();const gs=[];let tris=0;const conteo={};const dusa=[];
 root.traverse(o=>{
- if(!o.isMesh)return;const nombre=limpio(o.name),sector=SECTOR(nombre);
+ if(!o.isMesh)return;
+ const id=Number(o.name.match(/(\d{6,})$/)?.[1]);
+ const detalle=(detalleCapturas||conservarBombasDusa)&&detalles.get(id);
+ const nombre=limpio(o.name),sector=detalle||SECTOR(nombre);
  let g=o.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(M,o.matrixWorld));
+ const b=new THREE.Box3().setFromBufferAttribute(g.attributes.position);caja.union(b);
+ if(detalleCapturas&&!detalle){g.dispose();return;}
  if(g.index)g=g.toNonIndexed();
  for(const k of Object.keys(g.attributes))if(!['position','normal'].includes(k))g.deleteAttribute(k);
  g.clearGroups();
  // El nombre del sector va primero ("FBX Banos - ..."): se colorea por la parte descriptiva.
- const desc=nombre.replace(/^(FBX \w+(?: \w+)? - |REF [^-]+ - |DUSA(?: planta)? - |VOCATUS Enlace \w+ - )/,'');
- const c=CATS.find(([re])=>re.test(desc))||[null,...OTRO];
- const b=new THREE.Box3().setFromBufferAttribute(g.attributes.position);caja.union(b);
+ let desc=nombre.replace(/^(FBX \w+(?: \w+)? - |REF [^-]+ - |DUSA(?: planta)? - |VOCATUS Enlace \w+ - )/,'');
+ if(detalle)desc=desc.replace(/^(VOCATUS (?:Anexos|Fotos\d+)|Caldera ADMIN fotos) - /,'');
+ const [cat,color]=(detalle&&coloresDetalle.get(id))||(CATS.find(([re])=>re.test(desc))?.slice(1)??OTRO);
  if(/^DUSA/.test(sector))dusa.push({nombre:torreNombre(o.name),b});
  if(!conservarBombasDusa&&/^DUSA/.test(sector)&&BOMBA_TORRE.test(desc))return;
- tris+=g.attributes.position.count/3;conteo[c[1]]=(conteo[c[1]]||0)+1;
- gs.push({sector,cat:c[1],color:c[2],g,b,desc,bomba:BOMBA.test(desc)&&!NO_BOMBA.test(desc)});
+ tris+=g.attributes.position.count/3;conteo[cat]=(conteo[cat]||0)+1;
+ const bomba=detalle?nombresBombas.has(id):BOMBA.test(desc)&&!NO_BOMBA.test(desc);
+ gs.push({sector,cat,color,g,b,desc:bomba&&nombresBombas.get(id)||desc,bomba,id:detalleCapturas?id:null});
 });
 // Centrar en la huella y apoyar en cota cero.
 const centro=caja.getCenter(new THREE.Vector3());const off=new THREE.Vector3(-centro.x,-caja.min.y,-centro.z);const T=new THREE.Matrix4().makeTranslation(off.x,off.y,off.z);
+// Desfase FBX → planta integrada, medido sobre sectores comunes sin cambios.
+if(detalleCapturas){off.add(new THREE.Vector3(-1.25,0,21.8));T.makeTranslation(off.x,off.y,off.z);}
 const r2=v=>+v.toFixed(2),cajaJSON=b=>({min:b.min.toArray().map(r2),max:b.max.toArray().map(r2)});
 // Alineación torre del visor → modelo integrado: giro en planta + traslado, por mínimos cuadrados
 // sobre los centros de las piezas que tienen el mismo nombre en los dos modelos.
@@ -91,8 +116,10 @@ if(torreJSON){
 // Una malla por sector y color (liviano); cada bomba sin ficha va aparte para señalarla.
 const grupos={},bombas=[],sectores={};
 for(const x of gs){x.g.applyMatrix4(T);x.b.translate(off);(sectores[x.sector]||(sectores[x.sector]=new THREE.Box3())).union(x.b);
- if(x.bomba){bombas.push({nombre:x.desc,sector:x.sector,...cajaJSON(x.b)});grupos['bomba|'+bombas.length]={...x,nodo:'Bomba · '+x.desc,extras:{sector:x.sector,cat:x.cat,bomba:x.desc},lista:[x.g]};continue;}
- (grupos[x.sector+'|'+x.cat]||(grupos[x.sector+'|'+x.cat]={...x,nodo:x.sector,extras:{sector:x.sector,cat:x.cat},lista:[]})).lista.push(x.g);}
+ if(x.bomba)bombas.push({nombre:x.desc,sector:x.sector,...cajaJSON(x.b)});
+ if(x.id||x.bomba){const extras={sector:x.sector,cat:x.cat};if(x.id)extras.fbxId=x.id;if(x.bomba)extras.bomba=x.desc;grupos['pieza|'+(x.id||bombas.length)]={...x,nodo:x.bomba?'Bomba · '+x.desc:x.desc,extras,lista:[x.g]};continue;}
+ const clave=[x.sector,x.cat,x.color].join('|');
+ (grupos[clave]??={...x,nodo:x.sector,extras:{sector:x.sector,cat:x.cat},lista:[]}).lista.push(x.g);}
 for(const {nodo,cat,color,lista,extras} of Object.values(grupos)){
  const g=mergeGeometries(lista,false);
  const prim=doc.createPrimitive().setMaterial(mat(cat,color))
