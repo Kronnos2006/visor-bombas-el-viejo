@@ -41,8 +41,8 @@ import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js';
-import {buildN32Unit} from './bomba-n32-125-unidad.js';
-import {pumpReference,buildVerticalReference} from './pump-reference.js';
+import {buildN32Unit} from './bomba-n32-125-unidad.js?v=bridas';
+import {pumpReference,buildVerticalReference} from './pump-reference.js?v=bridas';
 import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
