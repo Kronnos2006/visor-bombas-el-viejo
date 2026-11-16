@@ -493,7 +493,9 @@ function iniciar() {
   barra.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.s === id ? 'page' : 'false'));
   titulo.textContent=SECCIONES.find(s=>s.id===id).nombre;cabecera.setSection(titulo.textContent);
   document.body.dataset.telSeccion = id;
-  history.replaceState(null, '', '?s=' + id + location.hash);
+  const query = new URLSearchParams(location.search);
+  query.set('s', id);
+  history.replaceState(null, '', '?' + query + location.hash);
   if (id === 'pendientes') { pintarPendientes(); leerPendientes(); }
   if (id === 'bodega') pintarBodega();
   if (id === 'mantenimiento' || id === 'bodega') pintarResumen();

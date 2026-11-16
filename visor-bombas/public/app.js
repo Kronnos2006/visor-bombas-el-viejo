@@ -956,12 +956,7 @@ function selectPendingPump(reference){
  $('#source-status').textContent=reference.excel?'DATOS DEL EXCEL · GEOMETRÍA DE REFERENCIA':'IDENTIFICACIÓN PENDIENTE · GEOMETRÍA DE REFERENCIA';
  $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
  $('#back').hidden=false;
- const show=async()=>{
-  let cad=null;
-  if(useN32Demo&&state.demo&&tag==='B30'&&pumpGroup){
-   n32Load??=new GLTFLoader().loadAsync('/modelos/bomba-n32-125.glb').catch(error=>{n32Load=null;throw error;});
-   try{({scene:cad}=await n32Load);}catch(error){if(ticket===state.loading)toast('No se pudo cargar el CAD de prueba: '+error.message);}
-  }
+ const show=()=>{
   if(ticket!==state.loading)return;
   state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
  if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf');}
