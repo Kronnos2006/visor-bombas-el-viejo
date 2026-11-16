@@ -42,7 +42,7 @@ import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js?v=montaje-monobloque';
 import {buildN32Unit} from './bomba-n32-125-unidad.js?v=bridas';
-import {pumpReference,buildVerticalReference} from './pump-reference.js?v=montaje-monobloque';
+import {pumpReference,buildVerticalReference} from './pump-reference.js?v=todas-las-bombas';
 import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
@@ -492,16 +492,17 @@ function setPhotoDetail(schematic){
  $('#scene-badge').textContent=state.pump?.pending?(schematic?'ANATOMÍA ILUSTRATIVA · NO IDENTIFICA EL TIPO INSTALADO':state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR'):state.pump?.data?.inactive?'EXTERIOR ILUSTRATIVO · SIN USO · MODELO SIN IDENTIFICAR':schematic?`DESPIECE DE REFERENCIA · ${identity.toUpperCase()} · NO ES CAD DEL FABRICANTE`:`EXTERIOR ${identity.toUpperCase()} · BASADO EN FOTOS`;
  if(activePumpReference&&schematic){
   $('#model-load').hidden=true;
-  $('#scene-badge').textContent=activePumpReference.label+' · GEOMETRÍA DE REFERENCIA';
+  const inactive=state.pump.data?.inactive||state.pump.data?.enUso===false;
+  $('#scene-badge').textContent=activePumpReference.label+' · GEOMETRÍA DE REFERENCIA'+(inactive?' · EQUIPO SIN USO':'');
   $('#scene-help').textContent='Modelo ilustrativo · Tocá una pieza para abrir su ficha';
  }
  $('#parts-title').textContent=schematic?(activePumpReference?'Despiece de referencia':`Despiece de ${identity}`):'Conjunto exterior';$('#part-count').textContent=schematic?(compactPumpView()?'8':'10')+' componentes de referencia · ficha individual':'Carcasa · guarda · motor · cubierta';
  const componentButtons=schematic?parts.map((part,index)=>compactPumpView()&&(index===7||index===8)?'':`<button class="part-button" data-part="${index}"><span>${String(index+1).padStart(2,'0')}</span>${esc(partName(index))}</button>`).join(''):'';
  $('#parts').innerHTML='<button id="switch-detail">'+(schematic?'← Volver al exterior de esta bomba':'Ver vista explosionada de esta bomba ↗')+'</button>'+componentButtons;
- $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));syncAnatomyTools();renderRail();if(camera){const box=schematic?(n32Model?cajaVisible(THREE,pumpGroup,{incluirReferencia:true}):anatomy?.bounds()):photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;if(box&&!box.isEmpty()){fitPumpMinimum(box);const [pos,obj]=encuadrar(box,new THREE.Vector3(...(schematic?[-8,7,12]:[5,4,7])),1.15,detailRailFraction());fly(pos,obj);}else fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);}syncAnatomyTools();renderRail();
+ $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));syncAnatomyTools();renderRail();if(camera){const box=schematic?(n32Model?cajaVisible(THREE,pumpGroup,{incluirReferencia:true}):anatomy?.bounds()):photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;if(box&&!box.isEmpty()){fitPumpMinimum(box);const [pos,obj]=encuadrar(box,new THREE.Vector3(...(schematic?[-8,7,12]:[5,4,7])),1.15,detailRailFraction());fly(pos,obj);}else fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);}syncAnatomyTools();renderRail();
 }
 function syncAnatomyTools(){
- const available=!!anatomy&&!!state.pump&&!state.pump.data.inactive&&state.view==='pump';
+ const available=!!anatomy&&!!state.pump&&state.view==='pump';
  $('#anatomy-tools').hidden=!available;
  const mode=anatomy?.state||{};
  for(const [id,key] of [['anatomy-cut','cutaway'],['anatomy-transparent','transparent'],['anatomy-isolate','isolate']])$('#'+id).setAttribute('aria-pressed',String(!!mode[key]));
@@ -510,7 +511,7 @@ function syncAnatomyTools(){
  $('#anatomy-status').textContent=state.detail==='exterior'?'Abrí el conjunto o retirale 1/4 a la carcasa para ver el interior.':state.part!==null?`Pieza ${String(state.part+1).padStart(2,'0')} · ${mode.subcomponent||partName(state.part)}${mode.isolate?' · aislada':''}. Su información está en la ficha.`:mode.cutaway?'Se retiró 1/4 de las cubiertas: podés ver el impulsor, eje, sello y el interior del motor. Pulsá Reponer 1/4 para cerrar.':'Conjunto armado. Retirá 1/4 o separá las piezas para ver su interior.';
 }
 function ensureAnatomy(){
- if(!state.pump||state.pump.data.inactive||!anatomy)return false;
+ if(!state.pump||!anatomy)return false;
  if(state.detail!=='schematic'){setPhotoDetail(true);renderPanel();}
  return true;
 }
@@ -542,7 +543,7 @@ async function loadPumpReference(pump){
  if(!profile||['vertical','compact'].includes(profile.kind))return {profile};
  n32Load??=new GLTFLoader().loadAsync('/modelos/bomba-n32-125.glb').catch(error=>{n32Load=null;throw error;});
  try{return {profile,cad:(await n32Load).scene};}
- catch(error){console.warn('No se pudo cargar el CAD de referencia',error);return {};}
+ catch(error){console.warn('No se pudo cargar el CAD de referencia',error);return {profile};}
 }
 function selectPhotoPump(tag){
  const p=state.pumps.find(p=>p.tag===tag);if(!p)return;const tip=$('#part-tip');if(tip)tip.hidden=true;resaltarBomba(null);rememberDetailOrigin();const ticket=++state.loading;
@@ -804,7 +805,7 @@ document.addEventListener('vocatus:referencias',()=>{if(!state.pump)selectFromHa
 
 // Riel de piezas: siempre visible junto al 3D cuando hay una bomba abierta.
 function railParts(){
- if(state.view!=='pump'||!state.pump||state.pump.data?.inactive)return [];
+ if(state.view!=='pump'||!state.pump)return [];
  return parts.map((part,index)=>({index,name:partName(index)})).filter(({index})=>!(compactPumpView()&&(index===7||index===8)));
 }
 function renderRail(){

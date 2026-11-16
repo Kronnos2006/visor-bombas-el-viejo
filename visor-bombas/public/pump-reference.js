@@ -11,13 +11,12 @@ const profiles = {
 };
 
 export function pumpReference(pump, plate) {
-  if (pump.inactive || plate?.fuente === 'Fuera de la lista') return null;
   const evidence = /^Placa(?:$| \()/.test(plate?.fuente ?? '') ? plate.placa : '';
-  const catalog = [pump.marca,pump.modelo,pump.size,pump.tipo,pump.nombre].filter(Boolean).join(' ');
+  const catalog = [pump.marca,pump.modelo,pump.size,pump.tipo,pump.tipo_bomba,pump.nombre].filter(Boolean).join(' ');
   const text = (evidence || catalog).toUpperCase();
   const tag = Number(pump.tag?.slice(1));
   let kind = 'standard';
-  if (/VERTICAL|MOVITEC|GRUNDFOS|EBARA|\bSB[ -]/.test(text) || [59,69,70,71,72,73].includes(tag)) kind = 'vertical';
+  if (/VERTICAL|MOVITEC|GRUNDFOS|EBARA|\bSB[ -]/.test(text) || [59,69,70,71,72,73,77,78,79,80].includes(tag)) kind = 'vertical';
   else if (/GOULDS|MONOBLOQUE|ACOPLAMIENTO DIRECTO/.test(text) || pump.variant==='goulds' || (tag >= 39 && tag <= 43) || tag === 56) kind = 'compact';
   else if (/TITAN/.test(text) || [17,18,20,21,61,62,63,64,65,66,67,68,81,83].includes(tag)) kind = 'titan';
   else if (/3\s*[X×]\s*4\s*[-X×]?\s*(12|13)|HIDROMAC AZ|RA\s*65|PACO/.test(text) || [44,45,48,55,58,60].includes(tag)) kind = 'large';
