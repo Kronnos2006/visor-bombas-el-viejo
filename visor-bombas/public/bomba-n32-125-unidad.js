@@ -10,7 +10,7 @@ const partGroups = {
 const bases = [-3.6, -3.21, -3.5, -2.85, -2.8, -2.58, -1.85, -1.15, .52, 2.2];
 const covers = new Set([1, 3, 4, 8]);
 
-export function buildN32Unit(T, cad) {
+export function buildN32Unit(T, cad, profile) {
   const { root, components } = buildPumpModel(T);
   const retained = new Set([1, 8, 9]);
   const moving = [];
@@ -72,6 +72,7 @@ export function buildN32Unit(T, cad) {
       if (!object.isMesh) return;
       object.geometry = object.geometry.clone();
       object.material = object.material.clone();
+      if (profile?.paint && covers.has(partNumber)) object.material.color.setHex(profile.paint);
       object.userData = { part: index, subcomponent: partLabel, anatomyCover: covers.has(partNumber) };
     });
     rotor.add(geometry);
@@ -126,6 +127,11 @@ export function buildN32Unit(T, cad) {
       names.add(object.userData.subcomponent);
     });
     group.userData.subcomponents = [...names];
+  }
+  if (profile) {
+    for (const index of [0,1,2,3,4,5,6,7]) components[index].scale.z *= profile.wet;
+    for (const index of [8,9]) components[index].scale.z *= profile.drive;
+    frame.scale.z = Math.max(profile.wet,profile.drive);
   }
   let amount = 0;
   function moveExplosion(target, immediate, isolated) {
