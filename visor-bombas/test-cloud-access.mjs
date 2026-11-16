@@ -34,7 +34,7 @@ test('ni JWT inventado ni identidad de otro usuario ni indisponibilidad abren el
 });
 test('usuario aprobado consulta pero no obtiene páginas administrativas; admin sí',async()=>{
  assert.equal(await cloudPageAccess(request('/api/bootstrap'),{...config,fetcher:provider()}),null);
- for(const path of ['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js']){
+ for(const path of ['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/ubicar-bombas.html','/ubicar-bombas','/%75bicar-bombas.html','/modelos/plano-bombas.json']){
   assert.equal((await cloudPageAccess(request(path),{...config,fetcher:provider()})).status,403);
   assert.equal(await cloudPageAccess(request(path),{...config,fetcher:provider({...approved,role:'admin'})}),null);
  }

@@ -1,4 +1,5 @@
 // Compatible con Edge: no importa módulos Node ni usa claves privilegiadas.
+import {isPumpEditorPath} from './admin-editor-path.js';
 export const cloudPublicPaths=new Set(['/login.html','/acceso.js','/acceso.css','/cloud-session.js','/cloud-photos-config.js','/vendor/supabase.js','/marca/vocatus.png','/favicon.ico']);
 export async function cloudPageAccess(request,{url,key,fetcher=fetch}){
  const path=new URL(request.url).pathname;
@@ -19,7 +20,7 @@ export async function cloudPageAccess(request,{url,key,fetcher=fetch}){
   const account=await response.json();
   if(!account||account.id!==identity.id||account.status!=='approved'||account.active!==true||account.sessionValid!==true)return deny(403,'Tu cuenta todavía no tiene acceso aprobado.');
   if(account.mustChange)return new Response(null,{status:302,headers:{Location:'/login.html?cambiar=1','Cache-Control':'no-store'}});
-  if(['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/diseno.html','/diseno-editor.js'].includes(path)&&account.role!=='admin')return deny(403,'Solo un administrador puede usar esta parte.');
+  if((isPumpEditorPath(path)||['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/diseno.html','/diseno-editor.js'].includes(path))&&account.role!=='admin')return deny(403,'Solo un administrador puede usar esta parte.');
   return null;
  }catch{return deny(503,'No se pudo comprobar el permiso.');}
 }

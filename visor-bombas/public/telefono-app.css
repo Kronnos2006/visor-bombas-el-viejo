@@ -649,3 +649,7 @@ body.app-tel #torre-planta-botones button:not([aria-pressed=true]){border-color:
 
 /* Bodega fuera de servicio: sin botón «Pedir repuestos» en las órdenes. */
 [data-order-action="parts"]{display:none!important}
+body.app-tel .tel-admin-plano{margin:0 0 1rem;padding:.75rem;border:1px solid var(--borde);border-radius:12px;background:var(--superficie)}
+body.app-tel .tel-admin-plano .tel-sub{margin:0 0 .55rem}
+body.app-tel .tel-admin-plano .tel-primario{gap:.5rem;min-height:44px;font-size:14px;text-decoration:none}
+body.app-tel .tel-admin-plano a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}

@@ -4,6 +4,7 @@ import {randomBytes,scrypt,timingSafeEqual,createHash,randomUUID} from 'node:cry
 import {mkdir,readFile,writeFile,rename,appendFile} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import {isPumpEditorPath} from './admin-editor-path.js';
 
 const KEYLEN=64,SESSION_MS=12*3600*1000,LOCK_AFTER=5,LOCK_MS=15*60*1000;
 export const ROLES=['admin','usuario'];
@@ -141,7 +142,7 @@ export async function authGate({store,req,res,url,send,payload,isAllowedOrigin})
   if(isPage(pathname)){redirect(res,'/login.html?cambiar=1');return {done:true};}
   if(pathname.startsWith('/api/')){send(res,403,{code:'PASSWORD_CHANGE',error:'Primero tenés que cambiar tu contraseña.'});return {done:true};}
  }
- if(ADMIN_PAGES.has(pathname)&&user.role!=='admin'){
+ if((ADMIN_PAGES.has(pathname)||isPumpEditorPath(pathname))&&user.role!=='admin'){
   if(isPage(pathname))redirect(res,'/login.html?sinpermiso=1');else send(res,403,{error:'Solo un administrador puede usar esta parte.'});
   return {done:true};
  }
