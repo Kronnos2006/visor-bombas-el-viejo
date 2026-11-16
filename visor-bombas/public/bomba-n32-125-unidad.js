@@ -103,6 +103,13 @@ export function buildN32Unit(T, cad, profile) {
   for (const [x, y, width, depth] of [[-3.1,-1.52,1.75,1.95],[-.57,-1.52,.54,1.45],[2.2,-1.39,1.48,1.34]]) {
     for (const z of [-depth * .36, depth * .36]) {
       box(frame, [width, 2 * (y + 1.93), depth * .24], [x,y,z], supportMaterial, 'Pedestal de montaje');
+      box(frame, [width+.08,.065,depth*.30], [x,2*y+1.93,z], supportMaterial, 'Placa de apoyo');
+      for(const dx of [-width*.32,width*.32]){
+        const bolt=new T.Mesh(new T.CylinderGeometry(.067,.067,.046,6),supportMaterial.clone());
+        bolt.position.set(x+dx,2*y+2,z);
+        bolt.name='Perno de bancada';
+        frame.add(bolt);
+      }
     }
   }
   root.add(frame);
@@ -112,9 +119,18 @@ export function buildN32Unit(T, cad, profile) {
   guard.name = 'Guarda del acople';
   guard.userData = {part:8, subcomponent:guard.name, anatomyCover:true};
   coupling.add(guard);
+  for(const x of [-.575,.575]){
+    const lip=new T.Mesh(sectorShellGeometry(T,{inner:.58,outer:.66,length:.035,start:-Math.PI/2,end:Math.PI/2}),[guardMaterial.clone(),guardMaterial.clone()]);
+    lip.position.x=x;
+    lip.name='Borde de la guarda';
+    lip.userData={...guard.userData,subcomponent:lip.name};
+    coupling.add(lip);
+  }
   for (const z of [-.61,.61]) {
     const skirt=box(coupling,[1.17,1.88,.045],[0,-.94,z],guardMaterial,guard.name);
     skirt.userData={...guard.userData};
+    const foot=box(coupling,[1.21,.055,.16],[0,-1.88,z*1.10],guardMaterial,'Pestaña de la guarda');
+    foot.userData={...guard.userData,subcomponent:foot.name};
   }
   supportMaterial.dispose();
   guardMaterial.dispose();
