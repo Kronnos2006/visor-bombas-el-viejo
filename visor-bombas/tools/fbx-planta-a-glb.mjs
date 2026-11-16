@@ -14,7 +14,9 @@ import {weld,simplify,quantize,meshopt,dedup,prune} from '@gltf-transform/functi
 import {MeshoptEncoder,MeshoptSimplifier} from 'meshoptimizer';
 globalThis.self=globalThis;globalThis.window={innerWidth:1000,innerHeight:800};
 THREE.TextureLoader.prototype.load=function(){return new THREE.Texture();};
-const [src,out,torreJSON]=process.argv.slice(2);
+const args=process.argv.slice(2);
+const conservarBombasDusa=args.includes('--conservar-bombas-dusa');
+const [src,out,torreJSON]=args.filter(arg=>arg!=='--conservar-bombas-dusa');
 const buf=readFileSync(src);
 const root=new FBXLoader().parse(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength),'');root.updateMatrixWorld(true);
 const FT=.3048, M=new THREE.Matrix4().set(FT,0,0,0, 0,0,FT,0, 0,-FT,0,0, 0,0,0,1);
@@ -62,7 +64,7 @@ root.traverse(o=>{
  const c=CATS.find(([re])=>re.test(desc))||[null,...OTRO];
  const b=new THREE.Box3().setFromBufferAttribute(g.attributes.position);caja.union(b);
  if(/^DUSA/.test(sector))dusa.push({nombre:torreNombre(o.name),b});
- if(/^DUSA/.test(sector)&&BOMBA_TORRE.test(desc))return;
+ if(!conservarBombasDusa&&/^DUSA/.test(sector)&&BOMBA_TORRE.test(desc))return;
  tris+=g.attributes.position.count/3;conteo[c[1]]=(conteo[c[1]]||0)+1;
  gs.push({sector,cat:c[1],color:c[2],g,b,desc,bomba:BOMBA.test(desc)&&!NO_BOMBA.test(desc)});
 });

@@ -4,6 +4,7 @@
 // selección, 3D, ficha ni guardado. Con ?vista=clasica se usa el visor anterior.
 import {selectionIdentity} from './selection-core.js';
 import {sectorDe} from './planta-integrada.js';
+import {VISTA_FBX_AGUA} from './blender-local.js';
 import {iniciarEstadisticas} from './estadisticas.js?v=20261112b';
 import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
@@ -128,6 +129,7 @@ function iniciar() {
   <div class="tel-campo"><label for="tel-marca">Marca</label><select id="tel-marca"><option value="">Todas</option></select></div></div>
   <p id="tel-cuenta" class="tel-cuenta" aria-live="polite"></p>
   <div id="tel-resultados" class="tel-resultados" hidden></div>
+ ${VISTA_FBX_AGUA?'<p class="notice">Vista de prueba del tanque de agua. Las bombas del FBX están pendientes de vincular a sus fichas. <a href="/?s=areas">Volver al modelo habitual</a></p>':''}
   <h2 class="tel-sub">Áreas de la planta</h2><div id="tel-areas"></div>
   <h2 class="tel-sub">Herramientas</h2><div id="tel-herramientas"></div>`;
  const areaMenu = $('#area-menu'), camara = $('#camera-tools');

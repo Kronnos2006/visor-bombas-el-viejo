@@ -4,7 +4,7 @@ import {evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {normalizeSearch,searchPump,completeness,verificationOf,verificationText,storageDescription} from './interfaz-core.js';
 import {createFirstFloorView} from './primera-planta.js';
 import {createInspectorUI} from './interfaz.js';
-import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
+import {cargarModeloPlanta, VISTA_FBX_AGUA, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera} from './bombas-calderas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
@@ -49,7 +49,7 @@ import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const primeraPlanta=createFirstFloorView(THREE);
 let paletaBombas=null;
-const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
+const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:VISTA_FBX_AGUA?'agua':null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
 const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index),onSummary:()=>{state.tab="ficha";renderPanel();},onLayout:()=>renderPanel()});
 const extraReferences=[];
 let detailOrigin=null,detailFlightTicket=null,bombaResaltada=null;
@@ -155,7 +155,9 @@ function rebuildPlant(){
     glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(area.aparte)return;o.userData.areaId=area.id;areaPickables.push(o);}});
     g.add(glb.scene);if(area.aparte){$('#model-load').hidden=true;$('#scene-error').hidden=true;}
     if(area.aparte)montarIntegrado(g,glb.scene,placed);
-    if(state.view==='plant'&&state.area===area.id)flyArea(area.id);
+    if(state.view==='plant'&&state.area===area.id){
+     if(glb.scene.userData.fbxAgua&&state.filtroInt)flyIntegrado();else flyArea(area.id);
+    }
    }).catch(err=>{if(area.aparte)show3DError(err);else console.warn('No se cargó '+area.nombre,err);});
   }
   tq.add(sector(THREE,placed.filter(p=>areaOf(p)==='tanques')));
@@ -1005,6 +1007,11 @@ function renderPendingPanel(){
 }
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
+ if(escena.userData.fbxAgua){
+  integrado.info=escena.userData.fbxAgua;
+  aplicarFiltroInt();applyArea();renderList();
+  return;
+ }
  Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261110d').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([info,gruposBase,gruposCampo,asignacionData])=>{
   const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];
   if(g.parent!==plant)return;integrado.info=info;
@@ -1158,7 +1165,7 @@ function aplicarFiltroInt(){
  const f=state.filtroInt||null;
  document.querySelectorAll('#integrado-sectores [data-sector]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.sector||null)===f)));
  const s=SECTORES_INT.find(x=>x.id===f);
- if($('#integrado-status'))$('#integrado-status').textContent=s?`${s.nombre} aislado. Los pisos quedan como referencia y la cubierta común se oculta.`:'Toda la planta. Elegí un sector para aislarlo; tocá una bomba o referencia para abrir su ficha y completar datos e imágenes.';
+ if($('#integrado-status'))$('#integrado-status').textContent=s?`${s.nombre} aislado. Los pisos quedan como referencia y la cubierta común se oculta.`:VISTA_FBX_AGUA?'Toda la planta del FBX. Elegí un sector para aislarlo.':'Toda la planta. Elegí un sector para aislarlo; tocá una bomba o referencia para abrir su ficha y completar datos e imágenes.';
  if(!integrado)return;
  integrado.g.traverse(o=>{if(o.userData.sector)o.visible=visibleCon(o.userData.sector,f);});
  for(const [tag,b] of Object.entries(pumpObjectsInt))b.visible=(!f||b.userData.sectorInt===f)&&!pumpVisibility.stateOf(claveTag(tag));
@@ -1172,7 +1179,7 @@ function aplicarFiltroInt(){
 function flyIntegrado(){
  const a=AREA('integrado'),g=areaGroups.integrado,c=state.filtroInt&&integrado?.info&&cajaSector(integrado.info,state.filtroInt);
  if(!g||!c)return flyArea('integrado');
- g.updateMatrixWorld(true);let box=cajaVisible(THREE,g);if(box.isEmpty())box=new THREE.Box3(new THREE.Vector3(...c.min),new THREE.Vector3(...c.max)).applyMatrix4(g.matrixWorld);if(state.filtroInt==='torre'&&state.primeraPlanta&&primeraPlanta.height!==null)box.max.y=Math.min(box.max.y,primeraPlanta.height);ajustarSol(box);
+ g.updateMatrixWorld(true);let box=cajaVisible(THREE,g);if(VISTA_FBX_AGUA||box.isEmpty())box=new THREE.Box3(new THREE.Vector3(...c.min),new THREE.Vector3(...c.max)).applyMatrix4(g.matrixWorld);if(state.filtroInt==='torre'&&state.primeraPlanta&&primeraPlanta.height!==null)box.max.y=Math.min(box.max.y,primeraPlanta.height);ajustarSol(box);
  const [pos,obj]=encuadrar(box,new THREE.Vector3(...a.camara.pos).sub(new THREE.Vector3(...a.camara.obj)),1.15);fly(pos,obj,900);
 }
 function cajaEdificio(area){
@@ -1218,7 +1225,7 @@ function applyArea(){
   for(const g of Object.values(pumpObjects))if(g.parent===areaGroups.torre)g.visible=!state.seccion||state.seccion==='n1';}
   renderRail();
  document.querySelectorAll('#area-menu [data-area]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.area===(id==='integrado'&&state.filtroInt?'sector:'+state.filtroInt:id))));
- const floorTools=$('#torre-planta-tools');if(floorTools){floorTools.hidden=!(id==='integrado'&&state.filtroInt==='torre'&&state.view==='plant');floorTools.querySelectorAll('[data-nivel-torre]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.nivelTorre||'')===(state.primeraPlanta?state.nivelTorre||'n1':''))));}
+ const floorTools=$('#torre-planta-tools');if(floorTools){floorTools.hidden=VISTA_FBX_AGUA||!(id==='integrado'&&state.filtroInt==='torre'&&state.view==='plant');floorTools.querySelectorAll('[data-nivel-torre]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.nivelTorre||'')===(state.primeraPlanta?state.nivelTorre||'n1':''))));}
  const tools=$('#torre-tools');if(tools)tools.hidden=!(id==='torre'&&state.view==='plant');
  const toolsInt=$('#integrado-tools');if(toolsInt)toolsInt.hidden=!(a?.aparte&&state.view==='plant');
  document.querySelectorAll('#torre-tools [data-seccion]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.seccion||null)===(state.seccion||null)||(!b.dataset.seccion&&!state.seccion))));
@@ -1229,7 +1236,8 @@ function applyArea(){
   $('#scene-title').textContent=a?.nombre||'Planta general';
   $('#breadcrumb').textContent=id==='planta'?'PLANTA / VISTA GENERAL':'PLANTA / '+a.nombre.toUpperCase()+(s?' / '+s.nombre.toUpperCase():'');
   $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':a?.aparte?'MODELO INTEGRADO · 1 UNIDAD = 1 m · TANQUES: UBICACIÓN PROVISIONAL · MEDIDAS Y COLORES ILUSTRATIVOS':a?.modelo?`${a.nombre.toUpperCase()} · MODELO FBX · ASIGNACIÓN Y POSICIÓN APROXIMADAS`:'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
-  $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.aparte?'Tocá una bomba o referencia para abrir su ficha · Elegí un sector abajo para aislarlo':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
+  if(a?.aparte&&VISTA_FBX_AGUA)$('#scene-badge').textContent='VISTA DE PRUEBA · FBX DEL TANQUE DE AGUA';
+  $('#scene-help').textContent=a?.aparte&&VISTA_FBX_AGUA?'Elegí un sector para aislarlo. Las posiciones de bombas de este FBX están pendientes de vincular a sus fichas.':id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.aparte?'Tocá una bomba o referencia para abrir su ficha · Elegí un sector abajo para aislarlo':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
  }
 }
 (function areaUI(){

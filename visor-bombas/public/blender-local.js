@@ -1,7 +1,19 @@
 // Modelo de Blender integrado; ?modelo=original conserva la vista anterior.
+export const VISTA_FBX_AGUA=new URLSearchParams(globalThis.location?.search).get('modelo')==='fbx-agua';
 export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress}){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
  if(!area.aparte||new URLSearchParams(location.search).get('modelo')==='original')return loader.loadAsync(area.modelo,onProgress);
+ if(VISTA_FBX_AGUA){
+  const [glb,info]=await Promise.all([
+   loader.loadAsync('/modelos/planta-tanque-agua.glb',onProgress),
+   fetch('/modelos/planta-tanque-agua.json').then(r=>{
+    if(!r.ok)throw new Error('No se pudieron cargar los sectores del FBX de agua');
+    return r.json();
+   })
+  ]);
+  glb.scene.userData.fbxAgua=info;
+  return glb;
+ }
  const {DRACOLoader}=await import('/vendor/blender-local/DRACOLoader.js');
  const draco=new DRACOLoader().setDecoderPath('/vendor/blender-local/draco/');
  loader.setDRACOLoader(draco);
