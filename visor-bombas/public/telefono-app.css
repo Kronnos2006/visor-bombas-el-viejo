@@ -653,3 +653,4 @@ body.app-tel .tel-admin-plano{margin:0 0 1rem;padding:.75rem;border:1px solid va
 body.app-tel .tel-admin-plano .tel-sub{margin:0 0 .55rem}
 body.app-tel .tel-admin-plano .tel-primario{gap:.5rem;min-height:44px;font-size:14px;text-decoration:none}
 body.app-tel .tel-admin-plano a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+body.app-tel .tel-admin-plano .tel-control-planta{display:flex;align-items:center;justify-content:center;margin-bottom:.5rem;min-height:44px;text-decoration:none}

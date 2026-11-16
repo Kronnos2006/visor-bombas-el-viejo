@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es"><head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>Control de bombas · Vocatus</title>
+ <link rel="icon" href="/marca/vocatus.png">
+ <link rel="stylesheet" href="/acceso.css"><link rel="stylesheet" href="/admin-planta.css">
+</head><body>
+ <main class="control" aria-labelledby="control-title">
+  <a href="/?s=areas" class="volver">← Volver a Áreas</a>
+  <header class="control-heading">
+   <div><h1 id="control-title">Control de bombas</h1><p>Inventario, fallas y mantenimiento de la planta.</p></div>
+   <div class="control-actions"><button type="button" class="boton" id="refresh">Actualizar</button><button type="button" class="boton exportar" id="export" disabled>Exportar a Excel</button></div>
+  </header>
+  <form id="filters" class="control-filtros">
+   <label>Desde<input name="from" type="date"></label>
+   <label>Hasta<input name="until" type="date"></label>
+   <label>Buscar en el inventario<input type="search" id="search" placeholder="TAG, área, líquido o modelo"></label>
+  </form>
+  <p id="status" role="status">Cargando los datos compartidos…</p>
+  <div id="results" hidden></div>
+ </main>
+ <script type="module" src="/admin-planta.js"></script>
+</body></html>

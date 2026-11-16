@@ -34,10 +34,36 @@ test('ni JWT inventado ni identidad de otro usuario ni indisponibilidad abren el
 });
 test('usuario aprobado consulta pero no obtiene páginas administrativas; admin sí',async()=>{
  assert.equal(await cloudPageAccess(request('/api/bootstrap'),{...config,fetcher:provider()}),null);
- for(const path of ['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/ubicar-bombas.html','/ubicar-bombas','/%75bicar-bombas.html','/modelos/plano-bombas.json']){
+ for(const path of ['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/ubicar-bombas.html','/ubicar-bombas','/%75bicar-bombas.html','/modelos/plano-bombas.json','/admin-planta.html','/api/admin/plant']){
   assert.equal((await cloudPageAccess(request(path),{...config,fetcher:provider()})).status,403);
   assert.equal(await cloudPageAccess(request(path),{...config,fetcher:provider({...approved,role:'admin'})}),null);
  }
+});
+test('el historial administrativo se rechaza antes de consultar datos si el rol no es administrador',async()=>{
+ const {access,privileged}=backend(approved);
+ await assert.rejects(access.readPlant({headers:{cookie:'vocatus_cloud_access=verified-token'}}),{status:403,code:'ADMIN_ONLY'});
+ assert.deepEqual(privileged,[]);
+});
+test('el historial administrativo pagina informes con la sesión verificada y excluye adjuntos del resumen',async()=>{
+ const queries=[];
+ const report={tag:'B30',source_id:'test',data:{title:'Fuga',pdf:{path:'private/file.pdf'}}};
+ const factory=(_url,key,options)=>({
+  auth:{getUser:async()=>({data:{user:identity}})},
+  rpc:async()=>({data:{...approved,role:'admin'}}),
+  from(table){
+   assert.equal(key,'public-test');
+   assert.equal(options.global.headers.Authorization,'Bearer verified-token');
+   return {select(){return this;},is(){return this;},order(){return this;},async range(from){
+    queries.push([table,from]);
+    return {data:table==='vocatus_work_reports'&&from===0?Array(200).fill(report):[]};
+   }};
+  },
+ });
+ const access=createCloudAccess({config,factory});
+ const data=await access.readPlant({headers:{cookie:'vocatus_cloud_access=verified-token'}});
+ assert.equal(data.reports.length,200);
+ assert.deepEqual(data.reports[0].data,{title:'Fuga'});
+ assert.ok(queries.some(([table,from])=>table==='vocatus_work_reports'&&from===200));
 });
 test('el acceso y sus recursos mínimos son públicos; la carpeta de imágenes y los modelos no',async()=>{
  assert.equal(await cloudPageAccess(request('/login.html',false),config),null);

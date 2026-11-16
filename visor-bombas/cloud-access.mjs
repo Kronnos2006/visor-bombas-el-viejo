@@ -30,6 +30,36 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
  }
  function approved(ctx){const a=ctx?.account;return !!(a&&a.status==='approved'&&a.active===true&&a.sessionValid===true&&['admin','usuario'].includes(a.role));}
  function requireAdmin(ctx){if(!approved(ctx)||ctx.account.mustChange||ctx.account.role!=='admin')throw error('Solo un administrador puede usar esta parte.',403,'ADMIN_ONLY');return ctx.account.id;}
+ async function readPlant(req){
+  const ctx=await context(cloudToken(req));
+  requireAdmin(ctx);
+  const db=asUser(ctx.token);
+  async function read(table,fields,keys,active=false){
+   const rows=[];
+   for(let offset=0;;offset+=200){
+    let query=db.from(table).select(fields);
+    if(active)query=query.is('archived_at',null);
+    for(const key of keys)query=query.order(key);
+    const {data,error:failure}=await query.range(offset,offset+199);
+    if(failure)throw error('No se pudo consultar el historial de la planta.',503,'PLANT_UNAVAILABLE');
+    rows.push(...data);
+    if(data.length<200)return rows;
+   }
+  }
+  const [reports,orders,incidents,overrides]=await Promise.all([
+   read('vocatus_work_reports','tag,source_id,work_order_id,created_at,data',['tag','source_id'],true),
+   read('vocatus_work_orders','id,tag,updated_at,data',['id'],true),
+   read('vocatus_incidents','id,tag,place,title,details,severity,status,order_id,created_at',['id']),
+   read('vocatus_pump_data','reference_key,data',['reference_key']),
+  ]);
+  const picked=(data,fields)=>Object.fromEntries(fields.filter(field=>data?.[field]!==undefined).map(field=>[field,data[field]]));
+  return {
+   reports:reports.map(row=>({...row,data:picked(row.data,['date','title','problema','symptoms','text','comentario','parts','author','operativo','retiro','retirado','workOrderId'])})),
+   orders:orders.map(row=>({...row,data:picked(row.data,['created','due','title','component','type','status','assignee'])})),
+   incidents,
+   overrides:overrides.map(row=>({...row,data:picked(row.data,['ubicacion','area','fluido','liquido','marca','modelo','tamano'])})),
+  };
+ }
  const manage=(actor,action,target=null,input={})=>rpc('vocatus_manage_account',{p_actor:actor,p_action:action,p_target:target,p_input:input});
  async function requestAccount(token,input){
   const result=await asUser(token).rpc('vocatus_request_access',{p_username:input.username,p_name:input.name});
@@ -127,6 +157,6 @@ export function createCloudAccess({config=cloudConfiguration(),factory=createCli
    throw error('Acción no encontrada.',404);
   }catch(e){return send(res,e.status||503,{code:e.code,error:e.status?e.message:'El servicio de cuentas no está disponible.'});}
  }
- return {context,approved,route,async authorize(req,url,body={}){const ctx=await context(cloudToken(req));if(!approved(ctx))throw error('Necesitás una sesión aprobada.',401,'AUTH_REQUIRED');return authorizeAccount(ctx.account,{method:req.method,pathname:url.pathname,body});},
+ return {context,approved,route,readPlant,async authorize(req,url,body={}){const ctx=await context(cloudToken(req));if(!approved(ctx))throw error('Necesitás una sesión aprobada.',401,'AUTH_REQUIRED');return authorizeAccount(ctx.account,{method:req.method,pathname:url.pathname,body});},
   async audit(actor,action,detail={}){return rpc('vocatus_record_action',{p_actor:actor,p_action:action,p_detail:detail});}};
 }
