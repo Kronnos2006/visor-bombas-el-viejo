@@ -13,20 +13,21 @@ const profiles = {
 export function pumpReference(pump, plate) {
   if (pump.inactive || plate?.fuente === 'Fuera de la lista') return null;
   const evidence = /^Placa(?:$| \()/.test(plate?.fuente ?? '') ? plate.placa : '';
-  const catalog = [pump.marca,pump.modelo,pump.size,pump.tipo].filter(Boolean).join(' ');
+  const catalog = [pump.marca,pump.modelo,pump.size,pump.tipo,pump.nombre].filter(Boolean).join(' ');
   const text = (evidence || catalog).toUpperCase();
   const tag = Number(pump.tag?.slice(1));
   let kind = 'standard';
   if (/VERTICAL|MOVITEC|GRUNDFOS|EBARA|\bSB[ -]/.test(text) || [59,69,70,71,72,73].includes(tag)) kind = 'vertical';
-  else if (/GOULDS/.test(text) || (tag >= 39 && tag <= 43) || tag === 56) kind = 'compact';
+  else if (/GOULDS|MONOBLOQUE|ACOPLAMIENTO DIRECTO/.test(text) || pump.variant==='goulds' || (tag >= 39 && tag <= 43) || tag === 56) kind = 'compact';
   else if (/TITAN/.test(text) || [17,18,20,21,61,62,63,64,65,66,67,68,81,83].includes(tag)) kind = 'titan';
   else if (/3\s*[X×]\s*4\s*[-X×]?\s*(12|13)|HIDROMAC AZ|RA\s*65|PACO/.test(text) || [44,45,48,55,58,60].includes(tag)) kind = 'large';
   else if (/\bLF\b|DURCO/.test(text) || [19,23,24,30,31,32,33,37,38].includes(tag)) kind = 'lowFlow';
   else if (/\bMTO\b|MULTISTEEL/.test(text) || [27,28,29,34,35,36,49,50,51,52,53,54,57].includes(tag)) kind = 'process';
-  return { kind, ...profiles[kind] };
+  const stages = /EVMSU?5[- /]?9/.test(text) ? 9 : /MOVITEC.*4[/ -]8/.test(text) ? 8 : /\bSB.*15[- /]5/.test(text) ? 5 : 6;
+  return { kind, ...profiles[kind], ...(kind==='vertical'?{stages}:{}) };
 }
 
-export function buildVerticalReference(T) {
+export function buildVerticalReference(T, stages=6) {
   const model = buildPumpModel(T);
   const {root,components} = model;
   const positions = [-1.7,-1.28,-.9,.76,.92,1.12,-.24,.12,1.55,2.86];
@@ -70,9 +71,9 @@ export function buildVerticalReference(T) {
     add(0,tube(.26,.65),paint,sign<0?'Entrada en línea':'Salida en línea',0,sign*.58);
     add(0,tube(.42,.13),metal,'Brida de conexión',0,sign*.95);
   }
-  for(let stage=0;stage<6;stage++){
-    const x=stage*.245;
-    axial(2,.36,.095,metal,'Impulsor de etapa',x);
+  for(let stage=0;stage<stages;stage++){
+    const x=stage*1.47/stages;
+    axial(2,.36,.52/stages,metal,'Impulsor de etapa',x);
     for(let blade=0;blade<6;blade++){
       const angle=blade*Math.PI/3;
       const fin=add(2,new T.BoxGeometry(.09,.15,.048),paint,'Álabe de etapa',x-.07,.24*Math.cos(angle),.24*Math.sin(angle));

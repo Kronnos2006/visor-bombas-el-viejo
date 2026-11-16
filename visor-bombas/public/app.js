@@ -206,7 +206,7 @@ function rebuildPlant(){
  if(render3D)render3D.refrescar();
 }
 function buildPump(variant='lf',cad=null,profile=null){
- const model=profile?.kind==='vertical'?buildVerticalReference(THREE):cad?buildN32Unit(THREE,cad,profile):buildPumpModel(THREE,profile?.kind==='compact'?'goulds':variant);
+ const model=profile?.kind==='vertical'?buildVerticalReference(THREE,profile.stages):cad?buildN32Unit(THREE,cad,profile):buildPumpModel(THREE,profile?.kind==='compact'?'goulds':variant);
  activePumpReference=profile;
  n32Model=model.moveExplosion?model:null;
  pumpGroup.rotation.z=model.vertical?Math.PI/2:0;
@@ -977,14 +977,17 @@ function selectPendingPump(reference){
  $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
  $('#back').hidden=false;
  const show=async()=>{
-  const {cad,profile}=tag?await loadPumpReference({tag,modelo:reference.excel?.bomba,size:reference.excel?.tamano}):{};
+  const {cad,profile}=await loadPumpReference({
+   tag,modelo:reference.excel?.bomba,size:reference.excel?.tamano,
+   tipo:reference.modelo,nombre:reference.nombre,
+  });
   if(ticket!==state.loading)return;
   state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
  if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf',cad,profile);}
  if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}
- photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);setPhotoDetail(false);
- if(profile)setPhotoDetail(true);
- else{
+ photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);
+ setPhotoDetail(!!profile);
+ if(!profile){
   $('#scene-badge').textContent=state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR';
   $('#scene-help').textContent='Arrastrá para girar · Abrí Piezas de la bomba para ver el despiece';
  }
@@ -1346,6 +1349,13 @@ window.vocatus={
  select:tag=>selectPhotoPump(tag),
  selectReference:reference=>selectPendingPump(reference),
  tab:name=>{state.tab=name;renderPanel();},
+ assembled:()=>{
+  if(state.view!=='pump'||!state.pump)return;
+  setPhotoDetail(!!activePumpReference);
+  anatomy?.reset();
+  syncAnatomyTools();
+  renderPanel();
+ },
  explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&!n32Model&&Number(value)>30&&document.body.classList.contains('app-tel'))fly([15,12,32],[0,0,0],650);},
  locate:()=>locateSelectedPump(),
  back:()=>{if(state.view!=='plant'||state.pump)$('#back').click();},
@@ -1354,7 +1364,27 @@ window.vocatus={
  get explosion(){return state.explode;},
  get listo(){return state.view==='pump'&&detailFlightTicket!==state.loading;},
  corte:()=>$('#anatomy-cut').click(),transparente:()=>$('#anatomy-transparent').click(),get anatomia(){return anatomy?{...anatomy.state}:{};},
- vista:t=>{if(!camera||state.view==='plant')return;const ex=state.explode>30,k=document.body.classList.contains('app-tel')&&ex?1.5:1;const P={tres:[10,8,ex?21:12],frente:[0,1.2,ex?22:13],arriba:[0,ex?30:22,.1]}[t];if(P)fly(P.map(v=>v*k),[0,0,0],650);},
+ vista:t=>{
+  if(!camera||state.view==='plant')return;
+  const ex=state.explode>30;
+  const direction={tres:[-8,7,12],frente:[0,1.2,13],arriba:[0,22,.1]}[t];
+  if(activePumpReference&&state.detail==='schematic'&&direction){
+   const previous=n32Model?.explosion;
+   const isolated=anatomy?.state.isolate;
+   n32Model?.moveExplosion(state.explode/100,true,isolated);
+   const bounds=cajaVisible(THREE,pumpGroup,{incluirReferencia:true});
+   n32Model?.moveExplosion(previous,true,isolated);
+   if(!bounds.isEmpty()){
+    fitPumpMinimum(bounds);
+    const [position,target]=encuadrar(bounds,new THREE.Vector3(...direction),1.15,detailRailFraction());
+    fly(position,target,650);
+    return;
+   }
+  }
+  const k=document.body.classList.contains('app-tel')&&ex?1.5:1;
+  const position={tres:[10,8,ex?21:12],frente:[0,1.2,ex?22:13],arriba:[0,ex?30:22,.1]}[t];
+  if(position)fly(position.map(v=>v*k),[0,0,0],650);
+ },
  areaDe:p=>areaEnMapa(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
  ensure3D:ensurePlant,api
 };
