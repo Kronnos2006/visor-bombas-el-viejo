@@ -117,7 +117,8 @@ function init(){
    if(V().listo){
     await new Promise(resolve=>setTimeout(resolve,350));
     if(ticket!==modelTicket||V()?.pump?.tag!==tag||!document.body.classList.contains('tel-con-ficha'))return;
-    V().explode(exploded?100:0);V().vista('tres');
+    if(exploded)V().explode(100);else V().assembled();
+    V().vista('tres');
     modelAccess.querySelectorAll('[data-model-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.modelMode===(exploded?'exploded':'assembled'))));
     const pieces=$('#tel-vistas [data-piezas] span');if(pieces)pieces.textContent=exploded?'Juntar piezas':'Separar piezas';
     status.textContent=exploded?'Piezas separadas · tocá una pieza para consultarla.':'Bomba completa · arrastrá para girar y acercá con dos dedos.';
