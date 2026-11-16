@@ -25,11 +25,12 @@ async function fixture(){
  return {...api,get calls(){return calls;},get queries(){return queries;},respond(fn){respond=fn;},advance(ms){time+=ms;},emit(event,next){authChanged(event,next);}};
 }
 
-test('diez lecturas simultáneas comparten una consulta de permisos y conservan sus lecturas de datos',async()=>{
+test('diez lecturas simultáneas del mismo equipo comparten permisos y consulta de filas',async()=>{
  const f=await fixture();
  await Promise.all(Array.from({length:10},()=>f.sharedPhotos('B30')));
- assert.equal(f.calls,1);assert.equal(f.queries,10);
- await f.sharedPhotos('B31');assert.equal(f.calls,1);assert.equal(f.queries,11);
+ assert.equal(f.calls,1);assert.equal(f.queries,1);
+ await Promise.all([f.sharedPhotos('B30'),f.sharedPhotos('B31')]);
+ assert.equal(f.calls,1);assert.equal(f.queries,3);
 });
 
 test('caché de permisos expira a los treinta segundos y deduplica la renovación',async()=>{

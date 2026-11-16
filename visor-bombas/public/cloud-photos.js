@@ -3,10 +3,32 @@ import {loadSharedPhotoRows} from './cloud-photo-core.js';
 let clientPromise,session=null,permissions=null,initPromise;
 let permissionGeneration=0,permissionRequest=null,permissionOwner=null,permissionUntil=0;
 const snapshots=new Map(),downloads=new Map(),watchers=new Map();
+const pendingRows=new Map();
+let photoChannel=null,photoLive=false,lastFallback=0;
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const notify=entity=>document.dispatchEvent(new CustomEvent('vocatus:cloud-photos',{detail:{entity}}));
 const changed=()=>document.dispatchEvent(new Event('vocatus:cloud-auth'));
 export const cloudEnabled=()=>typeof window!=='undefined'&&cloudPhotoConfig.enabled;
+function updatePhotoSubscription(supabase){
+ const needed=session&&watchers.size&&document.visibilityState==='visible';
+ if(!needed){
+  const previous=photoChannel;photoChannel=null;photoLive=false;
+  if(previous)void supabase.removeChannel(previous).catch(()=>{});
+  return;
+ }
+ if(photoChannel)return;
+ const channel=supabase.channel('vocatus-equipment-photos');
+ photoChannel=channel;
+ channel.on('postgres_changes',{event:'*',schema:'public',table:'vocatus_photos'},event=>{
+  if(photoChannel!==channel)return;
+  const entity=event.new?.entity_key||event.old?.entity_key;
+  if(entity&&watchers.has(entity)){snapshots.delete(entity);pendingRows.delete(entity);notify(entity);}
+ }).subscribe(status=>{
+  if(photoChannel!==channel)return;
+  photoLive=status==='SUBSCRIBED';
+  if(photoLive)lastFallback=Date.now();
+ });
+}
 async function client(){
  if(!clientPromise)clientPromise=(async()=>{if(typeof document!=='undefined'&&document.documentElement?.dataset.cloudAccounts==='1'){const {sharedAccountClient}=await import('./cloud-session.js');return sharedAccountClient();}return import('./vendor/supabase.js').then(({createClient})=>createClient(cloudPhotoConfig.url,cloudPhotoConfig.key,{auth:{storageKey:'vocatus-photo-session',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));})();
  return clientPromise;
@@ -35,16 +57,18 @@ export async function startCloudPhotos(){
   const supabase=await client();const initial=await supabase.auth.getSession();session=initial.data.session;
   supabase.auth.onAuthStateChange((_event,next)=>{
    const previous=session?.user?.id;session=next;invalidatePermissions();
-   if(previous!==next?.user?.id){snapshots.clear();for(const url of downloads.values())URL.revokeObjectURL(url);downloads.clear();}
+   if(previous!==next?.user?.id){snapshots.clear();pendingRows.clear();for(const url of downloads.values())URL.revokeObjectURL(url);downloads.clear();}
    // Fuera del callback de Auth para no bloquear la renovación de la sesión.
-   setTimeout(()=>{changed();for(const entity of watchers.keys())notify(entity);},0);
+   setTimeout(()=>{updatePhotoSubscription(supabase);changed();for(const entity of watchers.keys())notify(entity);},0);
   });
-  supabase.channel('vocatus-equipment-photos').on('postgres_changes',{event:'*',schema:'public',table:'vocatus_photos'},event=>{
-   const entity=event.new?.entity_key||event.old?.entity_key;if(entity){snapshots.delete(entity);notify(entity);}
-  }).subscribe();
-  setInterval(()=>{if(session&&document.visibilityState==='visible')for(const entity of watchers.keys())notify(entity);},15000);
+  updatePhotoSubscription(supabase);
+  setInterval(()=>{
+   if(!session||!watchers.size||document.visibilityState!=='visible')return;
+   const now=Date.now();if(now-lastFallback<(photoLive?60000:15000))return;
+   lastFallback=now;for(const entity of watchers.keys())notify(entity);
+  },15000);
   window.addEventListener('online',()=>{for(const entity of watchers.keys())notify(entity);});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')for(const entity of watchers.keys())notify(entity);});
+  document.addEventListener('visibilitychange',()=>{updatePhotoSubscription(supabase);if(document.visibilityState==='visible')for(const entity of watchers.keys())notify(entity);});
   return true;
  })().catch(error=>{initPromise=null;throw error;});
  await initPromise;return !!session;
@@ -52,8 +76,17 @@ export async function startCloudPhotos(){
 export function cloudRevision(entity,slot){const rows=snapshots.get(entity);return rows?rows.find(row=>row.slot===slot)?.revision??0:undefined;}
 export async function cloudSession(){await startCloudPhotos();if(!session)return null;await checkPermissions();return session;}
 async function rows(entity){
- const owner=session?.user?.id,supabase=await client(),result=await supabase.from('vocatus_photos').select('*').eq('entity_key',entity);
- if(result.error)throw result.error;if(!owner||session?.user?.id!==owner)throw Error('La cuenta cambió. Volvé a abrir las fotos.');snapshots.set(entity,result.data||[]);return result.data||[];
+ if(pendingRows.has(entity))return pendingRows.get(entity);
+ const owner=session?.user?.id;
+ const job=(async()=>{
+  const supabase=await client(),result=await supabase.from('vocatus_photos').select('*').eq('entity_key',entity);
+  if(result.error)throw result.error;
+  if(!owner||session?.user?.id!==owner)throw Error('La cuenta cambió. Volvé a abrir las fotos.');
+  if(pendingRows.get(entity)===job)snapshots.set(entity,result.data||[]);
+  return result.data||[];
+ })();
+ pendingRows.set(entity,job);
+ try{return await job;}finally{if(pendingRows.get(entity)===job)pendingRows.delete(entity);}
 }
 export async function sharedPhotos(entity,{strict=false}={}){
  if(!await cloudSession())return Object.defineProperty({},'warning',{value:'Conectá tu cuenta autorizada en este navegador para ver las fotos que compartiste desde el teléfono.',enumerable:false});
@@ -93,7 +126,7 @@ export async function cloudTransport(){
  const supabase=await client();
  return {userId:current.user.id,
   async upload(path,blob){const result=await supabase.storage.from('vocatus-photos').upload(path,blob,{contentType:blob.type,upsert:false});if(result.error&&String(result.error.statusCode)!=='409')throw result.error;},
-  async publish(entity,slot,expected,path){const result=await supabase.rpc('vocatus_publish_photo',{p_entity:entity,p_slot:slot,p_expected:expected,p_path:path});if(result.error)throw result.error;snapshots.delete(entity);notify(entity);return result.data?.[0];},
+  async publish(entity,slot,expected,path){const result=await supabase.rpc('vocatus_publish_photo',{p_entity:entity,p_slot:slot,p_expected:expected,p_path:path});if(result.error)throw result.error;snapshots.delete(entity);pendingRows.delete(entity);notify(entity);return result.data?.[0];},
   async readOne(entity,slot){return (await rows(entity)).find(row=>row.slot===slot);}
  };
 }
@@ -104,9 +137,17 @@ export function bindCloudPhotoControls(root,entity,{refresh,flush,resolve,detail
  if(!cloudEnabled())return;const box=root.querySelector('.cloud-photo-controls');if(!box)return;
  const previous=bindings.get(root);previous?.abort();const controller=new AbortController();bindings.set(root,controller);
  watchers.set(entity,(watchers.get(entity)||0)+1);
- controller.signal.addEventListener('abort',()=>{const n=watchers.get(entity)-1;n>0?watchers.set(entity,n):watchers.delete(entity);});
+ controller.signal.addEventListener('abort',()=>{const n=watchers.get(entity)-1;n>0?watchers.set(entity,n):watchers.delete(entity);queueMicrotask(()=>{void client().then(updatePhotoSubscription).catch(()=>{});});});
  const live=()=>root.isConnected&&root.querySelector('.cloud-photo-controls')?.dataset.cloudEntity===entity;
- let updating=false;const update=async()=>{if(!live()){controller.abort();return;}if(updating)return;updating=true;try{await refresh?.();if(live())root.querySelector('[data-cloud-state]').textContent=statusText(entity);}catch(error){if(live())root.querySelector('[data-cloud-result]').textContent=error.message;}finally{updating=false;}};
+ let updating=false,rerun=false;
+ const update=async()=>{
+  if(!live()){controller.abort();return;}
+  if(updating){rerun=true;return;}
+  updating=true;
+  try{await refresh?.();if(live())root.querySelector('[data-cloud-state]').textContent=statusText(entity);}
+  catch(error){if(live())root.querySelector('[data-cloud-result]').textContent=error.message;}
+  finally{updating=false;if(rerun){rerun=false;queueMicrotask(update);}}
+ };
  const authenticate=()=>{if(!live()){controller.abort();return;}const active=root.querySelector('.cloud-photo-controls');active.querySelector('[data-cloud-state]').textContent=statusText(entity);active.querySelector('[data-cloud-pending]').hidden=!session;update();};
  document.addEventListener('vocatus:cloud-photos',event=>{if(event.detail.entity===entity)update();},{signal:controller.signal});
  document.addEventListener('vocatus:cloud-auth',authenticate,{signal:controller.signal});
@@ -116,7 +157,7 @@ export function bindCloudPhotoControls(root,entity,{refresh,flush,resolve,detail
  box.querySelector('[data-cloud-pending]').onclick=syncAndRefresh;
  const detailBox=document.createElement('div');box.append(detailBox);
  details?.().then(items=>{if(!live())return;detailBox.innerHTML=items.map(item=>`<p><strong>${esc(item.name)}:</strong> ${esc(item.error)} ${item.online?`<a href="${esc(item.online)}" target="_blank" rel="noopener">Ver foto en línea</a>`:''}</p>${item.conflict?`<button type="button" data-cloud-resolve="${esc(item.slot)}" data-choice="online">Conservar foto en línea</button><button type="button" data-cloud-resolve="${esc(item.slot)}" data-choice="local">Reemplazar en línea con mi foto local</button>`:''}`).join('');detailBox.querySelectorAll('[data-cloud-resolve]').forEach(button=>button.onclick=async()=>{button.disabled=true;try{await resolve?.(entity,button.dataset.cloudResolve,button.dataset.choice);await update();}catch(error){box.querySelector('[data-cloud-result]').textContent=error.message;}finally{button.disabled=false;}});}).catch(()=>{});
- startCloudPhotos().then(async()=>{if(session)await checkPermissions();if(live()){box.querySelector('[data-cloud-state]').textContent=statusText(entity);box.querySelector('[data-cloud-pending]').hidden=!session;}}).catch(error=>{if(live())box.querySelector('[data-cloud-result]').textContent=error.message;});
+ startCloudPhotos().then(async()=>{updatePhotoSubscription(await client());if(session)await checkPermissions();if(live()){box.querySelector('[data-cloud-state]').textContent=statusText(entity);box.querySelector('[data-cloud-pending]').hidden=!session;}}).catch(error=>{if(live())box.querySelector('[data-cloud-result]').textContent=error.message;});
  addStyles();
 }
 async function openAccount(){
