@@ -1,4 +1,4 @@
-import { buildPumpModel } from './pump-model.js';
+import { buildPumpModel } from './pump-model.js?v=montaje-monobloque';
 
 const profiles = {
   standard: { label:'Centrífuga horizontal', paint:0x358093, wet:1, drive:1 },
