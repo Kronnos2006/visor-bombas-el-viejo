@@ -7,5 +7,7 @@ node_modules/
 app.js.respaldo*
 server.mjs.respaldo*
 public/*.respaldo*
+public/modelos/blender-local/planta-blender-local.glb.gz
+public/modelos/blender-local/planta-blender-local.glb.gz.tmp
 demo-vault/00-Proyecto/Mantenimiento/*.md
 

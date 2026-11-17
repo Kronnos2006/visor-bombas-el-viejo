@@ -21,7 +21,21 @@ export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgr
  const draco=new DRACOLoader().setDecoderPath('/vendor/blender-local/draco/');
  loader.setDRACOLoader(draco);
  try{
-  const glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
+  let glb;
+  if(typeof DecompressionStream==='function'){
+   const url='/modelos/blender-local/planta-blender-local.glb.gz?v='+PLANTA_BLENDER_CACHE,response=await fetch(url);
+   if(response.status===404)glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
+   else if(!response.ok)throw new Error('No se pudo descargar el modelo comprimido ('+response.status+')');
+   else if(!response.body)glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
+   else{
+    const total=Number(response.headers.get('content-length'))||0;let loaded=0;
+    const seguimiento=new TransformStream({transform(chunk,controller){loaded+=chunk.byteLength;onProgress?.({loaded,total});controller.enqueue(chunk);}});
+    const descarga=response.body.pipeThrough(seguimiento);
+    const contenido=/\bgzip\b/i.test(response.headers.get('content-encoding')||'')?descarga:descarga.pipeThrough(new DecompressionStream('gzip'));
+    const buffer=await new Response(contenido).arrayBuffer();
+    glb=await loader.parseAsync(buffer,'/modelos/blender-local/');
+   }
+  }else glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
   glb.scene.userData.blenderLocal=true;
   glb.scene.traverse(o=>{if(o.userData.sector)o.userData.sector=o.userData.sector.trim();});
   return glb;

@@ -22,7 +22,7 @@
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },
     {
-      "source": "/modelos/blender-local/planta-blender-local.glb",
+      "source": "/modelos/blender-local/planta-blender-local.glb.gz",
       "headers": [{ "key": "Cache-Control", "value": "private, max-age=31536000, immutable" }]
     },
     {
@@ -44,5 +44,5 @@
       "maxDuration": 60
     }
   },
-  "buildCommand": "node tools/proteger-historial.mjs && node tools/prepare-cloud-access.mjs"
+  "buildCommand": "node tools/proteger-historial.mjs && node tools/prepare-cloud-access.mjs && node tools/preparar-modelo-rapido.mjs"
 }
