@@ -3,7 +3,21 @@ import assert from 'node:assert/strict';
 import * as THREE from './public/vendor/three.module.js';
 import {buildPumpModel,sectorShellGeometry} from './public/pump-model.js';
 import {createAnatomyView} from './public/anatomy-view.js';
-import {pumpReference} from './public/pump-reference.js';
+import {pumpReference,buildInstalledReference,buildVerticalReference} from './public/pump-reference.js';
+
+test('B73 mantiene carcasa vertical ensamblada, ocho etapas y un despiece que se puede rearmar',()=>{
+ const profile=pumpReference({tag:'B73',marca:'Movitec',modelo:'VF 4/8B'});
+ const body=buildInstalledReference(THREE,profile),bounds=new THREE.Box3().setFromObject(body),size=bounds.getSize(new THREE.Vector3());
+ assert.equal(body.userData.referenceKind,'vertical');assert.ok(size.y>size.x*2&&size.y>size.z*2);
+ assert.ok(Math.abs(bounds.min.y)<1e-6);
+ const model=buildVerticalReference(THREE,profile.stages,profile.finish),impellers=[];
+ model.root.traverse(o=>{if(o.name==='Impulsor de etapa')impellers.push(o);});
+ assert.equal(impellers.length,8);
+ assert.ok(model.root.getObjectByName('Camisa exterior inoxidable'));
+ const positions=model.components.map(g=>g.position.toArray());
+ model.moveExplosion(1,true);assert.notDeepEqual(model.components.map(g=>g.position.toArray()),positions);
+ model.moveExplosion(0,true);assert.deepEqual(model.components.map(g=>g.position.toArray()),positions);
+});
 
 test('el modelo y la placa deciden la forma aunque el TAG tuviera otra referencia',()=>{
  assert.equal(pumpReference({tag:'B69',marca:'Hidromac',modelo:'2196 1X1.5-8 LF'}).kind,'lowFlow');

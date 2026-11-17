@@ -12,7 +12,7 @@ import {abrirFichaPendiente,clavePendiente,bombaParaResumen} from './ficha-pendi
 import {pumpNames} from './pump-names.js';
 import {startPumpData} from './pump-data.js';
 import {crearPaleta} from './paleta-bombas.js';
-import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
+import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo,datosDeExcel} from './asignacion-bombas.js';
 import {cargarPlacas,bloquePlaca,placaDe} from './placas-bombas.js';
 import {pumpVisibility,esAdmin,claveTag,bloqueAdmin,explicarErrorVisibilidad,recortarCajas} from './bombas-admin.js';
 import * as THREE from 'three';
@@ -42,7 +42,7 @@ import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js?v=montaje-monobloque';
 import {buildN32Unit} from './bomba-n32-125-unidad.js?v=proporciones';
-import {pumpReference,buildVerticalReference} from './pump-reference.js?v=proporciones';
+import {pumpReference,buildVerticalReference,buildInstalledReference} from './pump-reference.js?v=proporciones';
 import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
@@ -98,6 +98,7 @@ const parts=[
  {name:'Motor eléctrico',pieza:'JM-flange motor',desc:'Motor del equipo seleccionado. El montaje y los datos se consultan por modelo.',ref:'Placa leída: 7.5 HP, 1750 rpm, 230/460 V, 19.6/9.8 A, carcasa 213JM, TEFC, clase F. Rodamientos 6309-2Z-J/C3 y 6308-2Z-J/C3.',fields:[['Potencia registrada (kW)','potencia_kw'],['Velocidad registrada (rpm)','rpm']]}
 ];
 function partName(index,p=state.pump?.data){
+ if(activePumpReference?.kind==='vertical'&&index!==5)return ['Cuerpo de conexiones','Junta de la camisa','Impulsores de etapas','Cabezal y adaptador del motor','Cámara de sello','Sello mecánico','Eje vertical','Camisa, difusores y tirantes','Acople vertical','Motor eléctrico'][index];
  if(index!==5)return parts[index].name;
  return sealTitle(p);
 }
@@ -410,7 +411,7 @@ function setExplosion(value){
   n32Model.moveExplosion(before,true,isolated);
   if(!box.isEmpty()){
    fitPumpMinimum(box);
-   const [position,target]=encuadrar(box,new THREE.Vector3(-.45,.36,1),1.12,detailRailFraction());
+   const [position,target]=encuadrar(box,new THREE.Vector3(-.45,.36,1),activePumpReference?.kind==='vertical'?1.4:1.12,detailRailFraction());
    fly(position,target,650);
   }
  }else fly([state.explode>30?10:8,8,state.explode>30?21:12],[0,0,0],650);
@@ -563,7 +564,7 @@ function selectPhotoPump(tag){
   if(ticket!==state.loading)return;
   const {cad,profile}=await loadPumpReference(actual);
   if(ticket!==state.loading)return;
-  state.view='pump';if($('#torre-planta-tools'))$('#torre-planta-tools').hidden=true;if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant,cad,profile);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=exterior(THREE,p.scale*1.7,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,photoDetail);scene.add(photoDetail);}setPhotoDetail(!!activePumpReference);renderPanel();};
+  state.view='pump';if($('#torre-planta-tools'))$('#torre-planta-tools').hidden=true;if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant,cad,profile);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=buildInstalledReference(THREE,profile)||exterior(THREE,p.scale*1.7,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,photoDetail);scene.add(photoDetail);}setPhotoDetail(!!activePumpReference);renderPanel();};
  if(plant?.visible&&areaOf(p)!==state.area&&state.area!=='planta'&&state.area!=='integrado')setArea(areaOf(p),false);transitionToPump(ticket,pumpWorld(p.tag)||new THREE.Vector3(p.x,0,p.z),show);renderList();renderPanel();setViewButtons(false);
 
 }
@@ -990,8 +991,8 @@ function selectPendingPump(reference){
   state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
  if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf',cad,profile);}
  if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}
- photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);
- setPhotoDetail(!state.pump.geometriaIntegrada&&!!profile);
+ photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=buildInstalledReference(THREE,profile)||crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);
+ setPhotoDetail(!!profile);
  if(!profile){
   $('#scene-badge').textContent=state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR';
   $('#scene-help').textContent='Arrastrá para girar · Abrí Piezas de la bomba para ver el despiece';
@@ -1121,7 +1122,8 @@ function montarIntegrado(g,escena,placed){
    }
   }
   for(const n of asignacion.nuevas){
-   const sectorN=sectorDePosicion(n.x,n.z),b=crearModeloCaldera(THREE,n.modelo)||compactar(THREE,exterior(THREE,.72,'lf'));if(n.giro)b.rotation.y=n.giro;g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
+   const perfil=pumpReference({...datosDeExcel(asignacion.excel[n.tag]),tag:n.tag},placaDe(n.tag));
+   const sectorN=sectorDePosicion(n.x,n.z),b=buildInstalledReference(THREE,perfil)||crearModeloCaldera(THREE,n.modelo)||compactar(THREE,exterior(THREE,.72,'lf'));if(n.giro)b.rotation.y=n.giro;g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
    const k=new THREE.Box3().setFromObject(b),pisoN=alineado?alturaPiso(alineado.pisos,n.x+dA[0],n.z+dA[2],3):null;b.position.y=(pisoN??(.3+dA[1]))-k.min.y;
    b.userData.sector=sectorN;b.userData.sectorInt=sectorDe(sectorN);b.traverse(o=>{if(o.isMesh)o.castShadow=true;});
    if(conFicha.has(n.tag)){b.userData.tag=n.tag;b.traverse(o=>{if(o.isMesh){o.userData.tag=n.tag;pickables.push(o);}});pumpObjectsInt[n.tag]=b;const an=new THREE.Object3D();an.position.set(0,2.2,0);b.add(an);marker(an,n.tag,'pump',n.tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:sectorDe(sectorN)});}

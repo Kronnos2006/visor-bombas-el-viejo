@@ -54,6 +54,20 @@ export function pumpReference(pump, plate) {
   return {...profile,wet:radial};
 }
 
+export function buildInstalledReference(T, profile) {
+  if(!['vertical','compact'].includes(profile.kind))return null;
+  const model=profile.kind==='vertical'?buildVerticalReference(T,profile.stages,profile.finish):buildPumpModel(T,'goulds');
+  const body=new T.Group();body.add(model.root);
+  if(model.vertical)model.root.rotation.z=Math.PI/2;else model.root.rotation.y=Math.PI/2;
+  const bounds=new T.Box3().setFromObject(body),size=bounds.getSize(new T.Vector3());
+  const scale=model.vertical?(1+profile.stages*.12)/size.y:1.8/Math.max(size.x,size.z);
+  model.root.scale.setScalar(scale);
+  const fitted=new T.Box3().setFromObject(body),center=fitted.getCenter(new T.Vector3());
+  model.root.position.set(-center.x,-fitted.min.y,-center.z);
+  body.userData.referenceKind=profile.kind;
+  return body;
+}
+
 export function buildVerticalReference(T, stages=6, finish=0x244d63) {
   const model = buildPumpModel(T);
   const {root,components} = model;
