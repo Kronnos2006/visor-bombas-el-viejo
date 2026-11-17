@@ -62,7 +62,9 @@ export function extraerBomba(T,scene,reference){
   // El conversor del GLB usa un material por malla. Clonarlo evita que cerrar
   // una ficha elimine o cambie los materiales compartidos de la planta.
   const material=Array.isArray(object.material)?object.material[0].clone():object.material.clone();
-  const mesh=new T.Mesh(selected,material);mesh.castShadow=true;mesh.receiveShadow=true;result.add(mesh);
+  const mesh=new T.Mesh(selected,material);mesh.castShadow=true;mesh.receiveShadow=true;
+  if(Number.isInteger(object.userData.part)&&object.userData.part>=0&&object.userData.part<10){mesh.userData={part:object.userData.part,subcomponent:object.userData.subcomponent,anatomyCover:!!object.userData.anatomyCover};mesh.name=object.userData.subcomponent||object.name;}
+  result.add(mesh);
  });
  if(!result.children.length)return null;
  const bounds=new T.Box3().setFromObject(result),center=bounds.getCenter(new T.Vector3());

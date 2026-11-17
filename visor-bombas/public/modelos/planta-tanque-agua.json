@@ -1521,6 +1521,20 @@
    ]
   },
   {
+   "nombre": "Bomba de la pasarela exterior de caldera ADMIN",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    30.48,
+    3.39,
+    -28.74
+   ],
+   "max": [
+    31.7,
+    4.64,
+    -28.36
+   ]
+  },
+  {
    "nombre": "Bomba exterior del tanque de millo",
    "sector": "REF Tanque de millo",
    "min": [

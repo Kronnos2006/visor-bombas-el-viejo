@@ -6,7 +6,7 @@ import {createFirstFloorView} from './primera-planta.js';
 import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, VISTA_FBX_AGUA, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
-import {crearModeloCaldera,buildCalderaReference,esModeloCaldera} from './bombas-calderas.js';
+import {crearModeloCaldera,buildCalderaReference,buildSeparatedReference,esModeloCaldera} from './bombas-calderas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
 import {abrirFichaPendiente,clavePendiente,bombaParaResumen} from './ficha-pendiente.js?v=20261111-fotos-v2';
 import {pumpNames} from './pump-names.js';
@@ -98,7 +98,7 @@ const parts=[
  {name:'Motor eléctrico',pieza:'JM-flange motor',desc:'Motor del equipo seleccionado. El montaje y los datos se consultan por modelo.',ref:'Placa leída: 7.5 HP, 1750 rpm, 230/460 V, 19.6/9.8 A, carcasa 213JM, TEFC, clase F. Rodamientos 6309-2Z-J/C3 y 6308-2Z-J/C3.',fields:[['Potencia registrada (kW)','potencia_kw'],['Velocidad registrada (rpm)','rpm']]}
 ];
 function partName(index,p=state.pump?.data){
- if(activePumpReference?.kind==='caldera')return ({0:'Cuerpo de bomba y conexiones',3:'Panel y carcasa exterior',7:'Bancada',8:'Guarda y transmisión',9:'Motor eléctrico'})[index]||parts[index].name;
+ if(activePumpReference?.kind==='caldera')return componentGroups[index]?.userData.subcomponents[0]||({0:'Cuerpo de bomba y conexiones',3:'Panel y carcasa exterior',7:'Bancada',8:'Guarda y transmisión',9:'Motor eléctrico'})[index]||parts[index].name;
  if(activePumpReference?.kind==='vertical'&&index!==5)return ['Cuerpo de conexiones','Junta de la camisa','Impulsores de etapas','Cabezal y adaptador del motor','Cámara de sello','Sello mecánico','Eje vertical','Camisa, difusores y tirantes','Acople vertical','Motor eléctrico'][index];
  if(index!==5)return parts[index].name;
  return sealTitle(p);
@@ -210,8 +210,8 @@ function rebuildPlant(){
  });
  if(render3D)render3D.refrescar();
 }
-function buildPump(variant='lf',cad=null,profile=null){
- const model=profile?.kind==='caldera'?buildCalderaReference(THREE,profile.modelo):profile?.kind==='vertical'?buildVerticalReference(THREE,profile.stages,profile.finish):cad?buildN32Unit(THREE,cad,profile):buildPumpModel(THREE,profile?.kind==='compact'?'goulds':variant);
+function buildPump(variant='lf',cad=null,profile=null,prepared=null){
+ const model=prepared||(profile?.kind==='caldera'?buildCalderaReference(THREE,profile.modelo):profile?.kind==='vertical'?buildVerticalReference(THREE,profile.stages,profile.finish):cad?buildN32Unit(THREE,cad,profile):buildPumpModel(THREE,profile?.kind==='compact'?'goulds':variant));
  activePumpReference=profile;
  n32Model=model.moveExplosion?model:null;
  pumpGroup.rotation.z=model.vertical?Math.PI/2:0;
@@ -998,15 +998,19 @@ function selectPendingPump(reference){
  $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
  $('#back').hidden=false;
  const show=async()=>{
-  const {cad,profile}=await loadPumpReference({
+  let {cad,profile}=await loadPumpReference({
    ...bombaParaResumen(reference),tag,
    tipo:reference.modelo,nombre:reference.nombre,
   });
   if(ticket!==state.loading)return;
+  const source=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;
+  const separable=source?.children.length&&source.children.every(o=>Number.isInteger(o.userData.part));
+  const prepared=separable?buildSeparatedReference(THREE,extraerBomba(THREE,integrado.escena,reference)):null;
+  if(separable)profile={kind:'caldera',label:'Bomba de la pasarela · geometría del FBX'};
   state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
- if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf',cad,profile);}
+ if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf',cad,profile,prepared);}
  if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}
- photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=buildInstalledReference(THREE,profile)||crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);
+ photoDetail=source;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=buildInstalledReference(THREE,profile)||crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);
  setPhotoDetail(!!profile);
  if(!profile){
   $('#scene-badge').textContent=state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR';

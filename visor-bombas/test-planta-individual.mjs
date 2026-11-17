@@ -16,11 +16,13 @@ test('extraer una bomba conserva sus metros y material sin incluir otra bomba de
  positions.set(first.attributes.position.array);positions.set(second.attributes.position.array,first.attributes.position.array.length);
  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.computeVertexNormals();
  const material=new THREE.MeshStandardMaterial({color:0x123456}),mesh=new THREE.Mesh(geometry,material);group.add(mesh);
+ mesh.userData={part:3,subcomponent:'Tapa del cuerpo',anatomyCover:true};
  const originalPositions=Array.from(positions),originalColor=material.color.getHex(),originalPosition=group.position.toArray();
  // El nombre individual difiere del nombre del grupo exportado; la referencia mantiene ambos.
  const reference={nombre:'Dos bombas · Bomba 1',grupo:'Dos bombas',sector:group.userData.sector,min:[2,-.5,.5],max:[4,.5,3.5]};
  const extracted=extraerBomba(THREE,scene,reference);assert.ok(extracted);
  assert.equal(extracted.children.length,1);assert.equal(extracted.children[0].geometry.attributes.position.count,first.attributes.position.count);
+ assert.deepEqual(extracted.children[0].userData,mesh.userData);assert.equal(extracted.children[0].name,'Tapa del cuerpo');
  const bounds=cajaVisible(THREE,extracted);
  assert.deepEqual(bounds.min.toArray(),[-1,0,-1.5]);assert.deepEqual(bounds.max.toArray(),[1,1,1.5]);
  assert.deepEqual(extracted.userData.dimensiones,[2,1,3]);assert.deepEqual(extracted.scale.toArray(),[1,1,1]);

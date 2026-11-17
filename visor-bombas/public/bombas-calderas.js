@@ -89,10 +89,13 @@ export const crearModeloCaldera=(THREE,nombre)=>MODELOS[nombre]?.(THREE)||null;
 // Usa las mismas mallas de la planta y las agrupa sin modificar su forma ensamblada.
 export function buildCalderaReference(THREE,nombre){
  const root=crearModeloCaldera(THREE,nombre);if(!root)return null;
+ return buildSeparatedReference(THREE,root);
+}
+export function buildSeparatedReference(THREE,root){
  const components=Array.from({length:10},(_,index)=>{const g=new THREE.Group();g.userData={index,base:0,subcomponents:[]};return g;});
  for(const mesh of [...root.children]){const group=components[mesh.userData.part];group.add(mesh);if(!group.userData.subcomponents.includes(mesh.name))group.userData.subcomponents.push(mesh.name);}
  for(const group of components){group.visible=group.children.length>0;root.add(group);}
- const offsets={0:[-.65,.1,-.4],3:[-.85,.35,0],7:[0,-.35,0],8:[.8,.35,0],9:[.55,.6,.7]};
+ const offsets={0:[-.65,.1,-.4],3:[-.85,.35,0],6:[0,.3,.65],7:[0,-.35,0],8:[.8,.35,0],9:[.55,.6,.7]};
  let explosion=0;
  return {root,components,get explosion(){return explosion;},moveExplosion(target,immediate){
   explosion=immediate?target:THREE.MathUtils.lerp(explosion,target,.12);

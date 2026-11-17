@@ -4,7 +4,7 @@
 
 `/?s=areas&modelo=fbx-agua` abre el FBX convertido con **Agua y enfriamiento** seleccionado. **Toda la planta** muestra el resto del modelo exportado. Las posiciones del FBX están pendientes de vincular a las fichas de bombas.
 
-El visor carga una selección de piezas de ese FBX junto al modelo integrado. **Tanque de millo** muestra el depósito, el muro circular, la bomba exterior, sus conexiones y la nave contigua. **Calderas y nave** muestra las pasarelas de los tanques cafés, el desaireador con sus bombas y ramales, y las dos bombas de combustible de caldera ADMIN con su bancada y colector original. Las dos cubiertas son transparentes. Seis bombas quedan seleccionables como referencias pendientes de TAG. El anexo conserva más detalle para la inspección cercana y distingue motores, guardas, bases y pasarelas con colores de referencia.
+El visor carga una selección de piezas de ese FBX junto al modelo integrado. **Tanque de millo** muestra el depósito, el muro circular, la bomba exterior, sus conexiones y la nave contigua. **Calderas y nave** muestra las pasarelas de los tanques cafés, el desaireador con sus bombas y ramales, y las dos bombas de combustible de caldera ADMIN con su bancada y colector original. Las dos cubiertas son transparentes. Siete referencias quedan seleccionables como bombas pendientes de TAG. La bomba de la pasarela exterior de caldera ADMIN conserva sus mallas del FBX y permite separar bastidor, motores, cuerpos, tapas y transmisiones. El anexo conserva más detalle para la inspección cercana y distingue motores, guardas, bases y pasarelas con colores de referencia.
 
 Para regenerar el GLB y sus cajas de sectores desde `visor-bombas`:
 

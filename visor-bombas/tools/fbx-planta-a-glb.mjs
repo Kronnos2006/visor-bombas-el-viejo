@@ -26,6 +26,7 @@ const detalles=new Map([
 ]);
 const cubiertasCalderas=new Set([1240639,1240966]);
 const nombresBombas=new Map([
+ [1245188,'Bomba de la pasarela exterior de caldera ADMIN'],
  [1245171,'Bomba horizontal bajo el desaireador'],[1245172,'Bomba vertical multietapas bajo el desaireador'],
  [1245204,'Bomba exterior del tanque de millo'],[1245245,'Bomba en la pasarela del tanque café']
 ]);
@@ -78,6 +79,24 @@ const BOMBA_TORRE=/^(Bomba|Cubierta roja de bomba|Cubierta bomba|Conexiones visu
 // Bombas modeladas sin ficha: cada una queda como malla propia para poder señalarla.
 const BOMBA=/\bbombas?\b/i, NO_BOMBA=/^(Tuber|Conexi|Colector|Soportes|Canaleta|Piso|Ramales)/i;
 const torreNombre=n=>n.replace(/^_DUSA_(planta_)?-_/,'').replace(/_\d{6,}$/,'').replace(/_/g,' ').trim();
+function desglosarBombaPasarela(g,sector,id){
+ if(g.groups.length!==10||g.groups[1].count!==4596||g.groups[6].count!==4596)throw Error('Cambió la geometría de la bomba de pasarela ADMIN.');
+ const box=new THREE.Box3().setFromBufferAttribute(g.attributes.position);
+ const conjuntos=[{part:7,subcomponent:'Bastidor de la bomba',indices:[0,5]},
+  {part:9,subcomponent:'Motores del conjunto',indices:[1,6]},
+  {part:0,subcomponent:'Cuerpos de bomba',indices:[2,7]},
+  {part:3,subcomponent:'Tapas de los cuerpos',indices:[3,8],cover:true},
+  {part:6,subcomponent:'Transmisiones del conjunto',indices:[4,9]}];
+ return conjuntos.map(({part,subcomponent,indices,cover},index)=>{
+  const piezas=indices.map(i=>{const {start,count}=g.groups[i],pieza=new THREE.BufferGeometry();
+   for(const atributo of ['position','normal']){const base=g.getAttribute(atributo);if(base)pieza.setAttribute(atributo,new THREE.BufferAttribute(base.array.slice(start*3,(start+count)*3),3));}
+   return pieza;
+  });
+  const parte=mergeGeometries(piezas,false);
+  return {sector,id,cat:'inoxidable',color:0x9da7ab,g:parte,b:new THREE.Box3().setFromBufferAttribute(parte.attributes.position),
+   desc:nombresBombas.get(id),bomba:true,part,subcomponent,cover,referenceBox:box.clone(),skipReference:index>0};
+ });
+}
 function desglosarParBunker(g,sector,id){
  // Los grupos del elemento 1245163 contienen una bancada, dos bombas y el colector compartido.
  const partes=g.groups;
@@ -115,6 +134,7 @@ root.traverse(o=>{
  const b=new THREE.Box3().setFromBufferAttribute(g.attributes.position);caja.union(b);
  if(detalleCapturas&&!detalle){g.dispose();return;}
  if(g.index)g=g.toNonIndexed();
+ if(detalle&&id===1245188){gs.push(...desglosarBombaPasarela(g,sector,id));tris+=g.attributes.position.count/3;return;}
  if(detalle&&id===1245163){gs.push(...desglosarParBunker(g,sector,id));tris+=g.attributes.position.count/3;return;}
  for(const k of Object.keys(g.attributes))if(!['position','normal'].includes(k))g.deleteAttribute(k);
  const acabados=detalle&&acabadosCalderas.get(id);
@@ -163,8 +183,8 @@ if(torreJSON){
 // Una malla por sector y color (liviano); cada bomba sin ficha va aparte para señalarla.
 const grupos={},bombas=[],sectores={};
 for(const x of gs){x.g.applyMatrix4(T);x.b.translate(off);(sectores[x.sector]||(sectores[x.sector]=new THREE.Box3())).union(x.b);
- if(x.bomba)bombas.push({nombre:x.desc,sector:x.sector,...cajaJSON(x.b)});
- if(x.id||x.bomba){const extras={sector:x.sector,cat:x.cat};if(x.id)extras.fbxId=x.id;if(x.bomba)extras.bomba=x.desc;grupos['pieza|'+(x.id?x.id+'|'+x.desc:bombas.length)]={...x,nodo:x.bomba?'Bomba · '+x.desc:x.desc,extras,lista:[x.g]};continue;}
+ if(x.bomba&&!x.skipReference)bombas.push({nombre:x.desc,sector:x.sector,...cajaJSON(x.referenceBox?x.referenceBox.translate(off):x.b)});
+ if(x.id||x.bomba){const extras={sector:x.sector,cat:x.cat};if(x.id)extras.fbxId=x.id;if(x.bomba)extras.bomba=x.desc;if(x.part!=null)Object.assign(extras,{part:x.part,subcomponent:x.subcomponent,anatomyCover:!!x.cover});grupos['pieza|'+(x.id?x.id+'|'+x.desc+'|'+(x.part??''):bombas.length)]={...x,nodo:x.subcomponent||(x.bomba?'Bomba · '+x.desc:x.desc),extras,lista:[x.g]};continue;}
  const clave=[x.sector,x.cat,x.color].join('|');
  (grupos[clave]??={...x,nodo:x.sector,extras:{sector:x.sector,cat:x.cat},lista:[]}).lista.push(x.g);}
 for(const {nodo,cat,color,lista,extras} of Object.values(grupos)){
