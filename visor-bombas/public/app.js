@@ -133,6 +133,28 @@ let areaGroups={},torre=null;const pumpObjects={};
 let plantRequested=false;
 function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';const directHistory=section==='historial'&&plantPumps.some(p=>p.tag===location.hash.slice(1).toUpperCase());return params.get('vista')==='clasica'||(['areas','historial'].includes(section)&&!directHistory)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
 function ensurePlant(){if(!plant||plantRequested)return;plantRequested=true;rebuildPlant();}
+function cargarTorre(g=areaGroups.torre){
+ if(!g||torre?.root.parent===g)return torre;
+ torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:(objetos,error)=>{
+  performance.mark('torre-cargada');applyArea();
+  if(!error&&objetos.length&&state.view==='plant'&&state.area==='torre')flyArea('torre');
+ }});
+ g.add(torre.root);return torre;
+}
+function cargarModeloArea(area,g){
+ if(g.userData.cargando)return g.userData.cargando;
+ const load=area.aparte&&new URLSearchParams(location.search).get('modelo')!=='original'
+  ?cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress:reportModelProgress})
+  :new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo);
+ g.userData.cargando=load.then(glb=>{
+  if(g.parent!==plant){glb.scene.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of(Array.isArray(o.material)?o.material:[o.material]))m?.dispose();}});return;}
+  glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(area.aparte)return;o.userData.areaId=area.id;areaPickables.push(o);}});
+  g.add(glb.scene);
+  if(area.aparte){$('#model-load').hidden=true;$('#scene-error').hidden=true;montarIntegrado(g,glb.scene,state.pumps.length?state.pumps:plantPumps);}
+  if(state.view==='plant'&&state.area===area.id){if(glb.scene.userData.fbxAgua&&state.filtroInt)flyIntegrado();else flyArea(area.id);}
+ }).catch(err=>{g.userData.cargando=null;if(area.aparte)show3DError(err);else console.warn('No se cargó '+area.nombre,err);});
+ return g.userData.cargando;
+}
 let integrado=null;const pumpObjectsInt={}; // modelo integrado de Revit: bombas con ficha ubicadas sobre él
 const areaOf=p=>p?.areaId||'tanques',AREA=id=>AREAS.find(a=>a.id===id);
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -146,26 +168,21 @@ function marker(obj,text,kind,id){const el=document.createElement('button');el.c
 function clearGroup(group){group.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of(Array.isArray(o.material)?o.material:[o.material]))m.dispose();});group.clear();}
 function rebuildPlant(){
  clearGroup(plant);pickables.length=0;areaPickables.length=0;
+ torre=null;
  for(let i=markers.length-1;i>=0;i--)if(markers[i].kind!=='part'){markers[i].el.remove();markers[i].leader?.remove();markers[i].linea?.remove();markers.splice(i,1);}
  if(state.sector){
   const placed=state.pumps.length?state.pumps:plantPumps; // posiciones de la ficha si la bomba se movió
   const suelo=sueloSitio(THREE);suelo.userData.sitio=true;plant.add(suelo);
   const tq=ubicar(new THREE.Group(),AREA('tanques')),tr=ubicar(new THREE.Group(),AREA('torre'));
   areaGroups={tanques:tq,torre:tr};plant.add(tq,tr);
+  if(state.area==='torre')cargarTorre(tr);
   for(const area of AREAS.filter(a=>a.modelo)){
-   const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);if(area.aparte)reportModelProgress({loaded:0,total:0});
-   (area.aparte&&new URLSearchParams(location.search).get('modelo')!=='original'?cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress:reportModelProgress}):new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo)).then(glb=>{
-    if(g.parent!==plant)return;
-    glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(area.aparte)return;o.userData.areaId=area.id;areaPickables.push(o);}});
-    g.add(glb.scene);if(area.aparte){$('#model-load').hidden=true;$('#scene-error').hidden=true;}
-    if(area.aparte)montarIntegrado(g,glb.scene,placed);
-    if(state.view==='plant'&&state.area===area.id){
-     if(glb.scene.userData.fbxAgua&&state.filtroInt)flyIntegrado();else flyArea(area.id);
-    }
-   }).catch(err=>{if(area.aparte)show3DError(err);else console.warn('No se cargó '+area.nombre,err);});
+   const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);
+   // Los edificios pequeños se descargan al abrir su área. La vista de la planta
+   // integrada no los muestra y no necesita esperar ni transferir esos archivos.
+   if(area.aparte||area.id===state.area){if(area.aparte)reportModelProgress({loaded:0,total:0});cargarModeloArea(area,g);}
   }
   tq.add(sector(THREE,placed.filter(p=>areaOf(p)==='tanques')));
-  torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:()=>{performance.mark('torre-cargada');if(typeof applyArea==='function')applyArea();}});tr.add(torre.root);
   for(const k in pumpObjects)delete pumpObjects[k];
   for(const p of placed){const parent=areaGroups[areaOf(p)]||tq;const ext=exterior(THREE,p.scale,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,ext);const g=compactar(THREE,ext);g.position.set(p.x,p.y??.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;g.userData.section='n1';parent.add(g);pumpObjects[p.tag]=g;if(areaOf(p)==='torre'){const hit=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.4,3.3),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(0,1,.1);hit.userData.hitProxy=true;g.add(hit);}g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);markers.at(-1).area=areaOf(p);}
   extraReferences.length=0;
@@ -1271,6 +1288,8 @@ function setArea(id,volar=true){
  if(id.startsWith('sector:')){state.filtroInt=id.slice(7)||null;id='integrado';aplicarFiltroInt();}
  if(id==='planta'){id='integrado';state.filtroInt=null;aplicarFiltroInt();}
  state.area=id;if(id!=='torre')state.seccion=null;
+ if(id==='torre')cargarTorre(areaGroups.torre);
+ const seleccion=AREA(id),grupo=areaGroups[id];if(seleccion?.modelo&&grupo&&!grupo.children.length)cargarModeloArea(seleccion,grupo);
  if($('#area'))$('#area').value=id==='planta'?'':id;
  applyArea();renderList();
  if(volar&&state.view==='plant')flyArea(id);

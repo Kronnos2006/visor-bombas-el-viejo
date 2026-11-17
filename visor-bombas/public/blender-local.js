@@ -1,5 +1,8 @@
 // Modelo de Blender integrado; ?modelo=original conserva la vista anterior.
 export const VISTA_FBX_AGUA=new URLSearchParams(globalThis.location?.search).get('modelo')==='fbx-agua';
+// Cambiar esta huella cuando se reemplace el GLB. La caché local evita descargar
+// de nuevo los 31 MB en cada visita sin compartir el modelo entre cuentas.
+export const PLANTA_BLENDER_CACHE='962900d9f446b313';
 export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress}){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
  if(!area.aparte||new URLSearchParams(location.search).get('modelo')==='original')return loader.loadAsync(area.modelo,onProgress);
@@ -18,7 +21,7 @@ export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgr
  const draco=new DRACOLoader().setDecoderPath('/vendor/blender-local/draco/');
  loader.setDRACOLoader(draco);
  try{
-  const glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb',onProgress);
+  const glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
   glb.scene.userData.blenderLocal=true;
   glb.scene.traverse(o=>{if(o.userData.sector)o.userData.sector=o.userData.sector.trim();});
   return glb;

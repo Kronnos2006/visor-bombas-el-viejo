@@ -22,6 +22,10 @@
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },
     {
+      "source": "/modelos/blender-local/planta-blender-local.glb",
+      "headers": [{ "key": "Cache-Control", "value": "private, max-age=31536000, immutable" }]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
