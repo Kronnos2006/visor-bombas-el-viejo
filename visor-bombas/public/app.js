@@ -7,6 +7,7 @@ import {createInspectorUI} from './interfaz.js';
 import {cargarModeloPlanta, VISTA_FBX_AGUA, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera,buildCalderaReference,buildSeparatedReference,esModeloCaldera} from './bombas-calderas.js';
+import {detallarBombaPasarela} from './detalles-bombas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
 import {abrirFichaPendiente,clavePendiente,bombaParaResumen} from './ficha-pendiente.js?v=20261111-fotos-v2';
 import {pumpNames} from './pump-names.js';
@@ -217,7 +218,16 @@ function buildPump(variant='lf',cad=null,profile=null,prepared=null){
  pumpGroup.rotation.z=model.vertical?Math.PI/2:0;
  while(model.root.children.length)pumpGroup.add(model.root.children[0]);
  componentGroups.push(...model.components);simRig=createSimRig(THREE,model.components,model.visual);
- for(const group of componentGroups){if(!group.visible)continue;const index=group.userData.index;const anchor=new THREE.Object3D();anchor.position.set(0,index===0?1.75:1.12,0);group.add(anchor);marker(anchor,String(index+1).padStart(2,'0'),'part',index);}
+ for(const group of componentGroups){
+  if(!group.visible)continue;
+  const index=group.userData.index,anchor=new THREE.Object3D();
+  anchor.position.set(0,index===0?1.75:1.12,0);
+  if(profile?.kind==='caldera'){
+   const bounds=new THREE.Box3().setFromObject(group),center=bounds.getCenter(new THREE.Vector3());center.y=bounds.max.y+.06;
+   anchor.position.copy(group.worldToLocal(center));
+  }
+  group.add(anchor);marker(anchor,String(index+1).padStart(2,'0'),'part',index);
+ }
  render3D?.refrescar();anatomy?.register(componentGroups);
 }
 function fly(pos,target,duration=1100){cameraFlight={start:performance.now(),duration:reducedMotion.matches?1:duration,from:camera.position.clone(),to:new THREE.Vector3(...pos),fromTarget:controls.target.clone(),toTarget:new THREE.Vector3(...target)};}
@@ -1035,12 +1045,14 @@ async function cargarDetallesFBX(){
    new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url+'.glb'),
    fetch(url+'.json').then(r=>{if(!r.ok)throw new Error('No se pudieron cargar las posiciones de los detalles');return r.json();})
   ]);
+  detallarBombaPasarela(THREE,scene);
   const grupos=info.bombas.map(({nombre,sector,min,max})=>({nombre,sector,nota:'Referencia del FBX. TAG y ficha por confirmar en planta.',bombas:[{min,max}]}));
   return {scene,grupos,sectores:info.sectores};
  }catch(error){console.warn('No se cargaron los detalles del FBX',error);return null;}
 }
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
+ detallarBombaPasarela(THREE,escena);
  // Mantiene visibles las bombas y calderas debajo de las dos cubiertas.
  escena.traverse(o=>{
   const nombre=String(o.userData.original_name||o.name).replace(/_/g,' ');

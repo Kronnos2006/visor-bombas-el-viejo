@@ -3,10 +3,24 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from './public/vendor/three.module.js';
 import {cajaVisible,extraerBomba} from './public/planta-encuadre.js';
+import {detallarBombaPasarela} from './public/detalles-bombas.js';
 import {clavePendiente} from './public/ficha-pendiente.js';
 import {SECTORES_INT,SIEMPRE,CUBIERTA,sectorDe,torreAIntegrado,ubicarTanques,visibleCon,cajaSector} from './public/planta-integrada.js';
 const groups=JSON.parse(await readFile(new URL('./public/modelos/bombas-individuales.json',import.meta.url),'utf8'));
 const source=JSON.parse(await readFile(new URL('./public/modelos/planta-integrada.json',import.meta.url),'utf8'));
+
+test('el detalle de la pasarela conserva la geometría original, sus componentes y se aplica una sola vez',()=>{
+ const scene=new THREE.Group(),material=new THREE.MeshStandardMaterial({color:0x999999});
+ const motor=new THREE.Mesh(new THREE.BoxGeometry(.34,.84,.26),material);
+ motor.position.set(3,4,5);motor.userData={fbxId:1245188,part:9,subcomponent:'Motores del conjunto',sector:'REF Detras ADMIN',bomba:'Bomba de pasarela'};scene.add(motor);
+ const geometry=motor.geometry,position=motor.position.toArray();
+ detallarBombaPasarela(THREE,scene);
+ const count=scene.getObjectsByProperty('isMesh',true).length;assert.ok(count>1);
+ assert.equal(motor.geometry,geometry);assert.deepEqual(motor.position.toArray(),position);
+ assert.equal(material.color.getHex(),0x999999);
+ for(const mesh of scene.getObjectsByProperty('isMesh',true)){assert.equal(mesh.userData.part,9);assert.equal(mesh.userData.bomba,'Bomba de pasarela');}
+ detallarBombaPasarela(THREE,scene);assert.equal(scene.getObjectsByProperty('isMesh',true).length,count);
+});
 
 test('extraer una bomba conserva sus metros y material sin incluir otra bomba del mismo grupo',()=>{
  const scene=new THREE.Group(),group=new THREE.Group();
