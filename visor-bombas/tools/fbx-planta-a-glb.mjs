@@ -32,8 +32,16 @@ const nombresBombas=new Map([
 const coloresDetalle=new Map([
  [1244370,['lamina',0x82919b]],[1244371,['lamina',0xcbd3d7]],
  [1244379,['inoxidable',0x74828a]],[1244380,['inoxidable',0xc5cfd4]],[1244381,['inoxidable',0xa9b9c0]],
- [1245167,['inoxidable',0xd6dee0]],[1245172,['inoxidable',0xa9b9c0]],[1245173,['verde',0x2f7d4a]],
+ [1245167,['inoxidable',0xd6dee0]],[1245173,['verde',0x2f7d4a]],
  [1245188,['inoxidable',0x9da7ab]],[1245203,['concreto',0xa79c87]]
+]);
+// Colores de referencia por componente, en el orden de los grupos del FBX.
+const baseOscura=0x455461,aceroSatinado=0xaab9bf,azulMotor=0x2f5f9c;
+const acabadosCalderas=new Map([
+ [1245171,[baseOscura,azulMotor,aceroSatinado,baseOscura,0x46746c,aceroSatinado,0x46746c,aceroSatinado,aceroSatinado,0x46746c,aceroSatinado,aceroSatinado,0xb3342b]],
+ [1245172,[baseOscura,aceroSatinado,aceroSatinado,azulMotor,azulMotor,azulMotor,0x46746c,aceroSatinado,0xc1c9cc]],
+ [1245180,[baseOscura,0x89959b,0x5b7182,0xbbc7cc]],
+ [1245245,[baseOscura,0x46746c,aceroSatinado,azulMotor,0xb3342b,aceroSatinado,0x46746c,0xe2b72a,aceroSatinado]]
 ]);
 const buf=readFileSync(src);
 const root=new FBXLoader().parse(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength),'');root.updateMatrixWorld(true);
@@ -109,16 +117,26 @@ root.traverse(o=>{
  if(g.index)g=g.toNonIndexed();
  if(detalle&&id===1245163){gs.push(...desglosarParBunker(g,sector,id));tris+=g.attributes.position.count/3;return;}
  for(const k of Object.keys(g.attributes))if(!['position','normal'].includes(k))g.deleteAttribute(k);
+ const acabados=detalle&&acabadosCalderas.get(id);
+ if(acabados){
+  if(g.groups.length!==acabados.length)throw new Error('Cambió el orden de los componentes FBX de '+id);
+  const rgb=new Float32Array(g.attributes.position.count*3);
+  g.groups.forEach(({start,count},i)=>{
+   const color=new THREE.Color(acabados[i]);
+   for(let v=start;v<start+count;v++)color.toArray(rgb,v*3);
+  });
+  g.setAttribute('color',new THREE.BufferAttribute(rgb,3));
+ }
  g.clearGroups();
  // El nombre del sector va primero ("FBX Banos - ..."): se colorea por la parte descriptiva.
  let desc=nombre.replace(/^(FBX \w+(?: \w+)? - |REF [^-]+ - |DUSA(?: planta)? - |VOCATUS Enlace \w+ - )/,'');
  if(detalle)desc=desc.replace(/^(VOCATUS (?:Anexos|Fotos\d+)|Caldera ADMIN fotos) - /,'');
- const [cat,color]=(detalle&&coloresDetalle.get(id))||(CATS.find(([re])=>re.test(desc))?.slice(1)??OTRO);
+ const [cat,color]=acabados?['acero',0xffffff]:(detalle&&coloresDetalle.get(id))||(CATS.find(([re])=>re.test(desc))?.slice(1)??OTRO);
  if(/^DUSA/.test(sector))dusa.push({nombre:torreNombre(o.name),b});
  if(!conservarBombasDusa&&/^DUSA/.test(sector)&&BOMBA_TORRE.test(desc))return;
  tris+=g.attributes.position.count/3;conteo[cat]=(conteo[cat]||0)+1;
  const bomba=detalle?nombresBombas.has(id):BOMBA.test(desc)&&!NO_BOMBA.test(desc);
- gs.push({sector,cat,color,g,b,desc:bomba&&nombresBombas.get(id)||desc,bomba,id:detalleCapturas||conservarBombasDusa&&cubiertasCalderas.has(id)?id:null});
+ gs.push({sector,cat,color,g,b,desc:bomba&&nombresBombas.get(id)||desc,bomba,id:detalleCapturas||acabados||conservarBombasDusa&&cubiertasCalderas.has(id)?id:null});
 });
 // Centrar en la huella y apoyar en cota cero.
 const centro=caja.getCenter(new THREE.Vector3());const off=new THREE.Vector3(-centro.x,-caja.min.y,-centro.z);const T=new THREE.Matrix4().makeTranslation(off.x,off.y,off.z);
@@ -162,7 +180,9 @@ console.log('elementos FBX',gs.length,'mallas web',Object.keys(grupos).length,'b
 console.log('huella (m)',tam.x.toFixed(1),tam.z.toFixed(1),'alto',tam.y.toFixed(1));console.log('colores',conteo);
 await MeshoptEncoder.ready;await MeshoptSimplifier.ready;
 doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({method:EXTMeshoptCompression.EncoderMethod.QUANTIZE});
-await doc.transform(dedup(),weld({tolerance:.0005}),simplify({simplifier:MeshoptSimplifier,ratio:.15,error:.002}),prune(),quantize(),meshopt({encoder:MeshoptEncoder,level:'high'}));
+// El anexo se inspecciona de cerca. El modelo de planta completa sigue optimizado para la vista general.
+const simplificacion=detalleCapturas?{ratio:.36,error:.0007}:{ratio:.15,error:.002};
+await doc.transform(dedup(),weld({tolerance:.0005}),simplify({simplifier:MeshoptSimplifier,...simplificacion}),prune(),quantize(),meshopt({encoder:MeshoptEncoder,level:'high'}));
 const io=new NodeIO().registerExtensions([EXTMeshoptCompression,KHRMeshQuantization]).registerDependencies({'meshopt.encoder':MeshoptEncoder});
 writeFileSync(out,await io.writeBinary(doc));
 writeFileSync(out.replace(/\.glb$/,'.json'),JSON.stringify({huella:[r2(tam.x),r2(tam.z),r2(tam.y)],torre,sectores:Object.fromEntries(Object.entries(sectores).map(([k,b])=>[k,cajaJSON(b)])),bombas},null,1));
