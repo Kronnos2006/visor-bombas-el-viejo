@@ -4,6 +4,21 @@ import * as THREE from './public/vendor/three.module.js';
 import {buildPumpModel,sectorShellGeometry} from './public/pump-model.js';
 import {createAnatomyView} from './public/anatomy-view.js';
 import {pumpReference,buildInstalledReference,buildVerticalReference} from './public/pump-reference.js';
+import {crearModeloCaldera,buildCalderaReference} from './public/bombas-calderas.js';
+
+test('las bombas de combustible conservan la misma carcasa en planta, ensambladas y al rearmar el despiece',()=>{
+ const geometryOf=root=>{root.updateMatrixWorld(true,true);const result=[];root.traverse(o=>{if(!o.isMesh)return;const p=o.geometry.attributes.position,m=o.matrixWorld;for(let i=0;i<p.count;i++)result.push(...new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(m).toArray());});return result;};
+ for(const name of ['caldera-fondo','caldera-panel','caldera-correa']){
+  const installed=crearModeloCaldera(THREE,name),model=buildCalderaReference(THREE,name);
+  const sorted=values=>values.map(v=>Math.round(v*1e6)).sort((a,b)=>a-b);
+  const original=sorted(geometryOf(installed));
+  assert.deepEqual(sorted(geometryOf(model.root)),original,name+' conserva todas las mallas');
+  assert.ok(model.components[0].children.length>0&&model.components[9].children.length>0);
+  assert.equal(model.components[2].visible,false,'sin impulsor centrífugo inventado');
+  model.moveExplosion(1,true);assert.notDeepEqual(sorted(geometryOf(model.root)),original);
+  model.moveExplosion(0,true);assert.deepEqual(sorted(geometryOf(model.root)),original,name+' vuelve al mismo conjunto');
+ }
+});
 
 test('B73 mantiene carcasa vertical ensamblada, ocho etapas y un despiece que se puede rearmar',()=>{
  const profile=pumpReference({tag:'B73',marca:'Movitec',modelo:'VF 4/8B'});
