@@ -9,6 +9,20 @@ export function initialState(data,map){
  // Sin calibración de la imagen no se convierten los x/z del mapa a píxeles.
  return s;
 }
+// Añade puntos nuevos del plano al borrador local sin pisar posiciones que ya editó el usuario.
+export function mergeNewPoints(raw,data){
+ if(!raw||!Array.isArray(raw.points))return raw;
+ const points=raw.points.map(p=>({...p})),ids=new Set(points.map(p=>p?.id));
+ const occupied=new Set(points.filter(p=>p&&!p.removed&&p.tag).map(p=>p.tag));
+ for(const p of data.P){
+  if(ids.has(p.id))continue;
+  const next={...p};
+  // Si un TAG nuevo ya fue asignado manualmente en el borrador, no crear un duplicado.
+  if(next.tag&&occupied.has(next.tag))next.tag=null;
+  points.push(next);ids.add(next.id);
+ }
+ return {...raw,points};
+}
 export function validateState(raw,data){
  if(!raw||!Array.isArray(raw.points)||!Array.isArray(raw.catalog)||raw.points.length>2000||raw.catalog.length>2000)throw Error('El respaldo no es un plano de bombas válido.');
  const catalog=raw.catalog.map(t=>{const tag=typeof t?.tag==='string'?t.tag.trim():'',nombre=text(t?.nombre),area=text(t?.area);if(!validTag(tag)||!nombre||!area)throw Error('Hay una bomba sin TAG, nombre o área válidos.');return {tag,nombre,area};});
@@ -20,7 +34,7 @@ export function validateState(raw,data){
   if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>WIDTH||p.y<0||p.y>HEIGHT)throw Error('Hay posiciones fuera del plano.');
   const tag=p.tag||null;if(tag&&!tags.has(tag))throw Error('Un punto usa un TAG que no está en el catálogo.');
   if(tag&&!p.removed){if(placed.has(tag))throw Error('Una bomba tiene más de una posición.');placed.add(tag);}
-  return {id:p.id,x:p.x,y:p.y,sec:Object.hasOwn(data.SEC,p.sec)?p.sec:'toda',num:text(String(p.num),12),n:text(p.n),tag,name:text(p.name,60),removed:!!p.removed,nuevo:!baseIds.has(p.id)};
+  return {id:p.id,x:p.x,y:p.y,sec:Object.hasOwn(data.SEC,p.sec)?p.sec:'toda',num:text(String(p.num),12),n:text(p.n),tag,name:text(p.name,60),removed:!!p.removed,nuevo:!baseIds.has(p.id),...(p.origen==='modelo3d'?{origen:'modelo3d'}:{})};
  });
  if([...baseIds].some(id=>!ids.has(id)))throw Error('Faltan puntos originales en el respaldo.');
  return {catalog,points};

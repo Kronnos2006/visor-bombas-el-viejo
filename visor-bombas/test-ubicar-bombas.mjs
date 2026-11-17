@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {initialState,validateState,assign,addPump,changes} from './public/ubicar-bombas-core.js';
+import {initialState,validateState,mergeNewPoints,assign,addPump,changes} from './public/ubicar-bombas-core.js';
 const data=JSON.parse(await readFile(new URL('./public/modelos/plano-bombas.json',import.meta.url)));
 const map=JSON.parse(await readFile(new URL('./public/modelos/asignacion-bombas.json',import.meta.url)));
 const start=()=>validateState(initialState(data,map),data);
@@ -9,6 +9,17 @@ test('el plano conserva catálogo y asignaciones actuales, sin inventar conversi
  const s=start();assert.equal(s.catalog.length,83);assert.equal(s.points.length,data.P.length);
  assert.equal(s.points.find(p=>p.id==='tag:B2').tag,'B3');
  assert.ok(s.points.every(p=>p.x>=0&&p.x<=2800&&p.y>=0&&p.y<=2504));
+});
+test('las bombas nuevas de calderas quedan señaladas y los borradores antiguos conservan sus cambios',()=>{
+ const s=start(),newPumps=['B72','B73','B74','B75','B76'].map(tag=>s.points.find(p=>p.tag===tag));
+ assert.ok(newPumps.every(p=>p?.sec==='calderas'&&p.origen==='modelo3d'&&/aproximada/.test(p.n)));
+ assert.ok(newPumps.every(p=>p.x===1730));
+ assert.deepEqual(newPumps.map(p=>p.y),[406,348,291,222,161]);
+ const oldData={...data,P:data.P.filter(p=>!/^tag:B7[2-6]$/.test(p.id))};
+ const old=validateState(initialState(oldData,map),oldData);old.points.find(p=>p.tag==='B71').x=1501;
+ const merged=validateState(mergeNewPoints(old, data),data);
+ assert.equal(merged.points.find(p=>p.tag==='B71').x,1501);
+ assert.ok(['B72','B73','B74','B75','B76'].every(tag=>merged.points.some(p=>p.tag===tag)));
 });
 test('el registro incluye las bombas ya colocadas aunque no haya cambios',()=>{
  const s=start(),report=changes(s,structuredClone(s));

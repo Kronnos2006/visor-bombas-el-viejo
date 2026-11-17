@@ -24,6 +24,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .lugar::after{content:"";position:absolute;left:50%;bottom:-11px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:inherit;border:1.5px solid #000}
 .lugar:hover,.lugar:focus-visible{z-index:4}
 .lugar.sin{background:#fff;color:var(--falta);border-color:var(--falta)}
+.lugar.modelo3d{background:#63b9de;color:#092432;border-color:#e7f8ff;box-shadow:0 0 0 2px #164e68}
+.modelo3d-zone{position:absolute;z-index:1;border:2px dashed #48bde8;background:rgba(35,139,178,.12);pointer-events:none}
+.modelo3d-zone span{position:absolute;top:4px;left:4px;max-width:calc(100% - 8px);padding:4px 7px;border:1px solid #48bde8;border-radius:6px;background:#102832;color:#dff7ff;font:600 12px/1.3 var(--body)}
+.vista-modelo{display:flex;flex-wrap:wrap;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.boton-modelo{display:inline-flex;align-items:center;min-height:42px;padding:8px 12px;border:1px solid #48bde8;border-radius:8px;background:#102832;color:#dff7ff;text-decoration:none;font-weight:700}
 .lugar.cambio{background:var(--cambio);color:#fff}
 .lugar.nuevo{border-style:dashed}
 .lugar.elegido{outline:3px solid #fff;outline-offset:2px;z-index:3}

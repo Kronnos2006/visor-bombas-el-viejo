@@ -1,4 +1,4 @@
-import {CACHE,WIDTH,HEIGHT,clamp,initialState,validateState,assign,addPump,changes} from './ubicar-bombas-core.js';
+import {CACHE,WIDTH,HEIGHT,clamp,initialState,validateState,mergeNewPoints,assign,addPump,changes} from './ubicar-bombas-core.js';
 const $=id=>document.getElementById(id),copy=v=>structuredClone(v);
 const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 let D,base,state,history=[],sector='toda',zoom=1,selected=null,tag=null,adding=false,missing=false,ignoreClickUntil=0,movingId=null;
@@ -40,12 +40,20 @@ function drawMap(){
  const [x0,y0,w,h]=D.V[sector],pl=$('plano'),width=$('marco').clientWidth*zoom;
  pl.style.width=width+'px';pl.style.height=width*h/w+'px';
  const f=$('fondo');f.style.width=WIDTH/w*100+'%';f.style.left=-x0/w*100+'%';f.style.top=-y0/h*100+'%';
- pl.querySelectorAll('.lugar').forEach(e=>e.remove());
+ pl.querySelectorAll('.lugar,.modelo3d-zone').forEach(e=>e.remove());
+ // La zona se marca como referencia visual, no como huella dimensional del equipo.
+ if(sector==='toda'||sector==='calderas'){
+  const zone={x:1640,y:135,w:180,h:555},box=document.createElement('div');
+  box.className='modelo3d-zone';box.setAttribute('aria-hidden','true');
+  box.style.left=(zone.x-x0)/w*100+'%';box.style.top=(zone.y-y0)/h*100+'%';
+  box.style.width=zone.w/w*100+'%';box.style.height=zone.h/h*100+'%';
+  const label=document.createElement('span');label.textContent='Estructura y bombas añadidas · zona aprox.';box.append(label);pl.append(box);
+ }
  for(const p of active()){
   if(p.x<x0||p.x>x0+w||p.y<y0||p.y>y0+h)continue;
   const b=document.createElement('button');b.type='button';b.dataset.point=p.id;
   const before=base.points.find(q=>q.id===p.id),changed=!before||['tag','name','x','y','removed'].some(k=>p[k]!==before[k]);
-  b.className='lugar'+(!p.tag?' sin':'')+(changed?' cambio':'')+(p.nuevo?' nuevo':'')+(selected===p.id?' elegido':'');
+  b.className='lugar'+(!p.tag?' sin':'')+(changed?' cambio':'')+(p.nuevo?' nuevo':'')+(p.origen==='modelo3d'?' modelo3d':'')+(selected===p.id?' elegido':'');
   b.style.left=(p.x-x0)/w*100+'%';b.style.top=(p.y-y0)/h*100+'%';b.textContent=p.name||p.tag||'?';b.title=(p.tag||'Sin TAG')+' · '+(p.name||p.n||sectorName(p.sec));b.setAttribute('aria-label',b.title);
   let start=null,moved=false;
   b.onpointerdown=e=>{if(e.button!==0)return;e.stopPropagation();start={x:e.clientX,y:e.clientY};moved=false;b.setPointerCapture(e.pointerId);};
@@ -91,7 +99,7 @@ function render(){
 async function init(){
  const fetchJson=async u=>{const r=await fetch(u);if(!r.ok)throw Error('No se pudo cargar '+u+'. Recarga la página.');return r.json();};
  [D,base]=await Promise.all([fetchJson('/modelos/plano-bombas.json'),fetchJson('/modelos/asignacion-bombas.json')]);base=validateState(initialState(D,base),D);state=copy(base);
- try{const saved=JSON.parse(localStorage.getItem(CACHE)||'null');if(saved){if(saved.version!==1)throw Error('Versión de respaldo desconocida.');state=validateState(saved.state,D);$('guardado').textContent='Posiciones guardadas recuperadas de este navegador.';}else $('guardado').textContent='Posiciones de la imagen cargadas. Los cambios se guardan automáticamente.';}catch(e){error('No se pudo abrir el borrador guardado; se conserva sin sobrescribir. '+e.message);}
+ try{const saved=JSON.parse(localStorage.getItem(CACHE)||'null');if(saved){if(saved.version!==1)throw Error('Versión de respaldo desconocida.');state=validateState(mergeNewPoints(saved.state,D),D);$('guardado').textContent='Posiciones guardadas recuperadas de este navegador.';}else $('guardado').textContent='Posiciones de la imagen cargadas. Los cambios se guardan automáticamente.';}catch(e){error('No se pudo abrir el borrador guardado; se conserva sin sobrescribir. '+e.message);}
  $('plano').onclick=e=>{if(Date.now()<ignoreClickUntil||e.target.closest('.lugar'))return;if(adding||tag||movingId){const q=coordinates(e);addPoint(q.x,q.y);}else{selected=null;render();}};
  $('plano').onkeydown=e=>{if(e.target!==$('plano')||e.key!=='Enter'||!adding&&!tag&&!movingId)return;e.preventDefault();const [x,y,w,h]=D.V[sector];addPoint(x+w/2,y+h/2);};
  $('plano').ondragover=e=>e.preventDefault();$('plano').ondrop=e=>{e.preventDefault();const t=e.dataTransfer.getData('text/plain');if(!state.catalog.some(v=>v.tag===t))return;movingId=null;tag=t;const q=coordinates(e);addPoint(q.x,q.y);};
