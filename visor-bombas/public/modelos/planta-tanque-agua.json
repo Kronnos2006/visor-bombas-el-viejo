@@ -1465,17 +1465,31 @@
    ]
   },
   {
-   "nombre": "Caldera ADMIN fotos - Par de bombas bunker con motores grises y guardas ovaladas amarillas",
-   "sector": "Otros",
+   "nombre": "Bomba de combustible de caldera ADMIN 1",
+   "sector": "REF Detras ADMIN",
    "min": [
-    22.22,
-    0.3,
-    -36.38
+    22.25,
+    0.35,
+    -35.29
    ],
    "max": [
-    23.55,
+    23.52,
     1.8,
-    -34.62
+    -34.79
+   ]
+  },
+  {
+   "nombre": "Bomba de combustible de caldera ADMIN 2",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    22.25,
+    0.35,
+    -36.23
+   ],
+   "max": [
+    23.52,
+    1.8,
+    -35.66
    ]
   },
   {

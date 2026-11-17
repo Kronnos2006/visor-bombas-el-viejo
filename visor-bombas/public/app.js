@@ -1019,6 +1019,14 @@ async function cargarDetallesFBX(){
 }
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
+ // Mantiene visibles las bombas y calderas debajo de las dos cubiertas.
+ escena.traverse(o=>{
+  const nombre=String(o.userData.original_name||o.name).replace(/_/g,' ');
+  if(!o.isMesh||!([1240639,1240966].includes(o.userData.fbxId)||/Nave principal - cubierta metalica|Cubierta de lamina nave ADMIN/i.test(nombre)))return;
+  const aclarar=m=>{const c=m.clone();c.transparent=true;c.opacity=.12;c.depthWrite=false;return c;};
+  o.material=Array.isArray(o.material)?o.material.map(aclarar):aclarar(o.material);
+  o.renderOrder=2;o.castShadow=false;o.raycast=()=>{};
+ });
  if(escena.userData.fbxAgua){
   integrado.info=escena.userData.fbxAgua;
   aplicarFiltroInt();applyArea();renderList();
@@ -1073,14 +1081,6 @@ function montarIntegrado(g,escena,placed){
   const retirados=new Set(cambios.removedMeshes);for(let i=pickables.length-1;i>=0;i--)if(retirados.has(pickables[i]))pickables.splice(i,1);
   for(const body of Object.values(tankBodies))body.traverse(o=>{if(o.isMesh&&!pickables.includes(o))pickables.push(o);});
   window.__cambiosCampo={...cambios,removedMeshes:undefined};
-  // Pedido del usuario: el techo de la nave de calderas queda transparente para ver B69, B73, B74, B75 y B76 desde arriba.
-  escena.traverse(o=>{
-   if(!o.isMesh||!/Nave principal - cubierta metalica/i.test(String(o.userData?.original_name||o.name).replace(/_/g,' ')))return;
-   o.material=(Array.isArray(o.material)?o.material:[o.material]).map(m=>{const c=m.clone();c.transparent=true;c.opacity=.12;c.depthWrite=false;return c;});
-   if(o.material.length===1)o.material=o.material[0];
-   o.renderOrder=2;o.castShadow=false;o.raycast=()=>{};
-   const i=pickables.indexOf(o);if(i>=0)pickables.splice(i,1);
-  });
   // Área 3 · Nave pequeña (A16/A17) y nave grande a escala de A15.
   if(escena.userData.blenderLocal)window.__navesSitio=agregarNaves(THREE,escena);
   // Lista del usuario: cada cuerpo con ficha pasa a mostrar el TAG que él le asignó.

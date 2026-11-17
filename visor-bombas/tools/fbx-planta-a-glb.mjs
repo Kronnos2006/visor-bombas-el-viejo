@@ -21,9 +21,10 @@ const [src,out,torreJSON]=args.filter(arg=>!arg.startsWith('--'));
 const detalles=new Map([
  ...[1244368,1244369,1244370,1244371,1244372,1244378,1244379,1244380,1244381,1245203,1245204,1245205].map(id=>[id,'REF Tanque de millo']),
  [1244382,'Suelo VOCATUS'],
- ...[1245167,1245171,1245172,1245173,1245180,1245181,1245188,1245189].map(id=>[id,'REF Detras ADMIN']),
+ ...[1245163,1245167,1245171,1245172,1245173,1245180,1245181,1245188,1245189].map(id=>[id,'REF Detras ADMIN']),
  ...[1245221,1245222,1245223,1245245].map(id=>[id,'REF Exterior'])
 ]);
+const cubiertasCalderas=new Set([1240639,1240966]);
 const nombresBombas=new Map([
  [1245171,'Bomba horizontal bajo el desaireador'],[1245172,'Bomba vertical multietapas bajo el desaireador'],
  [1245204,'Bomba exterior del tanque de millo'],[1245245,'Bomba en la pasarela del tanque café']
@@ -69,6 +70,33 @@ const BOMBA_TORRE=/^(Bomba|Cubierta roja de bomba|Cubierta bomba|Conexiones visu
 // Bombas modeladas sin ficha: cada una queda como malla propia para poder señalarla.
 const BOMBA=/\bbombas?\b/i, NO_BOMBA=/^(Tuber|Conexi|Colector|Soportes|Canaleta|Piso|Ramales)/i;
 const torreNombre=n=>n.replace(/^_DUSA_(planta_)?-_/,'').replace(/_\d{6,}$/,'').replace(/_/g,' ').trim();
+function desglosarParBunker(g,sector,id){
+ // Los grupos del elemento 1245163 contienen una bancada, dos bombas y el colector compartido.
+ const partes=g.groups;
+ if(partes[1]?.count!==6588||partes[21]?.count!==108||partes[22]?.count!==6588||partes[42]?.count!==1272){
+  throw new Error('Cambió la geometría de las dos bombas de combustible del FBX.');
+ }
+ const guardas=new Set([7,8,28,29]);
+ const componer=(indices,desc,bomba)=>{
+  const piezas=indices.map(i=>{
+   const {start,count}=partes[i],pieza=new THREE.BufferGeometry();
+   for(const atributo of ['position','normal']){
+    const base=g.getAttribute(atributo);
+    if(base)pieza.setAttribute(atributo,new THREE.BufferAttribute(base.array.slice(start*3,(start+count)*3),3));
+   }
+   const color=new THREE.Color(guardas.has(i)?0xe2b72a:bomba?0x8a959a:0x59666f);
+   const rgb=new Float32Array(count*3);for(let v=0;v<count;v++)color.toArray(rgb,v*3);
+   pieza.setAttribute('color',new THREE.BufferAttribute(rgb,3));
+   return pieza;
+  });
+  const parte=mergeGeometries(piezas,false);
+  return {sector,id,cat:'acero',color:0xffffff,g:parte,b:new THREE.Box3().setFromBufferAttribute(parte.attributes.position),desc,bomba};
+ };
+ const indices=partes.map((_,i)=>i);
+ return [componer(indices.slice(1,21),'Bomba de combustible de caldera ADMIN 1',true),
+  componer(indices.slice(21,42),'Bomba de combustible de caldera ADMIN 2',true),
+  componer([0,...indices.slice(42)],'Base y colector de las bombas de combustible ADMIN',false)];
+}
 const caja=new THREE.Box3();const gs=[];let tris=0;const conteo={};const dusa=[];
 root.traverse(o=>{
  if(!o.isMesh)return;
@@ -79,6 +107,7 @@ root.traverse(o=>{
  const b=new THREE.Box3().setFromBufferAttribute(g.attributes.position);caja.union(b);
  if(detalleCapturas&&!detalle){g.dispose();return;}
  if(g.index)g=g.toNonIndexed();
+ if(detalle&&id===1245163){gs.push(...desglosarParBunker(g,sector,id));tris+=g.attributes.position.count/3;return;}
  for(const k of Object.keys(g.attributes))if(!['position','normal'].includes(k))g.deleteAttribute(k);
  g.clearGroups();
  // El nombre del sector va primero ("FBX Banos - ..."): se colorea por la parte descriptiva.
@@ -89,7 +118,7 @@ root.traverse(o=>{
  if(!conservarBombasDusa&&/^DUSA/.test(sector)&&BOMBA_TORRE.test(desc))return;
  tris+=g.attributes.position.count/3;conteo[cat]=(conteo[cat]||0)+1;
  const bomba=detalle?nombresBombas.has(id):BOMBA.test(desc)&&!NO_BOMBA.test(desc);
- gs.push({sector,cat,color,g,b,desc:bomba&&nombresBombas.get(id)||desc,bomba,id:detalleCapturas?id:null});
+ gs.push({sector,cat,color,g,b,desc:bomba&&nombresBombas.get(id)||desc,bomba,id:detalleCapturas||conservarBombasDusa&&cubiertasCalderas.has(id)?id:null});
 });
 // Centrar en la huella y apoyar en cota cero.
 const centro=caja.getCenter(new THREE.Vector3());const off=new THREE.Vector3(-centro.x,-caja.min.y,-centro.z);const T=new THREE.Matrix4().makeTranslation(off.x,off.y,off.z);
@@ -117,7 +146,7 @@ if(torreJSON){
 const grupos={},bombas=[],sectores={};
 for(const x of gs){x.g.applyMatrix4(T);x.b.translate(off);(sectores[x.sector]||(sectores[x.sector]=new THREE.Box3())).union(x.b);
  if(x.bomba)bombas.push({nombre:x.desc,sector:x.sector,...cajaJSON(x.b)});
- if(x.id||x.bomba){const extras={sector:x.sector,cat:x.cat};if(x.id)extras.fbxId=x.id;if(x.bomba)extras.bomba=x.desc;grupos['pieza|'+(x.id||bombas.length)]={...x,nodo:x.bomba?'Bomba · '+x.desc:x.desc,extras,lista:[x.g]};continue;}
+ if(x.id||x.bomba){const extras={sector:x.sector,cat:x.cat};if(x.id)extras.fbxId=x.id;if(x.bomba)extras.bomba=x.desc;grupos['pieza|'+(x.id?x.id+'|'+x.desc:bombas.length)]={...x,nodo:x.bomba?'Bomba · '+x.desc:x.desc,extras,lista:[x.g]};continue;}
  const clave=[x.sector,x.cat,x.color].join('|');
  (grupos[clave]??={...x,nodo:x.sector,extras:{sector:x.sector,cat:x.cat},lista:[]}).lista.push(x.g);}
 for(const {nodo,cat,color,lista,extras} of Object.values(grupos)){
@@ -125,6 +154,7 @@ for(const {nodo,cat,color,lista,extras} of Object.values(grupos)){
  const prim=doc.createPrimitive().setMaterial(mat(cat,color))
   .setAttribute('POSITION',doc.createAccessor().setType('VEC3').setArray(new Float32Array(g.attributes.position.array)).setBuffer(buffer));
  if(g.attributes.normal)prim.setAttribute('NORMAL',doc.createAccessor().setType('VEC3').setArray(new Float32Array(g.attributes.normal.array)).setBuffer(buffer));
+ if(g.attributes.color)prim.setAttribute('COLOR_0',doc.createAccessor().setType('VEC3').setArray(g.attributes.color.array).setBuffer(buffer));
  scene.addChild(doc.createNode(nodo).setMesh(doc.createMesh(nodo).addPrimitive(prim)).setExtras(extras));
 }
 const tam=caja.getSize(new THREE.Vector3());

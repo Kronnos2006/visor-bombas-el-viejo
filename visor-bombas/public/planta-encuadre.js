@@ -40,9 +40,10 @@ export function extraerBomba(T,scene,reference){
   while(node){if(node.userData.bomba){metadata=node.userData;break;}if(node===scene)break;node=node.parent;}
   if(!metadata||metadata.sector!==reference.sector||metadata.bomba!==(reference.grupo||reference.nombre))return;
   const geometry=object.geometry,position=geometry.getAttribute('position'),normal=geometry.getAttribute('normal'),index=geometry.index;
+  const color=geometry.getAttribute('color');
   if(!position)return;
   const matrix=new T.Matrix4().multiplyMatrices(inverse,object.matrixWorld),normalMatrix=new T.Matrix3().getNormalMatrix(matrix);
-  const positions=[],normals=[],count=index?index.count:position.count;
+  const positions=[],normals=[],colors=[],count=index?index.count:position.count;
   for(let i=0;i+2<count;i+=3){
    const ids=[0,1,2].map(offset=>index?index.getX(i+offset):i+offset);
    const vertices=ids.map(id=>new T.Vector3().fromBufferAttribute(position,id).applyMatrix4(matrix));
@@ -51,11 +52,13 @@ export function extraerBomba(T,scene,reference){
    for(let j=0;j<3;j++){
     positions.push(...vertices[j].toArray());
     if(normal)normals.push(...new T.Vector3().fromBufferAttribute(normal,ids[j]).applyNormalMatrix(normalMatrix).toArray());
+    if(color)for(let k=0;k<color.itemSize;k++)colors.push(color.getComponent(ids[j],k));
    }
   }
   if(!positions.length)return;
   const selected=new T.BufferGeometry();selected.setAttribute('position',new T.Float32BufferAttribute(positions,3));
   if(normals.length)selected.setAttribute('normal',new T.Float32BufferAttribute(normals,3));else selected.computeVertexNormals();
+  if(colors.length)selected.setAttribute('color',new T.Float32BufferAttribute(colors,color.itemSize));
   // El conversor del GLB usa un material por malla. Clonarlo evita que cerrar
   // una ficha elimine o cambie los materiales compartidos de la planta.
   const material=Array.isArray(object.material)?object.material[0].clone():object.material.clone();

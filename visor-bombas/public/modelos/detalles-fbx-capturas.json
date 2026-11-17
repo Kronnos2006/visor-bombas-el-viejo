@@ -34,7 +34,7 @@
    "min": [
     18.93,
     0.3,
-    -12.87
+    -14.58
    ],
    "max": [
     32.37,
@@ -56,6 +56,34 @@
   }
  },
  "bombas": [
+  {
+   "nombre": "Bomba de combustible de caldera ADMIN 1",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    21,
+    0.35,
+    -13.49
+   ],
+   "max": [
+    22.27,
+    1.8,
+    -12.99
+   ]
+  },
+  {
+   "nombre": "Bomba de combustible de caldera ADMIN 2",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    21,
+    0.35,
+    -14.43
+   ],
+   "max": [
+    22.27,
+    1.8,
+    -13.86
+   ]
+  },
   {
    "nombre": "Bomba horizontal bajo el desaireador",
    "sector": "REF Detras ADMIN",
