@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 import * as THREE from './public/vendor/three.module.js';
 import {buildPumpModel,sectorShellGeometry} from './public/pump-model.js';
 import {createAnatomyView} from './public/anatomy-view.js';
+import {pumpReference} from './public/pump-reference.js';
+
+test('el modelo y la placa deciden la forma aunque el TAG tuviera otra referencia',()=>{
+ assert.equal(pumpReference({tag:'B69',marca:'Hidromac',modelo:'2196 1X1.5-8 LF'}).kind,'lowFlow');
+ assert.equal(pumpReference({tag:'B30',marca:'Ebara',modelo:'AEVMSU5-9F0500T3S'}).kind,'vertical');
+ assert.equal(pumpReference({tag:'B61',marca:'Multisteel',modelo:'RSA 32/205'}).kind,'process');
+ assert.equal(pumpReference({tag:'B69',marca:'Goulds',modelo:'NPE'}).kind,'compact');
+ assert.equal(pumpReference({tag:'B69',marca:'Ebara',tipo_bomba:'Horizontal'}).kind,'standard');
+ const plate={fuente:'Placa (manda sobre Excel)',placa:'Titan 4196 3X4-13 MT'};
+ assert.equal(pumpReference({tag:'B61',marca:'Multisteel',modelo:'RSA 32/205'},plate).kind,'titan');
+ assert.equal(pumpReference({tag:'B69',marca:'Ebara',modelo:'AEVMSU5-9F0500T3S'},{fuente:'Placa',placa:'— (sin identificar)'}).stages,9);
+ assert.equal(pumpReference({tag:'B73',marca:'Movitec',modelo:'VF 4/8B'}).stages,8);
+});
 
 test('carcasas huecas tienen caras interiores y cortes radiales cerrados',()=>{
  const geometry=sectorShellGeometry(THREE,{inner:.5,outer:.65,length:1});

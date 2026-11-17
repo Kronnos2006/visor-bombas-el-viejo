@@ -10,18 +10,36 @@ const profiles = {
   vertical: { label:'Centrífuga vertical multietapa' },
 };
 
+function familyOf(text) {
+  if (/VERTICAL|MOVITEC|\b(?:A?EVMSU?|CR|CRN|CRI)\s*\d|\bSB\s*(?:MODEL\s*:?)?\s*\d/.test(text)) return 'vertical';
+  if (/MONOBLOQUE|ACOPLAMIENTO DIRECTO|GOULDS|\bNPE\b/.test(text)) return 'compact';
+  if (/TITAN/.test(text)) return 'titan';
+  if (/3\s*[X×]\s*4\s*[-X×]?\s*(12|13)|HIDROMAC AZ|RA\s*65|PACO/.test(text)) return 'large';
+  if (/\bLF\b|DURCO/.test(text)) return 'lowFlow';
+  if (/\bMTO\b|MULTISTEEL/.test(text)) return 'process';
+  if (/HORIZONTAL|HIDROMAC|HDROMAC/.test(text)) return 'standard';
+  return null;
+}
+
 export function pumpReference(pump, plate) {
+  const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
   const evidence = /^Placa(?:$| \()/.test(plate?.fuente ?? '') ? plate.placa : '';
   const catalog = [pump.marca,pump.modelo,pump.size,pump.tipo,pump.tipo_bomba,pump.nombre].filter(Boolean).join(' ');
-  const text = (evidence || catalog).toUpperCase();
+  const plateFamily=familyOf(normalize(evidence));
+  const recordedFamily=familyOf(normalize([pump.tipo_bomba,pump.tipo,pump.marca,pump.modelo,pump.size].filter(Boolean).join(' ')));
+  const text = normalize(plateFamily?evidence:catalog);
   const tag = Number(pump.tag?.slice(1));
-  let kind = 'standard';
-  if (/VERTICAL|MOVITEC|GRUNDFOS|EBARA|\bSB[ -]/.test(text) || [59,69,70,71,72,73,77,78,79,80].includes(tag)) kind = 'vertical';
-  else if (/GOULDS|MONOBLOQUE|ACOPLAMIENTO DIRECTO/.test(text) || pump.variant==='goulds' || (tag >= 39 && tag <= 43) || tag === 56) kind = 'compact';
-  else if (/TITAN/.test(text) || [17,18,20,21,61,62,63,64,65,66,67,68,81,83].includes(tag)) kind = 'titan';
-  else if (/3\s*[X×]\s*4\s*[-X×]?\s*(12|13)|HIDROMAC AZ|RA\s*65|PACO/.test(text) || [44,45,48,55,58,60].includes(tag)) kind = 'large';
-  else if (/\bLF\b|DURCO/.test(text) || [19,23,24,30,31,32,33,37,38].includes(tag)) kind = 'lowFlow';
-  else if (/\bMTO\b|MULTISTEEL/.test(text) || [27,28,29,34,35,36,49,50,51,52,53,54,57].includes(tag)) kind = 'process';
+  // La placa y el tipo registrado prevalecen sobre las referencias históricas por TAG.
+  let kind = plateFamily||recordedFamily||familyOf(text);
+  if(!kind){
+    if ([59,69,70,71,72,73,77,78,79,80].includes(tag)) kind = 'vertical';
+    else if (pump.variant==='goulds' || (tag >= 39 && tag <= 43) || tag === 56) kind = 'compact';
+    else if ([17,18,20,21,61,62,63,64,65,66,67,68,81,83].includes(tag)) kind = 'titan';
+    else if ([44,45,48,55,58,60].includes(tag)) kind = 'large';
+    else if ([19,23,24,30,31,32,33,37,38].includes(tag)) kind = 'lowFlow';
+    else if ([27,28,29,34,35,36,49,50,51,52,53,54,57].includes(tag)) kind = 'process';
+    else kind = 'standard';
+  }
   const stages = /EVMSU?5[- /]?9/.test(text) ? 9 : /MOVITEC.*4[/ -]8/.test(text) ? 8 : /\bSB.*15[- /]5/.test(text) ? 5 : 6;
   const profile={kind,...profiles[kind]};
   if(kind==='vertical'){
