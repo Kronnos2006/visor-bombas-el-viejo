@@ -11,20 +11,20 @@ const modelView=await readFile(new URL('./public/ubicar-bombas-modelo3d.js',impo
 const viewer=await readFile(new URL('./public/app.js',import.meta.url),'utf8');
 const start=()=>validateState(initialState(data,map),data);
 test('el plano conserva catálogo y asignaciones actuales, sin inventar conversión 3D',()=>{
- const s=start();assert.equal(s.catalog.length,83);assert.equal(s.points.length,data.P.length);
+ const s=start();assert.equal(s.catalog.length,90);assert.equal(s.points.length,data.P.length);
  assert.equal(s.points.find(p=>p.id==='tag:B2').tag,'B3');
  assert.ok(s.points.every(p=>p.x>=0&&p.x<=2800&&p.y>=0&&p.y<=2504));
 });
-test('las bombas nuevas de calderas quedan señaladas y los borradores antiguos conservan sus cambios',()=>{
- const s=start(),newPumps=['B72','B73','B74','B75','B76'].map(tag=>s.points.find(p=>p.tag===tag));
- assert.ok(newPumps.every(p=>p?.sec==='calderas'&&p.origen==='modelo3d'&&/aproximada/.test(p.n)));
- assert.ok(newPumps.every(p=>p.x===1730));
- assert.deepEqual(newPumps.map(p=>p.y),[406,348,291,222,161]);
- const oldData={...data,P:data.P.filter(p=>!/^tag:B7[2-6]$/.test(p.id))};
- const old=validateState(initialState(oldData,map),oldData);old.points.find(p=>p.tag==='B71').x=1501;
+test('posiciones definitivas (18-nov): B72-B76 en su nuevo lugar y los borradores antiguos conservan sus cambios',()=>{
+ const s=start(),newPumps=['B72','B73','B74','B75','B76'].map(tag=>s.points.find(p=>p.tag===tag&&!p.removed));
+ assert.ok(newPumps.every(p=>p&&p.origen==='registro-definitivo'));
+ assert.deepEqual(newPumps.map(p=>[p.x,p.y]),[[1733,573],[1736,534],[1737,492],[1736,454],[1740,405]]);
+ assert.ok(['tag:B72','tag:B73','tag:B74','tag:B75','tag:B76'].every(id=>s.points.find(p=>p.id===id).removed));
+ const oldData={...data,P:data.P.filter(p=>p.origen!=='registro-definitivo')};
+ const old=validateState(initialState(oldData,map),oldData);old.points.find(p=>p.tag==='B13').x=601;
  const merged=validateState(mergeNewPoints(old, data),data);
- assert.equal(merged.points.find(p=>p.tag==='B71').x,1501);
- assert.ok(['B72','B73','B74','B75','B76'].every(tag=>merged.points.some(p=>p.tag===tag)));
+ assert.equal(merged.points.find(p=>p.tag==='B13').x,601);
+ assert.ok(['B84','B85','B86','B87','B88','B89'].every(tag=>merged.points.some(p=>p.tag===tag)));
 });
 test('el fondo superior carga el modelo FBX optimizado, las bombas añadidas y los detalles de calderas',()=>{
  assert.match(editor,/id="fondo-3d"/);assert.match(editor,/id="fondo-2d"/);assert.match(editor,/id="fondo-modelo"/);
@@ -55,14 +55,14 @@ test('el registro incluye las bombas ya colocadas aunque no haya cambios',()=>{
  assert.doesNotMatch(changes(s,start()),/POSICIÓN B3 ·/);
 });
 test('añadir y reubicar una bomba no duplica TAG ni intercambia otra bomba',()=>{
- const s=start(),original=structuredClone(s);assert.equal(addPump(s,{tag:'B84',nombre:'Bomba adicional',area:'Prueba'}),'B84');
- assert.throws(()=>addPump(s,{tag:'B84',nombre:'Otra',area:'Prueba'}),/ya está/);
+ const s=start(),original=structuredClone(s);assert.equal(addPump(s,{tag:'B91',nombre:'Bomba adicional',area:'Prueba'}),'B91');
+ assert.throws(()=>addPump(s,{tag:'B91',nombre:'Otra',area:'Prueba'}),/ya está/);
  assert.throws(()=>addPump(s,{tag:'B084',nombre:'Otra',area:'Prueba'}),/TAG/);
  assert.throws(()=>addPump(s,{tag:'B12345',nombre:'Otra',area:'Prueba'}),/TAG/);
- assign(s,s.points[0].id,'B84');assign(s,s.points[1].id,'B84');
- assert.equal(s.points.filter(p=>p.tag==='B84').length,1);assert.equal(s.points[0].tag,null);
+ assign(s,s.points[0].id,'B91');assign(s,s.points[1].id,'B91');
+ assert.equal(s.points.filter(p=>p.tag==='B91').length,1);assert.equal(s.points[0].tag,null);
  const restored=validateState(JSON.parse(JSON.stringify(s)),data);assert.deepEqual(restored,s);
- assert.match(changes(restored,original),/CATÁLOGO B84/);assert.match(changes(restored,original),/UBICAR B84/);
+ assert.match(changes(restored,original),/CATÁLOGO B91/);assert.match(changes(restored,original),/UBICAR B91/);
 });
 test('los respaldos rechazan TAG duplicados, coordenadas inválidas y pérdida de puntos',()=>{
  const s=start();s.points[1].tag=s.points[0].tag;assert.throws(()=>validateState(s,data),/más de una posición/);
