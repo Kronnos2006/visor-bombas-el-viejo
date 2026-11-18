@@ -34,7 +34,8 @@ export function validateState(raw,data){
   if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>WIDTH||p.y<0||p.y>HEIGHT)throw Error('Hay posiciones fuera del plano.');
   const tag=p.tag||null;if(tag&&!tags.has(tag))throw Error('Un punto usa un TAG que no está en el catálogo.');
   if(tag&&!p.removed){if(placed.has(tag))throw Error('Una bomba tiene más de una posición.');placed.add(tag);}
-  return {id:p.id,x:p.x,y:p.y,sec:Object.hasOwn(data.SEC,p.sec)?p.sec:'toda',num:text(String(p.num),12),n:text(p.n),tag,name:text(p.name,60),removed:!!p.removed,nuevo:!baseIds.has(p.id),...(p.origen==='modelo3d'?{origen:'modelo3d'}:{})};
+  let model;if(Object.hasOwn(p,'model')){if(p.model===null)model=null;else if(p.model&&['x','y','z'].every(k=>Number.isFinite(p.model[k])&&Math.abs(p.model[k])<=1000))model={x:p.model.x,y:p.model.y,z:p.model.z};else throw Error('Hay una posición 3D inválida.');}
+  return {id:p.id,x:p.x,y:p.y,sec:Object.hasOwn(data.SEC,p.sec)?p.sec:'toda',num:text(String(p.num),12),n:text(p.n),tag,name:text(p.name,60),removed:!!p.removed,nuevo:!baseIds.has(p.id),...(Object.hasOwn(p,'model')?{model}:{}),...(p.origen==='modelo3d'?{origen:'modelo3d'}:{})};
  });
  if([...baseIds].some(id=>!ids.has(id)))throw Error('Faltan puntos originales en el respaldo.');
  return {catalog,points};

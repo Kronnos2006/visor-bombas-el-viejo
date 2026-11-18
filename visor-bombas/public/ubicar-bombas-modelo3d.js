@@ -15,7 +15,7 @@ const SECTORES={
  edificios:['FBX Administracion','FBX Banos','FBX Bodega pequena','FBX Bodega quimicos','FBX Cuarto electrico','FBX Nave pequena','REF Bodega de ron']
 };
 
-export async function createPlantTopView(canvas,onProgress=()=>{}){
+export async function createPlantTopView(canvas,onProgress=()=>{},points=[]){
  const scene=new THREE.Scene();scene.background=new THREE.Color('#17130f');
  scene.add(new THREE.HemisphereLight(0xe7f2ff,0x554b3b,2.6));
  const key=new THREE.DirectionalLight(0xffffff,3);key.position.set(-38,85,32);scene.add(key);
@@ -38,6 +38,18 @@ export async function createPlantTopView(canvas,onProgress=()=>{}){
   o.material=Array.isArray(o.material)?o.material.map(transparent):transparent(o.material);o.renderOrder=2;
  });
  const camera=new THREE.OrthographicCamera(-1,1,1,-1,.01,1000);camera.up.set(0,0,-1);
+ const fetchJson=async u=>{const r=await fetch(u);if(!r.ok)throw Error('No se pudieron leer las coordenadas de '+u);return r.json();};
+ const [individuales,detallesInfo,campoInfo]=await Promise.all([fetchJson('/modelos/bombas-individuales.json'),fetchJson('/modelos/detalles-fbx-capturas.json'),fetchJson('/modelos/bombas-campo.json')]);
+ const catalogo=[...individuales,...detallesInfo.bombas.map(b=>({...b,bombas:[b]})),...campoInfo],positions={};
+ const add=(id,b)=>{if(b?.min?.length===3&&b?.max?.length===3)positions[id]={x:(b.min[0]+b.max[0])/2,y:(b.min[1]+b.max[1])/2,z:(b.min[2]+b.max[2])/2};};
+ for(const {id} of points){
+  if(!id?.startsWith('integrado:'))continue;
+  const g=catalogo.filter(g=>id.startsWith(`integrado:${g.sector}:${g.nombre}`)).sort((a,b)=>b.nombre.length-a.nombre.length)[0];if(!g)continue;
+  const match=id.match(/ · Bomba (\d+)$/),index=match&&g.bombas.length>1?Math.min(g.bombas.length-1,+match[1]-1):0;add(id,g.bombas[index]);
+ }
+ const fbxPumps=new Map(detallesInfo.bombas.map(g=>[g.nombre,g]));
+ const extraTags={B72:'Bomba vertical multietapas bajo el desaireador',B73:'Bomba de la pasarela exterior de caldera ADMIN',B74:'Bomba de combustible de caldera ADMIN 1',B75:'Bomba horizontal bajo el desaireador',B76:'Bomba de combustible de caldera ADMIN 2'};
+ for(const [tag,name] of Object.entries(extraTags))add('tag:'+tag,fbxPumps.get(name));
  let cache='';
  function render({sector='toda',width,height}){
   const allowed=SECTORES[sector];
@@ -52,7 +64,8 @@ export async function createPlantTopView(canvas,onProgress=()=>{}){
   camera.left=-viewHeight*aspect/2;camera.right=viewHeight*aspect/2;camera.top=viewHeight/2;camera.bottom=-viewHeight/2;
   camera.position.set(center.x,box.max.y+Math.max(size.x,size.z)*1.3,center.z);camera.lookAt(center.x,center.y,center.z);camera.near=.01;camera.far=2000;camera.updateProjectionMatrix();
   const scale=Math.min(1,1500/Math.max(width,height)),rw=Math.max(1,Math.round(width*scale)),rh=Math.max(1,Math.round(height*scale));
-  renderer.setPixelRatio(1);renderer.setSize(rw,rh,false);renderer.render(scene,camera);
+  renderer.setPixelRatio(1);renderer.setSize(rw,rh,false);camera.updateMatrixWorld(true);renderer.render(scene,camera);
  }
- return {render,dispose(){renderer.dispose();plant.clear();}};
+ function project(point){const p=new THREE.Vector3(point.x,point.y,point.z).project(camera);return {x:(p.x+1)/2,y:(1-p.y)/2,visible:p.z>=-1&&p.z<=1};}
+ return {positions,render,project,dispose(){renderer.dispose();plant.clear();}};
 }

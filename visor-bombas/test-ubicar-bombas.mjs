@@ -28,6 +28,7 @@ test('el fondo superior carga el modelo FBX optimizado, las bombas añadidas y l
  assert.match(editor,/id="fondo-3d"/);assert.match(editor,/id="fondo-2d"/);assert.match(editor,/id="fondo-modelo"/);
  assert.match(editor,/<script type="importmap">\{"imports":\{"three":"\/vendor\/three\.module\.js"\}\}<\/script>/);
  for(const asset of ['/modelos/planta-integrada.glb','/modelos/bombas-campo.glb','/modelos/detalles-fbx-capturas.glb'])assert.ok(modelView.includes(asset),asset+' debe estar en el fondo 3D');
+ assert.ok(modelView.includes('function project(point)'),'las etiquetas deben proyectarse desde las coordenadas reales del FBX');assert.ok(modelView.includes('const extraTags='));
  assert.ok(modelView.includes("o.userData?.sector==='REF Cubierta comun'"));
  assert.ok(modelView.includes("o.userData?.sector==='REF Detalle'&&o.userData?.cat==='lamina'"),'la cubierta de calderas debe volverse casi invisible');assert.ok(modelView.includes('roofBoilers ? .04 : .12'));
  assert.ok(viewer.includes("o.userData.sector==='REF Cubierta comun'"),'el visor también debe transparentar las cubiertas del GLB');
@@ -57,6 +58,7 @@ test('los respaldos rechazan TAG duplicados, coordenadas inválidas y pérdida d
  const outside=start();outside.points[0].x=2801;assert.throws(()=>validateState(outside,data),/fuera/);
  const missing=start();missing.points.pop();assert.throws(()=>validateState(missing,data),/Faltan puntos/);
  const catalog=start();catalog.catalog.pop();assert.throws(()=>validateState(catalog,data),/catálogo original/);
+ const model=start();model.points[0].model={x:1,y:2,z:3};assert.deepEqual(validateState(model,data).points[0].model,{x:1,y:2,z:3});model.points[0].model=null;assert.equal(validateState(model,data).points[0].model,null);model.points[0].model={x:1001,y:0,z:0};assert.throws(()=>validateState(model,data),/posición 3D inválida/);
  const longTag=start();longTag.catalog.push({tag:'B12345',nombre:'Otra',area:'Prueba'});assert.throws(()=>validateState(longTag,data),/TAG/);
  const malformed=start();malformed.points[0].id='__proto__';assert.throws(()=>validateState(malformed,data),/identificadores/);
 });

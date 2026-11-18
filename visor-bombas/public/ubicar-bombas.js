@@ -16,7 +16,7 @@ function place(t,id){if(commit(()=>assign(state,id,t))){tag=null;selected=id;mov
 function addPoint(x,y){
  const t=tag,previous=movingId||(t?located(t)?.id:null),id=previous||'nuevo:'+crypto.randomUUID();
  if(commit(()=>{
-  if(previous){const p=state.points.find(p=>p.id===previous);Object.assign(p,{x:Math.round(clamp(x,WIDTH)),y:Math.round(clamp(y,HEIGHT)),sec:destinationSector(x,y,p.sec)});}
+  if(previous){const p=state.points.find(p=>p.id===previous);Object.assign(p,{x:Math.round(clamp(x,WIDTH)),y:Math.round(clamp(y,HEIGHT)),sec:destinationSector(x,y,p.sec),model:null});}
   else state.points.push({id,x:Math.round(clamp(x,WIDTH)),y:Math.round(clamp(y,HEIGHT)),sec:sector,num:'N'+(state.points.filter(p=>p.nuevo).length+1),n:'Punto nuevo',name:'',tag:null,nuevo:true});
   if(t)assign(state,id,t);
  })){adding=false;selected=id;tag=null;movingId=null;render();}
@@ -33,9 +33,9 @@ function removeSelected(){const id=selected;if(!id)return;if(commit(()=>{const p
 function persistEditor(){
  const p=active().find(p=>p.id===selected);if(!p)return true;
  if(!$('editor').reportValidity())return false;
- const name=$('ed-nombre').value.trim(),t=$('ed-tag').value||null,x=$('ed-x').valueAsNumber,y=$('ed-y').valueAsNumber;
+ const name=$('ed-nombre').value.trim(),t=$('ed-tag').value||null,x=$('ed-x').valueAsNumber,y=$('ed-y').valueAsNumber,moved=x!==p.x||y!==p.y;
  if(p.name===name&&p.tag===t&&p.x===x&&p.y===y)return true;
- return commit(()=>{assign(state,p.id,t);Object.assign(p,{name,x,y,sec:destinationSector(x,y,p.sec)});});
+ return commit(()=>{assign(state,p.id,t);Object.assign(p,{name,x,y,sec:destinationSector(x,y,p.sec),...(moved?{model:null}:{})});});
 }
 function drawMap(){
  const [x0,y0,w,h]=D.V[sector],pl=$('plano'),width=$('marco').clientWidth*zoom;
@@ -49,16 +49,19 @@ function drawMap(){
  else $('estado-fondo').textContent='Vista superior del modelo 3D · las posiciones guardadas siguen siendo editables.';
  if(!c.hidden&&modeloSuperior){const width=Math.max(1,Math.round(pl.clientWidth)),height=Math.max(1,Math.round(width*h/w));modeloSuperior.render({sector,width,height});}
  for(const p of active()){
-  if(p.x<x0||p.x>x0+w||p.y<y0||p.y>y0+h)continue;
+  if(sector!=='toda'&&p.sec!==sector)continue;
+  const modelPos=vistaFondo==='3d'&&p.model&&modeloSuperior?modeloSuperior.project(p.model):null;
+  if(modelPos&&(!modelPos.visible||modelPos.x<0||modelPos.x>1||modelPos.y<0||modelPos.y>1))continue;
+  if(!modelPos&&(p.x<x0||p.x>x0+w||p.y<y0||p.y>y0+h))continue;
   const b=document.createElement('button');b.type='button';b.dataset.point=p.id;
   const before=base.points.find(q=>q.id===p.id),changed=!before||['tag','name','x','y','removed'].some(k=>p[k]!==before[k]);
   b.className='lugar'+(!p.tag?' sin':'')+(changed?' cambio':'')+(p.nuevo?' nuevo':'')+(p.origen==='modelo3d'?' modelo3d':'')+(selected===p.id?' elegido':'');
-  b.style.left=(p.x-x0)/w*100+'%';b.style.top=(p.y-y0)/h*100+'%';b.textContent=p.name||p.tag||'?';b.title=(p.tag||'Sin TAG')+' · '+(p.name||p.n||sectorName(p.sec));b.setAttribute('aria-label',b.title);
+  b.style.left=(modelPos?modelPos.x*100:(p.x-x0)/w*100)+'%';b.style.top=(modelPos?modelPos.y*100:(p.y-y0)/h*100)+'%';b.textContent=p.name||p.tag||'?';b.title=(p.tag||'Sin TAG')+' · '+(p.name||p.n||sectorName(p.sec));b.setAttribute('aria-label',b.title);
   let start=null,moved=false;
   b.onpointerdown=e=>{if(e.button!==0)return;e.stopPropagation();start={x:e.clientX,y:e.clientY};moved=false;b.setPointerCapture(e.pointerId);};
   b.onpointermove=e=>{if(!start)return;if(!moved&&Math.hypot(e.clientX-start.x,e.clientY-start.y)<8)return;moved=true;const q=coordinates(e);b.style.left=(q.x-x0)/w*100+'%';b.style.top=(q.y-y0)/h*100+'%';};
   b.onpointercancel=()=>{start=null;drawMap();};
-  b.onpointerup=e=>{if(!start)return;start=null;ignoreClickUntil=Date.now()+400;if(moved){const q=coordinates(e);selected=p.id;movingId=null;tag=null;commit(()=>Object.assign(p,{x:Math.round(q.x),y:Math.round(q.y),sec:destinationSector(q.x,q.y,p.sec)}));}else selectPoint(p);};
+  b.onpointerup=e=>{if(!start)return;start=null;ignoreClickUntil=Date.now()+400;if(moved){const q=coordinates(e);selected=p.id;movingId=null;tag=null;commit(()=>Object.assign(p,{x:Math.round(q.x),y:Math.round(q.y),sec:destinationSector(q.x,q.y,p.sec),model:null}));}else selectPoint(p);};
   b.onclick=e=>e.stopPropagation();
   b.onkeydown=e=>{
    if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();selectPoint(p);return;}
@@ -87,7 +90,7 @@ function render(){
  $('resumen').textContent=`Catálogo: ${state.catalog.length} · Con lugar: ${placed} · Faltan: ${state.catalog.length-placed} · Puntos libres: ${active().filter(p=>!p.tag).length}`;
  status(movingId?'Toca la nueva posición de la bomba seleccionada.':adding?'Toca el plano para añadir un punto.':tag?'Ahora toca dónde va '+tag+'.':'Selecciona una bomba para ver, mover o eliminar su posición.');
  const p=active().find(p=>p.id===selected);$('editor').hidden=!p;
- if(p){$('editor-titulo').textContent=(p.tag||p.name||'Punto sin TAG')+' · '+sectorName(p.sec);$('posicion-elegida').textContent=`Posición registrada: X ${Math.round(p.x)}, Y ${Math.round(p.y)} px`;$('ed-x').value=Math.round(p.x);$('ed-y').value=Math.round(p.y);$('ed-nombre').value=p.name||'';$('ed-tag').replaceChildren(new Option('Sin TAG',''),...state.catalog.map(t=>new Option(t.tag+' · '+t.nombre,t.tag)));$('ed-tag').value=p.tag||'';}
+ if(p){$('editor-titulo').textContent=(p.tag||p.name||'Punto sin TAG')+' · '+sectorName(p.sec);$('posicion-elegida').textContent=p.model?`Posición FBX: X ${p.model.x.toFixed(2)}, Z ${p.model.z.toFixed(2)} m · arrastra la etiqueta para cambiarla.`:`Posición manual: X ${Math.round(p.x)}, Y ${Math.round(p.y)} px`;$('ed-x').value=Math.round(p.x);$('ed-y').value=Math.round(p.y);$('ed-nombre').value=p.name||'';$('ed-tag').replaceChildren(new Option('Sin TAG',''),...state.catalog.map(t=>new Option(t.tag+' · '+t.nombre,t.tag)));$('ed-tag').value=p.tag||'';}
  $('eliminar-bomba').disabled=!p;$('mover-bomba').disabled=!p;
  $('eliminar-bomba').textContent=p?.tag?'Eliminar '+p.tag:'Eliminar bomba';$('mover-bomba').textContent=p?.tag?'Mover '+p.tag:'Mover bomba';
  $('detalle').textContent=p?'Referencia: '+(p.n||p.id):'';
@@ -106,7 +109,7 @@ async function init(){
  $('filtro-texto').oninput=drawTags;$('filtro-area').onchange=drawTags;
  $('solo-faltan').onclick=e=>{missing=!missing;e.currentTarget.setAttribute('aria-pressed',String(missing));drawTags();};
  document.querySelectorAll('[data-zoom]').forEach(b=>b.onclick=()=>{zoom=+b.dataset.zoom;render();});
- $('fondo-3d').onclick=async()=>{vistaFondo='3d';render();if(modeloSuperior||cargandoModelo)return;cargandoModelo=true;$('estado-fondo').textContent='Cargando modelo 3D de la planta…';try{const {createPlantTopView}=await import('./ubicar-bombas-modelo3d.js');modeloSuperior=await createPlantTopView($('fondo-modelo'));render();}catch(e){vistaFondo='2d';$('estado-fondo').textContent='No se pudo cargar el fondo 3D; se conserva el plano anterior.';error(e);}finally{cargandoModelo=false;}};
+ $('fondo-3d').onclick=async()=>{vistaFondo='3d';render();if(modeloSuperior||cargandoModelo)return;cargandoModelo=true;$('estado-fondo').textContent='Cargando modelo 3D de la planta…';try{const {createPlantTopView}=await import('./ubicar-bombas-modelo3d.js');modeloSuperior=await createPlantTopView($('fondo-modelo'),()=>{},D.P);for(const p of [...base.points,...state.points])if(!Object.hasOwn(p,'model'))p.model=modeloSuperior.positions[p.id]||null;render();}catch(e){vistaFondo='2d';$('estado-fondo').textContent='No se pudo cargar el fondo 3D; se conserva el plano anterior.';error(e);}finally{cargandoModelo=false;}};
  $('fondo-2d').onclick=()=>{vistaFondo='2d';render();};
  $('agregar').onclick=()=>{adding=!adding;tag=null;selected=null;movingId=null;render();if(adding)$('plano').focus();};
  $('editor').onsubmit=e=>{e.preventDefault();persistEditor();};
