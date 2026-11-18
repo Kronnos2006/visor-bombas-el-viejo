@@ -25,6 +25,7 @@ test('las bombas nuevas de calderas quedan señaladas y los borradores antiguos 
 });
 test('el fondo superior carga el modelo FBX optimizado, las bombas añadidas y los detalles de calderas',()=>{
  assert.match(editor,/id="fondo-3d"/);assert.match(editor,/id="fondo-2d"/);assert.match(editor,/id="fondo-modelo"/);
+ assert.match(editor,/<script type="importmap">\{"imports":\{"three":"\/vendor\/three\.module\.js"\}\}<\/script>/);
  for(const asset of ['/modelos/planta-integrada.glb','/modelos/bombas-campo.glb','/modelos/detalles-fbx-capturas.glb'])assert.ok(modelView.includes(asset),asset+' debe estar en el fondo 3D');
  assert.match(modelView,/opacity=\.12/);assert.match(modelView,/Cubierta de lamina nave ADMIN/);
 });
