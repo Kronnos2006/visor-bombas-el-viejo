@@ -2,6 +2,7 @@ import {CACHE,WIDTH,HEIGHT,clamp,initialState,validateState,mergeNewPoints,assig
 const $=id=>document.getElementById(id),copy=v=>structuredClone(v);
 const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 let D,base,state,history=[],sector='toda',zoom=1,selected=null,tag=null,adding=false,missing=false,ignoreClickUntil=0,movingId=null;
+let vistaFondo='3d',modeloSuperior=null,cargandoModelo=false;
 const error=e=>{$('error').textContent=e?.message||String(e);};
 const status=t=>{$('estado').textContent=t;};
 const active=()=>state.points.filter(p=>!p.removed),located=t=>active().find(p=>p.tag===t);
@@ -39,16 +40,14 @@ function persistEditor(){
 function drawMap(){
  const [x0,y0,w,h]=D.V[sector],pl=$('plano'),width=$('marco').clientWidth*zoom;
  pl.style.width=width+'px';pl.style.height=width*h/w+'px';
- const f=$('fondo');f.style.width=WIDTH/w*100+'%';f.style.left=-x0/w*100+'%';f.style.top=-y0/h*100+'%';
- pl.querySelectorAll('.lugar,.modelo3d-zone').forEach(e=>e.remove());
- // La zona se marca como referencia visual, no como huella dimensional del equipo.
- if(sector==='toda'||sector==='calderas'){
-  const zone={x:1640,y:135,w:180,h:555},box=document.createElement('div');
-  box.className='modelo3d-zone';box.setAttribute('aria-hidden','true');
-  box.style.left=(zone.x-x0)/w*100+'%';box.style.top=(zone.y-y0)/h*100+'%';
-  box.style.width=zone.w/w*100+'%';box.style.height=zone.h/h*100+'%';
-  const label=document.createElement('span');label.textContent='Estructura y bombas añadidas · zona aprox.';box.append(label);pl.append(box);
- }
+ const f=$('fondo'),c=$('fondo-modelo');f.style.width=WIDTH/w*100+'%';f.style.left=-x0/w*100+'%';f.style.top=-y0/h*100+'%';
+ pl.querySelectorAll('.lugar').forEach(e=>e.remove());
+ f.hidden=vistaFondo==='3d'&&!!modeloSuperior;c.hidden=!(vistaFondo==='3d'&&modeloSuperior);
+ c.style.width='100%';c.style.height='100%';c.style.left='0';c.style.top='0';
+ if(c.hidden&&vistaFondo==='3d'){$('estado-fondo').textContent=cargandoModelo?'Cargando el modelo 3D de la planta…':'Vista 3D no disponible; se muestra el plano anterior.';}
+ else if(vistaFondo==='2d')$('estado-fondo').textContent='Plano anterior · selecciona «Vista superior 3D» para ver la estructura del modelo.';
+ else $('estado-fondo').textContent='Vista superior del modelo 3D · las posiciones guardadas siguen siendo editables.';
+ if(!c.hidden&&modeloSuperior){const width=Math.max(1,Math.round(pl.clientWidth)),height=Math.max(1,Math.round(width*h/w));modeloSuperior.render({sector,width,height});}
  for(const p of active()){
   if(p.x<x0||p.x>x0+w||p.y<y0||p.y>y0+h)continue;
   const b=document.createElement('button');b.type='button';b.dataset.point=p.id;
@@ -95,6 +94,7 @@ function render(){
  $('lista').value=changes(state,base);$('deshacer').disabled=!history.length;$('agregar').setAttribute('aria-pressed',String(adding));
  $('restaurar').hidden=!state.points.some(p=>p.removed);$('restaurar').textContent='Restaurar puntos quitados';
  document.querySelectorAll('[data-zoom]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.zoom===zoom)));
+ $('fondo-3d').setAttribute('aria-pressed',String(vistaFondo==='3d'));$('fondo-2d').setAttribute('aria-pressed',String(vistaFondo==='2d'));
 }
 async function init(){
  const fetchJson=async u=>{const r=await fetch(u);if(!r.ok)throw Error('No se pudo cargar '+u+'. Recarga la página.');return r.json();};
@@ -106,6 +106,8 @@ async function init(){
  $('filtro-texto').oninput=drawTags;$('filtro-area').onchange=drawTags;
  $('solo-faltan').onclick=e=>{missing=!missing;e.currentTarget.setAttribute('aria-pressed',String(missing));drawTags();};
  document.querySelectorAll('[data-zoom]').forEach(b=>b.onclick=()=>{zoom=+b.dataset.zoom;render();});
+ $('fondo-3d').onclick=async()=>{vistaFondo='3d';render();if(modeloSuperior||cargandoModelo)return;cargandoModelo=true;$('estado-fondo').textContent='Cargando modelo 3D de la planta…';try{const {createPlantTopView}=await import('./ubicar-bombas-modelo3d.js');modeloSuperior=await createPlantTopView($('fondo-modelo'));render();}catch(e){vistaFondo='2d';$('estado-fondo').textContent='No se pudo cargar el fondo 3D; se conserva el plano anterior.';error(e);}finally{cargandoModelo=false;}};
+ $('fondo-2d').onclick=()=>{vistaFondo='2d';render();};
  $('agregar').onclick=()=>{adding=!adding;tag=null;selected=null;movingId=null;render();if(adding)$('plano').focus();};
  $('editor').onsubmit=e=>{e.preventDefault();persistEditor();};
  $('ed-quitar').onclick=removeSelected;$('eliminar-bomba').onclick=removeSelected;
@@ -123,5 +125,6 @@ async function init(){
  $('importar').onclick=()=>$('archivo').click();$('archivo').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>2_000_000)throw Error('El respaldo supera 2 MB.');const raw=JSON.parse(await file.text());if(raw.version!==1)throw Error('Versión de respaldo desconocida.');const next=validateState(raw.state,D);if(confirm('¿Cargar este respaldo en lugar del borrador actual? Puedes deshacerlo.')){clearModes();commit(()=>{state=next;});}}catch(e){error(e);}finally{$('archivo').value='';}};
  addEventListener('keydown',e=>{if(e.key==='Escape'){selected=null;tag=null;adding=false;movingId=null;render();}});addEventListener('resize',drawMap);
  render();
+ if(vistaFondo==='3d')$('fondo-3d').click();
 }
 init().catch(e=>{error(e);status('No se cargó el plano.');});
