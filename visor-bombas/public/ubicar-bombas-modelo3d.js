@@ -1,7 +1,8 @@
 import * as THREE from './vendor/three.module.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {MeshoptDecoder} from './vendor/meshopt_decoder.module.js';
-import {PLANTA_BLENDER_CACHE,medirDesplazamiento} from './blender-local.js';
+import {PLANTA_BLENDER_CACHE,medirDesplazamiento,prepararBombasBlender} from './blender-local.js';
+import {photoPumps,sector,exterior} from './sector-fotos.js';
 
 const SECTORES={
  tanques:['Sector de tanques'],
@@ -15,10 +16,6 @@ const SECTORES={
  millo:['REF Tanque de millo'],
  edificios:['FBX Administracion','FBX Banos','FBX Bodega pequena','FBX Bodega quimicos','FBX Cuarto electrico','FBX Nave pequena','REF Bodega de ron']
 };
-
-// Conversión calibrada con las bombas cuyo modelo 3D tiene coordenadas medidas.
-// Conserva la ubicación existente del plano 2D para las etiquetas sin geometría propia.
-const PLANO_A_MODELO={escalaX:.0371374,offsetX:-51.994,escalaZ:.0371404,offsetZ:-46.507,altura:.3};
 
 async function loadTankSector(loader,onProgress){
  const {DRACOLoader}=await import('/vendor/blender-local/DRACOLoader.js');
@@ -42,7 +39,9 @@ async function loadTankSector(loader,onProgress){
   const boxes={};gltf.scene.traverse(o=>{if(!o.isMesh||!o.userData.sector)return;const b=new THREE.Box3().setFromObject(o);if(b.isEmpty())return;const s=boxes[o.userData.sector]??={min:b.min.toArray(),max:b.max.toArray()};for(let i=0;i<3;i++){s.min[i]=Math.min(s.min[i],b.min.getComponent(i));s.max[i]=Math.max(s.max[i],b.max.getComponent(i));}});
   const info=await fetch('/modelos/planta-integrada.json').then(r=>{if(!r.ok)throw Error('No se pudieron alinear los tanques con la planta.');return r.json();});
   const {d,residuo}=medirDesplazamiento(boxes,info);if(residuo>.25)throw Error('El modelo de tanques no coincide con la planta integrada.');
-  const aligned=new THREE.Group();aligned.name='Tanques del modelo detallado';aligned.position.set(-d[0],-d[1],-d[2]);aligned.add(gltf.scene);return aligned;
+  const bodies=prepararBombasBlender(THREE,gltf.scene,{sector,exterior,photoPumps,grupos:[]}),pumpPositions={};
+  for(const [tag,body] of Object.entries(bodies)){const b=new THREE.Box3().setFromObject(body);if(!b.isEmpty()){const c=b.getCenter(new THREE.Vector3());pumpPositions[tag]={x:c.x-d[0],y:c.y-d[1],z:c.z-d[2]};}}
+  const aligned=new THREE.Group();aligned.name='Tanques del modelo detallado';aligned.position.set(-d[0],-d[1],-d[2]);aligned.userData.pumpPositions=pumpPositions;aligned.add(gltf.scene);return aligned;
  }finally{draco.dispose();}
 }
 
@@ -71,7 +70,7 @@ export async function createPlantTopView(canvas,onProgress=()=>{},points=[]){
  });
  const camera=new THREE.OrthographicCamera(-1,1,1,-1,.01,1000);camera.up.set(0,0,-1);
  const fetchJson=async u=>{const r=await fetch(u);if(!r.ok)throw Error('No se pudieron leer las coordenadas de '+u);return r.json();};
- const [individuales,detallesInfo,campoInfo]=await Promise.all([fetchJson('/modelos/bombas-individuales.json'),fetchJson('/modelos/detalles-fbx-capturas.json'),fetchJson('/modelos/bombas-campo.json')]);
+ const [individuales,detallesInfo,campoInfo,assignments]=await Promise.all([fetchJson('/modelos/bombas-individuales.json'),fetchJson('/modelos/detalles-fbx-capturas.json'),fetchJson('/modelos/bombas-campo.json'),fetchJson('/modelos/asignacion-bombas.json')]);
  const catalogo=[...individuales,...detallesInfo.bombas.map(b=>({...b,bombas:[b]})),...campoInfo],positions={};
  const add=(id,b)=>{if(b?.min?.length===3&&b?.max?.length===3)positions[id]={x:(b.min[0]+b.max[0])/2,y:(b.min[1]+b.max[1])/2,z:(b.min[2]+b.max[2])/2};};
  for(const {id} of points){
@@ -85,9 +84,11 @@ export async function createPlantTopView(canvas,onProgress=()=>{},points=[]){
  const fbxPumps=new Map(detallesInfo.bombas.map(g=>[g.nombre,g]));
  const extraTags={B72:'Bomba vertical multietapas bajo el desaireador',B73:'Bomba de la pasarela exterior de caldera ADMIN',B74:'Bomba de combustible de caldera ADMIN 1',B75:'Bomba horizontal bajo el desaireador',B76:'Bomba de combustible de caldera ADMIN 2'};
  for(const [tag,name] of Object.entries(extraTags))add('tag:'+tag,fbxPumps.get(name));
+ const mapTagById=new Map(assignments.A.map(a=>[a.id,a.tag]));
  for(const p of points){
-  if(positions[p.id]||!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
-  positions[p.id]={x:PLANO_A_MODELO.offsetX+PLANO_A_MODELO.escalaX*p.x,y:PLANO_A_MODELO.altura,z:PLANO_A_MODELO.offsetZ+PLANO_A_MODELO.escalaZ*p.y};
+  if(positions[p.id])continue;
+  const tag=p.tag||mapTagById.get(p.id),position=tanques.userData.pumpPositions[tag];
+  if(position)positions[p.id]=position;
  }
  let cache='';
  function render({sector='toda',width,height}){
