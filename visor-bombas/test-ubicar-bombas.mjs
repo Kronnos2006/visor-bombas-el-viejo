@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {initialState,validateState,mergeNewPoints,assign,addPump,changes} from './public/ubicar-bombas-core.js';
+import {leerCajasGLB} from './tools/cajas-glb.mjs';
+import {medirDesplazamiento} from './public/blender-local.js';
 const data=JSON.parse(await readFile(new URL('./public/modelos/plano-bombas.json',import.meta.url)));
 const map=JSON.parse(await readFile(new URL('./public/modelos/asignacion-bombas.json',import.meta.url)));
 const editor=await readFile(new URL('./tools/ubicar-bombas.template.html',import.meta.url),'utf8');
@@ -28,11 +30,20 @@ test('el fondo superior carga el modelo FBX optimizado, las bombas añadidas y l
  assert.match(editor,/id="fondo-3d"/);assert.match(editor,/id="fondo-2d"/);assert.match(editor,/id="fondo-modelo"/);
  assert.match(editor,/<script type="importmap">\{"imports":\{"three":"\/vendor\/three\.module\.js"\}\}<\/script>/);
  for(const asset of ['/modelos/planta-integrada.glb','/modelos/bombas-campo.glb','/modelos/detalles-fbx-capturas.glb'])assert.ok(modelView.includes(asset),asset+' debe estar en el fondo 3D');
+ assert.ok(modelView.includes('/modelos/blender-local/planta-blender-local.glb.gz'),'el mapa debe cargar los tanques del modelo de alta definición');assert.ok(modelView.includes("name==='Sector de tanques'"));assert.ok(modelView.includes('medirDesplazamiento(boxes,info)'));
  assert.ok(modelView.includes('function project(point)'),'las etiquetas deben proyectarse desde las coordenadas reales del FBX');assert.ok(modelView.includes('const extraTags='));
  assert.ok(modelView.includes("o.userData?.sector==='REF Cubierta comun'"));
  assert.ok(modelView.includes("o.userData?.sector==='REF Detalle'&&o.userData?.cat==='lamina'"),'la cubierta de calderas debe volverse casi invisible');assert.ok(modelView.includes('roofBoilers ? .04 : .12'));
  assert.ok(viewer.includes("o.userData.sector==='REF Cubierta comun'"),'el visor también debe transparentar las cubiertas del GLB');
  assert.ok(viewer.includes("o.userData.sector==='REF Detalle'&&o.userData.cat==='lamina'"),'el visor debe transparentar el techo de calderas');
+});
+test('el modelo detallado aporta los 808 componentes del sector de tanques en las coordenadas de la planta',async()=>{
+ const local=leerCajasGLB(new URL('./public/modelos/blender-local/planta-blender-local.glb',import.meta.url));
+ assert.equal(local.nodos.filter(n=>n.sector==='Sector de tanques').length,808);
+ const info=JSON.parse(await readFile(new URL('./public/modelos/planta-integrada.json',import.meta.url),'utf8'));
+ const aligned=medirDesplazamiento(local.sectores,info);assert.ok(aligned.residuo<.25);
+ const source=local.sectores['Sector de tanques'],target=info.sectores['Sector de tanques'];
+ for(let i=0;i<3;i++){assert.ok(Math.abs(source.min[i]-aligned.d[i]-target.min[i])<.01);assert.ok(Math.abs(source.max[i]-aligned.d[i]-target.max[i])<.01);}
 });
 test('el registro incluye las bombas ya colocadas aunque no haya cambios',()=>{
  const s=start(),report=changes(s,structuredClone(s));

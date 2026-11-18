@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {MeshoptDecoder} from './vendor/meshopt_decoder.module.js';
+import {PLANTA_BLENDER_CACHE,medirDesplazamiento} from './blender-local.js';
 
 const SECTORES={
  tanques:['Sector de tanques'],
@@ -15,18 +16,45 @@ const SECTORES={
  edificios:['FBX Administracion','FBX Banos','FBX Bodega pequena','FBX Bodega quimicos','FBX Cuarto electrico','FBX Nave pequena','REF Bodega de ron']
 };
 
+async function loadTankSector(loader,onProgress){
+ const {DRACOLoader}=await import('/vendor/blender-local/DRACOLoader.js');
+ const draco=new DRACOLoader().setDecoderPath('/vendor/blender-local/draco/');loader.setDRACOLoader(draco);
+ try{
+  let gltf;
+  if(typeof DecompressionStream==='function'){
+   const response=await fetch('/modelos/blender-local/planta-blender-local.glb.gz?v='+PLANTA_BLENDER_CACHE);
+   if(response.status===404)gltf=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
+   else if(!response.ok)throw Error('No se pudo descargar el detalle de los tanques ('+response.status+').');
+   else if(!response.body)gltf=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
+   else{
+    const total=Number(response.headers.get('content-length'))||0;let loaded=0;
+    const progress=new TransformStream({transform(chunk,controller){loaded+=chunk.byteLength;onProgress?.({loaded,total});controller.enqueue(chunk);}});
+    const stream=response.body.pipeThrough(progress),buffered=/\bgzip\b/i.test(response.headers.get('content-encoding')||'')?stream:stream.pipeThrough(new DecompressionStream('gzip'));
+    gltf=await loader.parseAsync(await new Response(buffered).arrayBuffer(),'/modelos/blender-local/');
+   }
+  }else gltf=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
+  gltf.scene.traverse(o=>{if(o.userData.sector)o.userData.sector=o.userData.sector.trim();if(o.isMesh)o.userData.mapSectorOnly=true;});
+  gltf.scene.updateMatrixWorld(true);
+  const boxes={};gltf.scene.traverse(o=>{if(!o.isMesh||!o.userData.sector)return;const b=new THREE.Box3().setFromObject(o);if(b.isEmpty())return;const s=boxes[o.userData.sector]??={min:b.min.toArray(),max:b.max.toArray()};for(let i=0;i<3;i++){s.min[i]=Math.min(s.min[i],b.min.getComponent(i));s.max[i]=Math.max(s.max[i],b.max.getComponent(i));}});
+  const info=await fetch('/modelos/planta-integrada.json').then(r=>{if(!r.ok)throw Error('No se pudieron alinear los tanques con la planta.');return r.json();});
+  const {d,residuo}=medirDesplazamiento(boxes,info);if(residuo>.25)throw Error('El modelo de tanques no coincide con la planta integrada.');
+  const aligned=new THREE.Group();aligned.name='Tanques del modelo detallado';aligned.position.set(-d[0],-d[1],-d[2]);aligned.add(gltf.scene);return aligned;
+ }finally{draco.dispose();}
+}
+
 export async function createPlantTopView(canvas,onProgress=()=>{},points=[]){
  const scene=new THREE.Scene();scene.background=new THREE.Color('#17130f');
  scene.add(new THREE.HemisphereLight(0xe7f2ff,0x554b3b,2.6));
  const key=new THREE.DirectionalLight(0xffffff,3);key.position.set(-38,85,32);scene.add(key);
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
- const [gltf,campo,detalles]=await Promise.all([
+ const [gltf,campo,detalles,tanques]=await Promise.all([
   loader.loadAsync('/modelos/planta-integrada.glb',onProgress),
   loader.loadAsync('/modelos/bombas-campo.glb',onProgress),
-  loader.loadAsync('/modelos/detalles-fbx-capturas.glb',onProgress)
+  loader.loadAsync('/modelos/detalles-fbx-capturas.glb',onProgress),
+  loadTankSector(loader,onProgress)
  ]);
- const plant=new THREE.Group();plant.add(gltf.scene,campo.scene,detalles.scene);scene.add(plant);plant.updateMatrixWorld(true);
+ const plant=new THREE.Group();plant.add(gltf.scene,campo.scene,detalles.scene,tanques);scene.add(plant);plant.updateMatrixWorld(true);
  // El visor enseña estas dos cubiertas transparentes para que se vea el equipo interior.
  gltf.scene.traverse(o=>{
   const name=String(o.userData?.original_name||o.name||'');
@@ -53,7 +81,7 @@ export async function createPlantTopView(canvas,onProgress=()=>{},points=[]){
  let cache='';
  function render({sector='toda',width,height}){
   const allowed=SECTORES[sector];
-  plant.traverse(o=>{if(o.isMesh){const name=o.userData?.sector||o.parent?.userData?.sector;o.visible=!allowed||allowed.includes(name);}});
+  plant.traverse(o=>{if(o.isMesh){const name=o.userData?.sector||o.parent?.userData?.sector;o.visible=o.userData.mapSectorOnly?name==='Sector de tanques'&&(!allowed||allowed.includes(name)):!allowed||allowed.includes(name);}});
   plant.updateMatrixWorld(true);
   const box=new THREE.Box3();plant.traverse(o=>{if(!o.isMesh||!o.visible||!o.geometry)return;o.geometry.computeBoundingBox();if(o.geometry.boundingBox)box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));});
   if(box.isEmpty())throw Error('El modelo no contiene geometría para este sector.');
