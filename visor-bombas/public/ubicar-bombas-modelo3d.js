@@ -16,6 +16,10 @@ const SECTORES={
  edificios:['FBX Administracion','FBX Banos','FBX Bodega pequena','FBX Bodega quimicos','FBX Cuarto electrico','FBX Nave pequena','REF Bodega de ron']
 };
 
+// Conversión calibrada con las bombas cuyo modelo 3D tiene coordenadas medidas.
+// Conserva la ubicación existente del plano 2D para las etiquetas sin geometría propia.
+const PLANO_A_MODELO={escalaX:.0371374,offsetX:-51.994,escalaZ:.0371404,offsetZ:-46.507,altura:.3};
+
 async function loadTankSector(loader,onProgress){
  const {DRACOLoader}=await import('/vendor/blender-local/DRACOLoader.js');
  const draco=new DRACOLoader().setDecoderPath('/vendor/blender-local/draco/');loader.setDRACOLoader(draco);
@@ -73,11 +77,18 @@ export async function createPlantTopView(canvas,onProgress=()=>{},points=[]){
  for(const {id} of points){
   if(!id?.startsWith('integrado:'))continue;
   const g=catalogo.filter(g=>id.startsWith(`integrado:${g.sector}:${g.nombre}`)).sort((a,b)=>b.nombre.length-a.nombre.length)[0];if(!g)continue;
-  const match=id.match(/ · Bomba (\d+)$/),index=match&&g.bombas.length>1?Math.min(g.bombas.length-1,+match[1]-1):0;add(id,g.bombas[index]);
+  const match=id.match(/ · Bomba (\d+)$/),index=match&&g.bombas.length>1?+match[1]-1:0;
+  // Si el catálogo no tiene esa bomba, conserva su punto del plano; no dupliques
+  // la última caja disponible para inventar una segunda ubicación.
+  if(index<g.bombas.length)add(id,g.bombas[index]);
  }
  const fbxPumps=new Map(detallesInfo.bombas.map(g=>[g.nombre,g]));
  const extraTags={B72:'Bomba vertical multietapas bajo el desaireador',B73:'Bomba de la pasarela exterior de caldera ADMIN',B74:'Bomba de combustible de caldera ADMIN 1',B75:'Bomba horizontal bajo el desaireador',B76:'Bomba de combustible de caldera ADMIN 2'};
  for(const [tag,name] of Object.entries(extraTags))add('tag:'+tag,fbxPumps.get(name));
+ for(const p of points){
+  if(positions[p.id]||!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
+  positions[p.id]={x:PLANO_A_MODELO.offsetX+PLANO_A_MODELO.escalaX*p.x,y:PLANO_A_MODELO.altura,z:PLANO_A_MODELO.offsetZ+PLANO_A_MODELO.escalaZ*p.y};
+ }
  let cache='';
  function render({sector='toda',width,height}){
   const allowed=SECTORES[sector];
