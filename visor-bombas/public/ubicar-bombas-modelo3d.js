@@ -30,7 +30,7 @@ export async function createPlantTopView(canvas,onProgress=()=>{}){
  // El visor enseña estas dos cubiertas transparentes para que se vea el equipo interior.
  gltf.scene.traverse(o=>{
   const name=String(o.userData?.original_name||o.name||'');
-  if(!o.isMesh||!([1240639,1240966].includes(o.userData?.fbxId)||/Nave principal - cubierta metalica|Cubierta de lamina nave ADMIN/i.test(name)))return;
+  if(!o.isMesh||o.userData?.sector!=='REF Cubierta comun'&&!([1240639,1240966].includes(o.userData?.fbxId)||/Nave principal - cubierta metalica|Cubierta de lamina nave ADMIN/i.test(name)))return;
   const transparent=m=>{const copy=m.clone();copy.transparent=true;copy.opacity=.12;copy.depthWrite=false;return copy;};
   o.material=Array.isArray(o.material)?o.material.map(transparent):transparent(o.material);o.renderOrder=2;
  });

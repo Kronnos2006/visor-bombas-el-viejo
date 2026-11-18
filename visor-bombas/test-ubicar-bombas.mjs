@@ -6,6 +6,7 @@ const data=JSON.parse(await readFile(new URL('./public/modelos/plano-bombas.json
 const map=JSON.parse(await readFile(new URL('./public/modelos/asignacion-bombas.json',import.meta.url)));
 const editor=await readFile(new URL('./tools/ubicar-bombas.template.html',import.meta.url),'utf8');
 const modelView=await readFile(new URL('./public/ubicar-bombas-modelo3d.js',import.meta.url),'utf8');
+const viewer=await readFile(new URL('./public/app.js',import.meta.url),'utf8');
 const start=()=>validateState(initialState(data,map),data);
 test('el plano conserva catálogo y asignaciones actuales, sin inventar conversión 3D',()=>{
  const s=start();assert.equal(s.catalog.length,83);assert.equal(s.points.length,data.P.length);
@@ -27,7 +28,8 @@ test('el fondo superior carga el modelo FBX optimizado, las bombas añadidas y l
  assert.match(editor,/id="fondo-3d"/);assert.match(editor,/id="fondo-2d"/);assert.match(editor,/id="fondo-modelo"/);
  assert.match(editor,/<script type="importmap">\{"imports":\{"three":"\/vendor\/three\.module\.js"\}\}<\/script>/);
  for(const asset of ['/modelos/planta-integrada.glb','/modelos/bombas-campo.glb','/modelos/detalles-fbx-capturas.glb'])assert.ok(modelView.includes(asset),asset+' debe estar en el fondo 3D');
- assert.match(modelView,/opacity=\.12/);assert.match(modelView,/Cubierta de lamina nave ADMIN/);
+ assert.match(modelView,/opacity=\.12/);assert.ok(modelView.includes("o.userData?.sector!=='REF Cubierta comun'"));
+ assert.ok(viewer.includes("o.userData.sector!=='REF Cubierta comun'"),'el visor también debe transparentar las cubiertas del GLB');
 });
 test('el registro incluye las bombas ya colocadas aunque no haya cambios',()=>{
  const s=start(),report=changes(s,structuredClone(s));
