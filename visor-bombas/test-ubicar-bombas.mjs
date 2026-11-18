@@ -28,8 +28,10 @@ test('el fondo superior carga el modelo FBX optimizado, las bombas añadidas y l
  assert.match(editor,/id="fondo-3d"/);assert.match(editor,/id="fondo-2d"/);assert.match(editor,/id="fondo-modelo"/);
  assert.match(editor,/<script type="importmap">\{"imports":\{"three":"\/vendor\/three\.module\.js"\}\}<\/script>/);
  for(const asset of ['/modelos/planta-integrada.glb','/modelos/bombas-campo.glb','/modelos/detalles-fbx-capturas.glb'])assert.ok(modelView.includes(asset),asset+' debe estar en el fondo 3D');
- assert.match(modelView,/opacity=\.12/);assert.ok(modelView.includes("o.userData?.sector!=='REF Cubierta comun'"));
- assert.ok(viewer.includes("o.userData.sector!=='REF Cubierta comun'"),'el visor también debe transparentar las cubiertas del GLB');
+ assert.ok(modelView.includes("o.userData?.sector==='REF Cubierta comun'"));
+ assert.ok(modelView.includes("o.userData?.sector==='REF Detalle'&&o.userData?.cat==='lamina'"),'la cubierta de calderas debe volverse casi invisible');assert.ok(modelView.includes('roofBoilers ? .04 : .12'));
+ assert.ok(viewer.includes("o.userData.sector==='REF Cubierta comun'"),'el visor también debe transparentar las cubiertas del GLB');
+ assert.ok(viewer.includes("o.userData.sector==='REF Detalle'&&o.userData.cat==='lamina'"),'el visor debe transparentar el techo de calderas');
 });
 test('el registro incluye las bombas ya colocadas aunque no haya cambios',()=>{
  const s=start(),report=changes(s,structuredClone(s));

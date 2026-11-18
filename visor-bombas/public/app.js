@@ -1073,8 +1073,11 @@ function montarIntegrado(g,escena,placed){
  // Mantiene visibles las bombas y calderas debajo de las dos cubiertas.
  escena.traverse(o=>{
   const nombre=String(o.userData.original_name||o.name).replace(/_/g,' ');
-  if(!o.isMesh||o.userData.sector!=='REF Cubierta comun'&&!([1240639,1240966].includes(o.userData.fbxId)||/Nave principal - cubierta metalica|Cubierta de lamina nave ADMIN/i.test(nombre)))return;
-  const aclarar=m=>{const c=m.clone();c.transparent=true;c.opacity=.12;c.depthWrite=false;return c;};
+  const cubiertaComun=o.userData.sector==='REF Cubierta comun';
+  const cubiertaCalderas=o.userData.sector==='REF Detalle'&&o.userData.cat==='lamina';
+  if(!o.isMesh||!cubiertaComun&&!cubiertaCalderas&&!([1240639,1240966].includes(o.userData.fbxId)||/Nave principal - cubierta metalica|Cubierta de lamina nave ADMIN/i.test(nombre)))return;
+  const opacidad=cubiertaCalderas ? .04 : .12;
+  const aclarar=m=>{const c=m.clone();c.transparent=true;c.opacity=opacidad;c.depthWrite=false;return c;};
   o.material=Array.isArray(o.material)?o.material.map(aclarar):aclarar(o.material);
   o.renderOrder=2;o.castShadow=false;o.raycast=()=>{};
  });
