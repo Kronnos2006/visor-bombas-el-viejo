@@ -49,3 +49,18 @@ Edge a 390 y 1440 px con una cuenta local sintética y almacenamiento de autenti
 ## Contraste del acceso
 
 Se oscureció el ámbar del tema claro. El texto blanco sobre el botón principal pasó de 3,68:1 a 5,28:1 y conserva 4,64:1 al pasar el puntero. Se verificaron el título y la descripción Open Graph y que la imagen local de marca tiene 200 × 200 px. Falta validar cómo lo muestran las plataformas al compartir la URL publicada.
+
+## Pendientes para cerrar la revisión
+
+La vista previa del commit `fca32d0` está compilada en Vercel. Su portada indica que el acceso de Vocatus no está configurado. Para continuar con las pruebas autenticadas hace falta la URL de un entorno aislado que admita dos cuentas ya autorizadas. Las personas pueden iniciar sesión directamente en el navegador.
+
+| Orden | Pendiente | Evidencia de cierre |
+| --- | --- | --- |
+| 1 | Revisar los flujos con cuentas autorizadas en el entorno aislado. | En móvil y escritorio, comprobar inicio de sesión, enlaces generados y externos, levantamientos, solicitudes, carga de fotos y recuperación ante entradas inválidas o pérdida de conexión. Registrar errores de consola y red con los pasos para reproducirlos. Confirmar que la segunda cuenta puede abrir una foto compartida por la primera. |
+| 2 | Completar la revisión de accesibilidad. | Recorrer los flujos principales con teclado y lector de pantalla. Verificar el orden y la visibilidad del foco, los anuncios de carga y error, el contraste y el zoom. Confirmar que los controles se pueden usar en pantallas estrechas y revisar texto alternativo y peso de las fotos. |
+| 3 | Publicar y comprobar el dominio de producción. | Tras completar la prueba en vista previa y publicar, comprobar la redirección a HTTPS, el acceso privado y la cabecera noindex. Verificar una 404 con sesión iniciada, robots.txt público con HTTP 200, el favicon y la tarjeta al compartir el enlace de acceso. Repetir los flujos principales y registrar el commit servido por Vercel. |
+
+Web Analytics está desactivado según el panel de Vercel.
+
+- [Vista previa en Vercel](https://vercel.com/kronnos2006s-projects/visor-bombas-el-viejo/8SHmKUehkpQNn7wWtL3x1DqkPeon)
+- [Vocatus en producción](https://visor-bombas-el-viejo.vercel.app/)
