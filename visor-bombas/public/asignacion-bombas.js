@@ -2,7 +2,7 @@
 // No borra ni reescribe datos existentes: decide qué TAG muestra cada lugar del 3D.
 export const claveCuerpo=tag=>'tag:'+tag;
 export function indexarAsignacion(data){
- return {porLugar:new Map((data?.A||[]).map(a=>[a.id,a])),quitar:new Set(data?.Q||[]),nuevas:data?.N||[],excel:data?.excel||{}};
+ return {porLugar:new Map((data?.A||[]).map(a=>[a.id,a])),quitar:new Set(data?.Q||[]),nuevas:data?.N||[],excel:{...(data?.extra||{}),...(data?.excel||{})}};
 }
 export const nombreExcel=(as,tag)=>as.excel[tag]?.nombre||'';
 export const tituloTag=(as,tag)=>nombreExcel(as,tag)?`${tag} · ${nombreExcel(as,tag)}`:tag;
