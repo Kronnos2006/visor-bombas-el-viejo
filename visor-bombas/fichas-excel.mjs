@@ -1,16 +1,11 @@
 // Ficha completa para cada bomba del Excel que no tiene ficha propia en el prototipo.
 // Así las 90 bombas usan la misma ficha: Ubicar, Fotos, Manual, Mantenimiento, Historial,
 // Preguntar y Simulador. Los datos salen solo del Excel del usuario; lo que falta dice «Por confirmar».
-import {readFileSync} from 'node:fs';
-import {fileURLToPath} from 'node:url';
+// Import estático: Vercel incluye el JSON en la función al seguir el import.
+import asignacion from './public/modelos/asignacion-bombas.json' with {type: 'json'};
 import {datosDeExcel} from './public/asignacion-bombas.js';
 
-const RUTA = fileURLToPath(new URL('./public/modelos/asignacion-bombas.json', import.meta.url));
-let cache = null;
-function excel() {
- if (!cache) { try { cache = JSON.parse(readFileSync(RUTA, 'utf8')).excel || {}; } catch { cache = {}; } }
- return cache;
-}
+const excel = () => asignacion.excel || {};
 const PC = 'Por confirmar';
 const v = x => String(x ?? '').trim() || PC;
 const campo = (texto, clave) => {
