@@ -576,7 +576,7 @@ async function loadPumpReference(pump){
  if(!['vertical','compact'].includes(profile.kind)){
   let asignacion=integrado?.asignacion;
   if(!asignacion){
-   asignacionParaModelo??=fetch('/modelos/asignacion-bombas.json?v=20261119-90').then(r=>{if(!r.ok)throw Error('No se pudo cargar la forma de la planta');return r.json();}).then(indexarAsignacion).catch(error=>{asignacionParaModelo=null;console.warn(error);return null;});
+   asignacionParaModelo??=fetch('/modelos/asignacion-bombas.json?v=20261119-lista2').then(r=>{if(!r.ok)throw Error('No se pudo cargar la forma de la planta');return r.json();}).then(indexarAsignacion).catch(error=>{asignacionParaModelo=null;console.warn(error);return null;});
    asignacion=await asignacionParaModelo;
   }
   const modelo=esModeloCaldera(pump.tipo)?pump.tipo:asignacion?.nuevas.find(n=>n.tag===pump.tag)?.modelo;
@@ -1086,7 +1086,7 @@ function montarIntegrado(g,escena,placed){
   aplicarFiltroInt();applyArea();renderList();
   return;
  }
- Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261119-90').then(r=>r.ok?r.json():null).catch(()=>null),cargarDetallesFBX()]).then(([info,gruposBase,gruposCampo,asignacionData,detalles])=>{
+ Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261119-lista2').then(r=>r.ok?r.json():null).catch(()=>null),cargarDetallesFBX()]).then(([info,gruposBase,gruposCampo,asignacionData,detalles])=>{
   if(g.parent!==plant)return;
   const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];integrado.info=info;
   // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
