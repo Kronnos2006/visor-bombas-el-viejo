@@ -45,3 +45,7 @@ El panel de Vercel confirmó que el despliegue de `d04d239` estaba listo y que W
 ## Prueba autenticada local
 
 Edge a 390 y 1440 px con una cuenta local sintética y almacenamiento de autenticación temporal. Un enlace directo a Levantamiento redirigió al acceso y, al entrar con teclado, volvió a la misma ficha. El borrador persistió durante una desconexión y reapareció tras reconectar y recargar. Con la sesión iniciada, una ruta inexistente respondió 404 y Tab enfocó «Volver al inicio». El navegador no registró excepciones de JavaScript en ese recorrido. En ambos anchos también se eligió una imagen PNG de prueba desde Levantamiento. El aviso confirmó el guardado, la vista mostró texto alternativo y la foto se recuperó como JPEG tras recargar. La lectura compartida de fotos sigue pendiente de dos cuentas en un entorno que permita probarla.
+
+## Contraste del acceso
+
+Se oscureció el ámbar del tema claro. El texto blanco sobre el botón principal pasó de 3,68:1 a 5,28:1 y conserva 4,64:1 al pasar el puntero. Se verificaron el título y la descripción Open Graph y que la imagen local de marca tiene 200 × 200 px. Falta validar cómo lo muestran las plataformas al compartir la URL publicada.

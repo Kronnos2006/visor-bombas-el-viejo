@@ -1,6 +1,6 @@
 /* Entrada y administración de usuarios: misma identidad ámbar y caña del visor. */
 :root{--fondo:#120f0b;--superficie:#221c14;--borde:rgba(242,184,75,.28);--tinta:#f4ead8;--tinta-2:#cdbfa6;--accent:#f2b84b;--sobre-accent:#1d1408;--cana:#a9d46f;--error:#ffb4a0;--error-fondo:rgba(240,90,60,.14)}
-body.claro{--fondo:#f7f1e6;--superficie:#fffaf1;--borde:rgba(150,104,24,.3);--tinta:#2a2116;--tinta-2:#5a4a33;--accent:#b9770e;--sobre-accent:#fff;--cana:#4f7d1d;--error:#a32a12;--error-fondo:rgba(190,60,30,.1)}
+body.claro{--fondo:#f7f1e6;--superficie:#fffaf1;--borde:rgba(150,104,24,.3);--tinta:#2a2116;--tinta-2:#5a4a33;--accent:#985f08;--sobre-accent:#fff;--cana:#4f7d1d;--error:#a32a12;--error-fondo:rgba(190,60,30,.1)}
 *{box-sizing:border-box}
 html{min-height:100%}
 body{margin:0;min-height:100vh;color:var(--tinta);font:16px/1.5 'Plus Jakarta Sans','Segoe UI',sans-serif;background:radial-gradient(1000px 520px at 85% -10%,rgba(242,184,75,.13),transparent 60%),radial-gradient(800px 460px at -10% 110%,rgba(169,212,111,.09),transparent 60%),var(--fondo)}
