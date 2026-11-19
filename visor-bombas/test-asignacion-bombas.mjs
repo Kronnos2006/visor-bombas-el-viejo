@@ -10,3 +10,10 @@ test('fotos: siguen a la posición aunque cambie el TAG',async()=>{
  const {ligarFotosAPosicion,entidadDeFotos}=await import('./public/fotos-bomba.js');
  ligarFotosAPosicion({B3:'B2'});assert.equal(entidadDeFotos('B3'),'B2');assert.equal(entidadDeFotos('B11'),'B11');ligarFotosAPosicion({});
 });
+
+test('las 90 bombas tienen ficha completa (las que no tienen ficha propia usan el Excel)',async()=>{
+ const {fichaDeExcel,tagsExcel}=await import('./fichas-excel.mjs');
+ assert.equal(tagsExcel().length,90);
+ const f=fichaDeExcel('B44');assert.equal(f.tag,'B44');assert.equal(f.servicio,'Agua');assert.match(f.marca,/HIDROMAC/);assert.ok(f.soloExcel);
+ assert.equal(fichaDeExcel('B90').nombre,'Tanque Millonario 2');assert.equal(fichaDeExcel('B999'),null);
+});

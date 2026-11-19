@@ -110,7 +110,7 @@ test('el servidor entrega y lee las bombas de la torre',async()=>{
  const p=await readPump('B11');assert.equal(p.data.areaId,'torre');assert.equal(p.data.servicio,'Mosto - Vinaza');
  const req=Readable.from([]);req.url='/api/bootstrap';req.method='GET';req.headers={host:'127.0.0.1:8766'};
  const res={writeHead(st){this.status=st;},end(raw){this.raw=raw;}};await handler(req,res);
- const boot=JSON.parse(res.raw);assert.equal(boot.sectorPumps.length,28);assert.equal(boot.sectorPumps.filter(p=>p.areaId==='torre').length,16);
+ const boot=JSON.parse(res.raw);assert.equal(boot.sectorPumps.length,90);assert.equal(boot.sectorPumps.filter(p=>!p.soloExcel).length,28);assert.equal(boot.sectorPumps.filter(p=>!p.soloExcel&&p.areaId==='torre').length,16);
 });
 test('fotos del expediente: guarda, sustituye y conserva la anterior en el historial',async()=>{
  const {mkdtemp}=await import('node:fs/promises');const os=await import('node:os');const path=await import('node:path');

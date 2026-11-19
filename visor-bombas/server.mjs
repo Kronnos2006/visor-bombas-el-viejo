@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID, timingSafeEqual, createHmac } from 'node:crypto';
 import { load, JSON_SCHEMA } from './vendor/js-yaml.mjs';
 import { photoPumps, plantPumps } from './public/sector-fotos.js';
+import { fichaDeExcel, tagsExcel } from './fichas-excel.mjs';
 import { generatePumpPDF } from './pdf-generator.mjs';
 import { vaultConfiguration, equipmentData } from './vault.mjs';
 import { maintenanceStore } from './maintenance.mjs';
@@ -93,7 +94,7 @@ export async function readPump(tag) {
   try { note = parseNote(await readFile(path.join(VAULT, source), 'utf8')); }
   catch (e) {
    if (e.code !== 'ENOENT') throw e;
-   if (DEMO) {const integrated=readIntegratedPump(tag);if(integrated)return {...integrated,demo:true,reports:await maintenance.list(tag)};throw Error('No hay ficha para este TAG.');}
+   if (DEMO||!base) {const integrated=readIntegratedPump(tag);if(integrated)return {...integrated,demo:DEMO,reports:await maintenance.list(tag)};if(DEMO)throw Error('No hay ficha para este TAG.');}
    const missing = new Error(`Falta la ficha ${source} en la bóveda ${path.basename(VAULT)}.`);
    missing.code = 'PUMP_NOT_AVAILABLE'; throw missing;
   }
@@ -114,14 +115,14 @@ export async function readPump(tag) {
  return {tag,data,description:section(body,'Qué hace'), history, failures:section(body,'Modos de falla observados'), observations:section(body,'Observaciones'), reports, files, source:`00-Proyecto/bombas/${tag}.md`};
 }
 export function readIntegratedPump(tag) {
- const data=plantPumps.find(p=>p.tag===tag);
+ const data=plantPumps.find(p=>p.tag===tag)||fichaDeExcel(tag);
  if(!data) return null;
  return {
   tag,
   data,
   history:data.history.map(item=>`${item.fecha} · ${item.tipo}: ${item.detalle} (${item.responsable})`).join('\n'),
-  failures:'Posibles fallas DEMO: fuga de sello, incompatibilidad de elastómero, desalineación, cavitación y temperatura anormal de rodamientos. Todas requieren verificación en campo.',
-  observations:'Posición aportada por el usuario y el PDF. Serie de placa sin asociar. Historial y o-rings de ejemplo separados de los datos documentales.',
+  failures:data.soloExcel?'Sin modos de falla registrados para esta bomba.':'Posibles fallas DEMO: fuga de sello, incompatibilidad de elastómero, desalineación, cavitación y temperatura anormal de rodamientos. Todas requieren verificación en campo.',
+  observations:data.soloExcel?'Datos tomados del Excel de bombas. Placa, sello y o-rings por confirmar en campo.':'Posición aportada por el usuario y el PDF. Serie de placa sin asociar. Historial y o-rings de ejemplo separados de los datos documentales.',
   reports:[],files:[],
   source:data.source
  };
@@ -198,6 +199,9 @@ export async function handler(req,res) {
     try { const p = await readPump(base.tag); sectorPumps.push(p.data); }
     catch (e) { errors.push({file:`equipos/${base.tag}.md`, error:e.message}); }
    }
+   // Las demás bombas del Excel (hasta B90) usan la misma ficha, con los datos del Excel.
+   const conFicha=new Set(sectorPumps.map(p=>p.tag));
+   for (const tag of tagsExcel()) if(!conFicha.has(tag)) { try { sectorPumps.push({...(await readPump(tag)).data,soloExcel:true}); } catch { const f=fichaDeExcel(tag); if(f) sectorPumps.push(f); } }
    return send(res,200,{pumps,sectorPumps,errors,token:TOKEN,geminiConfigured:!!apiKey,model,demo:DEMO,vaultName:path.basename(VAULT),maintenanceWritable:configuration.writable});
   }
   if(req.method==='GET' && url.pathname==='/api/survey-catalog') {

@@ -171,7 +171,8 @@ function rebuildPlant(){
  torre=null;
  for(let i=markers.length-1;i>=0;i--)if(markers[i].kind!=='part'){markers[i].el.remove();markers[i].leader?.remove();markers[i].linea?.remove();markers.splice(i,1);}
  if(state.sector){
-  const placed=state.pumps.length?state.pumps:plantPumps; // posiciones de la ficha si la bomba se movió
+  // posiciones de la ficha si la bomba se movió; las bombas que solo tienen datos del Excel no se dibujan aquí
+  const placed=(state.pumps.length?state.pumps:plantPumps).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.z));
   const suelo=sueloSitio(THREE);suelo.userData.sitio=true;plant.add(suelo);
   const tq=ubicar(new THREE.Group(),AREA('tanques')),tr=ubicar(new THREE.Group(),AREA('torre'));
   areaGroups={tanques:tq,torre:tr};plant.add(tq,tr);
@@ -302,7 +303,7 @@ function initScene(){
   paletaBombas?.mostrar(state.view==='plant');
   const partLabels=[],pumpLabels=[];
   etiquetasFlotantes.ocultarLineas();
-  for(const m of markers){if(m.leader)m.leader.hidden=true;const show=m.kind!=='part'?state.view==='plant'&&markerInArea(m):state.view==='pump'&&m.obj.parent.visible&&(!state.sector||state.detail==='schematic');m.el.hidden=!show;if(!show)continue;const flota=m.kind==='pump'&&m.area==='integrado',base=m.obj.getWorldPosition(new THREE.Vector3()),v=(flota?base.clone().add(new THREE.Vector3(0,ALTURA_ETIQUETA,0)):base).project(camera);if(flota)m.pie=base.add(new THREE.Vector3(0,-1,0)).project(camera);m.el.hidden=v.z>1||v.z< -1||Math.abs(v.x)>1||Math.abs(v.y)>1;const x=(v.x+1)/2*viewport.clientWidth,y=(-v.y+1)/2*viewport.clientHeight;m.el.style.left=x+'px';m.el.style.top=y+'px';if(m.kind==='part'&&!m.el.hidden)partLabels.push({marker:m,x,y,anchorY:y});if(m.kind==='pump'&&(m.area==='torre'||m.area==='integrado')&&!m.el.hidden)pumpLabels.push({m,x,y,z:v.z});}
+  for(const m of markers){if(m.leader)m.leader.hidden=true;const show=m.kind!=='part'?state.view==='plant'&&markerInArea(m):state.view==='pump'&&m.obj.parent.visible&&(!state.sector||state.detail==='schematic');m.el.hidden=!show;if(!show)continue;const flota=m.kind==='pump'&&m.area==='integrado',base=m.obj.getWorldPosition(new THREE.Vector3()),v=(flota?base.clone().add(new THREE.Vector3(0,ALTURA_ETIQUETA,0)):base).project(camera);if(flota)m.pie=base.add(new THREE.Vector3(0,-1,0)).project(camera);m.el.hidden=!Number.isFinite(v.x)||!Number.isFinite(v.y)||v.z>1||v.z< -1||Math.abs(v.x)>1||Math.abs(v.y)>1;const x=(v.x+1)/2*viewport.clientWidth,y=(-v.y+1)/2*viewport.clientHeight;m.el.style.left=x+'px';m.el.style.top=y+'px';if(m.kind==='part'&&!m.el.hidden)partLabels.push({marker:m,x,y,anchorY:y});if(m.kind==='pump'&&(m.area==='torre'||m.area==='integrado')&&!m.el.hidden)pumpLabels.push({m,x,y,z:v.z});}
   separarEtiquetas(pumpLabels);
   for(const it of pumpLabels)if(it.m.pie&&!it.m.el.hidden&&it.m.area==='integrado')etiquetasFlotantes.linea(it.m,it.x,it.y,(it.m.pie.x+1)/2*viewport.clientWidth,(-it.m.pie.y+1)/2*viewport.clientHeight);
   for(const label of labelPositions(partLabels,viewport.clientWidth,viewport.clientHeight)){const m=label.marker;m.el.hidden=!!label.hidden;if(label.hidden)continue;m.el.style.top=label.y+'px';m.leader.hidden=!label.offset;m.leader.style.left=label.x+'px';m.leader.style.top=Math.min(label.y,label.anchorY)+'px';m.leader.style.height=Math.abs(label.offset)+'px';}
@@ -603,7 +604,7 @@ function selectPhotoPump(tag){
   const {cad,profile}=await loadPumpReference(actual);
   if(ticket!==state.loading)return;
   state.view='pump';if($('#torre-planta-tools'))$('#torre-planta-tools').hidden=true;if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant,cad,profile);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=buildInstalledReference(THREE,profile)||crearModeloCaldera(THREE,profile?.modelo)||exterior(THREE,p.scale*1.7,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,photoDetail);scene.add(photoDetail);}setPhotoDetail(!!activePumpReference);renderPanel();};
- if(plant?.visible&&areaOf(p)!==state.area&&state.area!=='planta'&&state.area!=='integrado')setArea(areaOf(p),false);transitionToPump(ticket,pumpWorld(p.tag)||new THREE.Vector3(p.x,0,p.z),show);renderList();renderPanel();setViewButtons(false);
+ if(plant?.visible&&areaOf(p)!==state.area&&state.area!=='planta'&&state.area!=='integrado')setArea(areaOf(p),false);transitionToPump(ticket,pumpWorld(p.tag)||new THREE.Vector3(p.x||0,0,p.z||0),show);renderList();renderPanel();setViewButtons(false);
 
 }
 
@@ -682,7 +683,7 @@ function paintPumpLinks(p){
  if(!el){el=document.createElement('div');el.id='pump-links';$('#source-status').after(el);}
  if(!p){el.hidden=true;el.innerHTML='';$('#pump-meta')?.remove();return;}
  paintPumpMeta(p);
- el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'';
+ el.hidden=false;const mp=placaDe(p.tag)?.manual,L=linksBomba(p)||(/^https:\/\//.test(mp?.url||'')?{alcance:'placa',nota:mp.texto,manual:{t:mp.texto||'Manual',u:mp.url}}:null),familia=L?.alcance==='familia'?' · familia':'';
  el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu"><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button><a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
  el.querySelector('[data-quick=locate]').onclick=locateSelectedPump;
  el.querySelector('[data-quick=photos]').onclick=async()=>{

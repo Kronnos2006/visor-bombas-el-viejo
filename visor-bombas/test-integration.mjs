@@ -34,7 +34,7 @@ test('B33 lee datos actuales de Obsidian y conserva los campos vacíos',async()=
 });
 test('B33 persiste informe y PDF, permite releerlos y elimina a papelera',async()=>{
  const bootstrap=await request('/api/bootstrap');const token=bootstrap.data.token;
- assert.equal(bootstrap.data.maintenanceWritable,true);assert.equal(bootstrap.data.sectorPumps.length,1);
+ assert.equal(bootstrap.data.maintenanceWritable,true);assert.equal(bootstrap.data.sectorPumps.filter(p=>!p.soloExcel).length,1);assert.equal(bootstrap.data.sectorPumps.length,90);
  const body={tag:'B33',date:'2026-10-11',title:'Inspección "sello" # campo',author:'Técnico de prueba',details:'Presión: 2.1 bar\nNo se inventaron caudales.',sourceId:'importacion-unica',attachment:{name:'informe.pdf',base64:Buffer.from('%PDF-1.4\nPRUEBA').toString('base64')}};
  assert.equal((await request('/api/maintenance',{method:'POST',body})).status,403);
  assert.equal((await request('/api/maintenance',{method:'POST',token,body,origin:'https://malicious.example'})).status,403);

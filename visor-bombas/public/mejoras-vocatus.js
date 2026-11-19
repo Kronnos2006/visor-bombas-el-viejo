@@ -61,7 +61,7 @@ function enhancePanel(){
  const secondary=$('#pump-links .secondary-actions');if(secondary&&!$('#equipo-documentos')){const b=document.createElement('button');b.type='button';b.id='equipo-documentos';b.textContent='Documentos y planos';b.onclick=()=>showDocuments();secondary.append(b);const create=document.createElement('button');create.type='button';create.id='equipo-programar';create.textContent='Programar trabajo';create.disabled=!writable;create.onclick=()=>openOrder();secondary.append(create);}
  const programar=$('#equipo-programar');if(programar)programar.disabled=!writable;
  const history=$('#history-equipment');if(history&&!$('#equipo-linea-tiempo')){
-  const section=document.createElement('section');section.id='equipo-linea-tiempo';section.className='mejora-timeline';section.innerHTML='<h3>Actividad del equipo</h3><div data-timeline role="status">Leyendo actividad…</div>';history.after(section);section.querySelector('[data-ver-registros]').onclick=()=>$('#rep-list')?.scrollIntoView({block:'start',behavior:'auto'});paintTimeline(p.tag,section);
+  const section=document.createElement('section');section.id='equipo-linea-tiempo';section.className='mejora-timeline';section.innerHTML='<h3>Actividad del equipo</h3><div data-timeline role="status">Leyendo actividad…</div>';history.after(section);const verReg=section.querySelector('[data-ver-registros]');if(verReg)verReg.onclick=()=>$('#rep-list')?.scrollIntoView({block:'start',behavior:'auto'});paintTimeline(p.tag,section);
  }
 }
 async function paintTimeline(tag,section){const ticket=++timelineTicket;try{
