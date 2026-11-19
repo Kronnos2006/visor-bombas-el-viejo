@@ -41,3 +41,7 @@ El gráfico del historial dejó de descargarse en la carga inicial en ambos tama
 ## Acceso a la vista previa y Analytics
 
 El panel de Vercel confirmó que el despliegue de `d04d239` estaba listo y que Web Analytics estaba desactivado. La URL de vista previa sirvió el contenido esperado de `robots.txt`. La portada indicó que el despliegue no tiene acceso configurado, por lo que quedan pendientes las pruebas autenticadas en un entorno configurado.
+
+## Prueba autenticada local
+
+Edge a 390 y 1440 px con una cuenta local sintética y almacenamiento de autenticación temporal. Un enlace directo a Levantamiento redirigió al acceso y, al entrar con teclado, volvió a la misma ficha. El borrador persistió durante una desconexión y reapareció tras reconectar y recargar. Con la sesión iniciada, una ruta inexistente respondió 404 y Tab enfocó «Volver al inicio». El navegador no registró excepciones de JavaScript en ese recorrido. La lectura compartida de fotos sigue pendiente de dos cuentas en un entorno que permita probarla.
