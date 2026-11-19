@@ -933,7 +933,7 @@ function renderPendingPanel(){
 }
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
- Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261119a').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([info,gruposBase,gruposCampo,asignacionData])=>{
+ Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261110d').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([info,gruposBase,gruposCampo,asignacionData])=>{
   const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];
   if(g.parent!==plant)return;integrado.info=info;
   // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
@@ -1005,12 +1005,8 @@ function montarIntegrado(g,escena,placed){
   ligarFotosAPosicion(lugaresFoto);
   // Guardar cada marcador por su lugar original antes de reasignar los TAG.
   const marcadoresPorLugar=new Map(markers.filter(m=>m.kind==='pump'&&m.area==='integrado').map(m=>[m.id,m]));
-  // Lleva el cuerpo de la bomba al centro x,z que el usuario ordenó (mismo sistema que las bombas nuevas).
-  const dA=alineado?.d||[0,0,0];
-  const moverCuerpo=(b,x,z)=>{g.updateMatrixWorld(true);const k=new THREE.Box3().setFromObject(b);const c=k.isEmpty()?b.getWorldPosition(new THREE.Vector3()):k.getCenter(new THREE.Vector3());const l=c.clone().applyMatrix4(inversaG),dest=new THREE.Vector3(x+dA[0],l.y,z+dA[2]).applyMatrix4(g.matrixWorld);const w=b.getWorldPosition(new THREE.Vector3()).add(dest.sub(c).setY(0));b.parent.updateMatrixWorld(true);b.position.copy(b.parent.worldToLocal(w));b.updateMatrixWorld(true);};
   for(const [viejo,b] of Object.entries(originales)){
    const id=claveCuerpo(viejo),a=asignacion.porLugar.get(id),quitar=asignacion.quitar.has(id),nuevo=a?.tag||(asignacionData?null:viejo),m=marcadoresPorLugar.get(viejo);
-   if(a?.x!=null&&!quitar)moverCuerpo(b,a.x,a.z);
    const sacarPick=()=>b.traverse(o=>{if(o.isMesh){delete o.userData.tag;const i=pickables.indexOf(o);if(i>=0)pickables.splice(i,1);}});
    if(quitar||!nuevo){sacarPick();if(m){m.el.remove();markers.splice(markers.indexOf(m),1);}if(quitar||!b.children.length)b.visible=false;b.userData.quitada=quitar||!b.children.length;if(!b.userData.quitada)b.userData.sector=b.userData.sectorInt==='torre'?'DUSA':'Sector de tanques';continue;}
    if(conFicha.has(nuevo)){b.userData.tag=nuevo;b.traverse(o=>{if(o.isMesh)o.userData.tag=nuevo;});pumpObjectsInt[nuevo]=b;if(m){m.id=nuevo;m.el.textContent=nuevo;m.el.title=tituloTag(asignacion,nuevo);m.el.setAttribute('aria-label','Acercarse a '+nuevo);m.el.onclick=()=>selectPump(nuevo);}continue;}
@@ -1020,6 +1016,7 @@ function montarIntegrado(g,escena,placed){
    gruposTag.push({nombre:tituloTag(asignacion,nuevo),sector:sectorB,tagAsignado:nuevo,clave:id,fotoKey:'='+viejo,imagenesLugar:imagenesLugar[viejo],bombas:[cajaLocal(b)]});
   }
   // Bombas que el usuario agregó en sitios nuevos.
+  const dA=alineado?.d||[0,0,0];
   for(const n of asignacion.nuevas){
    const sectorN=sectorDePosicion(n.x,n.z),b=crearModeloCaldera(THREE,n.modelo)||compactar(THREE,exterior(THREE,.72,'lf'));if(n.giro)b.rotation.y=n.giro;g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
    const k=new THREE.Box3().setFromObject(b),pisoN=alineado?alturaPiso(alineado.pisos,n.x+dA[0],n.z+dA[2],3):null;b.position.y=(pisoN??(.3+dA[1]))-k.min.y;
