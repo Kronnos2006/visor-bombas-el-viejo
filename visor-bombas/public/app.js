@@ -1136,7 +1136,14 @@ function montarIntegrado(g,escena,placed){
   for(const body of Object.values(tankBodies))body.traverse(o=>{if(o.isMesh&&!pickables.includes(o))pickables.push(o);});
   window.__cambiosCampo={...cambios,removedMeshes:undefined};
   // Área 3 · Nave pequeña (A16/A17) y nave grande a escala de A15.
-  if(escena.userData.blenderLocal)window.__navesSitio=agregarNaves(THREE,escena);
+  if(escena.userData.blenderLocal){
+   window.__navesSitio=agregarNaves(THREE,escena);
+   let tieneMillonario=false;
+   detalles?.scene.traverse(o=>{if(o.isMesh&&o.userData.fbxId===1244379)tieneMillonario=true;});
+   // La nave se ubica primero con su referencia completa; el FBX sustituye el tanque generado.
+   const tanqueProvisional=tieneMillonario&&escena.getObjectByName('Tanque junto a la nave pequeña');
+   if(tanqueProvisional){tanqueProvisional.removeFromParent();clearGroup(tanqueProvisional);}
+  }
   // Lista del usuario: cada cuerpo con ficha pasa a mostrar el TAG que él le asignó.
   const conFicha=new Set(state.pumps.map(p=>p.tag)),inversaG=new THREE.Matrix4().copy(g.matrixWorld).invert(),gruposTag=[];
   const cajaLocal=b=>{b.updateMatrixWorld(true);const k=new THREE.Box3().setFromObject(b).applyMatrix4(inversaG);return {min:k.min.toArray(),max:k.max.toArray()};};
@@ -1165,20 +1172,7 @@ function montarIntegrado(g,escena,placed){
   const dA=alineado?.d||[0,0,0];
   if(detalles){
    detalles.scene.position.set(...dA);
-   let tieneCuerpoMillonario=false;
-   detalles.scene.traverse(o=>{
-    if(!o.isMesh)return;
-    o.castShadow=o.userData.sector!=='Suelo VOCATUS';
-    o.receiveShadow=true;
-    if(o.userData.fbxId===1244379)tieneCuerpoMillonario=true;
-   });
-   // El cuerpo detallado del Millonario se cruza con esta malla del modelo base.
-   // En la vista general prevalece el detalle, si se cargó su cuerpo.
-   if(tieneCuerpoMillonario){
-    escena.traverse(o=>{
-     if(o.isMesh&&o.userData.original_name?.trim()==='REF Almacenamiento alcohol - Tanque blender sin conjun_11feaef')o.userData.ocultarEnVistaGeneral=true;
-    });
-   }
+   detalles.scene.traverse(o=>{if(o.isMesh){o.castShadow=o.userData.sector!=='Suelo VOCATUS';o.receiveShadow=true;}});
    escena.add(detalles.scene);
    for(const [sector,caja] of Object.entries(detalles.sectores)){
     const anterior=info.sectores[sector];
@@ -1257,7 +1251,7 @@ function aplicarFiltroInt(){
  const s=SECTORES_INT.find(x=>x.id===f);
  if($('#integrado-status'))$('#integrado-status').textContent=s?`${s.nombre} aislado. Los pisos quedan como referencia y la cubierta común se oculta.`:VISTA_FBX_AGUA?'Toda la planta del FBX. Elegí un sector para aislarlo.':'Toda la planta. Elegí un sector para aislarlo; tocá una bomba o referencia para abrir su ficha y completar datos e imágenes.';
  if(!integrado)return;
- integrado.g.traverse(o=>{if(o.userData.sector)o.visible=(!!f||!o.userData.ocultarEnVistaGeneral)&&visibleCon(o.userData.sector,f);});
+ integrado.g.traverse(o=>{if(o.userData.sector)o.visible=visibleCon(o.userData.sector,f);});
  for(const [tag,b] of Object.entries(pumpObjectsInt))b.visible=(!f||b.userData.sectorInt===f)&&!pumpVisibility.stateOf(claveTag(tag));
  integrado.g.traverse(o=>{if(o.userData.quitada)o.visible=false;});
  integrado.g.traverse(o=>{if(o.userData.hitProxy&&o.userData.pending&&pumpVisibility.stateOf(clavePendiente(o.userData.pending)))o.visible=false;});
