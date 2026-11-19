@@ -8,6 +8,7 @@ import {isPumpEditorPath} from './admin-editor-path.js';
 export const config = { matcher: '/:path*' };
 
 export default async function middleware(request) {
+ if (new URL(request.url).pathname === '/robots.txt') return;
  // Falla cerrada: en Vercel, sin contraseña ni cuentas configuradas, no se sirve nada.
  if (!process.env.VISOR_PASSWORD && process.env.VOCATUS_CLOUD_ACCOUNTS !== '1')
   return new Response('Visor sin configuración de acceso. Avisá al administrador.', {status:503,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});

@@ -23,6 +23,8 @@ test('sin sesión no se abre nada, salvo la pantalla de entrada',async t=>{
  assert.equal((await c('/api/bootstrap')).status,401);
  assert.equal((await c('/app.js')).status,401);
  assert.equal((await c('/login.html')).status,200);
+ const robots=await c('/robots.txt');assert.equal(robots.status,200);assert.match(robots.data,/Disallow: \/$/m);
+ assert.equal((await c('/favicon.ico')).status,200);
 });
 test('primer administrador, entrada por usuario o correo y sesión cerrada',async t=>{
  const {client}=await server(t),c=client();
@@ -30,6 +32,9 @@ test('primer administrador, entrada por usuario o correo y sesión cerrada',asyn
  assert.equal((await c('/api/auth/setup',{...admin,email:'ana@ejemplo.cr'})).status,201);
  assert.equal((await client()('/api/auth/setup',{...admin,username:'otra'})).status,409,'no se puede crear otro primer administrador');
  const home=await c('/');assert.equal(home.status,200);assert.match(home.data,/sesion\.js/);
+ const missing=await c('/ruta-inexistente');assert.equal(missing.status,404);
+ assert.match(missing.data,/Página no encontrada/);assert.match(missing.data,/href="\/"/);
+ assert.equal((await c('/api/ruta-inexistente')).status,404);
  assert.equal((await c('/api/auth/logout',{})).status,200);assert.equal((await c('/api/bootstrap')).status,401);
  for(const identifier of ['ana','ANA@ejemplo.cr']){const n=client();assert.equal((await n('/api/auth/login',{identifier,password:admin.password})).status,200,identifier);assert.equal((await n('/api/bootstrap')).status,200);}
  const wrong=await client()('/api/auth/login',{identifier:'ana',password:'mala-clave'});assert.equal(wrong.status,401);assert.doesNotMatch(JSON.stringify(wrong.data),/hash|salt/);

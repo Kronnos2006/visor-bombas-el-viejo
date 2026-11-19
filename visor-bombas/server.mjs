@@ -59,7 +59,7 @@ const askLog = [];
 let apiKey = process.env.GEMINI_API_KEY || '';
 let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 const tagPattern = /^(?:P-\d{4}[A-Z]?|B[1-9]\d{0,3})$/;
-const mime = {'.glb':'model/gltf-binary','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.pdf':'application/pdf','.md':'text/plain; charset=utf-8','.png':'image/png','.jpg':'image/jpeg'};
+const mime = {'.ico':'image/x-icon','.txt':'text/plain; charset=utf-8','.glb':'model/gltf-binary','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.pdf':'application/pdf','.md':'text/plain; charset=utf-8','.png':'image/png','.jpg':'image/jpeg'};
 
 export function parseNote(text) {
  const m = text.replace(/^\uFEFF/,'').match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
@@ -359,7 +359,15 @@ export async function handler(req,res) {
   if(req.method!=='GET') return send(res,405,{error:'Método no permitido.'});
   const filename=path.resolve(PUBLIC,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!filename.startsWith(PUBLIC+path.sep)) return send(res,403,{error:'Ruta inválida.'});
-  let content=await readFile(filename);
+  let content;
+  try {
+   content=await readFile(filename);
+  } catch(error) {
+   if(!['ENOENT','ENOTDIR','EISDIR'].includes(error.code)) throw error;
+   const page=await readFile(path.join(PUBLIC,'404.html'));
+   res.writeHead(404,{'Content-Type':mime['.html'],'Content-Length':page.length,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+   return res.end(page);
+  }
   if(access&&path.extname(filename)==='.html'&&path.basename(filename)!=='login.html'){const html=content.toString('utf8');const i=html.indexOf('</head>');if(i>=0)content=Buffer.from(html.slice(0,i)+'<link rel="stylesheet" href="/sesion.css"><script src="/sesion.js"></script>'+html.slice(i));}
   res.writeHead(200,{'Content-Type':mime[path.extname(filename)]||'application/octet-stream','Content-Length':content.length,'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'}); res.end(content);
  } catch(e) { send(res,e.status||(e.code==='PUMP_NOT_AVAILABLE'?409:e.code==='ENOENT'?404:400),{code:e.code,error:e.message==='fetch failed'?'No se pudo conectar con Gemini. Revisá la conexión a internet.':e.message}); }

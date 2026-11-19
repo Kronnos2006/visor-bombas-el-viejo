@@ -20,3 +20,10 @@ test('con contraseña, pide autenticación', async()=>{
  assert.equal(editor.status,403);
  limpiar();
 });
+
+test('robots.txt se sirve sin abrir las demás rutas privadas', async()=>{
+ limpiar();
+ assert.equal(await middleware(new Request('https://visor.test/robots.txt')),undefined);
+ const privatePath=await middleware(new Request('https://visor.test/modelos/planta.glb'));
+ assert.equal(privatePath.status,503);
+});
