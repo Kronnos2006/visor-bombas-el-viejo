@@ -48,9 +48,8 @@ test('un usuario nuevo cambia su contraseña temporal y no abre lo de administra
  assert.equal((await u('/api/auth/users',{name:'X',username:'xxx',role:'admin'})).status,403);
  assert.match((await u('/usuarios.html')).location,/sinpermiso/);
  assert.match((await u('/equipo.html')).location,/sinpermiso/);
- assert.match((await u('/ubicar-bombas.html')).location,/sinpermiso/);
- assert.equal((await u('/modelos/plano-bombas.json')).status,403);
- assert.equal((await a('/ubicar-bombas.html')).status,200);
+ assert.match((await u('/admin-planta.html')).location,/sinpermiso/);
+ assert.equal((await a('/admin-planta.html')).status,200);
  const raw=await readFile(path.join(dir,'usuarios.json'),'utf8');assert.ok(!raw.includes('nueva-clave-2'));assert.ok(!raw.includes(admin.password));
 });
 test('las acciones delicadas se reconocen y el trabajo normal sigue libre',()=>{

@@ -123,7 +123,6 @@ function iniciar() {
  paneles.areas.innerHTML = `<div class="tel-admin-plano" data-admin-only>
   <h2 class="tel-sub">Administración de la planta</h2>
   <a href="/admin-planta.html" class="tel-sec tel-control-planta">Control de bombas y fallas</a>
-  <a href="/ubicar-bombas.html" class="tel-primario">${icono('<circle cx="12" cy="10" r="3"/><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/>',20)}<span>Ubicar y añadir bombas</span></a>
   </div><label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="tel-buscar" type="search" placeholder="Buscar bomba (ej. B14)" autocomplete="off"></label>
   <div class="tel-dos"><div class="tel-campo"><label for="tel-fluido">Fluido</label><select id="tel-fluido"><option value="">Todos</option><option value="alcohol">Alcohol</option><option value="agua">Agua</option><option value="mosto">Mosto / vinaza</option><option value="sin-uso">Sin uso</option></select></div>
   <div class="tel-campo"><label for="tel-marca">Marca</label><select id="tel-marca"><option value="">Todas</option></select></div></div>

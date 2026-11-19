@@ -16,7 +16,7 @@ test('con contraseña, pide autenticación', async()=>{
  assert.equal(r.status,401);
  const ok=await middleware(new Request('https://visor.test/',{headers:{authorization:'Basic '+btoa('x:prueba-123')}}));
  assert.equal(ok,undefined);
- const editor=await middleware(new Request('https://visor.test/ubicar-bombas.html',{headers:{authorization:'Basic '+btoa('x:prueba-123')}}));
+ const editor=await middleware(new Request('https://visor.test/admin-planta.html',{headers:{authorization:'Basic '+btoa('x:prueba-123')}}));
  assert.equal(editor.status,403);
  limpiar();
 });
