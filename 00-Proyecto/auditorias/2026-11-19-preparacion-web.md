@@ -14,12 +14,12 @@ El visor requiere una cuenta aprobada. Producción redirige HTTP a HTTPS con 308
 | Metadescripción | Añadida a la pantalla de acceso. |
 | Títulos | Las páginas revisadas tienen títulos propios, incluida la nueva 404. |
 | Sitemap | Sin sitemap mientras el visor siga siendo privado. |
-| Robots | Archivo público y prueba HTTP local sin sesión. Falta comprobar el HTTP 200 en Vercel. |
+| Robots | Archivo público y prueba HTTP local sin sesión. El contenido se verificó en la vista previa de Vercel. Falta comprobar el estado HTTP en producción. |
 | Texto alternativo | Presente en logos y galerías principales. Falta revisar imágenes dinámicas en todos los flujos. |
 | Open Graph | Añadidos título, descripción e imagen de marca en la pantalla de acceso. Falta comprobar la vista previa de un enlace publicado. |
 | Favicon | Añadidos el ICO y las referencias faltantes. El ICO responde 200 en la prueba local sin sesión. |
 | HTTPS | Confirmado en producción antes del cambio. Falta repetir después de publicar. |
-| Analytics | No se encontró integración en el código y la ruta de Vercel Analytics respondió 401 anónimamente. El estado del panel de Vercel queda sin confirmar. |
+| Analytics | No se encontró integración en el código y la ruta de Vercel Analytics respondió 401 anónimamente. El panel de Vercel mostró Web Analytics desactivado. |
 | Imágenes | Las galerías existentes usan carga diferida. Falta revisar peso y formato en móvil con fotos autorizadas. |
 | Accesibilidad | La prueba DEMO cubre foco y anuncio del error y cierre con Escape. Quedan contraste, navegación completa por teclado, zoom y lector de pantalla. |
 | Consola | La prueba DEMO terminó sin excepciones de JavaScript. Queda la revisión con sesión y red real. |
@@ -40,4 +40,4 @@ El gráfico del historial dejó de descargarse en la carga inicial en ambos tama
 
 ## Acceso a la vista previa y Analytics
 
-El despliegue de `6cc9478` figura como exitoso en GitHub. El enlace al despliegue abrió la pantalla de inicio de sesión de Vercel. La revisión de Analytics y la prueba del despliegue quedan pendientes de una sesión autorizada.
+El panel de Vercel confirmó que el despliegue de `d04d239` estaba listo y que Web Analytics estaba desactivado. La URL de vista previa sirvió el contenido esperado de `robots.txt`. La portada indicó que el despliegue no tiene acceso configurado, por lo que quedan pendientes las pruebas autenticadas en un entorno configurado.
