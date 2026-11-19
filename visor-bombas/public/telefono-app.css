@@ -130,7 +130,7 @@
  body.app-tel .tel-cambiar{min-height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--borde-fuerte);background:transparent;color:var(--tinta);font:600 13px var(--texto,system-ui);cursor:pointer}
 
  /* Acción principal fija abajo del panel (Reportar y Bodega), al alcance del pulgar. */
- body.app-tel #pend-lista{display:grid;gap:14px}
+ body.app-tel #pend-lista{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
  body.app-tel #pend-lista .tel-sub{margin:4px 0 -4px}
  body.app-tel .tel-accion{position:sticky;bottom:-24px;z-index:5;margin:4px -16px -24px;padding:12px 16px;display:grid;gap:8px;background:var(--fondo);border-top:1px solid var(--borde)}
  body.app-tel .tel-accion-fila{display:flex;align-items:center;gap:10px}

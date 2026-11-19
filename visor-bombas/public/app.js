@@ -38,7 +38,6 @@ import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
 import {listReports, addReport, deleteReport, configureReports, reportsInObsidian, reportsInCloud, importReports} from './reportes.js';
 import {reportMeasurements} from './measurements.js';
-import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js?v=montaje-monobloque';
@@ -763,7 +762,15 @@ async function mountHistoryChart(pump,reports){
  }catch(error){if(mount.isConnected&&state.pump?.tag===tag){mount.replaceChildren();showHistoryLoadError(error,tag);}return;}
  records.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
  if(!mount.isConnected||state.pump?.tag!==tag)return;
- renderRechartsHistory(mount,{pumpTag:tag,records,nominalPressure,nominalFlow,ambiguos});
+ mount.innerHTML='<p class="muted" role="status">Cargando gráficos del historial…</p>';
+ try {
+  const {renderRechartsHistory}=await import('./vendor/history-chart.js');
+  if(!mount.isConnected||state.pump?.tag!==tag)return;
+  renderRechartsHistory(mount,{pumpTag:tag,records,nominalPressure,nominalFlow,ambiguos});
+ } catch {
+  if(!mount.isConnected||state.pump?.tag!==tag)return;
+  mount.innerHTML='<p class="form-error" role="alert">No se pudieron cargar los gráficos. Recargá la página para reintentar.</p>';
+ }
 }
 
 function reportUI(){return `<div id="rep-list" class="report-history-list"></div><section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Responsable<input name="author" maxlength="200" ${reportsInObsidian()?'required':''}></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label>Presión medida (bar)<input name="pressure" type="number" step="0.1" placeholder="Ej. 2.1"></label><label>Caudal medido (m³/h)<input name="flow" type="number" step="0.1" placeholder="Ej. 18.0"></label></div><label>Reporte<textarea name="text" rows="5" maxlength="7500" placeholder="Observaciones, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">${reportsInObsidian()?'Se guarda en Obsidian, en '+esc(state.vaultName)+'. El PDF queda adjunto al informe.':'Se guarda en este navegador. Los reportes no se comparten entre equipos.'}${state.demo?' Registro marcado DEMO.':''}</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">${reportsInObsidian()?'Guardar en Obsidian':'Guardar en este navegador'}</button></form></section>`;}
