@@ -58,7 +58,7 @@ export function bombaParaResumen(s){
  const key=clavePendiente(s);let guardado={};try{guardado=JSON.parse(localStorage.getItem(key))||{};}catch{}
  const d={...datosDeExcel(s.excel),...Object.fromEntries(Object.entries(guardado).filter(([,v])=>v))};
  const conUnidad=(v,u)=>v&&/^[\d.,\s-]+$/.test(String(v))?`${v} ${u}`:v||'';
- return {tag:s.tagAsignado||'Sin TAG',nombre:d.nombre||s.excel?.nombre||s.nombre,servicio:d.servicio,size:d.size,
+ return {tag:s.tagAsignado||'Sin TAG',nombre:d.nombre||s.excel?.nombre||s.nombre,marca:d.marca,modelo:d.modelo,servicio:d.servicio,size:d.size,
   specs:[['Caudal',conUnidad(d.caudal,'GPM')],['Altura',conUnidad(d.altura,'m')],['Velocidad de bomba',conUnidad(d.rpm,'rpm')],['Impulsor',conUnidad(d.impulsor,'mm')]],
   motor:{marca:[d.motor_marca,d.motor_modelo].filter(Boolean).join(' ')||d.motor||'',potencia:conUnidad(d.potencia,'kW'),rpm:''},
   seal:{tipo:d.sello||[d.sello_marca,d.sello_modelo].filter(Boolean).join(' '),diametro:d.sello_diametro||''},

@@ -4,16 +4,17 @@ import {evidenceMarkup,bindEvidenceGallery} from './evidence-ui.js';
 import {normalizeSearch,searchPump,completeness,verificationOf,verificationText,storageDescription} from './interfaz-core.js';
 import {createFirstFloorView} from './primera-planta.js';
 import {createInspectorUI} from './interfaz.js';
-import {cargarModeloPlanta, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
+import {cargarModeloPlanta, VISTA_FBX_AGUA, prepararBombasBlender, alinearInfoBlender, alturaPiso} from './blender-local.js';
 import {cajaVisible,extraerBomba} from './planta-encuadre.js';
-import {crearModeloCaldera} from './bombas-calderas.js';
+import {crearModeloCaldera,buildCalderaReference,buildSeparatedReference,esModeloCaldera} from './bombas-calderas.js';
+import {detallarBombaPasarela} from './detalles-bombas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
 import {abrirFichaPendiente,clavePendiente,bombaParaResumen} from './ficha-pendiente.js?v=20261111-fotos-v2';
-import {pumpNames,startPumpNames} from './pump-names.js';
+import {pumpNames} from './pump-names.js';
 import {startPumpData} from './pump-data.js';
 import {crearPaleta} from './paleta-bombas.js';
-import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo} from './asignacion-bombas.js';
-import {cargarPlacas,bloquePlaca} from './placas-bombas.js';
+import {indexarAsignacion,tituloTag,sectorDePosicion,bloqueExcel,claveCuerpo,datosDeExcel} from './asignacion-bombas.js';
+import {cargarPlacas,bloquePlaca,placaDe} from './placas-bombas.js';
 import {pumpVisibility,esAdmin,claveTag,bloqueAdmin,explicarErrorVisibilidad,recortarCajas} from './bombas-admin.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -40,14 +41,17 @@ import {reportMeasurements} from './measurements.js';
 import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
-import {buildPumpModel} from './pump-model.js';
+import {buildPumpModel} from './pump-model.js?v=montaje-monobloque';
+import {buildN32Unit} from './bomba-n32-125-unidad.js?v=proporciones';
+import {pumpReference,buildVerticalReference,buildInstalledReference} from './pump-reference.js?v=proporciones';
 import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const primeraPlanta=createFirstFloorView(THREE);
 let paletaBombas=null;
-const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
+const filtroInicial=new URLSearchParams(location.search).get('sector');
+const state={primeraPlanta:false,area:'integrado',seccion:null,filtroInt:SECTORES_INT.some(s=>s.id===filtroInicial)?filtroInicial:VISTA_FBX_AGUA?'agua':null,existente:false,techo:true,sector:true,detail:'exterior',pumps:[],pump:null,tab:'ficha',part:null,token:'',configured:false,model:'',answers:{},view:'plant',explode:0,loading:0};
 const inspectorUI=createInspectorUI({getSelection:()=>state.pump,onPart:index=>selectPart(index),onSummary:()=>{state.tab="ficha";renderPanel();},onLayout:()=>renderPanel()});
 const extraReferences=[];
 let detailOrigin=null,detailFlightTicket=null,bombaResaltada=null;
@@ -95,6 +99,8 @@ const parts=[
  {name:'Motor eléctrico',pieza:'JM-flange motor',desc:'Motor del equipo seleccionado. El montaje y los datos se consultan por modelo.',ref:'Placa leída: 7.5 HP, 1750 rpm, 230/460 V, 19.6/9.8 A, carcasa 213JM, TEFC, clase F. Rodamientos 6309-2Z-J/C3 y 6308-2Z-J/C3.',fields:[['Potencia registrada (kW)','potencia_kw'],['Velocidad registrada (rpm)','rpm']]}
 ];
 function partName(index,p=state.pump?.data){
+ if(activePumpReference?.kind==='caldera')return componentGroups[index]?.userData.subcomponents[0]||({0:'Cuerpo de bomba y conexiones',3:'Panel y carcasa exterior',7:'Bancada',8:'Guarda y transmisión',9:'Motor eléctrico'})[index]||parts[index].name;
+ if(activePumpReference?.kind==='vertical'&&index!==5)return ['Cuerpo de conexiones','Junta de la camisa','Impulsores de etapas','Cabezal y adaptador del motor','Cámara de sello','Sello mecánico','Eje vertical','Camisa, difusores y tirantes','Acople vertical','Motor eléctrico'][index];
  if(index!==5)return parts[index].name;
  return sealTitle(p);
 }
@@ -122,10 +128,33 @@ const etiquetasFlotantes=(()=>{
 })();let cameraFlight=null,render3D=null;let solModo=null,solCaja=null;
 let anatomy=null;
 let simRig=null;const sims={};
+let n32Load, n32Model, activePumpReference;
 let areaGroups={},torre=null;const pumpObjects={};
 let plantRequested=false;
 function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';const directHistory=section==='historial'&&plantPumps.some(p=>p.tag===location.hash.slice(1).toUpperCase());return params.get('vista')==='clasica'||(['areas','historial'].includes(section)&&!directHistory)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
 function ensurePlant(){if(!plant||plantRequested)return;plantRequested=true;rebuildPlant();}
+function cargarTorre(g=areaGroups.torre){
+ if(!g||torre?.root.parent===g)return torre;
+ torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:(objetos,error)=>{
+  performance.mark('torre-cargada');applyArea();
+  if(!error&&objetos.length&&state.view==='plant'&&state.area==='torre')flyArea('torre');
+ }});
+ g.add(torre.root);return torre;
+}
+function cargarModeloArea(area,g){
+ if(g.userData.cargando)return g.userData.cargando;
+ const load=area.aparte&&new URLSearchParams(location.search).get('modelo')!=='original'
+  ?cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress:reportModelProgress})
+  :new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo);
+ g.userData.cargando=load.then(glb=>{
+  if(g.parent!==plant){glb.scene.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of(Array.isArray(o.material)?o.material:[o.material]))m?.dispose();}});return;}
+  glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(area.aparte)return;o.userData.areaId=area.id;areaPickables.push(o);}});
+  g.add(glb.scene);
+  if(area.aparte){$('#model-load').hidden=true;$('#scene-error').hidden=true;montarIntegrado(g,glb.scene,state.pumps.length?state.pumps:plantPumps);}
+  if(state.view==='plant'&&state.area===area.id){if(glb.scene.userData.fbxAgua&&state.filtroInt)flyIntegrado();else flyArea(area.id);}
+ }).catch(err=>{g.userData.cargando=null;if(area.aparte)show3DError(err);else console.warn('No se cargó '+area.nombre,err);});
+ return g.userData.cargando;
+}
 let integrado=null;const pumpObjectsInt={}; // modelo integrado de Revit: bombas con ficha ubicadas sobre él
 const areaOf=p=>p?.areaId||'tanques',AREA=id=>AREAS.find(a=>a.id===id);
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -139,24 +168,21 @@ function marker(obj,text,kind,id){const el=document.createElement('button');el.c
 function clearGroup(group){group.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of(Array.isArray(o.material)?o.material:[o.material]))m.dispose();});group.clear();}
 function rebuildPlant(){
  clearGroup(plant);pickables.length=0;areaPickables.length=0;
+ torre=null;
  for(let i=markers.length-1;i>=0;i--)if(markers[i].kind!=='part'){markers[i].el.remove();markers[i].leader?.remove();markers[i].linea?.remove();markers.splice(i,1);}
  if(state.sector){
   const placed=state.pumps.length?state.pumps:plantPumps; // posiciones de la ficha si la bomba se movió
   const suelo=sueloSitio(THREE);suelo.userData.sitio=true;plant.add(suelo);
   const tq=ubicar(new THREE.Group(),AREA('tanques')),tr=ubicar(new THREE.Group(),AREA('torre'));
   areaGroups={tanques:tq,torre:tr};plant.add(tq,tr);
+  if(state.area==='torre')cargarTorre(tr);
   for(const area of AREAS.filter(a=>a.modelo)){
-   const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);if(area.aparte)reportModelProgress({loaded:0,total:0});
-   (area.aparte&&new URLSearchParams(location.search).get('modelo')!=='original'?cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress:reportModelProgress}):new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo)).then(glb=>{
-    if(g.parent!==plant)return;
-    glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(area.aparte)return;o.userData.areaId=area.id;areaPickables.push(o);}});
-    g.add(glb.scene);if(area.aparte){$('#model-load').hidden=true;$('#scene-error').hidden=true;}
-    if(area.aparte)montarIntegrado(g,glb.scene,placed);
-    if(state.view==='plant'&&state.area===area.id)flyArea(area.id);
-   }).catch(err=>{if(area.aparte)show3DError(err);else console.warn('No se cargó '+area.nombre,err);});
+   const g=ubicar(new THREE.Group(),area);g.name=area.nombre;areaGroups[area.id]=g;plant.add(g);
+   // Los edificios pequeños se descargan al abrir su área. La vista de la planta
+   // integrada no los muestra y no necesita esperar ni transferir esos archivos.
+   if(area.aparte||area.id===state.area){if(area.aparte)reportModelProgress({loaded:0,total:0});cargarModeloArea(area,g);}
   }
   tq.add(sector(THREE,placed.filter(p=>areaOf(p)==='tanques')));
-  torre=buildTorre(THREE,{cargar:url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url),alCargar:()=>{performance.mark('torre-cargada');if(typeof applyArea==='function')applyArea();}});tr.add(torre.root);
   for(const k in pumpObjects)delete pumpObjects[k];
   for(const p of placed){const parent=areaGroups[areaOf(p)]||tq;const ext=exterior(THREE,p.scale,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,ext);const g=compactar(THREE,ext);g.position.set(p.x,p.y??.3,p.z);g.rotation.y=p.rotation;g.userData.tag=p.tag;g.userData.section='n1';parent.add(g);pumpObjects[p.tag]=g;if(areaOf(p)==='torre'){const hit=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.4,3.3),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(0,1,.1);hit.userData.hitProxy=true;g.add(hit);}g.traverse(o=>{if(o.isMesh){o.userData.tag=p.tag;pickables.push(o);}});const a=new THREE.Object3D();a.position.set(0,2.2,0);g.add(a);marker(a,p.tag,'pump',p.tag);markers.at(-1).area=areaOf(p);}
   extraReferences.length=0;
@@ -202,16 +228,29 @@ function rebuildPlant(){
  });
  if(render3D)render3D.refrescar();
 }
-function buildPump(variant='lf'){
- const model=buildPumpModel(THREE,variant);
+function buildPump(variant='lf',cad=null,profile=null,prepared=null){
+ const model=prepared||(profile?.kind==='caldera'?buildCalderaReference(THREE,profile.modelo):profile?.kind==='vertical'?buildVerticalReference(THREE,profile.stages,profile.finish):cad?buildN32Unit(THREE,cad,profile):buildPumpModel(THREE,profile?.kind==='compact'?'goulds':variant));
+ activePumpReference=profile;
+ n32Model=model.moveExplosion?model:null;
+ pumpGroup.rotation.z=model.vertical?Math.PI/2:0;
  while(model.root.children.length)pumpGroup.add(model.root.children[0]);
- componentGroups.push(...model.components);simRig=createSimRig(THREE,model.components);
- for(const group of componentGroups){const index=group.userData.index;const anchor=new THREE.Object3D();anchor.position.set(0,index===0?1.75:1.12,0);group.add(anchor);marker(anchor,String(index+1).padStart(2,'0'),'part',index);}
+ componentGroups.push(...model.components);simRig=createSimRig(THREE,model.components,model.visual);
+ for(const group of componentGroups){
+  if(!group.visible)continue;
+  const index=group.userData.index,anchor=new THREE.Object3D();
+  anchor.position.set(0,index===0?1.75:1.12,0);
+  if(profile?.kind==='caldera'){
+   const bounds=new THREE.Box3().setFromObject(group),center=bounds.getCenter(new THREE.Vector3());center.y=bounds.max.y+.06;
+   anchor.position.copy(group.worldToLocal(center));
+  }
+  group.add(anchor);marker(anchor,String(index+1).padStart(2,'0'),'part',index);
+ }
  render3D?.refrescar();anatomy?.register(componentGroups);
 }
 function fly(pos,target,duration=1100){cameraFlight={start:performance.now(),duration:reducedMotion.matches?1:duration,from:camera.position.clone(),to:new THREE.Vector3(...pos),fromTarget:controls.target.clone(),toTarget:new THREE.Vector3(...target)};}
 // Controles equivalentes al arrastre y recuperación sin modificar datos de equipos.
 function reportModelProgress(event){
+ if(n32Model&&state.view==='pump')return;
  const box=$('#model-load'),progress=$('#model-progress'),label=$('#model-progress-label');box.hidden=false;
  if(event.total>0){const percent=Math.min(100,Math.round(event.loaded/event.total*100));progress.value=percent;label.textContent=percent+'%'+(percent===100?' · Preparando modelo':' · Descargando modelo');}
  else{progress.removeAttribute('value');label.textContent=event.loaded?'Descargando modelo · '+(event.loaded/1e6).toFixed(1)+' MB':'Preparando descarga del modelo';}
@@ -257,7 +296,8 @@ function initScene(){
  renderer.setAnimationLoop(()=>{
   if(document.hidden||!viewport.clientWidth||!viewport.clientHeight)return;
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
-  componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x=reducedMotion.matches?x:g.position.x+(x-g.position.x)*.12;});
+  if(n32Model)n32Model.moveExplosion(state.explode/100,reducedMotion.matches,anatomy?.state.isolate);
+  else componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x=reducedMotion.matches?x:g.position.x+(x-g.position.x)*.12;});
   controls.update();solSegunVista();renderer.render(scene,camera);
   paletaBombas?.mostrar(state.view==='plant');
   const partLabels=[],pumpLabels=[];
@@ -306,8 +346,17 @@ function selectPart(index,subcomponent=null){
  });
  document.querySelectorAll('[data-part]').forEach(b=>b.classList.toggle('active',Number(b.dataset.part)===index));
  if(index!==null&&componentGroups[index]&&camera){
-  const posX=componentGroups[index].position.x;
-  fly([posX+(index===2?-4:4),3.2,7.5],[posX,0.3,0],550);
+  if(n32Model){
+   const box=cajaVisible(THREE,componentGroups[index],{incluirReferencia:true});
+   if(!box.isEmpty()){
+    fitPumpMinimum(box);
+    const [position,target]=encuadrar(box,new THREE.Vector3(-.4,.3,1),1.35,detailRailFraction());
+    fly(position,target,550);
+   }
+  }else{
+   const posX=componentGroups[index].position.x;
+   fly([posX+(index===2?-4:4),3.2,7.5],[posX,0.3,0],550);
+  }
  }
  if(index!==null)state.tab='ficha';
  renderRail();
@@ -379,7 +428,22 @@ function showAnswer(item){const target=$('#ai-output');if(target)target.innerHTM
 async function ask(e){e.preventDefault();if(busyAI)return;const tag=state.pump.tag,question=$('#question').value;busyAI=true;const btn=$('#ask-form button');btn.disabled=true;btn.textContent='Consultando…';try{let reportes=[];try{let left=22000;reportes=(await listReports(tag)).map(r=>{const t=(r.text||'').slice(0,Math.min(3000,left));left-=t.length;return{fecha:r.date,titulo:r.title,texto:t,pdf:r.pdf?r.pdf.name+' (PDF adjunto: su contenido no se envía a Gemini)':''};});}catch{}
  const response=await api('/api/ask',{tag,question,component:anatomy?.state.subcomponent||parts[state.part]?.name||'',reportes,notaExpediente:expedienteDe(state.pump?.data?.tag===tag?state.pump.data:{tag}).nota||''});state.answers[tag]={...response,question};if(state.pump?.tag===tag&&state.tab==='ia')showAnswer(state.answers[tag]);}catch(error){if(state.pump?.tag===tag&&$('#ai-output'))$('#ai-output').innerHTML=`<p class="error">${esc(error.message)}</p>`;else toast(error.message);}finally{busyAI=false;if($('#ask-form button')){$('#ask-form button').disabled=false;$('#ask-form button').textContent='Consultar Gemini →';}}}
 function setViewButtons(top){$('#top').classList.toggle('active',top);$('#iso').classList.toggle('active',!top);}
-function setExplosion(value){state.explode=Number(value);$('#explode').value=value;$('#percent').textContent=value+'%';if(state.sector&&state.detail==='schematic')$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';if(camera)fly([state.explode>30?10:8,8,state.explode>30?21:12],[0,0,0],650);}
+function setExplosion(value){
+ state.explode=Number(value);$('#explode').value=value;$('#percent').textContent=value+'%';
+ if(state.sector&&state.detail==='schematic')$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';
+ if(!camera)return;
+ if(n32Model&&state.detail==='schematic'){
+  const before=n32Model.explosion, isolated=anatomy?.state.isolate;
+  n32Model.moveExplosion(state.explode/100,true,isolated);
+  const box=cajaVisible(THREE,pumpGroup,{incluirReferencia:true});
+  n32Model.moveExplosion(before,true,isolated);
+  if(!box.isEmpty()){
+   fitPumpMinimum(box);
+   const [position,target]=encuadrar(box,new THREE.Vector3(-.45,.36,1),activePumpReference?.kind==='vertical'?1.4:1.12,detailRailFraction());
+   fly(position,target,650);
+  }
+ }else fly([state.explode>30?10:8,8,state.explode>30?21:12],[0,0,0],650);
+}
 $('#explode').oninput=e=>{if(state.sector&&state.detail==='exterior')setPhotoDetail(true);setExplosion(e.target.value);};$('#explode-all').onclick=()=>{if(state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(100);renderPanel();return;}setExplosion(state.explode>50?0:100);$('#explode-all').textContent=state.explode>50?'Juntar piezas':'Separar piezas ↗';};
 function toggleFullscreenInspector(force){
  const inspector=document.querySelector('.inspector');
@@ -412,7 +476,7 @@ $('#back').onclick=()=>{
  if(origin){state.area=origin.area;state.filtroInt=origin.filtroInt;state.seccion=origin.seccion;}
  state.pump=null;
  selectPart(null);
- if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;}
+ if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;n32Model=null;activePumpReference=null;}
  if(plant){plant.visible=true;pumpGroup.visible=false;if(origin){controls.minDistance=origin.minDistance;controls.maxDistance=origin.maxDistance;if(Math.abs(origin.aspect-camera.aspect)<.01)fly(origin.position,origin.target);else setTimeout(()=>{if(state.view==='plant')refitCurrentView();},0);}else if(state.area==='integrado')flyIntegrado();else flyArea(state.area);}
  $('#back').hidden=true;
  $('#explode').disabled=true;
@@ -445,22 +509,32 @@ $('#config-form').onsubmit=async e=>{e.preventDefault();const form=e.target;try{
 $('#report-form').onsubmit=async e=>{e.preventDefault();const tag=state.pump.tag,form=e.target,button=form.querySelector('button.primary');button.disabled=true;try{await api('/api/maintenance',{...Object.fromEntries(new FormData(form)),tag});$('#report-dialog').close();form.reset();if(state.pump?.tag===tag)state.pump=await api('/api/pump?tag='+encodeURIComponent(tag));renderPanel();toast(state.demo?'Informe de prueba guardado en la carpeta de demostración.':'Informe guardado en Obsidian.');}catch(e){$('#report-error').textContent=e.message;}finally{button.disabled=false;}};
 async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?r.sectorPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;state.writable=r.maintenanceWritable;configureReports({writable:r.maintenanceWritable,token:r.token});document.dispatchEvent(new CustomEvent('vocatus:listo'));if(state.pump&&state.sector){const current=state.pumps.find(p=>p.tag===state.pump.tag);if(current)state.pump={...state.pump,data:current};}fillFilters();document.querySelector('.local').textContent=r.maintenanceWritable?'● OBSIDIAN · '+r.vaultName:'● DEMO · REPORTES EN ESTE NAVEGADOR';$('#report-dialog .muted').textContent=r.maintenanceWritable?'Se guardará en la bóveda '+r.vaultName+'.':'Este alojamiento no guarda informes en Obsidian.';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plant){if(plantRequested)rebuildPlant();else if(needsPlant())ensurePlant();}if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
 $('#refresh').onclick=async()=>{await refresh();toast('Expedientes actualizados.');};
+function compactPumpView(){
+ return activePumpReference?activePumpReference.kind==='compact':state.pump?.data?.variant==='goulds';
+}
 function setPhotoDetail(schematic){
  state.detail=schematic?'schematic':'exterior';state.part=null;state.explode=0;$('#explode').value=0;$('#percent').textContent='0%';
  if(schematic)anatomy?.set({selected:null,subcomponent:null,isolate:false});else anatomy?.reset();
  if(controls)controls.minDistance=schematic?1:4;
  $('#scene-title').textContent=state.pump.tag+(schematic?' · Anatomía':' · Exterior');
  if(plant)plant.visible=false;if(pumpGroup)pumpGroup.visible=schematic;if(photoDetail)photoDetail.visible=!schematic;
+ if(n32Model&&schematic)n32Model.moveExplosion(0,true,false);
  $('#explode').disabled=!schematic;$('#explode-all').disabled=false;$('#explode-all').textContent=schematic?(state.explode>50?'Juntar piezas':'Separar piezas ↗'):'Ver vista explosionada ↗';
  const identity=state.pump?.data?`${state.pump.data.marca} ${state.pump.data.modelo}`:'bomba seleccionada';
  $('#scene-badge').textContent=state.pump?.pending?(schematic?'ANATOMÍA ILUSTRATIVA · NO IDENTIFICA EL TIPO INSTALADO':state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR'):state.pump?.data?.inactive?'EXTERIOR ILUSTRATIVO · SIN USO · MODELO SIN IDENTIFICAR':schematic?`DESPIECE DE REFERENCIA · ${identity.toUpperCase()} · NO ES CAD DEL FABRICANTE`:`EXTERIOR ${identity.toUpperCase()} · BASADO EN FOTOS`;
- $('#parts-title').textContent=schematic?`Despiece de ${identity}`:'Conjunto exterior';$('#part-count').textContent=schematic?(state.pump?.data?.variant==='goulds'?'8':'10')+' componentes de referencia · ficha individual':'Carcasa · guarda · motor · cubierta';
- const componentButtons=schematic?parts.map((part,index)=>state.pump?.data?.variant==='goulds'&&(index===7||index===8)?'':`<button class="part-button" data-part="${index}"><span>${String(index+1).padStart(2,'0')}</span>${esc(partName(index))}</button>`).join(''):'';
+ if(activePumpReference&&schematic){
+  $('#model-load').hidden=true;
+  const inactive=state.pump.data?.inactive||state.pump.data?.enUso===false;
+  $('#scene-badge').textContent=activePumpReference.label+' · GEOMETRÍA DE REFERENCIA'+(inactive?' · EQUIPO SIN USO':'');
+  $('#scene-help').textContent='Modelo ilustrativo · Tocá una pieza para abrir su ficha';
+ }
+ $('#parts-title').textContent=schematic?(activePumpReference?'Despiece de referencia':`Despiece de ${identity}`):'Conjunto exterior';$('#part-count').textContent=schematic?parts.filter((_,index)=>partAvailable(index)).length+' componentes de referencia · ficha individual':'Carcasa · guarda · motor · cubierta';
+ const componentButtons=schematic?parts.map((part,index)=>!partAvailable(index)?'':`<button class="part-button" data-part="${index}"><span>${String(index+1).padStart(2,'0')}</span>${esc(partName(index))}</button>`).join(''):'';
  $('#parts').innerHTML='<button id="switch-detail">'+(schematic?'← Volver al exterior de esta bomba':'Ver vista explosionada de esta bomba ↗')+'</button>'+componentButtons;
- $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};if(state.pump?.data?.inactive){$('#switch-detail').disabled=true;$('#explode').disabled=true;$('#explode-all').disabled=true;}document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));syncAnatomyTools();renderRail();if(camera){const box=schematic?anatomy?.bounds():photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;if(box&&!box.isEmpty()){fitPumpMinimum(box);const [pos,obj]=encuadrar(box,new THREE.Vector3(...(schematic?[-8,7,12]:[5,4,7])),1.15,detailRailFraction());fly(pos,obj);}else fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);}syncAnatomyTools();renderRail();
+ $('#switch-detail').onclick=()=>{setPhotoDetail(!schematic);renderPanel();};document.querySelectorAll('#parts [data-part]').forEach(button=>button.onclick=()=>selectPart(Number(button.dataset.part)));syncAnatomyTools();renderRail();if(camera){const box=schematic?(n32Model?cajaVisible(THREE,pumpGroup,{incluirReferencia:true}):anatomy?.bounds()):photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;if(box&&!box.isEmpty()){fitPumpMinimum(box);const [pos,obj]=encuadrar(box,new THREE.Vector3(...(schematic?[-8,7,12]:[5,4,7])),1.15,detailRailFraction());fly(pos,obj);}else fly(schematic?[-8,7,12]:[5,4,7],[0,schematic?0:1,0]);}syncAnatomyTools();renderRail();
 }
 function syncAnatomyTools(){
- const available=!!anatomy&&!!state.pump&&!state.pump.data.inactive&&state.view==='pump';
+ const available=!!anatomy&&!!state.pump&&state.view==='pump';
  $('#anatomy-tools').hidden=!available;
  const mode=anatomy?.state||{};
  for(const [id,key] of [['anatomy-cut','cutaway'],['anatomy-transparent','transparent'],['anatomy-isolate','isolate']])$('#'+id).setAttribute('aria-pressed',String(!!mode[key]));
@@ -469,7 +543,7 @@ function syncAnatomyTools(){
  $('#anatomy-status').textContent=state.detail==='exterior'?'Abrí el conjunto o retirale 1/4 a la carcasa para ver el interior.':state.part!==null?`Pieza ${String(state.part+1).padStart(2,'0')} · ${mode.subcomponent||partName(state.part)}${mode.isolate?' · aislada':''}. Su información está en la ficha.`:mode.cutaway?'Se retiró 1/4 de las cubiertas: podés ver el impulsor, eje, sello y el interior del motor. Pulsá Reponer 1/4 para cerrar.':'Conjunto armado. Retirá 1/4 o separá las piezas para ver su interior.';
 }
 function ensureAnatomy(){
- if(!state.pump||state.pump.data.inactive||!anatomy)return false;
+ if(!state.pump||!anatomy)return false;
  if(state.detail!=='schematic'){setPhotoDetail(true);renderPanel();}
  return true;
 }
@@ -486,7 +560,7 @@ $('#anatomy-fit').onclick=()=>{if(ensureAnatomy())fitAnatomy();};
 function refitCurrentView(){
  if(!camera||!controls||(detailFlightTicket!==null&&detailFlightTicket===state.loading))return;
  if(state.view==='plant'){if(state.area==='integrado'&&state.filtroInt)flyIntegrado();else flyArea(state.area,$('#top').classList.contains('active')?'superior':undefined);return;}
- const box=state.detail==='schematic'?anatomy?.bounds():photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;
+ const box=state.detail==='schematic'?(n32Model?cajaVisible(THREE,pumpGroup,{incluirReferencia:true}):anatomy?.bounds()):photoDetail?cajaVisible(THREE,photoDetail,{incluirReferencia:true}):null;
  if(!box||box.isEmpty())return;const direction=camera.position.clone().sub(controls.target);if(direction.lengthSq()<1e-6)direction.set(5,4,7);const [pos,obj]=encuadrar(box,direction,1.15,detailRailFraction());fly(pos,obj);
 }
 function resetAnatomy(){
@@ -494,17 +568,41 @@ function resetAnatomy(){
 }
 $('#anatomy-reset').onclick=resetAnatomy;
 $('#anatomy-assembled').onclick=resetAnatomy;
+let asignacionParaModelo;
+async function loadPumpReference(pump){
+ if(!pumpGroup)return {};
+ await cargarPlacas();
+ const profile=pumpReference(pump,placaDe(pump.tag));
+ if(!['vertical','compact'].includes(profile.kind)){
+  let asignacion=integrado?.asignacion;
+  if(!asignacion){
+   asignacionParaModelo??=fetch('/modelos/asignacion-bombas.json?v=20261110d').then(r=>{if(!r.ok)throw Error('No se pudo cargar la forma de la planta');return r.json();}).then(indexarAsignacion).catch(error=>{asignacionParaModelo=null;console.warn(error);return null;});
+   asignacion=await asignacionParaModelo;
+  }
+  const modelo=esModeloCaldera(pump.tipo)?pump.tipo:asignacion?.nuevas.find(n=>n.tag===pump.tag)?.modelo;
+  if(esModeloCaldera(modelo))return {profile:{kind:'caldera',modelo,label:'Conjunto de bomba de combustible · forma de la planta'}};
+ }
+ if(!profile||['vertical','compact'].includes(profile.kind))return {profile};
+ n32Load??=new GLTFLoader().loadAsync('/modelos/bomba-n32-125.glb').catch(error=>{n32Load=null;throw error;});
+ try{return {profile,cad:(await n32Load).scene};}
+ catch(error){console.warn('No se pudo cargar el CAD de referencia',error);return {profile};}
+}
 function selectPhotoPump(tag){
  const p=state.pumps.find(p=>p.tag===tag);if(!p)return;const tip=$('#part-tip');if(tip)tip.hidden=true;resaltarBomba(null);rememberDetailOrigin();const ticket=++state.loading;
  history.replaceState(null,'','#'+p.tag);
  state.pump={tag,data:p,photo:true};document.dispatchEvent(new CustomEvent('vocatus:bomba',{detail:tag}));
  document.querySelectorAll('#area-menu [data-area]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.area==='sector:'+areaOf(p))));
  state.tab=state.tab==='sim'?'sim':'ficha';state.part=null;
- api('/api/pump?tag='+encodeURIComponent(tag)).then(current=>{if(ticket!==state.loading)return;state.pump={...current,photo:true};renderPanel();}).catch(error=>{if(ticket===state.loading)toast(error.message);});
+ const fichaActual=api('/api/pump?tag='+encodeURIComponent(tag)).then(current=>{if(ticket!==state.loading)return p;state.pump={...current,photo:true};renderPanel();return {...p,...current.data,tag};}).catch(error=>{if(ticket===state.loading)toast(error.message);return p;});
  $('#selected-tag').textContent=tag;$('#selected-name').textContent=`${p.marca} ${p.modelo} · ${p.nombre}`;$('#source-status').textContent=p.inactive?'SIN USO · SIN DATOS TÉCNICOS':'DATOS APORTADOS · GEOMETRÍA APROXIMADA';
  $('#scene-title').textContent=tag+' · Exterior';$('#breadcrumb').textContent='PLANTA / '+areaName(state.area==='integrado'?(state.filtroInt||areaOf(p)):areaOf(p)).toUpperCase()+' / '+tag;$('#back').hidden=false;
  $('#scene-help').textContent='Arrastrá para girar · Rueda para acercarte';
- const show=()=>{if(ticket!==state.loading)return;state.view='pump';if($('#torre-planta-tools'))$('#torre-planta-tools').hidden=true;if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=exterior(THREE,p.scale*1.7,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,photoDetail);scene.add(photoDetail);}setPhotoDetail(false);renderPanel();};
+ const show=async()=>{
+  const actual=await fichaActual;
+  if(ticket!==state.loading)return;
+  const {cad,profile}=await loadPumpReference(actual);
+  if(ticket!==state.loading)return;
+  state.view='pump';if($('#torre-planta-tools'))$('#torre-planta-tools').hidden=true;if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant,cad,profile);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=buildInstalledReference(THREE,profile)||crearModeloCaldera(THREE,profile?.modelo)||exterior(THREE,p.scale*1.7,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,photoDetail);scene.add(photoDetail);}setPhotoDetail(!!activePumpReference);renderPanel();};
  if(plant?.visible&&areaOf(p)!==state.area&&state.area!=='planta'&&state.area!=='integrado')setArea(areaOf(p),false);transitionToPump(ticket,pumpWorld(p.tag)||new THREE.Vector3(p.x,0,p.z),show);renderList();renderPanel();setViewButtons(false);
 
 }
@@ -632,7 +730,6 @@ function juntarNombre(tag,n){return !n?tag||'':!tag?n:(/^b\d+$/i.test(n)||n.toUp
 const nombreVisible=s=>juntarNombre(s.tagAsignado,pumpNames.nameOf(clavePendiente(s)))||s.labelBase;
 function nombreDeTag(tag){return juntarNombre(tag,pumpNames.nameOf(claveTag(tag)));}
 document.addEventListener('vocatus:nombres',()=>{for(const s of integrado?.references||[])if(s.labelEl)s.labelEl.textContent=nombreVisible(s);for(const m of markers)if(m.kind==='pump'&&m.id&&!m.ref)m.el.textContent=nombreDeTag(m.id);renderList();document.dispatchEvent(new Event('vocatus:referencias'));});
-startPumpNames();
 startPumpData();
 montarPaleta();
 document.addEventListener('vocatus:storage-ready',()=>{if($('#history-load-error')&&state.tab==='historial'&&state.pump){if($('#rep-list'))refreshPhotoHistory(state.pump);else{$('#history-load-error').remove();mountHistoryChart(state.pump);}}});
@@ -737,13 +834,26 @@ document.querySelector('.compass').textContent='LADOS FIJOS · Frontal B–C · 
 const welcome=document.getElementById('portada');
 if(welcome&&!welcome.hidden)await new Promise(resolve=>{window.addEventListener('vocatus:entered',resolve,{once:true});if(welcome.hidden)resolve();});
 initScene();renderPanel();await refresh();
-function selectFromHash(){const tag=location.hash.slice(1).toUpperCase();if(plantPumps.some(p=>p.tag===tag))selectPhotoPump(tag);}
+function selectFromHash(){
+ const tag=location.hash.slice(1).toUpperCase();
+ if(!/^B\d+$/.test(tag))return;
+ if(state.pumps.some(p=>p.tag===tag))selectPhotoPump(tag);
+ else {
+  const reference=integrado?.references.find(p=>p.tagAsignado===tag);
+  if(reference)selectPendingPump(reference);
+ }
+}
 window.addEventListener('hashchange',selectFromHash);selectFromHash();
+document.addEventListener('vocatus:referencias',()=>{if(!state.pump)selectFromHash();});
 
 // Riel de piezas: siempre visible junto al 3D cuando hay una bomba abierta.
+function partAvailable(index){
+ if(activePumpReference?.kind==='caldera')return componentGroups[index]?.userData.anatomyAvailable===true;
+ return !(compactPumpView()&&(index===7||index===8));
+}
 function railParts(){
- if(state.view!=='pump'||!state.pump||state.pump.data?.inactive)return [];
- return parts.map((part,index)=>({index,name:partName(index)})).filter(({index})=>!(state.pump?.data?.variant==='goulds'&&(index===7||index===8)));
+ if(state.view!=='pump'||!state.pump)return [];
+ return parts.map((part,index)=>({index,name:partName(index)})).filter(({index})=>partAvailable(index));
 }
 function renderRail(){
  const rail=$('#parts-rail');if(!rail)return;
@@ -812,7 +922,7 @@ function renderSimPanel(p){
  const sim=getSim(p);if(!sim){panel.innerHTML='<p class="notice">Faltan datos de placa para simular esta bomba.</p>';return;}
  panel.innerHTML=simPanelHTML(p,sim);
  const q=id=>panel.querySelector('#sim-'+id),refresh=()=>{const d=sim.model.derive(sim.state,sim.inputs);updateSimPanel(panel,sim,d);drawSimChart(q('chart'),sim,d);};
- q('run').onclick=()=>{sim.inputs.running=!sim.inputs.running;q('run').textContent=sim.inputs.running?'■ Parar bomba':'▶ Arrancar bomba';if(sim.inputs.running&&state.detail==='exterior')showInside();refresh();};
+ q('run').onclick=()=>{sim.inputs.running=!sim.inputs.running;q('run').textContent=sim.inputs.running?'■ Parar bomba':'▶ Arrancar bomba';if(sim.inputs.running&&(state.detail==='exterior'||activePumpReference))showInside();refresh();};
  q('pause').onclick=()=>{sim.paused=!sim.paused;q('pause').textContent=sim.paused?'Continuar':'Pausar';refresh();};
  q('speed').onclick=()=>{sim.speed=sim.speed===1?.25:sim.speed===.25?4:1;q('speed').textContent='Tiempo ×'+String(sim.speed).replace('.',',');};
  q('reset').onclick=()=>{sim.inputs=sim.model.defaults();sim.state=sim.model.initialState();sim.paused=false;sim.speed=1;sim.log=[];sim.lastLog=-1;renderSimPanel(p);toast('Simulador de '+p.tag+' restablecido.');};
@@ -905,7 +1015,8 @@ function cajaTorre(seccion){
 // modelo con la alineación calculada) y etiquetas «Sin ficha» para las bombas modeladas sin TAG.
 function selectPendingPump(reference){
  rememberDetailOrigin();
- const ticket=++state.loading;history.replaceState(null,'',location.pathname+location.search);
+ const tag=reference.tagAsignado;
+ const ticket=++state.loading;history.replaceState(null,'',location.pathname+location.search+(tag?'#'+encodeURIComponent(tag):''));
  state.pump={tag:'Sin TAG',pending:reference,data:{variant:'lf',marca:'',modelo:'',seal:{},orings:[],history:[]}};
  state.part=null;state.tab='ficha';
  document.dispatchEvent(new CustomEvent('vocatus:referencia',{detail:reference}));
@@ -913,12 +1024,25 @@ function selectPendingPump(reference){
  $('#source-status').textContent=reference.excel?'DATOS DEL EXCEL · GEOMETRÍA DE REFERENCIA':'IDENTIFICACIÓN PENDIENTE · GEOMETRÍA DE REFERENCIA';
  $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
  $('#back').hidden=false;
- const show=()=>{if(ticket!==state.loading)return;state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
- if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf');}
+ const show=async()=>{
+  let {cad,profile}=await loadPumpReference({
+   ...bombaParaResumen(reference),tag,
+   tipo:reference.modelo,nombre:reference.nombre,
+  });
+  if(ticket!==state.loading)return;
+  const source=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;
+  const separable=source?.children.length&&source.children.every(o=>Number.isInteger(o.userData.part));
+  const prepared=separable?buildSeparatedReference(THREE,extraerBomba(THREE,integrado.escena,reference)):null;
+  if(separable)profile={kind:'caldera',label:'Bomba de la pasarela · geometría del FBX'};
+  state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
+ if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf',cad,profile,prepared);}
  if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}
- photoDetail=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);setPhotoDetail(false);
- $('#scene-badge').textContent=state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR';
- $('#scene-help').textContent='Arrastrá para girar · Abrí Piezas de la bomba para ver el despiece';
+ photoDetail=source;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=buildInstalledReference(THREE,profile)||crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);
+ setPhotoDetail(!!profile);
+ if(!profile){
+  $('#scene-badge').textContent=state.pump.geometriaIntegrada?'GEOMETRÍA DEL MODELO INTEGRADO · ESCALA CONSERVADA · IDENTIFICACIÓN PENDIENTE':'BOMBA DE REFERENCIA · TIPO Y DIMENSIONES POR CONFIRMAR';
+  $('#scene-help').textContent='Arrastrá para girar · Abrí Piezas de la bomba para ver el despiece';
+ }
  setViewButtons(false);renderList();renderPanel();
  };
  const center=new THREE.Vector3(...reference.min).add(new THREE.Vector3(...reference.max)).multiplyScalar(.5);if(!reference.standalone&&integrado?.g){integrado.g.updateMatrixWorld(true);integrado.g.localToWorld(center);}transitionToPump(ticket,center,show);renderList();renderPanel();
@@ -929,15 +1053,45 @@ function renderPendingPanel(){
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
  if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
  abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;const hueco=$('#resumen-pendiente');if(hueco){paintPumpSummary(bombaParaResumen(reference),{pendiente:true});hueco.replaceWith($('#pump-resumen'));}const despues=$('#pump-resumen')||$('#editar-equipo');if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;if(!$('#datos-excel'))despues?.insertAdjacentHTML('afterend',bloqueExcel(integrado.asignacion,reference.tagAsignado));if(!$('#placa-manual'))$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
- if(state.part!==null){const part=parts[state.part];$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(part.name)}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
+ if(state.part!==null){$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(partName(state.part))}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
+}
+async function cargarDetallesFBX(){
+ const url='/modelos/detalles-fbx-capturas';
+ try{
+  const [{scene},info]=await Promise.all([
+   new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url+'.glb'),
+   fetch(url+'.json').then(r=>{if(!r.ok)throw new Error('No se pudieron cargar las posiciones de los detalles');return r.json();})
+  ]);
+  detallarBombaPasarela(THREE,scene);
+  const grupos=info.bombas.map(({nombre,sector,min,max})=>({nombre,sector,nota:'Referencia del FBX. TAG y ficha por confirmar en planta.',bombas:[{min,max}]}));
+  return {scene,grupos,sectores:info.sectores};
+ }catch(error){console.warn('No se cargaron los detalles del FBX',error);return null;}
 }
 function montarIntegrado(g,escena,placed){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
- Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261110d').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([info,gruposBase,gruposCampo,asignacionData])=>{
-  const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];
-  if(g.parent!==plant)return;integrado.info=info;
+ detallarBombaPasarela(THREE,escena);
+ // Mantiene visibles las bombas y calderas debajo de las dos cubiertas.
+ escena.traverse(o=>{
+  const nombre=String(o.userData.original_name||o.name).replace(/_/g,' ');
+  const cubiertaComun=o.userData.sector==='REF Cubierta comun';
+  const cubiertaCalderas=o.userData.sector==='REF Detalle'&&o.userData.cat==='lamina';
+  if(!o.isMesh||!cubiertaComun&&!cubiertaCalderas&&!([1240639,1240966].includes(o.userData.fbxId)||/Nave principal - cubierta metalica|Cubierta de lamina nave ADMIN/i.test(nombre)))return;
+  const opacidad=cubiertaCalderas ? .04 : .12;
+  const aclarar=m=>{const c=m.clone();c.transparent=true;c.opacity=opacidad;c.depthWrite=false;return c;};
+  o.material=Array.isArray(o.material)?o.material.map(aclarar):aclarar(o.material);
+  o.renderOrder=2;o.castShadow=false;o.raycast=()=>{};
+ });
+ if(escena.userData.fbxAgua){
+  integrado.info=escena.userData.fbxAgua;
+  aplicarFiltroInt();applyArea();renderList();
+  return;
+ }
+ Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261110d').then(r=>r.ok?r.json():null).catch(()=>null),cargarDetallesFBX()]).then(([info,gruposBase,gruposCampo,asignacionData,detalles])=>{
+  if(g.parent!==plant)return;
+  const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];integrado.info=info;
   // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
   const grupos=agregarBombaFrente(separarSemilleros(gruposConCampo(gruposBase,gruposCampo)));
+  if(detalles)grupos.push(...detalles.grupos);
   const alineado=escena.userData.blenderLocal?alinearInfoBlender(THREE,escena,info,grupos):null;integrado.desplazamientoBlender=alineado?.d||null;
   moverTorrePequena(escena,info,grupos);
   moverMallasSemilleros(THREE,escena,alineado?.d?.[0]||0);
@@ -981,16 +1135,15 @@ function montarIntegrado(g,escena,placed){
   const retirados=new Set(cambios.removedMeshes);for(let i=pickables.length-1;i>=0;i--)if(retirados.has(pickables[i]))pickables.splice(i,1);
   for(const body of Object.values(tankBodies))body.traverse(o=>{if(o.isMesh&&!pickables.includes(o))pickables.push(o);});
   window.__cambiosCampo={...cambios,removedMeshes:undefined};
-  // Pedido del usuario: el techo de la nave de calderas queda transparente para ver B69, B73, B74, B75 y B76 desde arriba.
-  escena.traverse(o=>{
-   if(!o.isMesh||!/Nave principal - cubierta metalica/i.test(String(o.userData?.original_name||o.name).replace(/_/g,' ')))return;
-   o.material=(Array.isArray(o.material)?o.material:[o.material]).map(m=>{const c=m.clone();c.transparent=true;c.opacity=.12;c.depthWrite=false;return c;});
-   if(o.material.length===1)o.material=o.material[0];
-   o.renderOrder=2;o.castShadow=false;o.raycast=()=>{};
-   const i=pickables.indexOf(o);if(i>=0)pickables.splice(i,1);
-  });
   // Área 3 · Nave pequeña (A16/A17) y nave grande a escala de A15.
-  if(escena.userData.blenderLocal)window.__navesSitio=agregarNaves(THREE,escena);
+  if(escena.userData.blenderLocal){
+   window.__navesSitio=agregarNaves(THREE,escena);
+   let tieneMillonario=false;
+   detalles?.scene.traverse(o=>{if(o.isMesh&&o.userData.fbxId===1244379)tieneMillonario=true;});
+   // La nave se ubica primero con su referencia completa; el FBX sustituye el tanque generado.
+   const tanqueProvisional=tieneMillonario&&escena.getObjectByName('Tanque junto a la nave pequeña');
+   if(tanqueProvisional){tanqueProvisional.removeFromParent();clearGroup(tanqueProvisional);}
+  }
   // Lista del usuario: cada cuerpo con ficha pasa a mostrar el TAG que él le asignó.
   const conFicha=new Set(state.pumps.map(p=>p.tag)),inversaG=new THREE.Matrix4().copy(g.matrixWorld).invert(),gruposTag=[];
   const cajaLocal=b=>{b.updateMatrixWorld(true);const k=new THREE.Box3().setFromObject(b).applyMatrix4(inversaG);return {min:k.min.toArray(),max:k.max.toArray()};};
@@ -1017,8 +1170,18 @@ function montarIntegrado(g,escena,placed){
   }
   // Bombas que el usuario agregó en sitios nuevos.
   const dA=alineado?.d||[0,0,0];
+  if(detalles){
+   detalles.scene.position.set(...dA);
+   detalles.scene.traverse(o=>{if(o.isMesh){o.castShadow=o.userData.sector!=='Suelo VOCATUS';o.receiveShadow=true;}});
+   escena.add(detalles.scene);
+   for(const [sector,caja] of Object.entries(detalles.sectores)){
+    const anterior=info.sectores[sector];
+    info.sectores[sector]={min:caja.min.map((v,i)=>Math.min(v+dA[i],anterior?.min[i]??Infinity)),max:caja.max.map((v,i)=>Math.max(v+dA[i],anterior?.max[i]??-Infinity))};
+   }
+  }
   for(const n of asignacion.nuevas){
-   const sectorN=sectorDePosicion(n.x,n.z),b=crearModeloCaldera(THREE,n.modelo)||compactar(THREE,exterior(THREE,.72,'lf'));if(n.giro)b.rotation.y=n.giro;g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
+   const perfil=pumpReference({...datosDeExcel(asignacion.excel[n.tag]),tag:n.tag},placaDe(n.tag));
+   const sectorN=sectorDePosicion(n.x,n.z),b=buildInstalledReference(THREE,perfil)||crearModeloCaldera(THREE,n.modelo)||compactar(THREE,exterior(THREE,.72,'lf'));if(n.giro)b.rotation.y=n.giro;g.add(b);b.position.set(n.x+dA[0],0,n.z+dA[2]);b.updateMatrixWorld(true);
    const k=new THREE.Box3().setFromObject(b),pisoN=alineado?alturaPiso(alineado.pisos,n.x+dA[0],n.z+dA[2],3):null;b.position.y=(pisoN??(.3+dA[1]))-k.min.y;
    b.userData.sector=sectorN;b.userData.sectorInt=sectorDe(sectorN);b.traverse(o=>{if(o.isMesh)o.castShadow=true;});
    if(conFicha.has(n.tag)){b.userData.tag=n.tag;b.traverse(o=>{if(o.isMesh){o.userData.tag=n.tag;pickables.push(o);}});pumpObjectsInt[n.tag]=b;const an=new THREE.Object3D();an.position.set(0,2.2,0);b.add(an);marker(an,n.tag,'pump',n.tag);Object.assign(markers.at(-1),{area:'integrado',sectorInt:sectorDe(sectorN)});}
@@ -1086,7 +1249,7 @@ function aplicarFiltroInt(){
  const f=state.filtroInt||null;
  document.querySelectorAll('#integrado-sectores [data-sector]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.sector||null)===f)));
  const s=SECTORES_INT.find(x=>x.id===f);
- if($('#integrado-status'))$('#integrado-status').textContent=s?`${s.nombre} aislado. Los pisos quedan como referencia y la cubierta común se oculta.`:'Toda la planta. Elegí un sector para aislarlo; tocá una bomba o referencia para abrir su ficha y completar datos e imágenes.';
+ if($('#integrado-status'))$('#integrado-status').textContent=s?`${s.nombre} aislado. Los pisos quedan como referencia y la cubierta común se oculta.`:VISTA_FBX_AGUA?'Toda la planta del FBX. Elegí un sector para aislarlo.':'Toda la planta. Elegí un sector para aislarlo; tocá una bomba o referencia para abrir su ficha y completar datos e imágenes.';
  if(!integrado)return;
  integrado.g.traverse(o=>{if(o.userData.sector)o.visible=visibleCon(o.userData.sector,f);});
  for(const [tag,b] of Object.entries(pumpObjectsInt))b.visible=(!f||b.userData.sectorInt===f)&&!pumpVisibility.stateOf(claveTag(tag));
@@ -1100,8 +1263,9 @@ function aplicarFiltroInt(){
 function flyIntegrado(){
  const a=AREA('integrado'),g=areaGroups.integrado,c=state.filtroInt&&integrado?.info&&cajaSector(integrado.info,state.filtroInt);
  if(!g||!c)return flyArea('integrado');
- g.updateMatrixWorld(true);let box=cajaVisible(THREE,g);if(box.isEmpty())box=new THREE.Box3(new THREE.Vector3(...c.min),new THREE.Vector3(...c.max)).applyMatrix4(g.matrixWorld);if(state.filtroInt==='torre'&&state.primeraPlanta&&primeraPlanta.height!==null)box.max.y=Math.min(box.max.y,primeraPlanta.height);ajustarSol(box);
- const [pos,obj]=encuadrar(box,new THREE.Vector3(...a.camara.pos).sub(new THREE.Vector3(...a.camara.obj)),1.15);fly(pos,obj,900);
+ g.updateMatrixWorld(true);let box=cajaVisible(THREE,g);if(VISTA_FBX_AGUA||box.isEmpty())box=new THREE.Box3(new THREE.Vector3(...c.min),new THREE.Vector3(...c.max)).applyMatrix4(g.matrixWorld);if(state.filtroInt==='torre'&&state.primeraPlanta&&primeraPlanta.height!==null)box.max.y=Math.min(box.max.y,primeraPlanta.height);ajustarSol(box);
+ const direccion=state.filtroInt==='millo'?new THREE.Vector3(-7,8,9):new THREE.Vector3(...a.camara.pos).sub(new THREE.Vector3(...a.camara.obj));
+ const [pos,obj]=encuadrar(box,direccion,1.15);fly(pos,obj,900);
 }
 function cajaEdificio(area){
  const [w,d,h]=area.huella,r=Math.hypot(w,d)/2;
@@ -1134,6 +1298,8 @@ function setArea(id,volar=true){
  if(id.startsWith('sector:')){state.filtroInt=id.slice(7)||null;id='integrado';aplicarFiltroInt();}
  if(id==='planta'){id='integrado';state.filtroInt=null;aplicarFiltroInt();}
  state.area=id;if(id!=='torre')state.seccion=null;
+ if(id==='torre')cargarTorre(areaGroups.torre);
+ const seleccion=AREA(id),grupo=areaGroups[id];if(seleccion?.modelo&&grupo&&!grupo.children.length)cargarModeloArea(seleccion,grupo);
  if($('#area'))$('#area').value=id==='planta'?'':id;
  applyArea();renderList();
  if(volar&&state.view==='plant')flyArea(id);
@@ -1146,7 +1312,7 @@ function applyArea(){
   for(const g of Object.values(pumpObjects))if(g.parent===areaGroups.torre)g.visible=!state.seccion||state.seccion==='n1';}
   renderRail();
  document.querySelectorAll('#area-menu [data-area]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.area===(id==='integrado'&&state.filtroInt?'sector:'+state.filtroInt:id))));
- const floorTools=$('#torre-planta-tools');if(floorTools){floorTools.hidden=!(id==='integrado'&&state.filtroInt==='torre'&&state.view==='plant');floorTools.querySelectorAll('[data-nivel-torre]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.nivelTorre||'')===(state.primeraPlanta?state.nivelTorre||'n1':''))));}
+ const floorTools=$('#torre-planta-tools');if(floorTools){floorTools.hidden=VISTA_FBX_AGUA||!(id==='integrado'&&state.filtroInt==='torre'&&state.view==='plant');floorTools.querySelectorAll('[data-nivel-torre]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.nivelTorre||'')===(state.primeraPlanta?state.nivelTorre||'n1':''))));}
  const tools=$('#torre-tools');if(tools)tools.hidden=!(id==='torre'&&state.view==='plant');
  const toolsInt=$('#integrado-tools');if(toolsInt)toolsInt.hidden=!(a?.aparte&&state.view==='plant');
  document.querySelectorAll('#torre-tools [data-seccion]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.seccion||null)===(state.seccion||null)||(!b.dataset.seccion&&!state.seccion))));
@@ -1157,7 +1323,8 @@ function applyArea(){
   $('#scene-title').textContent=a?.nombre||'Planta general';
   $('#breadcrumb').textContent=id==='planta'?'PLANTA / VISTA GENERAL':'PLANTA / '+a.nombre.toUpperCase()+(s?' / '+s.nombre.toUpperCase():'');
   $('#scene-badge').textContent=id==='planta'?'PLANO DE SITIO · ÁREAS MODELADAS SOBRE EL PLANO · POSICIONES RELATIVAS APROXIMADAS':id==='torre'?'TORRE DE DESTILACIÓN · MODELO DUSA 3D (FBX) · BOMBAS SEGÚN CROQUIS':a?.aparte?'MODELO INTEGRADO · 1 UNIDAD = 1 m · TANQUES: UBICACIÓN PROVISIONAL · MEDIDAS Y COLORES ILUSTRATIVOS':a?.modelo?`${a.nombre.toUpperCase()} · MODELO FBX · ASIGNACIÓN Y POSICIÓN APROXIMADAS`:'SECTOR FOTOGRAFIADO · POSICIONES APROXIMADAS';
-  $('#scene-help').textContent=id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.aparte?'Tocá una bomba o referencia para abrir su ficha · Elegí un sector abajo para aislarlo':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
+  if(a?.aparte&&VISTA_FBX_AGUA)$('#scene-badge').textContent='VISTA DE PRUEBA · FBX DEL TANQUE DE AGUA';
+  $('#scene-help').textContent=a?.aparte&&VISTA_FBX_AGUA?'Elegí un sector para aislarlo. Las posiciones de bombas de este FBX están pendientes de vincular a sus fichas.':id==='planta'?'Tocá un área o una bomba · Arrastrá para girar':a?.aparte?'Tocá una bomba o referencia para abrir su ficha · Elegí un sector abajo para aislarlo':a?.modelo?'Arrastrá para girar · confirmar área, ubicación y orientación en campo':'Seleccioná una bomba para acercarte';
  }
 }
 (function areaUI(){
@@ -1279,7 +1446,14 @@ window.vocatus={
  select:tag=>selectPhotoPump(tag),
  selectReference:reference=>selectPendingPump(reference),
  tab:name=>{state.tab=name;renderPanel();},
- explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&Number(value)>30&&document.body.classList.contains('app-tel'))fly([15,12,32],[0,0,0],650);},
+ assembled:()=>{
+  if(state.view!=='pump'||!state.pump)return;
+  setPhotoDetail(!!activePumpReference);
+  anatomy?.reset();
+  syncAnatomyTools();
+  renderPanel();
+ },
+ explode:value=>{if(Number(value)>0&&state.sector&&state.pump&&state.detail==='exterior'){setPhotoDetail(true);setExplosion(value);renderPanel();}else setExplosion(value);if(camera&&!n32Model&&Number(value)>30&&document.body.classList.contains('app-tel'))fly([15,12,32],[0,0,0],650);},
  locate:()=>locateSelectedPump(),
  back:()=>{if(state.view!=='plant'||state.pump)$('#back').click();},
  chooseArea:id=>chooseArea(id),elegirArea:id=>chooseArea(id),
@@ -1287,7 +1461,27 @@ window.vocatus={
  get explosion(){return state.explode;},
  get listo(){return state.view==='pump'&&detailFlightTicket!==state.loading;},
  corte:()=>$('#anatomy-cut').click(),transparente:()=>$('#anatomy-transparent').click(),get anatomia(){return anatomy?{...anatomy.state}:{};},
- vista:t=>{if(!camera||state.view==='plant')return;const ex=state.explode>30,k=document.body.classList.contains('app-tel')&&ex?1.5:1;const P={tres:[10,8,ex?21:12],frente:[0,1.2,ex?22:13],arriba:[0,ex?30:22,.1]}[t];if(P)fly(P.map(v=>v*k),[0,0,0],650);},
+ vista:t=>{
+  if(!camera||state.view==='plant')return;
+  const ex=state.explode>30;
+  const direction={tres:[-8,7,12],frente:[0,1.2,13],arriba:[0,22,.1]}[t];
+  if(activePumpReference&&state.detail==='schematic'&&direction){
+   const previous=n32Model?.explosion;
+   const isolated=anatomy?.state.isolate;
+   n32Model?.moveExplosion(state.explode/100,true,isolated);
+   const bounds=cajaVisible(THREE,pumpGroup,{incluirReferencia:true});
+   n32Model?.moveExplosion(previous,true,isolated);
+   if(!bounds.isEmpty()){
+    fitPumpMinimum(bounds);
+    const [position,target]=encuadrar(bounds,new THREE.Vector3(...direction),1.15,detailRailFraction());
+    fly(position,target,650);
+    return;
+   }
+  }
+  const k=document.body.classList.contains('app-tel')&&ex?1.5:1;
+  const position={tres:[10,8,ex?21:12],frente:[0,1.2,ex?22:13],arriba:[0,ex?30:22,.1]}[t];
+  if(position)fly(position.map(v=>v*k),[0,0,0],650);
+ },
  areaDe:p=>areaEnMapa(p),areaNombre:id=>areaName(id),tipos:p=>tipoDe(p),
  ensure3D:ensurePlant,api
 };

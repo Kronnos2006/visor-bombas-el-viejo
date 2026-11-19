@@ -1,0 +1,1566 @@
+{
+ "huella": [
+  92,
+  120.5,
+  28.1
+ ],
+ "torre": null,
+ "sectores": {
+  "REF Fotos": {
+   "min": [
+    4.1,
+    0.12,
+    -51.85
+   ],
+   "max": [
+    12.3,
+    5.19,
+    -41.85
+   ]
+  },
+  "REF Plano ampliacion": {
+   "min": [
+    12.3,
+    0.12,
+    -56.25
+   ],
+   "max": [
+    39.2,
+    1.69,
+    -41.35
+   ]
+  },
+  "REF Detalle": {
+   "min": [
+    11.8,
+    0.3,
+    -56.25
+   ],
+   "max": [
+    39.35,
+    7.66,
+    -27.55
+   ]
+  },
+  "REF Exterior": {
+   "min": [
+    28.04,
+    0.3,
+    -51.95
+   ],
+   "max": [
+    38.78,
+    4.59,
+    -41.85
+   ]
+  },
+  "REF Sector": {
+   "min": [
+    12.3,
+    0.14,
+    -41.35
+   ],
+   "max": [
+    39.2,
+    0.3,
+    -38.25
+   ]
+  },
+  "REF Detras ADMIN": {
+   "min": [
+    18,
+    0.12,
+    -38.75
+   ],
+   "max": [
+    42,
+    4.85,
+    -24.6
+   ]
+  },
+  "REF Agua y enfriamiento": {
+   "min": [
+    18.15,
+    0.12,
+    -25.62
+   ],
+   "max": [
+    41.9,
+    7.6,
+    -9.75
+   ]
+  },
+  "REF Cuatro tanques detalle": {
+   "min": [
+    -12.5,
+    0.12,
+    -24.55
+   ],
+   "max": [
+    17.9,
+    9.48,
+    -13.45
+   ]
+  },
+  "REF Cuatro tanques": {
+   "min": [
+    -11.7,
+    0.3,
+    -23.55
+   ],
+   "max": [
+    17.3,
+    0.5,
+    -15.95
+   ]
+  },
+  "REF Sector completo sur": {
+   "min": [
+    -16.8,
+    0.1,
+    -13.55
+   ],
+   "max": [
+    43.2,
+    0.65,
+    7.45
+   ]
+  },
+  "REF Torre pequena": {
+   "min": [
+    -15.39,
+    0.3,
+    -12.65
+   ],
+   "max": [
+    -6.59,
+    5.51,
+    -5.45
+   ]
+  },
+  "REF Fermentacion": {
+   "min": [
+    -1.8,
+    0.3,
+    -13.9
+   ],
+   "max": [
+    37.46,
+    8.25,
+    9.8
+   ]
+  },
+  "REF Almacenamiento alcohol": {
+   "min": [
+    -16.6,
+    0.3,
+    -3.95
+   ],
+   "max": [
+    10.7,
+    7.41,
+    7.6
+   ]
+  },
+  "FBX Banos": {
+   "min": [
+    -13.6,
+    0.49,
+    -57.78
+   ],
+   "max": [
+    -2.47,
+    3.7,
+    -49.78
+   ]
+  },
+  "FBX Bodega pequena": {
+   "min": [
+    -1.75,
+    0,
+    -57.83
+   ],
+   "max": [
+    6.32,
+    4.3,
+    -49.73
+   ]
+  },
+  "FBX Bodega quimicos": {
+   "min": [
+    -41.09,
+    0.15,
+    -55.04
+   ],
+   "max": [
+    -27.14,
+    4.18,
+    -46.56
+   ]
+  },
+  "FBX Cuarto electrico": {
+   "min": [
+    -25.37,
+    0,
+    -53.81
+   ],
+   "max": [
+    -14.57,
+    4.2,
+    -47.03
+   ]
+  },
+  "FBX Administracion": {
+   "min": [
+    -14.24,
+    0.15,
+    -36.94
+   ],
+   "max": [
+    16.44,
+    5.35,
+    -24.16
+   ]
+  },
+  "Otros": {
+   "min": [
+    -46,
+    0,
+    -60.25
+   ],
+   "max": [
+    46,
+    8.34,
+    60.25
+   ]
+  },
+  "REF Semilleros y pies de cuba": {
+   "min": [
+    30.88,
+    0.1,
+    -8.9
+   ],
+   "max": [
+    42.5,
+    8.22,
+    7.33
+   ]
+  },
+  "REF Fermentacion ampliacion": {
+   "min": [
+    -1.46,
+    0.3,
+    -12.43
+   ],
+   "max": [
+    11.86,
+    8.25,
+    5.57
+   ]
+  },
+  "DUSA": {
+   "min": [
+    -39.54,
+    0.3,
+    -30.22
+   ],
+   "max": [
+    -20.39,
+    28.1,
+    -6.43
+   ]
+  },
+  "DUSA planta": {
+   "min": [
+    -32.06,
+    5.68,
+    -28.16
+   ],
+   "max": [
+    -23.96,
+    10.48,
+    -25.52
+   ]
+  },
+  "VOCATUS Enlace destilacion": {
+   "min": [
+    -25.86,
+    0.3,
+    -17.17
+   ],
+   "max": [
+    -1.27,
+    8.27,
+    -6.95
+   ]
+  },
+  "REF Pasillo": {
+   "min": [
+    19.75,
+    0.3,
+    -13.65
+   ],
+   "max": [
+    23.45,
+    1.3,
+    -12.75
+   ]
+  },
+  "REF Cubierta comun": {
+   "min": [
+    -2.2,
+    0.3,
+    -12.95
+   ],
+   "max": [
+    39.2,
+    11.86,
+    7.88
+   ]
+  },
+  "REF Tanque de millo": {
+   "min": [
+    -43.58,
+    0.05,
+    19.25
+   ],
+   "max": [
+    -14.23,
+    12.38,
+    57.73
+   ]
+  },
+  "Suelo VOCATUS": {
+   "min": [
+    -44,
+    0,
+    22.25
+   ],
+   "max": [
+    46,
+    0.3,
+    60.25
+   ]
+  }
+ },
+ "bombas": [
+  {
+   "nombre": "Bomba 1 con motor y guarda roja",
+   "sector": "REF Fotos",
+   "min": [
+    7.82,
+    0.3,
+    -43.42
+   ],
+   "max": [
+    9.67,
+    1.09,
+    -42.62
+   ]
+  },
+  {
+   "nombre": "Bomba 2 con motor y guarda roja",
+   "sector": "REF Fotos",
+   "min": [
+    7.82,
+    0.3,
+    -44.88
+   ],
+   "max": [
+    9.67,
+    1.09,
+    -44.08
+   ]
+  },
+  {
+   "nombre": "Bomba central pequena con motor y guarda roja",
+   "sector": "REF Fotos",
+   "min": [
+    8.19,
+    0.3,
+    -43.99
+   ],
+   "max": [
+    9.3,
+    0.77,
+    -43.51
+   ]
+  },
+  {
+   "nombre": "Bomba auxiliar exterior de tanques de agua - motor y guarda ventilada",
+   "sector": "REF Agua y enfriamiento",
+   "min": [
+    18.15,
+    0.3,
+    -19.6
+   ],
+   "max": [
+    19.45,
+    1.18,
+    -18.35
+   ]
+  },
+  {
+   "nombre": "Tres bombas de circulacion con guardas y bancadas",
+   "sector": "REF Agua y enfriamiento",
+   "min": [
+    30.15,
+    0.3,
+    -25.62
+   ],
+   "max": [
+    39.85,
+    1.45,
+    -24.58
+   ]
+  },
+  {
+   "nombre": "Par de bombas lado oficina entre tanques 1 y 2",
+   "sector": "REF Cuatro tanques detalle",
+   "min": [
+    -7.6,
+    0.3,
+    -23.35
+   ],
+   "max": [
+    -5,
+    1.03,
+    -22.05
+   ]
+  },
+  {
+   "nombre": "Par de bombas posterior entre tanques 1 y 2",
+   "sector": "REF Cuatro tanques detalle",
+   "min": [
+    -7.6,
+    0.3,
+    -15.3
+   ],
+   "max": [
+    -5,
+    1.03,
+    -14
+   ]
+  },
+  {
+   "nombre": "Par de bombas auxiliares marcado junto al verde",
+   "sector": "REF Cuatro tanques detalle",
+   "min": [
+    12.62,
+    0.48,
+    -22.94
+   ],
+   "max": [
+    14.77,
+    0.96,
+    -22.1
+   ]
+  },
+  {
+   "nombre": "Tres bombas con motores bases y guardas",
+   "sector": "REF Torre pequena",
+   "min": [
+    -14.19,
+    0.6,
+    -12.15
+   ],
+   "max": [
+    -7.49,
+    1.58,
+    -11.35
+   ]
+  },
+  {
+   "nombre": "Bomba a la derecha de escalera 1 - segun foto",
+   "sector": "REF Semilleros y pies de cuba",
+   "min": [
+    40.8,
+    0.14,
+    -6.2
+   ],
+   "max": [
+    42.5,
+    1.36,
+    -5.1
+   ]
+  },
+  {
+   "nombre": "Bomba a la derecha de escalera 2 - segun foto",
+   "sector": "REF Semilleros y pies de cuba",
+   "min": [
+    40.8,
+    0.14,
+    -8
+   ],
+   "max": [
+    42.5,
+    1.36,
+    -6.9
+   ]
+  },
+  {
+   "nombre": "Cuatro bombas dos por tanque del lado oficina",
+   "sector": "REF Fermentacion",
+   "min": [
+    0.5,
+    0.3,
+    -13.9
+   ],
+   "max": [
+    8.3,
+    1.3,
+    -12.5
+   ]
+  },
+  {
+   "nombre": "Bomba 1 - envolvente fotográfica",
+   "sector": "DUSA",
+   "min": [
+    -37.76,
+    0.6,
+    -19.4
+   ],
+   "max": [
+    -36.92,
+    1.81,
+    -18.1
+   ]
+  },
+  {
+   "nombre": "Cubierta roja de bomba 1",
+   "sector": "DUSA",
+   "min": [
+    -37.73,
+    1.06,
+    -19.28
+   ],
+   "max": [
+    -36.96,
+    1.98,
+    -18.54
+   ]
+  },
+  {
+   "nombre": "Bomba 2 - envolvente fotográfica",
+   "sector": "DUSA",
+   "min": [
+    -36.81,
+    0.6,
+    -19.4
+   ],
+   "max": [
+    -35.97,
+    1.81,
+    -18.1
+   ]
+  },
+  {
+   "nombre": "Cubierta roja de bomba 2",
+   "sector": "DUSA",
+   "min": [
+    -36.78,
+    1.06,
+    -19.28
+   ],
+   "max": [
+    -36.01,
+    1.98,
+    -18.54
+   ]
+  },
+  {
+   "nombre": "Bomba 3 - envolvente fotográfica",
+   "sector": "DUSA",
+   "min": [
+    -35.84,
+    0.6,
+    -19.4
+   ],
+   "max": [
+    -35,
+    1.81,
+    -18.1
+   ]
+  },
+  {
+   "nombre": "Cubierta roja de bomba 3",
+   "sector": "DUSA",
+   "min": [
+    -35.8,
+    1.06,
+    -19.28
+   ],
+   "max": [
+    -35.03,
+    1.98,
+    -18.54
+   ]
+  },
+  {
+   "nombre": "Bomba 1 columna Rectificadora Bach",
+   "sector": "DUSA",
+   "min": [
+    -31.26,
+    0.6,
+    -18.64
+   ],
+   "max": [
+    -30.42,
+    1.81,
+    -17.34
+   ]
+  },
+  {
+   "nombre": "Cubierta bomba 1 columna Rectificadora Bach",
+   "sector": "DUSA",
+   "min": [
+    -31.23,
+    1.06,
+    -18.52
+   ],
+   "max": [
+    -30.46,
+    1.98,
+    -17.79
+   ]
+  },
+  {
+   "nombre": "Bomba columna Bach fotos 141932",
+   "sector": "DUSA",
+   "min": [
+    -29.25,
+    0.6,
+    -18.58
+   ],
+   "max": [
+    -28.41,
+    1.81,
+    -17.28
+   ]
+  },
+  {
+   "nombre": "Cubierta bomba Bach fotos 141932",
+   "sector": "DUSA",
+   "min": [
+    -29.22,
+    1.06,
+    -18.46
+   ],
+   "max": [
+    -28.45,
+    1.98,
+    -17.73
+   ]
+  },
+  {
+   "nombre": "Bomba 1 columna Vinaza",
+   "sector": "DUSA",
+   "min": [
+    -27.99,
+    0.6,
+    -18.57
+   ],
+   "max": [
+    -27.15,
+    1.81,
+    -17.27
+   ]
+  },
+  {
+   "nombre": "Cubierta bomba 1 columna Vinaza",
+   "sector": "DUSA",
+   "min": [
+    -27.95,
+    1.06,
+    -18.44
+   ],
+   "max": [
+    -27.18,
+    1.98,
+    -17.71
+   ]
+  },
+  {
+   "nombre": "Bomba 2 columna Rectificadora Bach",
+   "sector": "DUSA",
+   "min": [
+    -30.36,
+    0.6,
+    -18.64
+   ],
+   "max": [
+    -29.52,
+    1.81,
+    -17.34
+   ]
+  },
+  {
+   "nombre": "Cubierta bomba 2 columna Rectificadora Bach",
+   "sector": "DUSA",
+   "min": [
+    -30.33,
+    1.06,
+    -18.52
+   ],
+   "max": [
+    -29.56,
+    1.98,
+    -17.79
+   ]
+  },
+  {
+   "nombre": "Bomba 2 columna Vinaza",
+   "sector": "DUSA",
+   "min": [
+    -27.09,
+    0.6,
+    -18.57
+   ],
+   "max": [
+    -26.25,
+    1.81,
+    -17.27
+   ]
+  },
+  {
+   "nombre": "Cubierta bomba 2 columna Vinaza",
+   "sector": "DUSA",
+   "min": [
+    -27.05,
+    1.06,
+    -18.44
+   ],
+   "max": [
+    -26.28,
+    1.98,
+    -17.71
+   ]
+  },
+  {
+   "nombre": "Bomba 2 columna Aldehídos Fusel",
+   "sector": "DUSA",
+   "min": [
+    -34.94,
+    0.6,
+    -19.4
+   ],
+   "max": [
+    -34.1,
+    1.81,
+    -18.1
+   ]
+  },
+  {
+   "nombre": "Cubierta bomba 2 Aldehídos Fusel",
+   "sector": "DUSA",
+   "min": [
+    -34.9,
+    1.06,
+    -19.28
+   ],
+   "max": [
+    -34.13,
+    1.98,
+    -18.54
+   ]
+  },
+  {
+   "nombre": "Motor y bomba auxiliar Bach 1",
+   "sector": "DUSA",
+   "min": [
+    -28.29,
+    0.6,
+    -25.44
+   ],
+   "max": [
+    -26.99,
+    1.98,
+    -24.6
+   ]
+  },
+  {
+   "nombre": "Motor y bomba auxiliar Bach 2",
+   "sector": "DUSA",
+   "min": [
+    -28.29,
+    0.6,
+    -23.44
+   ],
+   "max": [
+    -26.99,
+    1.98,
+    -22.6
+   ]
+  },
+  {
+   "nombre": "Dos bombas frontales y tres frente a semilleros",
+   "sector": "REF Fermentacion",
+   "min": [
+    19.75,
+    0.3,
+    5.6
+   ],
+   "max": [
+    37.46,
+    1.3,
+    9.8
+   ]
+  },
+  {
+   "nombre": "Bomba 1 enfrentada sin tuberias",
+   "sector": "REF Pasillo",
+   "min": [
+    19.75,
+    0.3,
+    -13.65
+   ],
+   "max": [
+    21.15,
+    1.3,
+    -12.75
+   ]
+  },
+  {
+   "nombre": "Bomba 2 enfrentada sin tuberias",
+   "sector": "REF Pasillo",
+   "min": [
+    22.05,
+    0.3,
+    -13.65
+   ],
+   "max": [
+    23.45,
+    1.3,
+    -12.75
+   ]
+  },
+  {
+   "nombre": "Tres bombas exteriores con guardas rojas",
+   "sector": "REF Almacenamiento alcohol",
+   "min": [
+    -12.35,
+    0.3,
+    6.2
+   ],
+   "max": [
+    4.75,
+    1.3,
+    7.6
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba faltante - bancada provisional foto",
+   "sector": "Otros",
+   "min": [
+    -13.5,
+    0.3,
+    -5.31
+   ],
+   "max": [
+    -12.5,
+    0.48,
+    -3.99
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba faltante - motor y cuerpo aproximados",
+   "sector": "Otros",
+   "min": [
+    -13.26,
+    0.48,
+    -5.22
+   ],
+   "max": [
+    -12.74,
+    1.06,
+    -4.12
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba faltante - cubierta rojiza superior foto",
+   "sector": "Otros",
+   "min": [
+    -13.4,
+    1.1,
+    -5.21
+   ],
+   "max": [
+    -12.6,
+    1.14,
+    -4.59
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba faltante - lateral cubierta exterior",
+   "sector": "Otros",
+   "min": [
+    -13.4,
+    0.57,
+    -5.21
+   ],
+   "max": [
+    -13.36,
+    1.1,
+    -4.59
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba faltante - cierre extremo cubierta",
+   "sector": "Otros",
+   "min": [
+    -13.4,
+    0.57,
+    -5.21
+   ],
+   "max": [
+    -12.6,
+    1.1,
+    -4.59
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba faltante - descarga vertical referencia",
+   "sector": "Otros",
+   "min": [
+    -13.05,
+    0.9,
+    -4.29
+   ],
+   "max": [
+    -12.95,
+    2.25,
+    -4.23
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba faltante - brida inferior",
+   "sector": "Otros",
+   "min": [
+    -13.1,
+    1.35,
+    -4.32
+   ],
+   "max": [
+    -12.9,
+    1.38,
+    -4.2
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba faltante - brida superior",
+   "sector": "Otros",
+   "min": [
+    -13.1,
+    1.65,
+    -4.32
+   ],
+   "max": [
+    -12.9,
+    1.68,
+    -4.2
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba detalle - descarga y brida sobre carcasa",
+   "sector": "Otros",
+   "min": [
+    -13.12,
+    0.8,
+    -4.37
+   ],
+   "max": [
+    -12.89,
+    1.3,
+    -4.14
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba detalle - boca lateral bridada",
+   "sector": "Otros",
+   "min": [
+    -13.11,
+    0.69,
+    -4.15
+   ],
+   "max": [
+    -12.89,
+    0.91,
+    -4.02
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba 3 de cinco - referencia fotos103254-103313",
+   "sector": "Otros",
+   "min": [
+    36.15,
+    0.3,
+    -5.08
+   ],
+   "max": [
+    37.85,
+    1.52,
+    -4.42
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba 4 de cinco - referencia fotos103254-103313",
+   "sector": "Otros",
+   "min": [
+    36.15,
+    0.3,
+    -4.28
+   ],
+   "max": [
+    37.85,
+    1.52,
+    -3.62
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Bomba vertical 1 de 5 referencia20261027",
+   "sector": "Otros",
+   "min": [
+    13,
+    0.3,
+    -44.65
+   ],
+   "max": [
+    14,
+    2,
+    -43.85
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Ramales verdes bomba vertical 1",
+   "sector": "Otros",
+   "min": [
+    12.74,
+    0.47,
+    -44.35
+   ],
+   "max": [
+    14.25,
+    2.8,
+    -44.14
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Bomba vertical 2 de 5 referencia20261027",
+   "sector": "Otros",
+   "min": [
+    13,
+    0.3,
+    -46.45
+   ],
+   "max": [
+    14,
+    2,
+    -45.65
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Ramales verdes bomba vertical 2",
+   "sector": "Otros",
+   "min": [
+    12.74,
+    0.47,
+    -46.15
+   ],
+   "max": [
+    14.25,
+    2.8,
+    -45.94
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Bomba vertical 3 de 5 referencia20261027",
+   "sector": "Otros",
+   "min": [
+    13,
+    0.3,
+    -48.25
+   ],
+   "max": [
+    14,
+    2.15,
+    -47.45
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Ramales verdes bomba vertical 3",
+   "sector": "Otros",
+   "min": [
+    12.74,
+    0.47,
+    -47.95
+   ],
+   "max": [
+    14.25,
+    2.8,
+    -47.74
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Bomba vertical 4 de 5 referencia20261027",
+   "sector": "Otros",
+   "min": [
+    13,
+    0.3,
+    -50.05
+   ],
+   "max": [
+    14,
+    2.15,
+    -49.25
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Ramales verdes bomba vertical 4",
+   "sector": "Otros",
+   "min": [
+    12.74,
+    0.47,
+    -49.75
+   ],
+   "max": [
+    14.25,
+    2.8,
+    -49.54
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Bomba vertical 5 de 5 referencia20261027",
+   "sector": "Otros",
+   "min": [
+    13,
+    0.3,
+    -51.85
+   ],
+   "max": [
+    14,
+    1.45,
+    -51.05
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Ramales verdes bomba vertical 5",
+   "sector": "Otros",
+   "min": [
+    12.74,
+    0.47,
+    -51.55
+   ],
+   "max": [
+    14.25,
+    2.8,
+    -51.34
+   ]
+  },
+  {
+   "nombre": "VOCATUS Calderas - Colectores verdes fila cinco bombas",
+   "sector": "Otros",
+   "min": [
+    12.76,
+    2.72,
+    -51.75
+   ],
+   "max": [
+    14.23,
+    2.89,
+    -43.95
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba central entre tanques auxiliares tipo fermentadores",
+   "sector": "Otros",
+   "min": [
+    13.35,
+    0.3,
+    -17.55
+   ],
+   "max": [
+    14.25,
+    1.3,
+    -16.15
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba exterior tanquería 1",
+   "sector": "Otros",
+   "min": [
+    -17.67,
+    0.3,
+    6.8
+   ],
+   "max": [
+    -16.27,
+    1.3,
+    7.7
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba exterior tanquería 2",
+   "sector": "Otros",
+   "min": [
+    -17.67,
+    0.3,
+    10
+   ],
+   "max": [
+    -16.27,
+    1.3,
+    10.9
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba exterior tanquería 3",
+   "sector": "Otros",
+   "min": [
+    -17.67,
+    0.3,
+    15
+   ],
+   "max": [
+    -16.27,
+    1.3,
+    15.9
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba tanques grandes - Pareja 1 unidad 1",
+   "sector": "Otros",
+   "min": [
+    -37.95,
+    0.3,
+    19.82
+   ],
+   "max": [
+    -37.05,
+    1.3,
+    21.22
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba tanques grandes - Pareja 1 unidad 2",
+   "sector": "Otros",
+   "min": [
+    -36.55,
+    0.3,
+    19.82
+   ],
+   "max": [
+    -35.65,
+    1.3,
+    21.22
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba tanques grandes - Pareja 2 unidad 1",
+   "sector": "Otros",
+   "min": [
+    -26.95,
+    0.3,
+    19.82
+   ],
+   "max": [
+    -26.05,
+    1.3,
+    21.22
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bomba tanques grandes - Pareja 2 unidad 2",
+   "sector": "Otros",
+   "min": [
+    -25.55,
+    0.3,
+    19.82
+   ],
+   "max": [
+    -24.65,
+    1.3,
+    21.22
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Frente DUSA - Bomba 1 pequeña",
+   "sector": "Otros",
+   "min": [
+    -45.66,
+    0.3,
+    -0.24
+   ],
+   "max": [
+    -44.75,
+    0.95,
+    0.34
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Frente DUSA - Bomba 2 grupo central",
+   "sector": "Otros",
+   "min": [
+    -45.9,
+    0.3,
+    1.3
+   ],
+   "max": [
+    -44.5,
+    1.3,
+    2.2
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Frente DUSA - Bomba 3 grupo central",
+   "sector": "Otros",
+   "min": [
+    -45.9,
+    0.3,
+    3
+   ],
+   "max": [
+    -44.5,
+    1.3,
+    3.9
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Frente DUSA - Bomba 4 grupo central",
+   "sector": "Otros",
+   "min": [
+    -45.9,
+    0.3,
+    4.7
+   ],
+   "max": [
+    -44.5,
+    1.3,
+    5.6
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Frente DUSA - Bomba 5 pareja extremo",
+   "sector": "Otros",
+   "min": [
+    -45.9,
+    0.3,
+    12
+   ],
+   "max": [
+    -44.5,
+    1.3,
+    12.9
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Frente DUSA - Bomba 6 pareja extremo",
+   "sector": "Otros",
+   "min": [
+    -45.9,
+    0.3,
+    13.7
+   ],
+   "max": [
+    -44.5,
+    1.3,
+    14.6
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bombas lateral torre 1",
+   "sector": "Otros",
+   "min": [
+    -41.95,
+    0.3,
+    -4.75
+   ],
+   "max": [
+    -41.05,
+    1.3,
+    -3.35
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bombas lateral torre 2",
+   "sector": "Otros",
+   "min": [
+    -39.65,
+    0.3,
+    -4.75
+   ],
+   "max": [
+    -38.75,
+    1.3,
+    -3.35
+   ]
+  },
+  {
+   "nombre": "VOCATUS - Bombas lateral torre 3",
+   "sector": "Otros",
+   "min": [
+    -31.75,
+    0.3,
+    -4.75
+   ],
+   "max": [
+    -30.85,
+    1.3,
+    -3.35
+   ]
+  },
+  {
+   "nombre": "INDU - Bomba piso 0 - 1",
+   "sector": "Otros",
+   "min": [
+    -31.05,
+    0.6,
+    -9.45
+   ],
+   "max": [
+    -30.15,
+    1.6,
+    -8.05
+   ]
+  },
+  {
+   "nombre": "INDU - Bomba piso 0 - 2",
+   "sector": "Otros",
+   "min": [
+    -26.75,
+    0.6,
+    -9.45
+   ],
+   "max": [
+    -25.85,
+    1.6,
+    -8.05
+   ]
+  },
+  {
+   "nombre": "INDU - Bomba piso 0 - 3",
+   "sector": "Otros",
+   "min": [
+    -31.05,
+    0.6,
+    -11.65
+   ],
+   "max": [
+    -30.15,
+    1.6,
+    -10.25
+   ]
+  },
+  {
+   "nombre": "INDU - Bomba piso 0 - 4",
+   "sector": "Otros",
+   "min": [
+    -26.75,
+    0.6,
+    -11.65
+   ],
+   "max": [
+    -25.85,
+    1.6,
+    -10.25
+   ]
+  },
+  {
+   "nombre": "Bomba de combustible de caldera ADMIN 1",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    22.25,
+    0.35,
+    -35.29
+   ],
+   "max": [
+    23.52,
+    1.8,
+    -34.79
+   ]
+  },
+  {
+   "nombre": "Bomba de combustible de caldera ADMIN 2",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    22.25,
+    0.35,
+    -36.23
+   ],
+   "max": [
+    23.52,
+    1.8,
+    -35.66
+   ]
+  },
+  {
+   "nombre": "Bomba horizontal bajo el desaireador",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    20.2,
+    0.3,
+    -32.8
+   ],
+   "max": [
+    21.6,
+    1.24,
+    -31.9
+   ]
+  },
+  {
+   "nombre": "Bomba vertical multietapas bajo el desaireador",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    20.59,
+    0.3,
+    -34.01
+   ],
+   "max": [
+    21.11,
+    1.73,
+    -33.49
+   ]
+  },
+  {
+   "nombre": "Bomba de la pasarela exterior de caldera ADMIN",
+   "sector": "REF Detras ADMIN",
+   "min": [
+    30.48,
+    3.39,
+    -28.74
+   ],
+   "max": [
+    31.7,
+    4.64,
+    -28.36
+   ]
+  },
+  {
+   "nombre": "Bomba exterior del tanque de millo",
+   "sector": "REF Tanque de millo",
+   "min": [
+    -43.58,
+    0.3,
+    49.75
+   ],
+   "max": [
+    -39.56,
+    4.45,
+    50.69
+   ]
+  },
+  {
+   "nombre": "Bomba en la pasarela del tanque café",
+   "sector": "REF Exterior",
+   "min": [
+    32.13,
+    3.51,
+    -50.3
+   ],
+   "max": [
+    32.73,
+    4.37,
+    -48.67
+   ]
+  }
+ ]
+}

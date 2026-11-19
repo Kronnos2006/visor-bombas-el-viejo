@@ -1,5 +1,20 @@
 # Edificios del plano de sitio
 
+## Vista de prueba del tanque de agua
+
+`/?s=areas&modelo=fbx-agua` abre el FBX convertido con **Agua y enfriamiento** seleccionado. **Toda la planta** muestra el resto del modelo exportado. Las posiciones del FBX están pendientes de vincular a las fichas de bombas.
+
+El visor carga una selección de piezas de ese FBX junto al modelo integrado. **Tanque de millo** muestra el depósito, el muro circular, la bomba exterior, sus conexiones y la nave contigua. **Calderas y nave** muestra las pasarelas de los tanques cafés, el desaireador con sus bombas y ramales, y las dos bombas de combustible de caldera ADMIN con su bancada y colector original. Las dos cubiertas son transparentes. Siete referencias quedan seleccionables como bombas pendientes de TAG. La bomba de la pasarela exterior de caldera ADMIN conserva sus mallas del FBX y permite separar bastidor, motores, cuerpos, tapas y transmisiones. El anexo conserva más detalle para la inspección cercana y distingue motores, guardas, bases y pasarelas con colores de referencia.
+
+Para regenerar el GLB y sus cajas de sectores desde `visor-bombas`:
+
+```sh
+node --max-old-space-size=8000 tools/fbx-planta-a-glb.mjs /ruta/TanquedeAgua-3DView-VOCATUS-Modelogeneralcompleto.fbx public/modelos/planta-tanque-agua.glb --conservar-bombas-dusa
+node --max-old-space-size=8000 tools/fbx-planta-a-glb.mjs /ruta/TanquedeAgua-3DView-VOCATUS-Modelogeneralcompleto.fbx public/modelos/detalles-fbx-capturas.glb --detalle-capturas
+```
+
+## Edificios de octubre de 2026
+
 Fuentes: `FBX.zip` y `Baños3D-3DView-VOCATUS-Banos-3Dgeneral.fbx`, entregados el 14-oct-2026. Los cinco FBX se convirtieron a GLB sin alterar sus dimensiones; se centraron en su huella y se apoyaron en cota cero. Los colores son ilustrativos y no indican materiales instalados.
 
 En la vista compartida por el usuario, el orden de izquierda a derecha es **bodega pequeña, baños, cuarto eléctrico y bodega de químicos**. La ubicación sobre el plano sigue siendo aproximada; las separaciones laterales de 1 a 4 m sirven para que los volúmenes no se superpongan. La torre se apartó unos 4 m adicionales de la bodega de químicos. Estos movimientos son de presentación, no coordenadas de levantamiento.

@@ -396,3 +396,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 #paleta-bombas .paleta-nombres{margin-bottom:6px;font-size:13px;min-height:36px}
 #placa-manual a.manual-link{display:block;text-align:center;text-decoration:none;margin-top:10px;padding:12px 14px;border-radius:10px;font-weight:700;font-size:15px;background:#e8b45a;color:#1b1206;border:1px solid #e8b45a}
 #placa-manual a.manual-link:hover{filter:brightness(1.08)}
+html:not([data-rol="admin"]) [data-admin-only]{display:none!important}

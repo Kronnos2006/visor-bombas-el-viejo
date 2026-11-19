@@ -2,6 +2,20 @@ import * as T from './vendor/three.module.js';
 import {mountLiquidEther} from './liquid-ether-native.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {MeshoptDecoder} from './vendor/meshopt_decoder.module.js';
+async function loadIntroPlant(signal){
+ const path='/modelos/intro-planta.glb';
+ if(typeof DecompressionStream==='function'){
+  try{
+   const response=await fetch(path+'.gz',{signal});
+   if(response.ok&&response.body){
+    return await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+   }
+  }catch(error){if(signal?.aborted)throw error;}
+ }
+ const response=await fetch(path,{signal});
+ if(!response.ok)throw Error('No se pudo cargar la miniatura de la planta.');
+ return response.arrayBuffer();
+}
 // Escena de identidad visual: no representa mediciones ni simulación del proceso.
 export async function mountIntro3D(root,{signal,reducedMotion=false}={}){
  if(signal?.aborted||root.hidden)return null;
@@ -129,7 +143,9 @@ const plantLiquidMaterial=new T.ShaderMaterial({uniforms:plantUniforms,transpare
 root.dataset.introPlant='loading';
 const plant=new T.Group();scene.add(plant);let plantBottom=-1.7,plantHeight=1;
 try{
- const gltf=await new GLTFLoader().loadAsync('/modelos/intro-planta.glb');const model=gltf.scene;
+ const buffer=await loadIntroPlant(signal);
+ if(signal?.aborted){dispose();return null;}
+ const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer,'/modelos/');const model=gltf.scene;
  const sourceMaterials=new Set();model.traverse(o=>{if(o.isMesh){for(const m of(Array.isArray(o.material)?o.material:[o.material]))sourceMaterials.add(m);o.material=glassMaterial;o.renderOrder=2;}});sourceMaterials.forEach(m=>m.dispose());
  const box=new T.Box3().setFromObject(model),size=box.getSize(new T.Vector3()),center=box.getCenter(new T.Vector3());
  model.position.set(-center.x,-box.min.y,-center.z);plant.add(model);plant.scale.setScalar(7.2/Math.max(size.x,size.z));plant.position.set(.05,-2.3,-7.2);plant.rotation.y=-.3;

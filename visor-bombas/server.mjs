@@ -162,6 +162,11 @@ export async function handler(req,res) {
   const cloudUrl=new URL(req.url,`http://127.0.0.1:${PORT}`);
   if(cloudAccess){
    if(cloudUrl.pathname.startsWith('/api/auth/'))return cloudAccess.route({req,res,url:cloudUrl,send,payload});
+   if(cloudUrl.pathname==='/api/admin/plant'){
+    if(req.method!=='GET')return send(res,405,{error:'Método no permitido.'});
+    const data=await cloudAccess.readPlant(req);
+    return send(res,200,data);
+   }
    await cloudAccess.authorize(req,cloudUrl);
   }
   let currentUser=null;
@@ -173,6 +178,7 @@ export async function handler(req,res) {
   // En Vercel, con VISOR_PASSWORD definida, la API también exige la contraseña (las páginas las protege middleware.js).
   if (ON_VERCEL && !passwordOk(req.headers.authorization, process.env.VISOR_PASSWORD)) { res.writeHead(401,{'WWW-Authenticate':'Basic realm="Visor Vocatus", charset="UTF-8"','Content-Type':'application/json; charset=utf-8'}); return res.end(JSON.stringify({error:'Acceso restringido.'})); }
   const url=new URL(req.url,`http://127.0.0.1:${PORT}`);
+  if(url.pathname==='/api/admin/plant')return send(res,currentUser?.role==='admin'?503:403,{error:currentUser?.role==='admin'?'Conectá la base de la planta para consultar el historial compartido.':'Solo un administrador puede usar esta parte.'});
   if(url.pathname==='/api/work-orders'){
    if(req.method==='GET')return send(res,200,{orders:await workOrders.list(),writable:configuration.writable});
    if(req.method!=='POST')return send(res,405,{error:'Método no permitido.'});

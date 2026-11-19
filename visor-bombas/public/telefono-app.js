@@ -4,6 +4,7 @@
 // selección, 3D, ficha ni guardado. Con ?vista=clasica se usa el visor anterior.
 import {selectionIdentity} from './selection-core.js';
 import {sectorDe} from './planta-integrada.js';
+import {VISTA_FBX_AGUA} from './blender-local.js';
 import {iniciarEstadisticas} from './estadisticas.js?v=20261112b';
 import {completeness, verificationOf} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
@@ -119,11 +120,16 @@ function iniciar() {
  fab.onclick = () => { const tag = V()?.pump?.tag; V()?.explode(0); V()?.back(); mostrar('mantenimiento'); if (tag) setReportTag(tag); };
 
  // ---------- Áreas ----------
- paneles.areas.innerHTML = `<label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="tel-buscar" type="search" placeholder="Buscar bomba (ej. B14)" autocomplete="off"></label>
+ paneles.areas.innerHTML = `<div class="tel-admin-plano" data-admin-only>
+  <h2 class="tel-sub">Administración de la planta</h2>
+  <a href="/admin-planta.html" class="tel-sec tel-control-planta">Control de bombas y fallas</a>
+  <a href="/ubicar-bombas.html" class="tel-primario">${icono('<circle cx="12" cy="10" r="3"/><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/>',20)}<span>Ubicar y añadir bombas</span></a>
+  </div><label class="tel-buscar">${icono('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', 20)}<input id="tel-buscar" type="search" placeholder="Buscar bomba (ej. B14)" autocomplete="off"></label>
   <div class="tel-dos"><div class="tel-campo"><label for="tel-fluido">Fluido</label><select id="tel-fluido"><option value="">Todos</option><option value="alcohol">Alcohol</option><option value="agua">Agua</option><option value="mosto">Mosto / vinaza</option><option value="sin-uso">Sin uso</option></select></div>
   <div class="tel-campo"><label for="tel-marca">Marca</label><select id="tel-marca"><option value="">Todas</option></select></div></div>
   <p id="tel-cuenta" class="tel-cuenta" aria-live="polite"></p>
   <div id="tel-resultados" class="tel-resultados" hidden></div>
+ ${VISTA_FBX_AGUA?'<p class="notice">Vista de prueba del tanque de agua. Las bombas del FBX están pendientes de vincular a sus fichas. <a href="/?s=areas">Volver al modelo habitual</a></p>':''}
   <h2 class="tel-sub">Áreas de la planta</h2><div id="tel-areas"></div>
   <h2 class="tel-sub">Herramientas</h2><div id="tel-herramientas"></div>`;
  const areaMenu = $('#area-menu'), camara = $('#camera-tools');
@@ -492,7 +498,9 @@ function iniciar() {
   barra.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.s === id ? 'page' : 'false'));
   titulo.textContent=SECCIONES.find(s=>s.id===id).nombre;cabecera.setSection(titulo.textContent);
   document.body.dataset.telSeccion = id;
-  history.replaceState(null, '', '?s=' + id + location.hash);
+  const query = new URLSearchParams(location.search);
+  query.set('s', id);
+  history.replaceState(null, '', '?' + query + location.hash);
   if (id === 'pendientes') { pintarPendientes(); leerPendientes(); }
   if (id === 'bodega') pintarBodega();
   if (id === 'mantenimiento' || id === 'bodega') pintarResumen();

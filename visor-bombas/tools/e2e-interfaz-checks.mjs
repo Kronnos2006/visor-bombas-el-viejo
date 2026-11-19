@@ -42,11 +42,11 @@ export const checkInterface=async({page,context,base,out,errors})=>{
  await page.setViewportSize({width:360,height:800});await noOverflow('Ficha a 360px');
  await page.setViewportSize({width:1440,height:1000});
  const failed=await context.newPage();failed.on('pageerror',e=>errors.push(e.message));
- await failed.route('**/modelos/blender-local/planta-blender-local.glb',r=>r.abort());
+ await failed.route('**/modelos/blender-local/planta-blender-local.glb*',r=>r.abort());
  await failed.goto(base,{waitUntil:'networkidle'});await failed.locator('#scene-error').waitFor({state:'visible'});
  await failed.locator('#scene-sheets').click();assert.ok(await failed.locator('body.fichas-only').count());
  await failed.screenshot({path:path.join(out,'recuperacion-3d.png')});
- await failed.unroute('**/modelos/blender-local/planta-blender-local.glb');await failed.locator('#scene-retry').click();
+ await failed.unroute('**/modelos/blender-local/planta-blender-local.glb*');await failed.locator('#scene-retry').click();
  await failed.waitForFunction(()=>window.__blenderIntegrado?.bombas?.length>0,{},{timeout:60000});assert.ok(await failed.locator('#scene-error').isHidden());assert.equal(await failed.locator('#model-progress').getAttribute('value'),'100','La carga no informa porcentaje');await failed.close();
  const flat=await context.newPage();flat.on('pageerror',e=>errors.push(e.message));
  await flat.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){if(/webgl/i.test(type))return null;return original.call(this,type,...args);};});

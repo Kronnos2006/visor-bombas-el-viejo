@@ -3,6 +3,7 @@
 import { passwordOk } from './password.mjs';
 import {cloudPageAccess} from './cloud-edge-access.js';
 import {assertAccountPreviewScope} from './cloud-preview-config.js';
+import {isPumpEditorPath} from './admin-editor-path.js';
 
 export const config = { matcher: '/:path*' };
 
@@ -11,7 +12,10 @@ export default async function middleware(request) {
  if (!process.env.VISOR_PASSWORD && process.env.VOCATUS_CLOUD_ACCOUNTS !== '1')
   return new Response('Visor sin configuración de acceso. Avisá al administrador.', {status:503,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});
  if (passwordOk(request.headers.get('authorization'), process.env.VISOR_PASSWORD)) {
-  if(process.env.VOCATUS_CLOUD_ACCOUNTS!=='1')return;
+  if(process.env.VOCATUS_CLOUD_ACCOUNTS!=='1'){
+   if(isPumpEditorPath(new URL(request.url).pathname))return new Response('Ingresá con una cuenta administradora.',{status:403,headers:{'Cache-Control':'no-store'}});
+   return;
+  }
   try{assertAccountPreviewScope(process.env);}catch{return new Response('Cuentas nuevas fuera de la rama de Preview autorizada.',{status:503});}
   return (await cloudPageAccess(request,{url:process.env.SUPABASE_URL,key:process.env.SUPABASE_PUBLISHABLE_KEY}))||undefined;
  }

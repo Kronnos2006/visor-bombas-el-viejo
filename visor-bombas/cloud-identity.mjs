@@ -1,6 +1,7 @@
 // Frontera de identidad del servidor. No importa código del navegador ni almacena sesiones locales.
 // Los adaptadores deben proporcionar auth.getUser y una lectura protegida de la cuenta actual.
 import {delicateAction} from './auth.mjs';
+import {isPumpEditorPath} from './admin-editor-path.js';
 
 export const CLOUD_ADMIN_PAGES=new Set(['/usuarios.html','/usuarios.js','/equipo.html','/equipo.js','/diseno.html','/diseno-editor.js']);
 const denied=(message,status=403,code='ADMIN_ONLY')=>Object.assign(new Error(message),{status,code});
@@ -16,7 +17,7 @@ export function accountIdentity(authUser,account){
 export function authorizeAccount(user,{method='GET',pathname,body={}}){
  if(!user)throw denied('Tu sesión terminó. Volvé a entrar.',401,'AUTH_REQUIRED');
  if(user.mustChange)throw denied('Primero tenés que cambiar tu contraseña.',403,'PASSWORD_CHANGE');
- const admin=CLOUD_ADMIN_PAGES.has(pathname)||delicateAction(method,pathname,body);
+ const admin=CLOUD_ADMIN_PAGES.has(pathname)||isPumpEditorPath(pathname)||delicateAction(method,pathname,body);
  if(admin&&user.role!=='admin')throw denied('Este cambio solo lo puede hacer un administrador.');
  return {user,audit:typeof admin==='string'?admin:''};
 }

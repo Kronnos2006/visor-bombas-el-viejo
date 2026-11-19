@@ -80,7 +80,12 @@ export function buildPumpModel(T,variant='lf'){
  shell(plate,.145,1.14,.16,materials.paint,'Tapa posterior con paso de eje');bolts(plate,1.02,.11);
  shell(chamber,.38,.54,.58,materials.paint,'Pared de cámara de sello');
  const flush=shell(chamber,.05,.09,.2,materials.steel,'Conexión de lavado');flush.rotation.z=Math.PI/2;flush.position.y=.61;
- if(compact)shell(chamber,.38,.62,.53,materials.paint,'Adaptador del motor · montaje directo',.55);
+ if(compact){
+  shell(chamber,.38,.62,.53,materials.paint,'Adaptador del motor · montaje directo',.55);
+  shell(chamber,.385,.67,.105,materials.steel,'Brida de montaje directo',.79);
+  bolts(chamber,.54,.86,6);
+  for(const z of [-.43,.43])box(chamber,.41,.13,.13,materials.paint,'Nervio del adaptador',.52,-.37,z);
+ }
  // Par de caras, fuelle y resorte visibles al retirar el cuarto de la cámara.
  shell(seal,.13,.26,.085,materials.dark,'Cara estacionaria',-.17,{cover:false});
  shell(seal,.13,.26,.08,materials.steel,'Cara rotativa',-.08,{cover:false});
@@ -124,12 +129,32 @@ export function buildPumpModel(T,variant='lf'){
  shell(motor,.54,.68,.34,materials.motor,'Cubierta del ventilador',motorLength/2+.25);
  const terminal=box(motor,.48,.33,.45,materials.motor,'Caja de conexiones',0,.83,-.12);terminal.userData.removableQuarter=true;
  box(motor,motorLength*.8,.19,1.05,materials.motor,'Pies del motor',0,-.77,0);
- if(compact){frame.visible=false;coupling.visible=false;}
+ if(compact){
+  frame.visible=false;coupling.visible=false;
+  const flangeX=-motorLength/2-.12;
+  shell(motor,.20,.69,.10,materials.motor,'Brida del motor monobloque',flangeX);
+  bolts(motor,.57,flangeX-.075,6);
+  const fanX=motorLength/2+.42;
+  shell(motor,.56,.69,.06,materials.motor,'Aro de la rejilla',fanX);
+  for(let slot=-3;slot<=3;slot++){
+   const z=slot*.14;
+   const grille=box(motor,.045,2*Math.sqrt(.54**2-z*z),.032,materials.dark,'Rejilla del ventilador',fanX,0,z);
+   grille.userData.anatomyCover=true;
+   grille.userData.removableQuarter=true;
+  }
+  for(const z of [-.43,.43]){
+   box(motor,motorLength*.72,.085,.26,materials.steel,'Placa de apoyo del motor',0,-.9,z);
+   for(const x of [-.56,.56])cylinder(motor,.075,.044,materials.steel,'Perno de montaje',x,-.835,z,'y',6);
+  }
+ }
  for(const group of components){
   group.userData.subcomponents=[...new Set(group.children.flatMap(child=>{const names=[];child.traverse(object=>{if(object.isMesh)names.push(object.name);});return names;}))];
   group.traverse(object=>{if(object.isMesh)object.userData.part=group.userData.index;});
  }
  box(root,compact?5.8:8.9,.14,2.05,materials.dark,'Bancada general',compact?-1:0.65,-1.47,0);
+ if(compact){
+  for(const z of [-.43,.43])box(root,1.8,.42,.31,materials.dark,'Soporte de la unidad monobloque',.65,-1.19,z);
+ }
  root.userData.referenceOnly=true;root.updateMatrixWorld(true);
  for(const material of Object.values(materials))material.dispose();
  return {root,components};

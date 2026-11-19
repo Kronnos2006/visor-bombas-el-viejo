@@ -1,12 +1,41 @@
 // Modelo de Blender integrado; ?modelo=original conserva la vista anterior.
+export const VISTA_FBX_AGUA=new URLSearchParams(globalThis.location?.search).get('modelo')==='fbx-agua';
+// Cambiar esta huella cuando se reemplace el GLB. La caché local evita descargar
+// de nuevo los 31 MB en cada visita sin compartir el modelo entre cuentas.
+export const PLANTA_BLENDER_CACHE='962900d9f446b313';
 export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress}){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
  if(!area.aparte||new URLSearchParams(location.search).get('modelo')==='original')return loader.loadAsync(area.modelo,onProgress);
+ if(VISTA_FBX_AGUA){
+  const [glb,info]=await Promise.all([
+   loader.loadAsync('/modelos/planta-tanque-agua.glb',onProgress),
+   fetch('/modelos/planta-tanque-agua.json').then(r=>{
+    if(!r.ok)throw new Error('No se pudieron cargar los sectores del FBX de agua');
+    return r.json();
+   })
+  ]);
+  glb.scene.userData.fbxAgua=info;
+  return glb;
+ }
  const {DRACOLoader}=await import('/vendor/blender-local/DRACOLoader.js');
  const draco=new DRACOLoader().setDecoderPath('/vendor/blender-local/draco/');
  loader.setDRACOLoader(draco);
  try{
-  const glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb',onProgress);
+  let glb;
+  if(typeof DecompressionStream==='function'){
+   const url='/modelos/blender-local/planta-blender-local.glb.gz?v='+PLANTA_BLENDER_CACHE,response=await fetch(url);
+   if(response.status===404)glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
+   else if(!response.ok)throw new Error('No se pudo descargar el modelo comprimido ('+response.status+')');
+   else if(!response.body)glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
+   else{
+    const total=Number(response.headers.get('content-length'))||0;let loaded=0;
+    const seguimiento=new TransformStream({transform(chunk,controller){loaded+=chunk.byteLength;onProgress?.({loaded,total});controller.enqueue(chunk);}});
+    const descarga=response.body.pipeThrough(seguimiento);
+    const contenido=/\bgzip\b/i.test(response.headers.get('content-encoding')||'')?descarga:descarga.pipeThrough(new DecompressionStream('gzip'));
+    const buffer=await new Response(contenido).arrayBuffer();
+    glb=await loader.parseAsync(buffer,'/modelos/blender-local/');
+   }
+  }else glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
   glb.scene.userData.blenderLocal=true;
   glb.scene.traverse(o=>{if(o.userData.sector)o.userData.sector=o.userData.sector.trim();});
   return glb;

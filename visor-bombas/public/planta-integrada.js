@@ -10,6 +10,7 @@ export const SECTORES_INT=[
  {id:'cuatro',nombre:'Cuatro tanques',sectores:['REF Cuatro tanques','REF Cuatro tanques detalle']},
  {id:'agua',nombre:'Agua y enfriamiento',sectores:['REF Agua y enfriamiento','REF Torre pequena','REF Pasillo']},
  {id:'calderas',nombre:'Calderas y nave',sectores:['REF Detalle','REF Detras ADMIN','REF Exterior','REF Fotos','REF Plano ampliacion']},
+ {id:'millo',nombre:'Tanque de millo',sectores:['REF Tanque de millo']},
  {id:'edificios',nombre:'Edificios',sectores:['FBX Administracion','FBX Banos','FBX Bodega pequena','FBX Bodega quimicos','FBX Cuarto electrico','FBX Nave pequena','REF Bodega de ron']}
 ];
 // Pisos: siempre visibles como referencia. La cubierta común se oculta al aislar un sector para ver adentro.
