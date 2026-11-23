@@ -148,6 +148,22 @@ async function main(){
   await page.locator('#tel-resultados button').filter({hasText:'B48'}).click();
   await verificarCadB48();
   checks.push({name:'B48-CAD-detallado-desde-historial-y-areas',ok:true});
+  const estructuraFicha=()=>page.locator('#panel').evaluate(panel=>({
+   secciones:[...panel.children].slice(0,4).map(el=>el.id),
+   edicion:[...panel.querySelectorAll('.equipment-primary-actions a')].map(el=>el.textContent.replace(/B\d+/g,'TAG')),
+   acciones:[...panel.querySelectorAll('.quick-actions button')].map(el=>el.textContent.trim()),
+   componentes:[...panel.querySelectorAll('.equipment-components a')].map(el=>el.textContent.trim())
+  }));
+  const referencia=await estructuraFicha();
+  await page.locator('.tel-volver').click();
+  await page.locator('#tel-buscar').fill('B22');
+  await page.locator('#tel-resultados button').filter({hasText:'B22'}).click();
+  await page.locator('#editar-equipo').getByRole('heading',{name:'Datos y fotos de B22'}).waitFor();
+  const ficha=await estructuraFicha();
+  assert.deepEqual(ficha,referencia);
+  assert.deepEqual(ficha.secciones,['editar-equipo','pump-resumen','mobile-actions','documentos-bomba']);
+  checks.push({name:'B22-y-B48-comparten-estructura-y-acciones',ok:true});
+
   await navigate('mantenimiento');
   const equipoReporte=page.locator('#mant-bomba');
   const tagsReporte=await equipoReporte.locator('option').evaluateAll(rows=>rows.map(row=>row.value));

@@ -9,7 +9,7 @@ import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera,buildCalderaReference,buildSeparatedReference,esModeloCaldera} from './bombas-calderas.js';
 import {detallarBombaPasarela} from './detalles-bombas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
-import {abrirFichaPendiente,clavePendiente,bombaParaResumen} from './ficha-pendiente.js?v=20261123-fichas';
+import {abrirFichaPendiente,clavePendiente,bombaParaResumen,renderEquipmentEdit} from './ficha-pendiente.js?v=20261123-ficha-comun';
 import {pumpNames} from './pump-names.js';
 import {startPumpData} from './pump-data.js';
 import {crearPaleta} from './paleta-bombas.js';
@@ -33,7 +33,7 @@ import {ligarFotosAPosicion,fotosActualizadas, guardarFoto, originales, htmlFoto
 import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js?v=20261111-fotos-v2';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
-import {expediente, expedienteDe, enlaces, linksBomba, documentosBomba, renderDocumentosBomba, linkPieza} from './expediente.js';
+import {expediente, expedienteDe, enlaces, renderDocumentosBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
 import {listReports, deleteReport, configureReports, reportsInObsidian, reportsInCloud, importReports} from './reportes.js';
@@ -382,7 +382,7 @@ window.addEventListener('storage',event=>{if(state.pump&&event.key==='vocatus-su
 function ponerPlaca(){
  const tag=state.pump&&!state.pump.pending&&state.tab==='ficha'?state.pump.tag:null;
  if(!tag||$('#placa-manual'))return;const html=bloquePlaca(tag);if(!html)return;
- const ancla=$('#pump-resumen');if(ancla&&$('#panel').contains(ancla))ancla.insertAdjacentHTML('afterend',html);else $('#panel').insertAdjacentHTML('afterbegin',html);
+ const ancla=$('#documentos-bomba')||$('#pump-resumen');if(ancla&&$('#panel').contains(ancla))ancla.insertAdjacentHTML('afterend',html);else $('#panel').insertAdjacentHTML('afterbegin',html);
 }
 cargarPlacas().then(()=>{if(state.pump)ponerPlaca();});
 function renderPanel(){
@@ -394,23 +394,17 @@ function renderPanel(){
   inspectorUI.enhance();
   return;
  }
- const previousLinks=$("#pump-links");if(previousLinks&&$("#panel").contains(previousLinks))$("#source-status").after(previousLinks);
+ $('#pump-links')?.remove();$('#pump-meta')?.remove();
  const requestLink=document.querySelector('header a[href^="/solicitud.html"]');if(requestLink)requestLink.href="/solicitud.html"+(state.pump?.tag?"?tag="+encodeURIComponent(state.pump.tag):"");
  renderPanelContent();
  const p=state.pump?.data;
- if(p&&state.sector&&!state.pump.pending){
-  if(state.tab==='ficha'){paintPumpSummary(p);$('#panel').prepend($('#pump-resumen'));} const meta=$('#pump-meta');if(meta){const copy=document.createElement('div');copy.className='mobile-pump-meta';copy.innerHTML=meta.innerHTML;$('#panel').prepend(copy);}
-  else $('#pump-resumen')?.remove();
- }
  const photosReady=renderEditingAccess();
- if(matchMedia("(max-width:900px)").matches&&state.tab==="ficha"&&$("#pump-resumen"))$("#panel").prepend($("#pump-resumen"));
- if(matchMedia('(max-width:900px)').matches&&$('#pump-links')){
-  const actions=document.createElement('section');actions.id='mobile-actions';actions.className='block';
-  const heading=document.createElement('h3');heading.textContent='Qué querés hacer con esta bomba';actions.append(heading,$('#pump-links'));
-  const summary=$('#pump-resumen .rs-card');if(summary)summary.after(actions);else $('#panel').append(actions);
- }
- const editAccess=$('#editar-equipo');if(editAccess)$('#panel').prepend(editAccess);
- if(p&&!state.pump.pending&&['ficha','historial'].includes(state.tab)){const local=savedSurveyHTML(state.pump.tag);if(local){if(editAccess)editAccess.insertAdjacentHTML('afterend',local);else $('#panel').insertAdjacentHTML('afterbegin',local);}}
+ if(p&&state.sector&&!state.pump.pending&&state.tab==='ficha'){
+  paintPumpSummary(p);
+  ordenarFichaBomba(p);
+  const local=savedSurveyHTML(state.pump.tag);
+  if(local)$('#documentos-bomba')?.insertAdjacentHTML('afterend',local);
+ } else if(!state.pump?.pending)$('#pump-resumen')?.remove();
  ponerPlaca();
  inspectorUI.enhance();
  return photosReady;
@@ -696,17 +690,32 @@ function paintPumpSummary(p,opts={}){
   }catch(e){error.textContent=e.message||'No se pudo guardar el rango.';submit.disabled=false;}
  };
 }
+function ordenarFichaBomba(p){
+ const panel=$('#panel'),editor=$('#editar-equipo'),resumen=$('#pump-resumen'),documentos=$('#documentos-bomba');
+ if(!editor||!resumen||!documentos)return;
+ paintPumpLinks(p);
+ const acciones=document.createElement('section');
+ acciones.className='block';acciones.id='mobile-actions';
+ const titulo=document.createElement('h3');titulo.textContent='Acciones de la bomba';
+ acciones.append(titulo,$('#pump-meta'),$('#pump-links'));
+ $('#resumen-pendiente')?.remove();
+ panel.prepend(editor,resumen,acciones,documentos);
+}
 function paintPumpLinks(p){
  let el=document.getElementById('pump-links');
  if(!el){el=document.createElement('div');el.id='pump-links';$('#source-status').after(el);}
  if(!p){el.hidden=true;el.innerHTML='';$('#pump-meta')?.remove();return;}
  paintPumpMeta(p);
- el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'',hayDocumentos=documentosBomba(p).length>0;
- el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:hayDocumentos?'<button type="button" data-quick="docs">📘 Manuales y CAD</button>':'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu"><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button><a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
+ el.hidden=false;
+ const reference=state.pump?.pending;
+ const puedeUbicar=reference?!reference.sinUbicacion&&!!reference.anclaEtiqueta:!integrado?.asignacion||!!pumpObjectsInt[p.tag];
+ el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate" ${puedeUbicar?'':'disabled title="Ubicación 3D pendiente"'}>📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button><button type="button" data-quick="docs">📘 Manuales y CAD</button><button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu"><summary>Más acciones</summary><div class="secondary-actions"><button type="button" data-quick="edit">Actualizar datos</button><button type="button" id="download-summary-pdf-header" ${reference&&!state.pump.ficha?'disabled title="Resumen técnico pendiente"':''}>Resumen PDF</button><a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
  const docs=el.querySelector('[data-quick=docs]');
  if(docs)docs.onclick=()=>{state.tab='ficha';renderPanel();inspectorUI.show($('#documentos-bomba'));};
- el.querySelector('[data-quick=locate]').onclick=locateSelectedPump;
+ el.querySelector('[data-quick=locate]').onclick=reference?()=>ubicarReferencia(reference):locateSelectedPump;
+ el.querySelector('[data-quick=edit]').onclick=()=>$('#editar-equipo .equipment-primary-actions a')?.click();
  el.querySelector('[data-quick=photos]').onclick=async()=>{
+  if(reference){$('#editar-equipo [data-ir=fotos]')?.click();return;}
   state.tab='ficha';
   const photosReady=renderPanel(),anchor=$('#fuentes-'+p.tag);
   inspectorUI.show(anchor);
@@ -721,6 +730,17 @@ function paintPumpMeta(p){
  const c=completeness(p),v=verificationOf(p);
  const doc=p.documental||p,enRep=doc.estado_operativo==='en_reparacion';
  el.innerHTML=`${enRep?`<span class="chip no reparacion">En reparación desde ${esc(doc.reparacion_desde||'—')}: ${esc(doc.reparacion_motivo||'')}</span>`:''}<span class="chip">Completos ${c.done}/${c.total}</span><span class="chip ${v.verified?'ok':'no'}">${esc((state.demo?'DEMO · ':'')+verificationText(v))}</span><p class="storage-note">${esc(storageDescription(state))}</p>`;
+}
+function ubicarReferencia(reference){
+ if(!plant||!camera||!reference.anclaEtiqueta?.parent)return;
+ ++state.loading;detailFlightTicket=null;state.view='plant';state.explode=0;
+ if(photoDetail)photoDetail.visible=false;
+ plant.visible=true;pumpGroup.visible=false;
+ state.area='integrado';state.filtroInt=sectorDe(reference.sector);
+ aplicarFiltroInt();applyArea();
+ const target=reference.anclaEtiqueta.getWorldPosition(new THREE.Vector3());
+ fly(target.clone().add(new THREE.Vector3(5,6,5)).toArray(),target.toArray());
+ renderList();renderPanel();
 }
 function locateSelectedPump(){
  const p=state.pump?.data;if(!p)return;
@@ -812,7 +832,7 @@ function representedSubparts(index){
 }
 function renderPhotoPanel(p=state.pump?.data){
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
- if(!state.pump?.pending)paintPumpLinks(p);
+ if(!p)paintPumpLinks(null);
  if(!p&&state.area==='integrado'){$('#panel').innerHTML='<p class="eyebrow">PLANTA COMPLETA</p><h2>Seleccioná un sector y una bomba</h2><p class="notice">Cada bomba tiene su selección individual, incluso cuando hay varias juntas. Elegí un sector para ver sus etiquetas, o buscá una bomba en el explorador.</p><p>Las fichas existentes conservan sus datos. En los equipos pendientes, los campos e imágenes quedan vacíos para completar el levantamiento.</p>';return;}
  if(!p){$('#panel').innerHTML=`<p class="eyebrow">SECTOR FOTOGRAFIADO · 07 OCT 2026</p><h2>Seleccioná una bomba</h2><p class="notice">El expediente mostrará únicamente la bomba elegida. Los datos de sellos, o-rings e historial están preparados para la demostración y se distinguen de la evidencia real.</p><img src="${photo3URL('142609')}" alt="Vista elevada de los tanques del sector"><p class="muted">Referencia utilizada para orientar y completar los tanques del render.</p>`;return;}
 
@@ -1034,6 +1054,7 @@ function selectPendingPump(reference){
   if(state.pump!==selection)return;
   selection.ficha=ficha;selection.history=ficha.history;selection.source=ficha.source;
   if(state.tab==='historial')renderPanel();
+  else if(state.tab==='ficha'&&$('#download-summary-pdf-header'))$('#download-summary-pdf-header').disabled=false;
  }).catch(()=>{});
  state.part=null;state.tab='ficha';
  document.dispatchEvent(new CustomEvent('vocatus:referencia',{detail:reference}));
@@ -1077,7 +1098,18 @@ function renderPendingPanel(){
   else $('#panel').innerHTML='<p class="notice">Asigná un TAG a la bomba para consultar su historial o hacer preguntas a Gemini.</p>';
   return;
  }
- abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference||state.tab!=='ficha')return;const hueco=$('#resumen-pendiente');if(hueco){paintPumpSummary(bombaParaResumen(reference),{pendiente:true});hueco.replaceWith($('#pump-resumen'));}const despues=$('#pump-resumen')||$('#editar-equipo');if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;if(!$('#datos-excel'))despues?.insertAdjacentHTML('afterend',bloqueExcel(integrado.asignacion,reference.tagAsignado));if(!$('#placa-manual'))$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
+ abrirFichaPendiente($('#panel'),reference,()=>{
+  if(state.pump?.pending!==reference||state.tab!=='ficha')return;
+  const p=bombaParaResumen(reference);
+  paintPumpSummary(p,{pendiente:true});
+  ordenarFichaBomba(p);
+  if(reference.tagAsignado&&integrado?.asignacion&&!$('#datos-excel')){
+   $('#documentos-bomba')?.insertAdjacentHTML('afterend',bloqueExcel(integrado.asignacion,reference.tagAsignado));
+   $('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));
+  }
+  pintarBloqueAdmin(clavePendiente(reference));
+  inspectorUI.enhance();
+ }).catch(e=>toast(e.message));
  if(state.part!==null){$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(partName(state.part))}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
 async function cargarDetallesFBX(){
@@ -1454,8 +1486,8 @@ function renderEditingAccess(){
  const selection=state.pump;if(!selection||selection.pending||state.tab!=='ficha')return;
  const tag=selection.tag;if(!/^(B[1-9]\d{0,3}|P-\d{4}[A-Z]?)$/.test(tag))return;
  const href=group=>'/levantamiento.html?tag='+encodeURIComponent(tag)+'#editar-'+group;
- const groups=[['general','Datos de la bomba'],['placa','Placa'],['motor','Motor'],['sello','Sello'],['empaque','Empaque'],['componentes','Rodamientos y acople'],['orings','O-rings'],['fotos','Fotos y componentes']];
- $('#panel').insertAdjacentHTML('afterbegin','<section class="edit-equipment" id="editar-equipo" aria-label="Actualizar '+esc(tag)+'"><h3>Datos y fotos de '+esc(tag)+'</h3><nav class="equipment-primary-actions" aria-label="Editar '+esc(tag)+'"><a href="'+href('general')+'">Editar datos de '+esc(tag)+'</a><a href="'+href('fotos')+'">Editar fotos de '+esc(tag)+'</a></nav><details class="equipment-components"><summary>Ir a un componente</summary><div class="edit-equipment-links">'+groups.filter(([group])=>!['general','fotos'].includes(group)).map(([group,label])=>'<a href="'+href(group)+'">'+label+'</a>').join('')+'</div></details></section>');
+ $('#panel').insertAdjacentHTML('afterbegin',renderEquipmentEdit(tag,grupo=>({href:href(grupo)})));
+ $('#editar-equipo [data-ir=documentos]').onclick=e=>{e.preventDefault();inspectorUI.show($('#documentos-bomba'));};
  $('#panel').insertAdjacentHTML('afterbegin',`<form id="nombre-bomba-tag" class="block"><label class="field">Nombre o código de ${esc(tag)}<input name="nombre" maxlength="120" value="${esc(pumpNames.nameOf(claveTag(tag)))}" placeholder="${esc(selection.data?.nombre||'')}" style="width:100%"></label><button type="submit">Guardar nombre</button><p role="status" class="nombre-tag-estado"></p></form>`);
  $('#nombre-bomba-tag').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,estado=f.querySelector('.nombre-tag-estado');estado.textContent='Guardando…';const r=await pumpNames.save(claveTag(tag),f.nombre.value);if(!f.isConnected)return;estado.textContent={done:'Nombre guardado para todo el equipo.',offline:'Guardado aquí. Se comparte cuando vuelva la señal.','signed-out':'Guardado en este navegador. Entrá con tu cuenta para compartirlo.','read-only':'Guardado en este navegador. Tu cuenta solo permite consultar.'}[r]||'Guardado en este navegador; no se pudo compartir todavía.';renderList();};
  pintarBloqueAdmin(claveTag(tag));
