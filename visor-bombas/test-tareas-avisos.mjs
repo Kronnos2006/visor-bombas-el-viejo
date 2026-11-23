@@ -79,3 +79,14 @@ test('la base tiene índices en sus relaciones y limpia avisos viejos sola',asyn
  assert.doesNotMatch(s,/delete from public\.vocatus_(work|incidents|photos|pump)/);
  assert.match(s,/add table public\.vocatus_work_reports/);
 });
+test('las órdenes ya no se editan directo: solo por las funciones, que pasan a SECURITY DEFINER',async()=>{
+ const s=await readFile(new URL('../supabase/migrations/20261123120000_vocatus_cerrar_work_orders_update.sql',import.meta.url),'utf8');
+ assert.match(s,/alter function public\.vocatus_save_work_report\(jsonb\) security definer/);
+ assert.match(s,/alter function public\.vocatus_save_work_order\(jsonb\) security definer/);
+ assert.match(s,/drop policy if exists work_orders_update on public\.vocatus_work_orders/);
+ assert.match(s,/drop policy if exists vocatus_account_update on public\.vocatus_work_orders/);
+ assert.match(s,/revoke update on public\.vocatus_work_orders from authenticated/);
+ assert.doesNotMatch(s,/drop policy[^;]*(read|insert)/i);
+ const js=await readFile(new URL('./public/cloud-workflow.js',import.meta.url),'utf8');
+ assert.doesNotMatch(js,/\.from\(['"]vocatus_work_orders['"]\)\s*\.(update|upsert)/);
+});
