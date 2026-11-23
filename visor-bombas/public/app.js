@@ -131,7 +131,7 @@ let simRig=null;const sims={};
 let n32Load, n32Model, activePumpReference;
 let areaGroups={},torre=null;const pumpObjects={};
 let plantRequested=false;
-function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';const directHistory=section==='historial'&&plantPumps.some(p=>p.tag===location.hash.slice(1).toUpperCase());return params.get('vista')==='clasica'||(['areas','historial'].includes(section)&&!directHistory)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
+function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';return params.get('vista')==='clasica'||section==='areas'||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
 function ensurePlant(){if(!plant||plantRequested)return;plantRequested=true;rebuildPlant();}
 function cargarTorre(g=areaGroups.torre){
  if(!g||torre?.root.parent===g)return torre;
@@ -386,6 +386,7 @@ function ponerPlaca(){
 }
 cargarPlacas().then(()=>{if(state.pump)ponerPlaca();});
 function renderPanel(){
+ if(state.pump?.historyOnly){renderMaintenanceHistory(state.pump);return;}
  const previousLinks=$("#pump-links");if(previousLinks&&$("#panel").contains(previousLinks))$("#source-status").after(previousLinks);
  const requestLink=document.querySelector('header a[href^="/solicitud.html"]');if(requestLink)requestLink.href="/solicitud.html"+(state.pump?.tag?"?tag="+encodeURIComponent(state.pump.tag):"");
  renderPanelContent();
@@ -732,6 +733,23 @@ function showHistoryLoadError(error,tag){
  notice.querySelector('p').textContent=error.message||'No se pudo leer el historial. Tus reportes se conservan.';
  notice.querySelector('button').onclick=()=>{notice.remove();const pump=state.pump;if(pump?.tag!==tag||state.tab!=='historial')return;if($('#rep-list'))refreshPhotoHistory(pump);else mountHistoryChart(pump);};
 }
+function renderMaintenanceHistory(pump){
+ const panel=$('#panel');
+ panel.innerHTML=`<h2>Historial de mantenimiento · ${esc(pump.tag)}</h2>${pump.history?.trim()?'<section class="history-note"><h3>Intervenciones documentadas</h3><pre>'+esc(pump.history)+'</pre></section>':''}<div id="rep-list" class="report-history-list" aria-live="polite"><p>Leyendo reportes…</p></div>`;
+ paintReports(pump.tag);
+}
+function openMaintenanceHistory(tag){
+ if(!/^B(?:[1-9]|[1-8]\d|90)$/.test(tag))return;
+ ++state.loading;
+ const pump=state.pump={tag,historyOnly:true};
+ state.tab='historial';
+ history.replaceState(null,'',location.pathname+location.search+'#'+tag);
+ renderPanel();
+ api('/api/pump?tag='+encodeURIComponent(tag)).then(ficha=>{
+  if(state.pump!==pump||!ficha.history?.trim())return;
+  pump.history=ficha.history;renderPanel();
+ }).catch(()=>{});
+}
 function refreshPhotoHistory(pump){
  $('#history-load-error')?.remove();
  const reports=listReports(pump.tag||pump.data?.tag);
@@ -809,7 +827,9 @@ async function renderHistoryPhotos(p){
  bindPhotoTransfers(root,key,{writable:!reference&&!!state.writable,token:state.token,reference:!!reference},paint);await paint();
 }
 document.addEventListener('vocatus:informe-guardado',({detail})=>{
- if(state.tab==='historial'&&state.pump?.tag===detail?.tag)refreshPhotoHistory(state.pump);
+ if(state.tab==='historial'&&state.pump?.tag===detail?.tag){
+  if(state.pump.historyOnly)paintReports(detail.tag);else refreshPhotoHistory(state.pump);
+ }
 });
 function representedSubparts(index){
  const names=componentGroups[index]?.userData.subcomponents||[];
@@ -856,6 +876,7 @@ await refresh();
 function selectFromHash(){
  const tag=location.hash.slice(1).toUpperCase();
  if(!/^B\d+$/.test(tag))return;
+ if(document.body.dataset.telSeccion==='historial'){document.dispatchEvent(new CustomEvent('vocatus:abrir-historial',{detail:tag}));return;}
  if(state.pumps.some(p=>p.tag===tag))selectPhotoPump(tag);
  else {
   const reference=integrado?.references.find(p=>p.tagAsignado===tag)||referenciasDeInventario().find(p=>p.tagAsignado===tag);
@@ -1485,6 +1506,7 @@ window.vocatus={
   return [...equipos.values()];
  },
  get pumps(){return state.pumps;},get pump(){return state.pump;},get token(){return state.token;},get writable(){return !!state.writable;},get demo(){return !!state.demo;},
+ openHistory:openMaintenanceHistory,
  select:tag=>selectPhotoPump(tag),
  selectReference:reference=>selectPendingPump(reference),
  tab:name=>{state.tab=name;renderPanel();},
