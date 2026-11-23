@@ -114,6 +114,15 @@ export async function readPump(tag) {
  }
  return {tag,data,description:section(body,'Qué hace'), history, failures:section(body,'Modos de falla observados'), observations:section(body,'Observaciones'), reports, files, source:`00-Proyecto/bombas/${tag}.md`};
 }
+async function readPumpForMaintenance(tag){
+ try{return await readPump(tag);}
+ catch(error){
+  if(!tagPattern.test(tag)||!tag.startsWith('B')||!(error.code==='PUMP_NOT_AVAILABLE'||error.message==='No hay ficha para este TAG.'))throw error;
+  const inventory=pumpAssignments.excel;
+  if(!Object.hasOwn(inventory,tag))throw error;
+  return {tag,source:'Inventario Excel · '+tag,data:inventory[tag],history:'',reports:await maintenance.list(tag)};
+ }
+}
 export function readIntegratedPump(tag) {
  const data=plantPumps.find(p=>p.tag===tag);
  if(!data) return null;
@@ -214,15 +223,15 @@ export async function handler(req,res) {
    return send(res,200,{rows,errors,inventory,token:TOKEN,demo:DEMO,writable:configuration.writable,fields:FIELDS,replaceFields:REPLACE_FIELDS});
   }
   if(req.method==='GET' && url.pathname==='/api/reports') {
-   const p=await readPump(url.searchParams.get('tag')||'');
+   const p=await readPumpForMaintenance(url.searchParams.get('tag')||'');
    return send(res,200,{reports:p.reports.map(r=>r.record)});
   }
   if(req.method==='GET' && url.pathname==='/api/report-evidence') {
-   const tag=url.searchParams.get('tag')||'';await readPump(tag);const image=await maintenance.evidence(tag,url.searchParams.get('id')||'',Number(url.searchParams.get('index')));
+   const tag=url.searchParams.get('tag')||'';await readPumpForMaintenance(tag);const image=await maintenance.evidence(tag,url.searchParams.get('id')||'',Number(url.searchParams.get('index')));
    res.writeHead(200,{'Content-Type':image.mime,'Content-Disposition':`inline; filename*=UTF-8''${encodeURIComponent(image.name)}`,'X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});return res.end(image.bytes);
   }
   if(req.method==='GET' && url.pathname==='/api/report-document') {
-   const tag=url.searchParams.get('tag')||''; await readPump(tag);
+   const tag=url.searchParams.get('tag')||''; await readPumpForMaintenance(tag);
    const document=await maintenance.attachment(tag,url.searchParams.get('id')||'');
    res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(document.name)}`,'X-Content-Type-Options':'nosniff'});
    return res.end(document.bytes);
@@ -283,7 +292,7 @@ export async function handler(req,res) {
    }
    if(url.pathname==='/api/maintenance' && !configuration.writable) return send(res,403,{error:'Este alojamiento no tiene almacenamiento persistente. Los reportes se conservan en el navegador.'});
    if(req.method==='DELETE') {
-    const p=await readPump(body.tag); await maintenance.remove(p.tag,body.id);
+    const p=await readPumpForMaintenance(body.tag); await maintenance.remove(p.tag,body.id);
     return send(res,200,{removed:true});
    }
    if(url.pathname==='/api/config') {
@@ -327,7 +336,7 @@ export async function handler(req,res) {
     return res.end(Buffer.from(pdf));
    }
    if(url.pathname==='/api/maintenance') {
-    const p=await readPump(body.tag);
+    const p=await readPumpForMaintenance(body.tag);
     if(body.workOrderId){const order=await workOrders.find(body.workOrderId,p.tag);if(order.status==='completada'&&order.reportId!==(await maintenance.list(p.tag)).find(r=>r.record.sourceId===body.sourceId)?.record.id)throw Error('Esta orden ya está cerrada con otro informe.');}
     const report=await maintenance.save(p.tag,body);
     if(body.workOrderId){if(report.workOrderId!==body.workOrderId)throw Error('El informe de origen ya existe con otro vínculo de orden.');await workOrders.complete(body.workOrderId,p.tag,report);}
@@ -338,15 +347,7 @@ export async function handler(req,res) {
     if(ON_VERCEL){const now=Date.now();while(askLog.length&&now-askLog[0]>3600000)askLog.shift();if(askLog.length>=60)return send(res,429,{error:'Límite de consultas por hora alcanzado. Probá más tarde.'});askLog.push(now);}
     const question=clean(body.question,4000);
     if(!question) throw new Error('Escribí una pregunta.');
-    let p;
-    try{p=await readPump(body.tag);}
-    catch(error){
-     if(!tagPattern.test(body.tag)||!body.tag.startsWith('B')||!(error.code==='PUMP_NOT_AVAILABLE'||error.message==='No hay ficha para este TAG.'))throw error;
-     const inventory=pumpAssignments.excel;
-     const fields=Object.hasOwn(inventory,body.tag)?inventory[body.tag]:null;
-     if(!fields)throw error;
-     p={source:'Inventario Excel · '+body.tag,data:fields,history:'',reports:[]};
-    }
+    const p=await readPumpForMaintenance(body.tag);
     const context={demostracion:DEMO,advertencia:DEMO?'Todos estos datos son de demostración o están por confirmar. Identificá la respuesta como demostración. No uses estas medidas ni materiales para recomendar repuestos o compatibilidad reales.':'',source:p.source,fields:p.data,history:p.history,failures:p.failures,reports:p.reports,reportesDeCampo:(Array.isArray(body.reportes)?body.reportes.slice(0,20).map(r=>({fecha:textField(r.fecha,10),titulo:textField(r.titulo),texto:clean(r.texto,3000),pdf:textField(r.pdf)})):[]),notaExpediente:clean(body.notaExpediente,600),aclaracion:'reportesDeCampo son escritos por usuarios en el navegador y no están verificados; tratalos como declaraciones, no como hechos confirmados.'};
     // Razonamiento bajo para responder dentro del límite de la función en Vercel (60 s).
     // Si el modelo no acepta thinkingConfig (HTTP 400), se reintenta sin esa opción.
