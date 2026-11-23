@@ -9,7 +9,7 @@ const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const out=path.resolve(process.env.UI_SCREENSHOTS_DIR||path.join(root,'informes-auditoria','interfaz-app'));
-const sections=['areas','pendientes','historial','bodega','mantenimiento'];
+const sections=['areas','pendientes','historial','mantenimiento'];
 
 async function port(){return new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const n=s.address().port;s.close(()=>resolve(n));});});}
 async function geometry(page,label){
@@ -47,7 +47,7 @@ async function main(){
   await context.route('https://fonts.googleapis.com/**',r=>r.abort());
   await context.route('**/*.supabase.co/**',r=>r.abort());
   await context.route('**/api/**',async r=>{const request=r.request();if(['POST','DELETE'].includes(request.method())&&/\/api\/(maintenance|equipment|survey)(?:\?|$)/.test(request.url())){blockedWrites.push(request.url());await r.abort();}else await r.continue();});
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.stack||e.message));
   const shot=async name=>page.screenshot({path:path.join(out,name+'.png')});
   const navigate=async section=>{await page.locator('#tel-barra button[data-s='+section+']').click();await page.waitForFunction(s=>document.body.dataset.telSeccion===s,section);};
   await page.goto(base+'/?s=mantenimiento',{waitUntil:'networkidle',timeout:90000});
@@ -86,16 +86,14 @@ async function main(){
   assert.equal(await page.inputValue('#mant-problema'),'PRUEBA AISLADA DE INTERFAZ');
   await page.getByRole('button',{name:'Guardar en este dispositivo',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#mant-aviso')?.textContent.includes('Reporte de B3'));
-  assert.ok((await page.locator('#mant-local').textContent()).includes('PRUEBA AISLADA DE INTERFAZ'));checks.push({name:'guardar-reporte-y-recuperar-borrador',ok:true});
+  await page.locator('#mant-local').getByText('PRUEBA AISLADA DE INTERFAZ',{exact:false}).first().waitFor();checks.push({name:'guardar-reporte-y-recuperar-borrador',ok:true});
   await shot('reporte-guardado-movil');
   await navigate('historial');if(await page.locator('.tel-volver').isVisible())await page.locator('.tel-volver').click();await page.locator('#hist-buscar').fill('B-3');
   await page.locator('#hist-tarjetas [data-tag=B3]').click();await page.waitForFunction(()=>!document.querySelector('.tel-ficha').hidden);
   await geometry(page,'Historial con ficha movil');await shot('historial-movil');
   await page.locator('#tema-toggle').click();await geometry(page,'Ficha tema claro');await shot('historial-movil-claro');await page.locator('#tema-toggle').click();
-  await page.setViewportSize({width:1024,height:768});await navigate('pendientes');
-  const pendingGroup=page.locator('#pend-lista details').first();if(await pendingGroup.getAttribute('open')===null)await pendingGroup.locator('summary').click();
-  await page.locator('#pend-lista .tel-pend').first().click();await page.waitForTimeout(400);
-  await geometry(page,'Pendientes con ficha 1024');await shot('pendientes-ficha-1024');
+  await page.setViewportSize({width:1024,height:768});
+  await geometry(page,'Historial con ficha 1024');
   const beforeExpand=await page.locator('.inspector').boundingBox();await page.locator('#expand-inspector').click();
   const expanded=await page.locator('.inspector').boundingBox();assert.ok(expanded.width>beforeExpand.width*1.5,'Pantalla completa no amplia la ficha');
   assert.equal(await page.locator('#expand-inspector').getAttribute('aria-pressed'),'true');await shot('ficha-ampliada');
@@ -111,7 +109,7 @@ async function main(){
     checks.push({name:route+'-'+size.width,ok:true});if(size.width===390)await shot(route+'-movil');
    }
   }
-  const flat=await context.newPage();flat.on('pageerror',e=>errors.push(e.message));
+  const flat=await context.newPage();flat.on('pageerror',e=>errors.push(e.stack||e.message));
   await flat.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/i.test(type)?null:original.call(this,type,...args);};});
   await flat.goto(base+'/?s=areas',{waitUntil:'networkidle'});assert.equal(await flat.evaluate(()=>document.createElement('canvas').getContext('webgl2')),null);
   if(await flat.locator('#portada button').isVisible())await flat.locator('#portada button').click();

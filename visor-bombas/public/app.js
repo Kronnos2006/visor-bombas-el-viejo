@@ -146,11 +146,14 @@ function cargarModeloArea(area,g){
  const load=area.aparte&&new URLSearchParams(location.search).get('modelo')!=='original'
   ?cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress:reportModelProgress})
   :new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(area.modelo);
+ const datos=area.aparte&&!VISTA_FBX_AGUA?cargarDatosIntegrado():null;
+ // Si los datos fallan antes que el modelo, montarIntegrado registra el error.
+ datos?.catch(()=>{});
  g.userData.cargando=load.then(glb=>{
   if(g.parent!==plant){glb.scene.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of(Array.isArray(o.material)?o.material:[o.material]))m?.dispose();}});return;}
   glb.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(area.aparte)return;o.userData.areaId=area.id;areaPickables.push(o);}});
   g.add(glb.scene);
-  if(area.aparte){$('#model-load').hidden=true;$('#scene-error').hidden=true;montarIntegrado(g,glb.scene,state.pumps.length?state.pumps:plantPumps);}
+  if(area.aparte){$('#model-load').hidden=true;$('#scene-error').hidden=true;montarIntegrado(g,glb.scene,state.pumps.length?state.pumps:plantPumps,datos);}
   if(state.view==='plant'&&state.area===area.id){if(glb.scene.userData.fbxAgua&&state.filtroInt)flyIntegrado();else flyArea(area.id);}
  }).catch(err=>{g.userData.cargando=null;if(area.aparte)show3DError(err);else console.warn('No se cargó '+area.nombre,err);});
  return g.userData.cargando;
@@ -298,7 +301,10 @@ function initScene(){
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
   if(n32Model)n32Model.moveExplosion(state.explode/100,reducedMotion.matches,anatomy?.state.isolate);
   else componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x=reducedMotion.matches?x:g.position.x+(x-g.position.x)*.12;});
-  controls.update();solSegunVista();renderer.render(scene,camera);
+  controls.update();
+  // Las sombras dinámicas se reservan para vistas de sector y de bomba.
+  renderer.shadowMap.enabled=state.view!=='plant'||state.area!=='integrado'||!!state.filtroInt;
+  solSegunVista();renderer.render(scene,camera);
   paletaBombas?.mostrar(state.view==='plant');
   const partLabels=[],pumpLabels=[];
   etiquetasFlotantes.ocultarLineas();
@@ -1067,7 +1073,10 @@ async function cargarDetallesFBX(){
   return {scene,grupos,sectores:info.sectores};
  }catch(error){console.warn('No se cargaron los detalles del FBX',error);return null;}
 }
-function montarIntegrado(g,escena,placed){
+function cargarDatosIntegrado(){
+ return Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261119-lista2').then(r=>r.ok?r.json():null).catch(()=>null),cargarDetallesFBX()]);
+}
+function montarIntegrado(g,escena,placed,datos){
  integrado={g,escena,info:null,references:[]};for(const k in pumpObjectsInt)delete pumpObjectsInt[k];
  detallarBombaPasarela(THREE,escena);
  // Mantiene visibles las bombas y calderas debajo de las dos cubiertas.
@@ -1086,7 +1095,7 @@ function montarIntegrado(g,escena,placed){
   aplicarFiltroInt();applyArea();renderList();
   return;
  }
- Promise.all([fetch(INFO_URL).then(r=>r.json()),fetch('/modelos/bombas-individuales.json').then(r=>{if(!r.ok)throw new Error('No se pudo cargar la identificación individual de bombas');return r.json();}),fetch('/modelos/bombas-campo.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('/modelos/asignacion-bombas.json?v=20261119-lista2').then(r=>r.ok?r.json():null).catch(()=>null),cargarDetallesFBX()]).then(([info,gruposBase,gruposCampo,asignacionData,detalles])=>{
+ datos.then(([info,gruposBase,gruposCampo,asignacionData,detalles])=>{
   if(g.parent!==plant)return;
   const asignacion=indexarAsignacion(asignacionData);integrado.asignacion=asignacion;integrado.quitadas=[];integrado.info=info;
   // Bombas nuevas del FBX general: archivo aparte, sin tocar el modelo ni la identificación existentes.
