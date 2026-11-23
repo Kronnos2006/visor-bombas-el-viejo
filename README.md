@@ -11,18 +11,18 @@ Si se olvida la clave de administrador, `Restablecer administrador.cmd` genera u
 
 ## Edición de todas las bombas
 
-Editor común de datos, componentes y diez categorías de fotos para las 77 fichas B y 15 fichas P. Incluye edición de o-rings y acceso a fichas fuera del mapa. Ver [editor universal](00-Proyecto/Documentacion-visor/17-Editor-universal-bombas.md).
+El inventario Excel contiene 90 equipos (B1–B90). La base documental incluye 77 fichas B y 15 fichas P. El editor permite modificar datos, componentes y diez categorías de fotos. Incluye edición de o-rings y acceso a fichas fuera del mapa. Ver [editor universal](00-Proyecto/Documentacion-visor/17-Editor-universal-bombas.md).
 
 ## Correcciones de integridad
 
-Verificación explícita por identidad, placa y repuestos; validación de fechas y números; respaldo previo al levantamiento; corrección de pedidos y explicación de los conteos. `npm test`: 100 pruebas. Al cambiar la potencia del motor, el valor anterior y su unidad quedan como antecedente. Ver [cierre de auditoría](00-Proyecto/Documentacion-visor/16-Correcciones-integridad-2026-10-26.md).
+Verificación explícita por identidad, placa y repuestos; validación de fechas y números; respaldo previo al levantamiento; corrección de pedidos y explicación de los conteos. Al cambiar la potencia del motor, el valor anterior y su unidad quedan como antecedente. Ver [cierre de auditoría](00-Proyecto/Documentacion-visor/16-Correcciones-integridad-2026-10-26.md).
 
 
 ## Interfaz vigente · 26 de octubre de 2026
 
 Tema compartido entre vista simple y completa; búsqueda por TAG, marca, modelo y serie; acciones de expediente; apartados plegables y ficha móvil con el 3D visible. Avance separa documentación y verificación en campo. El visor incorpora controles de cámara, progreso de descarga y recuperación del 3D.
 
-`npm test` ejecuta la misma suite desde la raíz y desde `visor-bombas/` (80 pruebas en esta revisión). La revisión visual automatizada está en `visor-bombas/tools/e2e-interfaz.mjs` desde la raíz; usa un servidor DEMO separado y requiere Playwright. Consultar [la documentación vigente](00-Proyecto/Documentacion-visor/15-Interfaz-y-validacion-2026-10-26.md) para opciones, almacenamiento y pendientes de campo. Las notas antiguas de Obsidian son evidencia histórica.
+`npm test` ejecuta la suite de regresión desde la raíz del repositorio. La revisión visual automatizada está en `visor-bombas/tools/e2e-interfaz.mjs` desde la raíz; usa un servidor DEMO separado y requiere Playwright. Consultar [la documentación vigente](00-Proyecto/Documentacion-visor/15-Interfaz-y-validacion-2026-10-26.md) para opciones, almacenamiento y pendientes de campo. Las notas antiguas de Obsidian son evidencia histórica.
 
 
 ## Abrir en GitHub Codespaces
@@ -45,7 +45,7 @@ ningún lado consultable.
 | Carpeta | Qué contiene |
 |---|---|
 | `visor-bombas/` | El visor: servidor Node, PDF con pdf-lib, página en Three.js, pruebas |
-| `00-Proyecto/` | La base de conocimiento en Obsidian: 77 fichas de equipo, notas de proyecto, scripts |
+| `00-Proyecto/` | La base de conocimiento en Obsidian: 77 fichas B, notas de proyecto y scripts |
 
 ### El visor
 
