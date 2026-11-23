@@ -1,5 +1,7 @@
 # Visor de bombas · Planta El Viejo
 
+La [guía de continuidad](00-Proyecto/Documentacion-visor/24-Continuidad-del-visor.md) reúne el estado de producción, las pruebas y los pendientes. Para trabajar con Claude, empieza por [CLAUDE.md](CLAUDE.md).
+
 ## Cuentas en el visor local
 
 Al arrancar el visor en la computadora se pide entrar con usuario o correo y contraseña. La primera vez se crea el administrador, solo desde esa misma computadora. Cuentas y bitácora quedan en `.vocatus-visor`, en la carpeta personal: fuera del repositorio y de la bóveda, con contraseñas cifradas (scrypt). No aplica a Vercel ni a Codespaces.
@@ -29,7 +31,7 @@ Tema compartido entre vista simple y completa; búsqueda por TAG, marca, modelo 
 
 En GitHub, seleccionar **Code → Codespaces → Create codespace on main**. La configuración de `.devcontainer` inicia `visor-bombas` con datos de demostración, publica el puerto 8766 como vista privada y evita depender de la bóveda instalada en una PC.
 
-Codespaces es el entorno de desarrollo. La publicación permanente se preparará por separado en Cloudflare Workers y D1. No guardar claves API en el repositorio.
+Codespaces es un entorno de desarrollo. La versión operativa se publica en [Vercel](https://visor-bombas-el-viejo.vercel.app/). Las claves se administran fuera del repositorio.
 
 Buscador 3D de bombas con su información de sellado, y la base de conocimiento
 que lo alimenta. Práctica profesional de Ingeniería Mecatrónica en Vocatus
