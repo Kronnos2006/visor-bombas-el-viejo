@@ -9,7 +9,7 @@ const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const out=path.resolve(process.env.UI_SCREENSHOTS_DIR||path.join(root,'informes-auditoria','interfaz-app'));
-const sections=['areas','pendientes','historial','bodega','mantenimiento'];
+const sections=['areas','pendientes','historial','mantenimiento'];
 
 async function port(){return new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const n=s.address().port;s.close(()=>resolve(n));});});}
 async function geometry(page,label){

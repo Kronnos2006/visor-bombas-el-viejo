@@ -82,7 +82,7 @@ body.claro .estadisticas{--est-barra:#a0660a}
 .est-atencion{display:grid;gap:8px}
 .est-alerta{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--orange,#f08a4b) 55%,transparent);background:color-mix(in srgb,var(--orange,#f08a4b) 8%,transparent);color:var(--tinta)}
 .est-alerta>span{color:var(--orange,#f08a4b);font-size:18px}.est-alerta small{display:block;color:var(--tinta-2)}
-.est-grilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-top:14px}
+.est-grilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:12px;margin-top:14px}
 .est-grafico{padding:16px;border:1px solid var(--borde);border-radius:14px;background:var(--superficie-solida);min-width:0}
 .est-grafico h3{margin:0 0 2px;font-size:16px;color:var(--tinta)}
 .est-ayuda{margin:0 0 12px;color:var(--tinta-2);font-size:13px}
@@ -92,7 +92,7 @@ body.claro .estadisticas{--est-barra:#a0660a}
 .est-pista{height:18px;border-radius:0 4px 4px 0;background:var(--est-pista);overflow:hidden}
 .est-pista i{display:block;height:100%;background:var(--est-barra);border-radius:0 4px 4px 0}
 .est-barras b{min-width:2ch;text-align:right;color:var(--tinta);font-variant-numeric:tabular-nums}
-.est-columnas{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:end;height:170px;border-bottom:1px solid var(--borde)}
+.est-columnas{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:end;height:170px;border-bottom:1px solid var(--borde)}
 .est-columnas>div{display:grid;grid-template-rows:auto 1fr auto;height:100%;text-align:center;gap:4px}
 .est-columnas b{font-size:13px;color:var(--tinta);min-height:1em}
 .est-col{display:flex;align-items:flex-end;justify-content:center}
