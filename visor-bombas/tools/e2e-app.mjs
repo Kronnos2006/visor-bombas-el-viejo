@@ -43,7 +43,7 @@ async function main(){
   const bootstrap=await(await fetch(base+'/api/bootstrap')).json();assert.equal(bootstrap.maintenanceWritable,false);
   browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{}),args:['--enable-unsafe-swiftshader']});
   const context=await browser.newContext({viewport:{width:1560,height:800},reducedMotion:'reduce'});
-  await context.addInitScript(()=>sessionStorage.setItem('vocatus-portada-3d-5','1'));
+  await context.addInitScript(()=>{sessionStorage.setItem('vocatus-portada-3d-5','1');localStorage.setItem('vocatus-reporte-tag','B90');});
   await context.route('https://fonts.googleapis.com/**',r=>r.abort());
   await context.route('**/*.supabase.co/**',r=>r.abort());
   await context.route('**/api/**',async r=>{const request=r.request();if(['POST','DELETE'].includes(request.method())&&/\/api\/(maintenance|equipment|survey)(?:\?|$)/.test(request.url())){blockedWrites.push(request.url());await r.abort();}else await r.continue();});
@@ -51,7 +51,9 @@ async function main(){
   const shot=async name=>page.screenshot({path:path.join(out,name+'.png')});
   const navigate=async section=>{await page.locator('#tel-barra button[data-s='+section+']').click();await page.waitForFunction(s=>document.body.dataset.telSeccion===s,section);};
   await page.goto(base+'/?s=mantenimiento',{waitUntil:'networkidle',timeout:90000});
-  await page.locator('#mant-bomba option[value=B3]').waitFor({state:'attached'});await page.selectOption('#mant-bomba','B3');
+  await page.locator('#mant-bomba option[value=B3]').waitFor({state:'attached'});
+  assert.equal(await page.inputValue('#mant-bomba'),'');
+  await page.selectOption('#mant-bomba','B3');
   await page.locator('[data-localizar=mant-bomba]').click();await page.waitForTimeout(1000);
   for(const width of [1920,1560,1440,1280,1024,901,900,768,420,390,360,320]){
    await page.setViewportSize({width,height:width>900?800:820});
@@ -178,6 +180,9 @@ async function main(){
   await page.locator('#mant-fecha').fill('2026-10-30');
   await page.locator('[name=mant-funcional][value=si]').check();
   await page.getByRole('button',{name:'Guardar en este dispositivo',exact:true}).click();
+  await page.getByRole('button',{name:'Ver historial de B90'}).waitFor();
+  assert.equal(await equipoReporte.inputValue(),'');
+  assert.equal(await page.inputValue('#mant-problema'),'');
   await page.getByRole('button',{name:'Ver historial de B90'}).click();
   await page.getByRole('heading',{name:'Historial de mantenimiento · B90'}).waitFor();
   const registro=page.locator('#rep-list .record').filter({hasText:'REGISTRO ÚNICO B90'});
