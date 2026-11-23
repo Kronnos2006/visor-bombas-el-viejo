@@ -83,7 +83,7 @@ export const expediente={
 const MAN='https://www.manualslib.es/manual/481189/Malmedi-Hidromac-2196.html';
 const pag=n=>`${MAN}?page=${n}`;
 const CAT_H=enlaces.hidromac[0].u;
-const GOULDS={man:'https://www.xylem.com/en-us/brand/goulds-water-technology/',guia:enlaces.goulds[2].u,bro:enlaces.goulds[0].u};
+const GOULDS={man:'https://amp.xylem.com/m/5ebcdd02e3b7a6f3/original/Model-e-SH-Close-coupled-and-Frame-Mounted-End-Suction-Pumps-IOM-EN-FR-ES-IM321-Rev2.pdf',guia:enlaces.goulds[2].u,bro:enlaces.goulds[0].u};
 // índice de pieza (ver `parts` en app.js) → [texto, url, páginas]
 const HID_PIEZA=[
   ['Carcasa · descripción',pag(8),'pág. 8'],['Juntas y o-rings en armado',pag(51),'pág. 51'],['Ajuste del impulsor',pag(30),'pág. 30–31'],
@@ -105,7 +105,7 @@ export function linksBomba(p){
     planos:{t:'Planos: corte, lista de partes y dimensiones (manual pág. 87–99)',u:pag(90)},
     extra:[{t:'Catálogo Hidromac 2196 (corte y curvas)',u:CAT_H},enlaces.hidromac[2]]};
   if(esGoulds(p))return{alcance:'familia',nota:'Documentación de la familia Goulds e-SH; comprobar grupo y variante del modelo instalado.',
-    manual:{t:'Goulds e-SH · manuales en el sitio del fabricante (referencia de familia)',u:GOULDS.man},
+    manual:{t:'Goulds e-SH · manual de instalación y operación IM321 (referencia de familia)',u:GOULDS.man},
     planos:{t:'Goulds e-SH · guía de partes y vistas del kit (PDF, referencia de familia)',u:GOULDS.guia},
     extra:[{t:'Brochure técnico Goulds e-SH',u:GOULDS.bro}]};
   return null;

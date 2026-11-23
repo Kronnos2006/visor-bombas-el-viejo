@@ -18,6 +18,7 @@ assert.equal(linksBomba(p('B30')).alcance,'modelo');
 assert.ok(linksBomba(p('B30')).manual.t.includes('Hidromac 2196'));
 assert.equal(linksBomba(identificarBomba(p('B41'),inventory.excel.B41)).alcance,'familia');
 assert.ok(urls(identificarBomba(p('B41'),inventory.excel.B41)).some(u=>/xylem/i.test(u)));
+for(const t of ['B39','B40','B41','B42','B43']){const l=linksBomba(identificarBomba(p(t)||{tag:t},inventory.excel[t]));assert.equal(l.alcance,'familia',t);assert.match(l.manual.u,/IM321-Rev2\.pdf$/,t+' enlaza el manual e-SH IM321');assert.match(l.nota,/variante/,t+' avisa que falta confirmar la variante');}
 assert.ok(!urls(p('B41')).some(u=>/hidromac|bomeq/i.test(u)));
 assert.equal(linksBomba({tag:'X',marca:'HIDROMAC',modelo:'3196'}),null,'Hidromac de otro modelo queda pendiente');
 assert.equal(linksBomba({tag:'X',marca:'Por confirmar',modelo:''}),null);
