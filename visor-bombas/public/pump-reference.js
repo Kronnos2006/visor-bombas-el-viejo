@@ -41,7 +41,8 @@ export function pumpReference(pump, plate) {
     else kind = 'standard';
   }
   const stages = /EVMSU?5[- /]?9/.test(text) ? 9 : /MOVITEC.*4[/ -]8/.test(text) ? 8 : /\bSB.*15[- /]5/.test(text) ? 5 : 6;
-  const profile={kind,...profiles[kind]};
+  const referenciaRA=/MULTISTEEL/.test(text)&&/RA\s*65\s*[/ -]\s*300/.test(text);
+  const profile={kind,...profiles[kind],...(referenciaRA?{referenciaRA,label:'Multisteel RA65/300 · geometría de referencia'}:{})};
   if(kind==='vertical'){
     const finish=/EBARA/.test(text)?0x275168:/GRUNDFOS/.test(text)?0x343b40:/MOVITEC/.test(text)?0x365579:0x244d63;
     return {...profile,stages,finish};

@@ -1,5 +1,6 @@
 import http from 'node:http';
 import {inventorySummary} from './inventory.mjs';
+import pumpAssignments from './public/modelos/asignacion-bombas.json' with {type:'json'};
 import {sectorDe} from './public/planta-integrada.js';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
@@ -335,9 +336,17 @@ export async function handler(req,res) {
    if(url.pathname==='/api/ask') {
     if(!apiKey) return send(res,409,{error:ON_VERCEL?'Falta la variable de entorno GEMINI_API_KEY en Vercel.':'Gemini todavía no está configurado. Agregá tu clave API en Configurar Gemini.'});
     if(ON_VERCEL){const now=Date.now();while(askLog.length&&now-askLog[0]>3600000)askLog.shift();if(askLog.length>=60)return send(res,429,{error:'Límite de consultas por hora alcanzado. Probá más tarde.'});askLog.push(now);}
-    const p=await readPump(body.tag); const question=clean(body.question,4000);
+    const question=clean(body.question,4000);
     if(!question) throw new Error('Escribí una pregunta.');
-    const integrated=!!readIntegratedPump(body.tag);
+    let p;
+    try{p=await readPump(body.tag);}
+    catch(error){
+     if(!tagPattern.test(body.tag)||!body.tag.startsWith('B')||!(error.code==='PUMP_NOT_AVAILABLE'||error.message==='No hay ficha para este TAG.'))throw error;
+     const inventory=pumpAssignments.excel;
+     const fields=Object.hasOwn(inventory,body.tag)?inventory[body.tag]:null;
+     if(!fields)throw error;
+     p={source:'Inventario Excel · '+body.tag,data:fields,history:'',reports:[]};
+    }
     const context={demostracion:DEMO,advertencia:DEMO?'Todos estos datos son de demostración o están por confirmar. Identificá la respuesta como demostración. No uses estas medidas ni materiales para recomendar repuestos o compatibilidad reales.':'',source:p.source,fields:p.data,history:p.history,failures:p.failures,reports:p.reports,reportesDeCampo:(Array.isArray(body.reportes)?body.reportes.slice(0,20).map(r=>({fecha:textField(r.fecha,10),titulo:textField(r.titulo),texto:clean(r.texto,3000),pdf:textField(r.pdf)})):[]),notaExpediente:clean(body.notaExpediente,600),aclaracion:'reportesDeCampo son escritos por usuarios en el navegador y no están verificados; tratalos como declaraciones, no como hechos confirmados.'};
     // Razonamiento bajo para responder dentro del límite de la función en Vercel (60 s).
     // Si el modelo no acepta thinkingConfig (HTTP 400), se reintenta sin esa opción.
@@ -349,7 +358,10 @@ export async function handler(req,res) {
     let response;
     try{response=await askGemini(true);if(response.status===400)response=await askGemini(false);}
     catch(e){if(e.name==='TimeoutError'||e.name==='AbortError')return send(res,504,{error:'Gemini tardó demasiado en responder. Probá con una pregunta más corta o de nuevo en un momento.'});throw e;}
-    if(!response.ok) return send(res,502,{error:`Gemini respondió HTTP ${response.status}. Revisá clave, modelo y cuota. No se generó un informe.`});
+    if(!response.ok){
+     const detail={401:'La credencial de Gemini no fue aceptada.',403:'Gemini rechazó el acceso. Revisá la clave y sus permisos.',404:'El modelo configurado de Gemini no está disponible con esta clave.',429:'Se alcanzó el límite de Gemini. Revisá la cuota o reintentá más tarde.',503:'Gemini está temporalmente saturado. Reintentá en un momento.'}[response.status];
+     return send(res,502,{error:detail||`Gemini respondió HTTP ${response.status}. Revisá el modelo y la configuración.`});
+    }
     const result=await response.json(); const answer=(result.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||'').join('\n');
     if(!answer) return send(res,502,{error:'Gemini no devolvió una respuesta de texto.'});
     return send(res,200,{answer,source:p.source});

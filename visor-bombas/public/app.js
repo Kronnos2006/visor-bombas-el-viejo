@@ -9,7 +9,7 @@ import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera,buildCalderaReference,buildSeparatedReference,esModeloCaldera} from './bombas-calderas.js';
 import {detallarBombaPasarela} from './detalles-bombas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
-import {abrirFichaPendiente,clavePendiente,bombaParaResumen} from './ficha-pendiente.js?v=20261111-fotos-v2';
+import {abrirFichaPendiente,clavePendiente,bombaParaResumen,fotoClavePendiente} from './ficha-pendiente.js?v=20261123-fichas';
 import {pumpNames} from './pump-names.js';
 import {startPumpData} from './pump-data.js';
 import {crearPaleta} from './paleta-bombas.js';
@@ -33,7 +33,7 @@ import {ligarFotosAPosicion,fotosActualizadas, guardarFoto, originales, htmlFoto
 import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js?v=20261111-fotos-v2';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
-import {expediente, expedienteDe, enlaces, linksBomba, linkPieza} from './expediente.js';
+import {expediente, expedienteDe, enlaces, linksBomba, documentosBomba, renderDocumentosBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
 import {listReports, addReport, deleteReport, configureReports, reportsInObsidian, reportsInCloud, importReports} from './reportes.js';
@@ -43,7 +43,7 @@ import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js?v=montaje-monobloque';
 import {buildN32Unit} from './bomba-n32-125-unidad.js?v=proporciones';
-import {pumpReference,buildVerticalReference,buildInstalledReference} from './pump-reference.js?v=proporciones';
+import {pumpReference,buildVerticalReference,buildInstalledReference} from './pump-reference.js?v=20261123-fichas';
 import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
@@ -575,6 +575,12 @@ function resetAnatomy(){
 $('#anatomy-reset').onclick=resetAnatomy;
 $('#anatomy-assembled').onclick=resetAnatomy;
 let asignacionParaModelo;
+const cargarAsignacion=()=>asignacionParaModelo??=fetch('/modelos/asignacion-bombas.json?v=20261119-lista2').then(r=>{if(!r.ok)throw Error('No se pudo cargar el inventario');return r.json();}).then(indexarAsignacion).catch(error=>{asignacionParaModelo=null;console.warn(error);return null;});
+let inventarioExcel={};
+function referenciasDeInventario(){
+ const presentes=new Set([...state.pumps.map(p=>p.tag),...(integrado?.references||[]).map(p=>p.tagAsignado)]);
+ return Object.entries(inventarioExcel).filter(([tag])=>!presentes.has(tag)).map(([tag,excel])=>({tagAsignado:tag,excel,sector:'Inventario',nombre:tag+' · '+(excel.nombre||'Equipo'),clave:'='+tag,sinUbicacion:true}));
+}
 async function loadPumpReference(pump){
  if(!pumpGroup)return {};
  await cargarPlacas();
@@ -582,13 +588,12 @@ async function loadPumpReference(pump){
  if(!['vertical','compact'].includes(profile.kind)){
   let asignacion=integrado?.asignacion;
   if(!asignacion){
-   asignacionParaModelo??=fetch('/modelos/asignacion-bombas.json?v=20261119-lista2').then(r=>{if(!r.ok)throw Error('No se pudo cargar la forma de la planta');return r.json();}).then(indexarAsignacion).catch(error=>{asignacionParaModelo=null;console.warn(error);return null;});
-   asignacion=await asignacionParaModelo;
+   asignacion=await cargarAsignacion();
   }
   const modelo=esModeloCaldera(pump.tipo)?pump.tipo:asignacion?.nuevas.find(n=>n.tag===pump.tag)?.modelo;
   if(esModeloCaldera(modelo))return {profile:{kind:'caldera',modelo,label:'Conjunto de bomba de combustible · forma de la planta'}};
  }
- if(!profile||['vertical','compact'].includes(profile.kind))return {profile};
+ if(!profile||['vertical','compact'].includes(profile.kind)||profile.referenciaRA)return {profile};
  n32Load??=new GLTFLoader().loadAsync('/modelos/bomba-n32-125.glb').catch(error=>{n32Load=null;throw error;});
  try{return {profile,cad:(await n32Load).scene};}
  catch(error){console.warn('No se pudo cargar el CAD de referencia',error);return {profile};}
@@ -688,8 +693,10 @@ function paintPumpLinks(p){
  if(!el){el=document.createElement('div');el.id='pump-links';$('#source-status').after(el);}
  if(!p){el.hidden=true;el.innerHTML='';$('#pump-meta')?.remove();return;}
  paintPumpMeta(p);
- el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'';
- el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu"><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button><a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
+ el.hidden=false;const L=linksBomba(p),familia=L?.alcance==='familia'?' · familia':'',hayDocumentos=documentosBomba(p).length>0;
+ el.innerHTML=`<nav class="quick-actions" aria-label="Acciones de la bomba"><button type="button" data-quick="locate">📍 Ubicar</button><button type="button" data-quick="photos">📷 Fotos</button>${L?`<a href="${esc(L.manual.u)}" target="_blank" rel="noopener noreferrer" title="${esc(L.nota||L.manual.t)}">📘 Manual${familia}</a>`:hayDocumentos?'<button type="button" data-quick="docs">📘 Manuales y CAD</button>':'<button type="button" disabled>📘 Manual pendiente</button>'}<button type="button" data-quick="maintenance">🛠 Mantenimiento</button></nav><details class="secondary-menu"><summary>Más acciones</summary><div class="secondary-actions"><a href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-general">Actualizar datos</a><button type="button" id="download-summary-pdf-header">Resumen PDF</button><a href="/solicitud.html?tag=${encodeURIComponent(p.tag)}">Pedir a bodega</a><a href="/equipo.html?tag=${encodeURIComponent(p.tag)}">Mover o cambiar</a></div></details>`;
+ const docs=el.querySelector('[data-quick=docs]');
+ if(docs)docs.onclick=()=>{state.tab='ficha';renderPanel();inspectorUI.show($('#documentos-bomba'));};
  el.querySelector('[data-quick=locate]').onclick=locateSelectedPump;
  el.querySelector('[data-quick=photos]').onclick=async()=>{
   state.tab='ficha';
@@ -796,27 +803,28 @@ function initReports(tag,load=true){
 }
 async function renderHistoryPhotos(p){
  const root=$('#history-photos');if(!root)return;const target=root.querySelector('[data-history-images]'),tag=p.tag;
- const paint=async()=>{try{const act=await fotosActualizadas(tag,{writable:!!state.writable});if(!root.isConnected||state.pump?.tag!==tag)return;const orig=originales(p,expedienteDe(p));const labels={placa1:'Placa de la bomba',placa2:'Placa del motor',bomba:'Foto de la bomba',posicion:'Posición',motor:'Motor',sello:'Sello mecánico',empaque:'Empaque',orings:'O-rings',rodamientos:'Rodamientos',acople:'Acople'};const entries=Object.entries(labels).flatMap(([slot,label])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src;if(!src)return[];return`<figure><a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(label)} de ${esc(tag)}" loading="lazy"></a><figcaption>${esc(label)}<small>${a?(a.cloud?'Compartida en línea':a.local?'Guardada en este navegador':'Obsidian'):'Original del expediente · asociación por revisar'}</small></figcaption></figure>`;});target.innerHTML=entries.length?'<div class="history-photo-grid">'+entries.join('')+'</div>':'<p>No hay fotos asociadas en este navegador. Si las tomaste en el teléfono, descargalas allí y cargá el archivo aquí.</p>';if(act.warning){const warning=document.createElement('p');warning.className='form-error';warning.textContent=act.warning;target.prepend(warning);}}catch(error){if(root.isConnected){target.replaceChildren();const text=document.createElement('p');text.className='form-error';text.textContent=error.message;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=paint;target.append(text,retry);}}};
- bindPhotoTransfers(root,tag,{writable:!!state.writable,token:state.token},paint);await paint();
+ const reference=state.pump?.pending;
+ const key=reference?fotoClavePendiente(reference):tag;
+ const paint=async()=>{try{const act=await fotosActualizadas(key,{writable:!reference&&!!state.writable});if(!root.isConnected||state.pump?.tag!==tag)return;const orig=reference?(reference.imagenesLugar?originales(reference.imagenesLugar,reference.imagenesLugar):{}):originales(p,expedienteDe(p));const labels={placa1:'Placa de la bomba',placa2:'Placa del motor',bomba:'Foto de la bomba',posicion:'Posición',motor:'Motor',sello:'Sello mecánico',empaque:'Empaque',orings:'O-rings',rodamientos:'Rodamientos',acople:'Acople'};const entries=Object.entries(labels).flatMap(([slot,label])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src;if(!src)return[];return`<figure><a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(label)} de ${esc(tag)}" loading="lazy"></a><figcaption>${esc(label)}<small>${a?(a.cloud?'Compartida en línea':a.local?'Guardada en este navegador':'Obsidian'):'Original del expediente · asociación por revisar'}</small></figcaption></figure>`;});target.innerHTML=entries.length?'<div class="history-photo-grid">'+entries.join('')+'</div>':'<p>No hay fotos asociadas en este navegador. Si las tomaste en el teléfono, descargalas allí y cargá el archivo aquí.</p>';if(act.warning){const warning=document.createElement('p');warning.className='form-error';warning.textContent=act.warning;target.prepend(warning);}}catch(error){if(root.isConnected){target.replaceChildren();const text=document.createElement('p');text.className='form-error';text.textContent=error.message;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=paint;target.append(text,retry);}}};
+ bindPhotoTransfers(root,key,{writable:!reference&&!!state.writable,token:state.token,reference:!!reference},paint);await paint();
 }
 function representedSubparts(index){
  const names=componentGroups[index]?.userData.subcomponents||[];
  return names.length?'<div class="block"><h3>Componentes representados en 3D</h3><div class="subcomponent-list">'+names.map(name=>'<button type="button" data-subcomponent="'+esc(name)+'" aria-pressed="'+String(anatomy?.state.subcomponent===name)+'">'+esc(name)+'</button>').join('')+'</div><p class="muted">Elegí un componente para resaltarlo y aislarlo. Detalle visual de referencia; verificar el despiece del equipo instalado.</p></div>':'';
 }
-function renderPhotoPanel(){
+function renderPhotoPanel(p=state.pump?.data){
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
- const p=state.pump?.data;
- paintPumpLinks(p);
+ if(!state.pump?.pending)paintPumpLinks(p);
  if(!p&&state.area==='integrado'){$('#panel').innerHTML='<p class="eyebrow">PLANTA COMPLETA</p><h2>Seleccioná un sector y una bomba</h2><p class="notice">Cada bomba tiene su selección individual, incluso cuando hay varias juntas. Elegí un sector para ver sus etiquetas, o buscá una bomba en el explorador.</p><p>Las fichas existentes conservan sus datos. En los equipos pendientes, los campos e imágenes quedan vacíos para completar el levantamiento.</p>';return;}
  if(!p){$('#panel').innerHTML=`<p class="eyebrow">SECTOR FOTOGRAFIADO · 07 OCT 2026</p><h2>Seleccioná una bomba</h2><p class="notice">El expediente mostrará únicamente la bomba elegida. Los datos de sellos, o-rings e historial están preparados para la demostración y se distinguen de la evidencia real.</p><img src="${photo3URL('142609')}" alt="Vista elevada de los tanques del sector"><p class="muted">Referencia utilizada para orientar y completar los tanques del render.</p>`;return;}
 
  const demo=state.demo?'<span class="demo-chip">DEMO · POR CONFIRMAR</span>':'<span class="demo-chip">DATOS DOCUMENTALES / POR CONFIRMAR</span>';
  const fieldRows=rows=>'<dl class="fields">'+rows.map(([key,value])=>`<div class="field"><dt>${esc(key)}</dt><dd>${esc(value)}</dd></div>`).join('')+'</dl>';
  if(state.tab==='historial'){
-  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.tag)} · ${esc(p.marca)} ${esc(p.modelo)}</h2><nav class="history-nav" aria-label="Apartados de la bomba"><button type="button" data-history-jump="history-equipment">Ficha</button><button type="button" data-history-jump="rep-list">Registros</button><button type="button" data-history-jump="history-photos">Fotos</button></nav><p class="notice">${reportsInObsidian()?'Ficha e intervenciones guardadas en Obsidian.':'Ficha documental y reportes guardados en este navegador; no se sincronizan entre equipos.'} No se presentan ejemplos como intervenciones de esta bomba.</p><section class="history-equipment" id="history-equipment"><h3>Ficha de ${esc(p.tag)}</h3>${fieldRows([['Ubicación',p.nombre||p.ubicacion||'Por confirmar'],['Fabricante',p.marca||'Por confirmar'],['Modelo',p.modelo||'Por confirmar'],['Serie',p.serie||'Por confirmar'],['Servicio',p.servicio||p.fluido||'Por confirmar'],...(p.specs||[])])}<a class="button-link" href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}">Actualizar datos y componentes</a><button type="button" class="wide" id="history-model">${document.body.classList.contains('hist-model-open')?'Volver a la ficha':'Ver despiece 3D'}</button></section>${state.pump.history?.trim()?'<section class="history-note"><h3>Historial escrito en la ficha</h3><pre class="markdown-text">'+esc(state.pump.history)+'</pre><small>Fuente: '+esc(state.pump.source||'Ficha del equipo')+'</small></section>':''}${reportUI()}<section class="history-photos" id="history-photos"><h3>Fotos de ${esc(p.tag)}</h3><div data-history-images>Leyendo fotos guardadas…</div><a class="button-link" href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-fotos">Actualizar fotos y componentes</a>${photoTransferHTML(p.tag,{writable:!!state.writable})}</section><details class="history-measurements"><summary>Ver gráfico de mediciones registradas</summary><div id="chart-mount"></div></details><div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag,false);refreshPhotoHistory(state.pump);renderHistoryPhotos(p);$('#panel').querySelectorAll('[data-history-jump]').forEach(button=>button.onclick=()=>document.getElementById(button.dataset.historyJump)?.scrollIntoView({block:'start',behavior:'auto'}));const modelButton=$('#history-model');if(modelButton)modelButton.onclick=()=>{const open=!document.body.classList.contains('hist-model-open');document.body.classList.toggle('hist-model-open',open);window.vocatus.explode(open?100:0);window.dispatchEvent(new Event('resize'));};return;
+  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.tag)} · ${esc(p.marca)} ${esc(p.modelo)}</h2><nav class="history-nav" aria-label="Apartados de la bomba"><button type="button" data-history-jump="history-equipment">Ficha</button><button type="button" data-history-jump="rep-list">Registros</button><button type="button" data-history-jump="history-photos">Fotos</button></nav><p class="notice">${reportsInObsidian()?'Ficha e intervenciones guardadas en Obsidian.':'Ficha documental y reportes guardados en este navegador; no se sincronizan entre equipos.'} No se presentan ejemplos como intervenciones de esta bomba.</p><section class="history-equipment" id="history-equipment"><h3>Ficha de ${esc(p.tag)}</h3>${fieldRows([['Ubicación',p.nombre||p.ubicacion||'Por confirmar'],['Fabricante',p.marca||'Por confirmar'],['Modelo',p.modelo||'Por confirmar'],['Serie',p.serie||'Por confirmar'],['Servicio',p.servicio||p.fluido||'Por confirmar'],...(p.specs||[])])}<a class="button-link" href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}">Actualizar datos y componentes</a><button type="button" class="wide" id="history-model">${document.body.classList.contains('hist-model-open')?'Volver a la ficha':'Ver despiece 3D'}</button></section>${state.pump.history?.trim()?'<section class="history-note"><h3>Historial escrito en la ficha</h3><pre class="markdown-text">'+esc(state.pump.history)+'</pre><small>Fuente: '+esc(state.pump.source||'Ficha del equipo')+'</small></section>':''}${reportUI()}<section class="history-photos" id="history-photos"><h3>Fotos de ${esc(p.tag)}</h3><div data-history-images>Leyendo fotos guardadas…</div><a class="button-link" href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-fotos">Actualizar fotos y componentes</a>${photoTransferHTML(state.pump.pending?fotoClavePendiente(state.pump.pending):p.tag,{writable:!state.pump.pending&&!!state.writable,reference:!!state.pump.pending})}</section><details class="history-measurements"><summary>Ver gráfico de mediciones registradas</summary><div id="chart-mount"></div></details><div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag,false);refreshPhotoHistory(state.pump);renderHistoryPhotos(p);$('#panel').querySelectorAll('[data-history-jump]').forEach(button=>button.onclick=()=>document.getElementById(button.dataset.historyJump)?.scrollIntoView({block:'start',behavior:'auto'}));const modelButton=$('#history-model');if(modelButton)modelButton.onclick=()=>{const open=!document.body.classList.contains('hist-model-open');document.body.classList.toggle('hist-model-open',open);window.vocatus.explode(open?100:0);window.dispatchEvent(new Event('resize'));};return;
  }
  if(state.tab==='ia'){
-  $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Gemini analiza solamente el expediente de esta bomba seleccionada. Distingue los datos aportados de los ejemplos DEMO y de los campos pendientes.</p>${fieldRows([['Fluido registrado',p.servicio],['Sellado',p.seal.tipo],['Elastómero',p.seal.elastomero],['Registros de demo',String(p.history.length)]])}<div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará a Google el expediente de esta bomba, con los ejemplos DEMO identificados.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué sello y o-rings aparecen en este expediente y qué datos faltan confirmar?">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí el historial DEMO de esta bomba, separado por fechas.">Resumir el mantenimiento ↗</button><button data-question="¿Qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;
+  $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Gemini analiza solamente el expediente de esta bomba seleccionada. Distingue los datos aportados de los ejemplos DEMO y de los campos pendientes.</p>${fieldRows([['Fluido registrado',p.servicio],['Sellado',p.seal.tipo],['Elastómero',p.seal.elastomero],['Registros de demo',String(p.history?.length||0)]])}<div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará a Google el expediente de esta bomba, con los ejemplos DEMO identificados.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué sello y o-rings aparecen en este expediente y qué datos faltan confirmar?">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí el historial DEMO de esta bomba, separado por fechas.">Resumir el mantenimiento ↗</button><button data-question="¿Qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;
   $('#configure').onclick=()=>{$('#config-form [name=model]').value=state.model;$('#settings').showModal();};document.querySelectorAll('[data-question]').forEach(b=>b.onclick=()=>{$('#question').value=b.dataset.question;$('#question').focus();});$('#ask-form').onsubmit=ask;const answer=state.answers[p.tag];if(answer)showAnswer(answer);return;
  }
  if(state.tab==='sim'){renderSimPanel(p);return;}
@@ -830,7 +838,7 @@ function renderPhotoPanel(){
  const docLinks=[...(exp.fab||[]).flatMap(k=>k==='weg'&&p.motor?.catalogo!=='00218XT3E145T'?[enlaces.weg[0]]:enlaces[k]||[]),...(exp.rod||[]).map(k=>enlaces.skf[k]).filter(Boolean).map(l=>({...l,k:'rodamiento · CAD'}))];
  const imagenes=`<div class="block exp-block" id="fuentes-${esc(p.tag)}"><h3>Imágenes del equipo</h3>${exp.pendiente?`<p class="notice pending-source"><strong>PENDIENTE · ${esc(p.tag)}</strong><br>${esc(exp.pendiente)}</p>`:''}<p><a class="doc" href="/#${esc(p.tag)}">Vínculo directo al expediente ${esc(p.tag)}</a></p><p class="eyebrow">PLACA DE CARACTERÍSTICAS</p>${figs(exp.placas,'Sin foto de placa asociada en el Excel.')}<p class="eyebrow">FOTO DE LA BOMBA</p>${figs(exp.fotos,'Sin foto individual asociada en el Excel.')}${exp.nota?`<p class="notice">${esc(exp.nota)}</p>`:''}<p class="muted">Imágenes tomadas de “Libro1 bomba2.xlsx”, asociadas por la fila donde estaban ancladas. Cada pie conserva su fila de origen; no se asignan placas por semejanza.</p></div>`;
  const documentos=`<div class="block exp-block"><h3>Catálogos, fichas y CAD del fabricante</h3>${docLinks.length?`<ul class="doc-links">${linkRows(docLinks)}</ul>`:'<p class="muted">Sin fabricante identificado: no hay documentación asociada.</p>'}<p class="muted">Enlaces públicos a fabricantes y distribuidores. “CAD” = ficha de producto donde el fabricante lo ofrece; el despiece 3D de esta app no es CAD del fabricante.</p></div>`;
- $('#panel').innerHTML=`${componentCard}<p class="eyebrow">EXPEDIENTE DE ${esc(p.tag)}</p><h2>${p.inactive?'B22 · SIN USO':esc(p.marca)+' '+esc(p.modelo)}</h2>${p.enUso===false?'<p class="notice warn"><strong>Sin uso.</strong> Está instalada en la torre pero no opera (confirmado por el usuario, 13-oct-2026). Los datos son los de su placa.</p>':''}<p class="notice">${p.inactive?'Equipo marcado SIN USO en el Excel. Exterior ilustrativo de bomba azul con cubierta roja, según la foto asociada a la fila 25. Modelo, dimensiones y componentes sin identificar; se conserva la posición aproximada existente.':'Datos del Excel y confirmaciones del usuario. Las proporciones 3D son aproximadas; los ejemplos de o-rings e historial están marcados DEMO.'}</p>${imagenes}${fieldRows([['Ubicación (tanque conectado)',p.nombre],['Lado',p.area],['Fabricante',p.marca],['Modelo',p.modelo],['Tamaño',p.size],['Fluido',p.servicio],['Fuente',p.source],...p.specs])}<div class="block interactive-part-block" data-part="9" title="Ver motor eléctrico en el 3D"><h3>Motor <span class="part-badge">Pieza 10 ↗</span></h3>${fieldRows(componentRows(p,9))}</div><div class="block interactive-part-block" data-part="5" title="Ver sello mecánico en el 3D"><h3>${esc(sealTitle(p))} <span class="part-badge">Pieza 06 ↗</span></h3>${state.part===5?'<p>Datos y referencias en la pieza seleccionada, arriba.</p>':sealInfo}</div><div class="block interactive-part-block" data-part="7" title="Ver rodamientos y bancada en el 3D"><h3>Rodamientos registrados <span class="part-badge">Pieza 08 ↗</span></h3>${fieldRows(componentRows(p,7))}</div><div class="block interactive-part-block" data-part="8" title="Ver acople en el 3D"><h3>Acople <span class="part-badge">Pieza 09 ↗</span></h3>${fieldRows(componentRows(p,8))}</div><div class="block"><h3>O-rings ${demo}</h3>${rings||'<p>Sin datos.</p>'}</div>${documentos}`;
+ $('#panel').innerHTML=`${componentCard}<p class="eyebrow">EXPEDIENTE DE ${esc(p.tag)}</p><h2>${p.inactive?'B22 · SIN USO':esc(p.marca)+' '+esc(p.modelo)}</h2>${p.enUso===false?'<p class="notice warn"><strong>Sin uso.</strong> Está instalada en la torre pero no opera (confirmado por el usuario, 13-oct-2026). Los datos son los de su placa.</p>':''}<p class="notice">${p.inactive?'Equipo marcado SIN USO en el Excel. Exterior ilustrativo de bomba azul con cubierta roja, según la foto asociada a la fila 25. Modelo, dimensiones y componentes sin identificar; se conserva la posición aproximada existente.':'Datos del Excel y confirmaciones del usuario. Las proporciones 3D son aproximadas; los ejemplos de o-rings e historial están marcados DEMO.'}</p>${imagenes}${renderDocumentosBomba(p)}${fieldRows([['Ubicación (tanque conectado)',p.nombre],['Lado',p.area],['Fabricante',p.marca],['Modelo',p.modelo],['Tamaño',p.size],['Fluido',p.servicio],['Fuente',p.source],...p.specs])}<div class="block interactive-part-block" data-part="9" title="Ver motor eléctrico en el 3D"><h3>Motor <span class="part-badge">Pieza 10 ↗</span></h3>${fieldRows(componentRows(p,9))}</div><div class="block interactive-part-block" data-part="5" title="Ver sello mecánico en el 3D"><h3>${esc(sealTitle(p))} <span class="part-badge">Pieza 06 ↗</span></h3>${state.part===5?'<p>Datos y referencias en la pieza seleccionada, arriba.</p>':sealInfo}</div><div class="block interactive-part-block" data-part="7" title="Ver rodamientos y bancada en el 3D"><h3>Rodamientos registrados <span class="part-badge">Pieza 08 ↗</span></h3>${fieldRows(componentRows(p,7))}</div><div class="block interactive-part-block" data-part="8" title="Ver acople en el 3D"><h3>Acople <span class="part-badge">Pieza 09 ↗</span></h3>${fieldRows(componentRows(p,8))}</div><div class="block"><h3>O-rings ${demo}</h3>${rings||'<p>Sin datos.</p>'}</div>${documentos}`;
  $('#panel').querySelectorAll('.interactive-part-block').forEach(b=>b.onclick=()=>selectPart(Number(b.dataset.part)));
  $('#panel').querySelectorAll('[data-subcomponent]').forEach(b=>b.onclick=()=>{selectPart(state.part,b.dataset.subcomponent);fitAnatomy();});
 
@@ -839,17 +847,20 @@ document.querySelector('.compass').textContent='LADOS FIJOS · Frontal B–C · 
 // No mantener dos escenas WebGL activas durante la bienvenida.
 const welcome=document.getElementById('portada');
 if(welcome&&!welcome.hidden)await new Promise(resolve=>{window.addEventListener('vocatus:entered',resolve,{once:true});if(welcome.hidden)resolve();});
-initScene();renderPanel();await refresh();
+initScene();renderPanel();
+const cargaInventario=cargarAsignacion().then(datos=>{inventarioExcel=datos?.excel||{};document.dispatchEvent(new Event('vocatus:referencias'));});
+await refresh();
 function selectFromHash(){
  const tag=location.hash.slice(1).toUpperCase();
  if(!/^B\d+$/.test(tag))return;
  if(state.pumps.some(p=>p.tag===tag))selectPhotoPump(tag);
  else {
-  const reference=integrado?.references.find(p=>p.tagAsignado===tag);
+  const reference=integrado?.references.find(p=>p.tagAsignado===tag)||referenciasDeInventario().find(p=>p.tagAsignado===tag);
   if(reference)selectPendingPump(reference);
  }
 }
 window.addEventListener('hashchange',selectFromHash);selectFromHash();
+ cargaInventario.then(()=>{if(!state.pump)selectFromHash();});
 document.addEventListener('vocatus:referencias',()=>{if(!state.pump)selectFromHash();});
 
 // Riel de piezas: siempre visible junto al 3D cuando hay una bomba abierta.
@@ -1023,7 +1034,12 @@ function selectPendingPump(reference){
  rememberDetailOrigin();
  const tag=reference.tagAsignado;
  const ticket=++state.loading;history.replaceState(null,'',location.pathname+location.search+(tag?'#'+encodeURIComponent(tag):''));
- state.pump={tag:'Sin TAG',pending:reference,data:{variant:'lf',marca:'',modelo:'',seal:{},orings:[],history:[]}};
+ const selection=state.pump={tag:tag||'Sin TAG',pending:reference,data:bombaParaResumen(reference)};
+ if(tag)api('/api/pump?tag='+encodeURIComponent(tag)).then(ficha=>{
+  if(state.pump!==selection)return;
+  selection.ficha=ficha;selection.history=ficha.history;selection.source=ficha.source;
+  if(state.tab==='historial')renderPanel();
+ }).catch(()=>{});
  state.part=null;state.tab='ficha';
  document.dispatchEvent(new CustomEvent('vocatus:referencia',{detail:reference}));
  $('#selected-tag').textContent='Sin TAG';$('#selected-name').textContent=reference.nombre;
@@ -1036,12 +1052,13 @@ function selectPendingPump(reference){
    tipo:reference.modelo,nombre:reference.nombre,
   });
   if(ticket!==state.loading)return;
-  const source=!reference.standalone&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;
-  const separable=source?.children.length&&source.children.every(o=>Number.isInteger(o.userData.part));
+  const source=!reference.standalone&&!reference.sinUbicacion&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;
+  const separable=!['compact','vertical'].includes(profile?.kind)&&source?.children.length&&source.children.every(o=>Number.isInteger(o.userData.part));
   const prepared=separable?buildSeparatedReference(THREE,extraerBomba(THREE,integrado.escena,reference)):null;
   if(separable)profile={kind:'caldera',label:'Bomba de la pasarela · geometría del FBX'};
   state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;
  if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump('lf',cad,profile,prepared);}
+ if(!scene){renderPanel();return;}
  if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}
  photoDetail=source;state.pump.geometriaIntegrada=!!photoDetail;if(!photoDetail){photoDetail=buildInstalledReference(THREE,profile)||crearModeloCaldera(THREE,reference.modelo);if(photoDetail)photoDetail.scale.setScalar(2.2);else photoDetail=exterior(THREE,1.2,'lf');}scene.add(photoDetail);
  setPhotoDetail(!!profile);
@@ -1051,14 +1068,21 @@ function selectPendingPump(reference){
  }
  setViewButtons(false);renderList();renderPanel();
  };
- const center=new THREE.Vector3(...reference.min).add(new THREE.Vector3(...reference.max)).multiplyScalar(.5);if(!reference.standalone&&integrado?.g){integrado.g.updateMatrixWorld(true);integrado.g.localToWorld(center);}transitionToPump(ticket,center,show);renderList();renderPanel();
+ const center=reference.sinUbicacion?null:new THREE.Vector3(...reference.min).add(new THREE.Vector3(...reference.max)).multiplyScalar(.5);
+ if(center&&!reference.standalone&&integrado?.g){integrado.g.updateMatrixWorld(true);integrado.g.localToWorld(center);}
+ transitionToPump(ticket,center,show);renderList();renderPanel();
 }
 function renderPendingPanel(){
  const reference=state.pump.pending;
- const simTab=state.tab==='sim';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(simTab?'sim':'ficha')));
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
  $('#pump-links')?.remove();$('#pump-resumen')?.remove();$('#pump-meta')?.remove();
- if(simTab){renderSimPanel(pumpPendienteParaSimular(reference));return;}
- abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference)return;const hueco=$('#resumen-pendiente');if(hueco){paintPumpSummary(bombaParaResumen(reference),{pendiente:true});hueco.replaceWith($('#pump-resumen'));}const despues=$('#pump-resumen')||$('#editar-equipo');if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;if(!$('#datos-excel'))despues?.insertAdjacentHTML('afterend',bloqueExcel(integrado.asignacion,reference.tagAsignado));if(!$('#placa-manual'))$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
+ if(state.tab==='sim'){renderSimPanel(pumpPendienteParaSimular(reference));return;}
+ if(state.tab==='historial'||state.tab==='ia'){
+  if(reference.tagAsignado)renderPhotoPanel({...bombaParaResumen(reference),...state.pump.ficha?.data});
+  else $('#panel').innerHTML='<p class="notice">Asigná un TAG a la bomba para consultar su historial o hacer preguntas a Gemini.</p>';
+  return;
+ }
+ abrirFichaPendiente($('#panel'),reference).then(()=>{if(state.pump?.pending!==reference||state.tab!=='ficha')return;const hueco=$('#resumen-pendiente');if(hueco){paintPumpSummary(bombaParaResumen(reference),{pendiente:true});hueco.replaceWith($('#pump-resumen'));}const despues=$('#pump-resumen')||$('#editar-equipo');if(reference.tagAsignado&&integrado?.asignacion){$('#selected-tag').textContent=reference.tagAsignado;if(!$('#datos-excel'))despues?.insertAdjacentHTML('afterend',bloqueExcel(integrado.asignacion,reference.tagAsignado));if(!$('#placa-manual'))$('#datos-excel')?.insertAdjacentHTML('beforebegin',bloquePlaca(reference.tagAsignado));}pintarBloqueAdmin(clavePendiente(reference));}).catch(e=>toast(e.message));
  if(state.part!==null){$('#panel').insertAdjacentHTML('afterbegin',`<section class="block component-focus" id="component-detail" tabindex="-1"><p class="eyebrow">PIEZA ${state.part+1} · REFERENCIA</p><h2>${esc(partName(state.part))}</h2><p>Geometría ilustrativa. Identificación y medidas del componente instalado pendientes de levantamiento.</p></section>`);}
 }
 async function cargarDetallesFBX(){
@@ -1451,6 +1475,7 @@ window.vocatus={
  // Para «Mover bombas» (mover-bombas.js, solo administrador): acceso a la escena sin cambiar cómo se arma.
  get mover3D(){return integrado?.g?{THREE,g:integrado.g,escena:integrado.escena,campo:integrado.campo||null,refs:integrado.references,cuerpos:pumpObjectsInt,camera,controls,renderer,pickables,raycaster}:null;},
  get references(){return [...(integrado?.references||[]).filter(r=>!r.fichaTag),...extraReferences];},
+ get historyReferences(){return [...this.references,...referenciasDeInventario()];},
  get pumps(){return state.pumps;},get pump(){return state.pump;},get token(){return state.token;},get writable(){return !!state.writable;},get demo(){return !!state.demo;},
  select:tag=>selectPhotoPump(tag),
  selectReference:reference=>selectPendingPump(reference),

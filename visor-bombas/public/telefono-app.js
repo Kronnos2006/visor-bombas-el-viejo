@@ -408,9 +408,9 @@ function iniciar() {
  const areasMenu = () => [...document.querySelectorAll('#area-menu [data-area]')].map(b => [b.dataset.area, [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() || b.textContent.trim()]);
  const areaDeMenu = id => !id || id === 'integrado' || id === 'planta' ? '' : id.replace(/^sector:/, '');
  function pintarHistorial() {
-  const referencias=(V()?.references||[]).map(reference=>{
+  const referencias=(V()?.historyReferences||V()?.references||[]).map(reference=>{
    let local={};try{local=JSON.parse(localStorage.getItem('integrado:'+reference.sector+':'+reference.nombre))||{};}catch{}
-   return {...local,tag:'Sin TAG',nombre:local.nombre||reference.nombre,reference};
+   return {...local,tag:reference.tagAsignado||'Sin TAG',nombre:local.nombre||reference.excel?.nombre||reference.nombre,reference};
   });
   const todas=[...bombas(),...referencias],areaDe=p=>p.reference?(p.reference.standalone?'torre':sectorDe(p.reference.sector)):V()?.areaDe(p);
   const areas=areasMenu(),marcaSel=$('#hist-marca'),actual=marcaSel.value;
@@ -424,7 +424,7 @@ function iniciar() {
   if(!todas.length){$('#hist-tarjetas').innerHTML='<p class="tel-vacio">Cargando las bombas y referencias del modelo…</p>';return;}
   if(!lista.length){$('#hist-tarjetas').innerHTML=`<div class="tel-vacio-ilus tt-ancho">${ILUS.buscar}<p>Ninguna ficha o referencia coincide con los filtros.</p></div>`;return;}
   $('#hist-tarjetas').innerHTML=lista.map(p=>{
-   if(p.reference)return `<button type="button" class="tel-tarjeta" data-reference="${esc(selectionIdentity({pending:p.reference}))}"><span class="tt-cab"><strong>${esc(p.nombre&&p.nombre!==p.reference.nombre?p.nombre:p.reference.numero?'Bomba '+p.reference.numero:'Sin TAG')}</strong></span><span>${esc(p.nombre&&p.nombre!==p.reference.nombre?(p.reference.numero?'Bomba '+p.reference.numero+' · ':'')+p.reference.nombre:p.nombre)}</span><small>${p.nombre&&p.nombre!==p.reference.nombre?'Nombre asignado · tocá para editar':'Sin nombre · tocá para poner nombre o código'}</small></button>`;
+   if(p.reference)return `<button type="button" class="tel-tarjeta" data-reference="${esc(selectionIdentity({pending:p.reference}))}" data-reference-tag="${esc(p.reference.tagAsignado||'')}"><span class="tt-cab"><strong>${esc(p.reference.tagAsignado||(p.nombre&&p.nombre!==p.reference.nombre?p.nombre:p.reference.numero?'Bomba '+p.reference.numero:'Sin TAG'))}</strong></span><span>${esc(p.nombre&&p.nombre!==p.reference.nombre?(p.reference.numero?'Bomba '+p.reference.numero+' · ':'')+p.reference.nombre:p.nombre)}</span><small>${p.reference.sinUbicacion?'Ubicación 3D pendiente':p.nombre&&p.nombre!==p.reference.nombre?'Nombre asignado · tocá para editar':'Sin nombre · tocá para poner nombre o código'}</small></button>`;
    const c=completeness(p),pct=c.total?Math.round(c.done/c.total*100):0,marcaP=String(p.marca||'').trim();
    return `<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><span class="tt-cab"><strong>${esc(p.tag)}</strong>${marcaP&&!/por confirmar/i.test(marcaP)?`<em>${esc(marcaP)}</em>`:''}</span><span>${esc(p.nombre||p.ubicacion||'')}</span><span class="tt-medidor" title="Ficha completa ${c.done} de ${c.total}"><i style="width:${pct}%"></i></span><small>Ficha ${c.done}/${c.total}</small></button>`;
   }).join('');

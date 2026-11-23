@@ -43,7 +43,7 @@ async function main(){
   const bootstrap=await(await fetch(base+'/api/bootstrap')).json();assert.equal(bootstrap.maintenanceWritable,false);
   browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{}),args:['--enable-unsafe-swiftshader']});
   const context=await browser.newContext({viewport:{width:1560,height:800},reducedMotion:'reduce'});
-  await context.addInitScript(()=>sessionStorage.setItem('vocatus-portada','1'));
+  await context.addInitScript(()=>sessionStorage.setItem('vocatus-portada-3d-5','1'));
   await context.route('https://fonts.googleapis.com/**',r=>r.abort());
   await context.route('**/*.supabase.co/**',r=>r.abort());
   await context.route('**/api/**',async r=>{const request=r.request();if(['POST','DELETE'].includes(request.method())&&/\/api\/(maintenance|equipment|survey)(?:\?|$)/.test(request.url())){blockedWrites.push(request.url());await r.abort();}else await r.continue();});
@@ -109,6 +109,35 @@ async function main(){
     checks.push({name:route+'-'+size.width,ok:true});if(size.width===390)await shot(route+'-movil');
    }
   }
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(base+'/?s=historial',{waitUntil:'domcontentloaded'});
+  await page.locator('#hist-tarjetas [data-reference-tag]').first().waitFor({timeout:60000});
+  const tags=await page.locator('#hist-tarjetas button').evaluateAll(rows=>rows.map(row=>row.dataset.tag||row.dataset.referenceTag));
+  for(let i=1;i<=90;i++)assert.ok(tags.includes('B'+i),'Falta B'+i+' en Historial');
+  await page.locator('#hist-buscar').fill('B43');
+  await page.locator('#hist-tarjetas [data-reference-tag=B43]').click({timeout:60000});
+  await page.getByRole('link',{name:'Manuales y CAD'}).click();
+  await page.locator('#documentos-bomba a[href$="Goulds-eSH-repuestos.pdf"]').waitFor();
+  await page.locator('#tabs [data-tab=historial]').click();
+  await page.locator('#history-equipment').getByRole('heading',{name:'Ficha de B43'}).waitFor();
+  await page.locator('#rep-list').waitFor();
+  await page.route('**/api/ask',async route=>{
+   assert.equal(route.request().postDataJSON().tag,'B43');
+   await route.fulfill({json:{answer:'Respuesta simulada para verificar la interfaz',source:'Prueba local'}});
+  });
+  await page.locator('#tabs [data-tab=ia]').click();
+  await page.locator('#question').fill('Pregunta de comprobación');
+  await page.locator('#ask-form button').click();
+  await page.locator('#ai-output').getByText('Respuesta simulada para verificar la interfaz').waitFor();
+  checks.push({name:'B43-documentos-historial-y-preguntar',ok:true});
+  await page.locator('.tel-volver').click();
+  await page.locator('#hist-buscar').fill('B48');
+  await page.locator('#hist-tarjetas [data-reference-tag=B48]').click();
+  await page.getByRole('link',{name:'Manuales y CAD'}).click();
+  const dxf=page.locator('#documentos-bomba a[href$="Multisteel-RA65-300-rodamientos-referencia.dxf"]');
+  await dxf.waitFor();
+  assert.equal((await page.request.get(base+await dxf.getAttribute('href'))).status(),200);
+  checks.push({name:'B48-referencia-CAD-disponible',ok:true});
   const flat=await context.newPage();flat.on('pageerror',e=>errors.push(e.stack||e.message));
   await flat.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/i.test(type)?null:original.call(this,type,...args);};});
   await flat.goto(base+'/?s=areas',{waitUntil:'networkidle'});assert.equal(await flat.evaluate(()=>document.createElement('canvas').getContext('webgl2')),null);
