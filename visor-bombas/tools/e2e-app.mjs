@@ -44,6 +44,7 @@ async function main(){
   browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{}),args:['--enable-unsafe-swiftshader']});
   const context=await browser.newContext({viewport:{width:1560,height:800},reducedMotion:'reduce'});
   await context.addInitScript(()=>{sessionStorage.setItem('vocatus-portada-3d-5','1');localStorage.setItem('vocatus-reporte-tag','B90');});
+  await context.route('**/api/auth/me',r=>r.fulfill({json:{user:{name:'Técnica de prueba',username:'tecnica-prueba',role:'user'}}}));
   await context.route('https://fonts.googleapis.com/**',r=>r.abort());
   await context.route('**/*.supabase.co/**',r=>r.abort());
   await context.route('**/api/**',async r=>{const request=r.request();if(['POST','DELETE'].includes(request.method())&&/\/api\/(maintenance|equipment|survey)(?:\?|$)/.test(request.url())){blockedWrites.push(request.url());await r.abort();}else await r.continue();});
@@ -53,6 +54,7 @@ async function main(){
   await page.goto(base+'/?s=mantenimiento',{waitUntil:'networkidle',timeout:90000});
   await page.locator('#mant-bomba option[value=B3]').waitFor({state:'attached'});
   assert.equal(await page.inputValue('#mant-bomba'),'');
+  await page.waitForFunction(()=>document.querySelector('#mant-autor')?.value==='Técnica de prueba');
   await page.selectOption('#mant-bomba','B3');
   await page.locator('[data-localizar=mant-bomba]').click();await page.waitForTimeout(1000);
   for(const width of [1920,1560,1440,1280,1024,901,900,768,420,390,360,320]){
@@ -183,6 +185,7 @@ async function main(){
   await page.getByRole('button',{name:'Ver historial de B90'}).waitFor();
   assert.equal(await equipoReporte.inputValue(),'');
   assert.equal(await page.inputValue('#mant-problema'),'');
+  assert.equal(await page.inputValue('#mant-autor'),'Técnica de prueba');
   await page.getByRole('button',{name:'Ver historial de B90'}).click();
   await page.getByRole('heading',{name:'Historial de mantenimiento · B90'}).waitFor();
   const registro=page.locator('#rep-list .record').filter({hasText:'REGISTRO ÚNICO B90'});

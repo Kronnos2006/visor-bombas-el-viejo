@@ -66,6 +66,7 @@ function iniciar() {
  let reportTag='',applyingDraft=false,reportBusy=false,storageReady=false,draftRestored=false;
  const nextReportId=()=>globalThis.crypto?.randomUUID?.()||'reporte-'+Date.now()+'-'+Math.random().toString(36).slice(2);let reportId=nextReportId();
  const draftStore=createDraftStore(localStorage);
+ let accountReportAuthor='',reportAuthorEdited=false;
 
  // ---------- Estructura ----------
  const cabecera=crearFlujoCabecera($('header'),{onPause:p=>guardar('vocatus-cab-pausa',p?'1':'')});
@@ -304,7 +305,7 @@ function iniciar() {
  }
  const resumenMant = () => { const a = $('#mant-autor').value.trim(), f = $('#mant-fecha').value; $('#mant-resumen').textContent = (a || 'Sin responsable') + ' · ' + (f === hoy() ? 'hoy' : f || 'sin fecha'); };
  $('#mant-bomba').onchange=()=>setReportTag($('#mant-bomba').value);
- $('#mant-autor').addEventListener('input', resumenMant); $('#mant-fecha').addEventListener('input', resumenMant); resumenMant();
+ $('#mant-autor').addEventListener('input',()=>{reportAuthorEdited=true;resumenMant();}); $('#mant-fecha').addEventListener('input', resumenMant); resumenMant();
  function aviso(form, texto, tipo = '') {
   const el = $(`#${form}-aviso`);el.setAttribute('role',tipo==='error'?'alert':'status');el.textContent=texto;el.dataset.tipo=tipo;
   if(tipo==='error'){
@@ -312,7 +313,7 @@ function iniciar() {
   }else if(tipo==='ok'&&texto.startsWith('Reporte de '))el.scrollIntoView({block:'nearest',behavior:'auto'});
  }
 
- function snapshotReport(){return {id:reportId,workOrderId:$('#tel-mant').dataset.workOrderId||'',problema:$('#mant-problema').value,comentario:$('#mant-comentario').value,author:$('#mant-autor').value,date:$('#mant-fecha').value,operativo:document.querySelector('[name=mant-funcional]:checked')?.value||'',retiro:document.querySelector('[name=mant-retiro]:checked')?.value||'no',parts:[...document.querySelectorAll('.tel-repuesto')].map(r=>({code:r.querySelectorAll('input')[0].value,name:r.querySelectorAll('input')[1].value}))};}
+ function snapshotReport(){return {id:reportId,workOrderId:$('#tel-mant').dataset.workOrderId||'',problema:$('#mant-problema').value,comentario:$('#mant-comentario').value,author:$('#mant-autor').value,authorManual:reportAuthorEdited,date:$('#mant-fecha').value,operativo:document.querySelector('[name=mant-funcional]:checked')?.value||'',retiro:document.querySelector('[name=mant-retiro]:checked')?.value||'no',parts:[...document.querySelectorAll('.tel-repuesto')].map(r=>({code:r.querySelectorAll('input')[0].value,name:r.querySelectorAll('input')[1].value}))};}
  function saveReportDraft(){
   if(applyingDraft)return;try{draftStore.write(reportTag,snapshotReport());const label=reportTag?'Borrador de '+reportTag:'Borrador sin equipo';const el=$('#mant-draft-status');if(el.textContent!==label+' guardado en este dispositivo.')el.textContent=label+' guardado en este dispositivo.';}
   catch(error){$('#mant-draft-status').textContent='No se pudo conservar el borrador en este navegador. Descargá el reporte antes de salir.';}
@@ -322,12 +323,19 @@ function iniciar() {
   if(!force)saveReportDraft();$('#mant-ver-historial').hidden=true;reportTag=tag;photoPicker.load(tag);let draft=null;
   try{if(restoreDraft)draft=draftStore.read(tag);}catch(error){aviso('mant','No se pudo recuperar el borrador de '+(tag||'este equipo')+'. '+error.message,'error');}
   applyingDraft=true;$('#tel-mant').dataset.workOrderId=draft?.workOrderId||'';reportId=draft?.id||nextReportId();$('#mant-bomba').value=tag;
-  $('#mant-problema').value=draft?.problema||'';$('#mant-comentario').value=draft?.comentario||'';$('#mant-autor').value=draft?.author??leer('vocatus-responsable');$('#mant-fecha').value=draft?.date??hoy();
+  $('#mant-problema').value=draft?.problema||'';$('#mant-comentario').value=draft?.comentario||'';reportAuthorEdited=draft?.authorManual??!!draft?.author?.trim();$('#mant-autor').value=reportAuthorEdited?(draft?.author||''):(accountReportAuthor||leer('vocatus-responsable'));$('#mant-fecha').value=draft?.date??hoy();
   document.querySelectorAll('[name=mant-funcional]').forEach(r=>r.checked=r.value===(draft?.operativo||''));document.querySelectorAll('[name=mant-retiro]').forEach(r=>r.checked=r.value===(draft?.retiro||'no'));
   $('#mant-repuestos').innerHTML='';for(const row of draft?.parts?.length?draft.parts:[{}])repuestoFila(row);
   applyingDraft=false;pintarElegida('mant-bomba');resumenMant();saveReportDraft();paintLocalReports();
  }
  $('#tel-mant').addEventListener('input',saveReportDraft);$('#tel-mant').addEventListener('change',saveReportDraft);window.addEventListener('pagehide',saveReportDraft);
+ fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'}).then(response=>response.ok?response.json():null).then(me=>{
+  const user=me?.user;
+  accountReportAuthor=(user?.name?.trim()||user?.username?.trim()||'').slice(0,100);
+  if(!accountReportAuthor||reportAuthorEdited)return;
+  $('#mant-autor').value=accountReportAuthor;resumenMant();
+  if(draftRestored)saveReportDraft();
+ }).catch(()=>{});
  function reportInput(){
   const d=snapshotReport(),tag=$('#mant-bomba').value;
   if(tag!==reportTag)throw new Error('El equipo cambió. Volvé a seleccionarlo antes de guardar.');
@@ -538,7 +546,7 @@ function iniciar() {
  window.vocatusApp={show:mostrar,openEquipment:abrirFicha,reportOrder:async order=>{
   mostrar('mantenimiento');await setReportTag(order.tag);if($('#tel-mant').dataset.workOrderId&&$('#tel-mant').dataset.workOrderId!==order.id)throw Error('Este equipo tiene un borrador vinculado a otra orden. Guardalo o desvinculalo antes de continuar.');$('#tel-mant').dataset.workOrderId=order.id;
   if(!$('#mant-problema').value)$('#mant-problema').value=order.title;if(!$('#mant-comentario').value)$('#mant-comentario').value=order.details||'';
-  if(!$('#mant-autor').value)$('#mant-autor').value=order.assignee;saveReportDraft();resumenMant();
+  if(!$('#mant-autor').value&&order.assignee){$('#mant-autor').value=order.assignee;reportAuthorEdited=true;}saveReportDraft();resumenMant();
  },bodegaOrder:()=>{},get section(){return seccion;}};
  document.dispatchEvent(new Event('vocatus:app-lista'));
  document.addEventListener('vocatus:listo', alCargar);
