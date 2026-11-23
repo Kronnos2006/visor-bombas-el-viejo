@@ -47,11 +47,11 @@ async function main(){
   await context.route('**/api/auth/me',r=>r.fulfill({json:{user:{name:'Técnica de prueba',username:'tecnica-prueba',role:'user'}}}));
   await context.route('https://fonts.googleapis.com/**',r=>r.abort());
   await context.route('**/*.supabase.co/**',r=>r.abort());
-  await context.route('**/api/**',async r=>{const request=r.request();if(['POST','DELETE'].includes(request.method())&&/\/api\/(maintenance|equipment|survey)(?:\?|$)/.test(request.url())){blockedWrites.push(request.url());await r.abort();}else await r.continue();});
+  await context.route('**/api/**',async r=>{const request=r.request();if(['POST','DELETE'].includes(request.method())&&/\/api\/(maintenance|equipment|survey)(?:\?|$)/.test(request.url())){blockedWrites.push(request.url());await r.abort();}else await r.fallback();});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.stack||e.message));
   const shot=async name=>page.screenshot({path:path.join(out,name+'.png')});
   const navigate=async section=>{await page.locator('#tel-barra button[data-s='+section+']').click();await page.waitForFunction(s=>document.body.dataset.telSeccion===s,section);};
-  await page.goto(base+'/?s=mantenimiento',{waitUntil:'networkidle',timeout:90000});
+  await page.goto(base+'/?s=mantenimiento',{waitUntil:'domcontentloaded',timeout:90000});
   await page.locator('#mant-bomba option[value=B3]').waitFor({state:'attached'});
   assert.equal(await page.inputValue('#mant-bomba'),'');
   await page.waitForFunction(()=>document.querySelector('#mant-autor')?.value==='Técnica de prueba');
