@@ -86,7 +86,7 @@ async function main(){
   assert.equal(await page.inputValue('#mant-problema'),'PRUEBA AISLADA DE INTERFAZ');
   await page.getByRole('button',{name:'Guardar en este dispositivo',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#mant-aviso')?.textContent.includes('Reporte de B3'));
-  assert.ok((await page.locator('#mant-local').textContent()).includes('PRUEBA AISLADA DE INTERFAZ'));checks.push({name:'guardar-reporte-y-recuperar-borrador',ok:true});
+  await page.locator('#mant-local').getByText('PRUEBA AISLADA DE INTERFAZ',{exact:false}).first().waitFor();checks.push({name:'guardar-reporte-y-recuperar-borrador',ok:true});
   await shot('reporte-guardado-movil');
   await navigate('historial');if(await page.locator('.tel-volver').isVisible())await page.locator('.tel-volver').click();await page.locator('#hist-buscar').fill('B-3');
   await page.locator('#hist-tarjetas [data-tag=B3]').click();await page.waitForFunction(()=>!document.querySelector('.tel-ficha').hidden);
