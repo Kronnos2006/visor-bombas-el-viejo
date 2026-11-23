@@ -12,7 +12,7 @@ const allReferences=[...references,...standalone];
 const phoneSource=await readFile(new URL('./public/telefono-app.js',import.meta.url),'utf8');
 const opener=phoneSource.slice(phoneSource.indexOf('function abrirFicha('),phoneSource.indexOf("\n ficha.querySelector('.tel-volver')",phoneSource.indexOf('function abrirFicha(')));
 const appSource=await readFile(new URL('./public/app.js',import.meta.url),'utf8');
-const pendingSelector=appSource.slice(appSource.indexOf('function selectPendingPump('),appSource.indexOf('\nfunction renderPendingPanel('));
+const pendingSelector=appSource.slice(appSource.indexOf('function selectPendingPump('),appSource.indexOf('\nasync function cargarDetallesFBX('));
 function phone(){
  const scheduled=[],tabs=[],selections=[],calls={};
  const api={pump:null,listo:true,select(tag){this.pump={tag};selections.push(tag);},selectReference(reference){this.pump={tag:'Sin TAG',pending:reference};selections.push(reference);},tab(tab){tabs.push({key:selectionIdentity(this.pump),tab});},explode(){}};

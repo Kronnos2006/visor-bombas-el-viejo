@@ -152,13 +152,16 @@ async function main(){
    secciones:[...panel.children].slice(0,4).map(el=>el.id),
    edicion:[...panel.querySelectorAll('.equipment-primary-actions a')].map(el=>el.textContent.replace(/B\d+/g,'TAG')),
    acciones:[...panel.querySelectorAll('.quick-actions button')].map(el=>el.textContent.trim()),
-   componentes:[...panel.querySelectorAll('.equipment-components a')].map(el=>el.textContent.trim())
+   componentes:[...panel.querySelectorAll('.equipment-components a')].map(el=>el.textContent.trim()),
+   bloques:['#editar-datos','#ficha-fotos','#documentos-bomba','.interactive-part-block[data-part="9"]','.interactive-part-block[data-part="5"]','.interactive-part-block[data-part="7"]'].map(selector=>panel.querySelector(selector)?.tagName)
   }));
+  await page.locator('#ficha-fotos #fotos-actualizar').waitFor({state:'attached'});
   const referencia=await estructuraFicha();
   await page.locator('.tel-volver').click();
   await page.locator('#tel-buscar').fill('B22');
   await page.locator('#tel-resultados button').filter({hasText:'B22'}).click();
   await page.locator('#editar-equipo').getByRole('heading',{name:'Datos y fotos de B22'}).waitFor();
+  await page.locator('#ficha-fotos #fotos-actualizar').waitFor({state:'attached'});
   const ficha=await estructuraFicha();
   assert.deepEqual(ficha,referencia);
   assert.deepEqual(ficha.secciones,['editar-equipo','pump-resumen','mobile-actions','documentos-bomba']);
