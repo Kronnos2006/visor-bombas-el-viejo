@@ -35,6 +35,7 @@ import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js?v=20261111
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
 import {expediente, expedienteDe, enlaces, renderDocumentosBomba, linkPieza} from './expediente.js';
+import {respuestaIaHtml} from './respuesta-ia.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
 import {listReports, deleteReport, configureReports, reportsInObsidian, reportsInCloud, importReports} from './reportes.js';
@@ -441,7 +442,7 @@ function renderPanelContent(){
  }
 }
 function renderOrings(){const rings=state.pump.data.orings;return Array.isArray(rings)&&rings.length?'<div class="block"><h3>O-rings registrados</h3>'+rings.map(o=>`<div class="record"><strong>${esc(o.posicion||'Posición no registrada')}</strong><p class="muted">Medida: ${esc(o.medida||'Sin levantar')}<br>Material: ${esc(o.material||'Sin levantar')}<br>Cantidad: ${esc(o.cantidad??'Sin levantar')}<br>Código: ${esc(o.codigo||'Sin levantar')}</p></div>`).join('')+'</div>':'<p class="notice">No hay medidas de o-rings registradas.</p>';}
-function showAnswer(item){const target=$('#ai-output');if(target)target.innerHTML=`<p class="answer-caption">PREGUNTA: ${esc(item.question)}</p><div class="ai-answer">${esc(item.answer)}</div><p class="source">${esc(item.source)}</p>`;}
+function showAnswer(item){const target=$('#ai-output');if(target)target.innerHTML=`<p class="answer-caption">PREGUNTA: ${esc(item.question)}</p><div class="ai-answer">${respuestaIaHtml(item.answer)}</div><p class="source">${esc(item.source)}</p>`;}
 async function ask(e){e.preventDefault();if(busyAI)return;const tag=state.pump.tag,question=$('#question').value;busyAI=true;const btn=$('#ask-form button');btn.disabled=true;btn.textContent='Consultando…';try{let reportes=[];try{let left=22000;reportes=(await listReports(tag)).map(r=>{const t=(r.text||'').slice(0,Math.min(3000,left));left-=t.length;return{fecha:r.date,titulo:r.title,texto:t,pdf:r.pdf?r.pdf.name+' (PDF adjunto: su contenido no se envía a Gemini)':''};});}catch{}
  const response=await api('/api/ask',{tag,question,component:anatomy?.state.subcomponent||parts[state.part]?.name||'',reportes,notaExpediente:expedienteDe(state.pump?.data?.tag===tag?state.pump.data:{tag}).nota||''});state.answers[tag]={...response,question};if(state.pump?.tag===tag&&state.tab==='ia')showAnswer(state.answers[tag]);}catch(error){if(state.pump?.tag===tag&&$('#ai-output'))$('#ai-output').innerHTML=`<p class="error">${esc(error.message)}</p>`;else toast(error.message);}finally{busyAI=false;if($('#ask-form button')){$('#ask-form button').disabled=false;$('#ask-form button').textContent='Consultar Gemini →';}}}
 function setViewButtons(top){$('#top').classList.toggle('active',top);$('#iso').classList.toggle('active',!top);}

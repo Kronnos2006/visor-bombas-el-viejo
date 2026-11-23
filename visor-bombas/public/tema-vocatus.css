@@ -146,7 +146,16 @@ body .muted,body .source,body .answer-caption{color:var(--muted)}
 body .muted{font-size:14px}
 body textarea,body input{background:var(--superficie);color:var(--tinta);border-color:var(--borde)}
 body .suggestions button{font-size:15px;padding:13px}
-body .ai-answer{font-size:15px}
+body .ai-answer{font-size:15px;white-space:normal;line-height:1.65}
+body .ai-answer>:first-child{margin-top:0}
+body .ai-answer>:last-child{margin-bottom:0}
+body .ai-answer p{margin:0 0 12px}
+body .ai-answer h4{margin:16px 0 6px;font-size:16px;font-weight:700;color:var(--accent)}
+body .ai-answer ul,body .ai-answer ol{margin:0 0 12px;padding-left:22px}
+body .ai-answer li{margin:0 0 6px}
+body .ai-answer strong{font-weight:700}
+body .ai-answer hr{border:0;border-top:1px solid var(--borde);margin:14px 0}
+body .ai-answer code{font-size:.92em;padding:1px 5px;border-radius:5px;background:rgba(127,127,127,.18);word-break:break-word}
 body .panel-actions button,body .panel-actions a{font-size:14px}
 body #toast{font-size:16px;border-radius:14px;background:var(--superficie-solida);color:var(--tinta);border-color:var(--borde-fuerte)}
 body .block{border-color:var(--line)}
