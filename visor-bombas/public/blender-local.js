@@ -1,8 +1,8 @@
 // Modelo de Blender integrado; ?modelo=original conserva la vista anterior.
 export const VISTA_FBX_AGUA=new URLSearchParams(globalThis.location?.search).get('modelo')==='fbx-agua';
 // Cambiar esta huella cuando se reemplace el GLB. La caché local evita descargar
-// de nuevo los 31 MB en cada visita sin compartir el modelo entre cuentas.
-export const PLANTA_BLENDER_CACHE='962900d9f446b313';
+// de nuevo los 12 MB en cada visita sin compartir el modelo entre cuentas.
+export const PLANTA_BLENDER_CACHE='9e284523fe32a8b1';
 export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgress}){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
  if(!area.aparte||new URLSearchParams(location.search).get('modelo')==='original')return loader.loadAsync(area.modelo,onProgress);
@@ -79,7 +79,9 @@ export function alinearInfoBlender(T,scene,info,grupos){
  scene.traverse(o=>{if(!o.isMesh||!o.userData.sector)return;const b=new T.Box3().setFromObject(o).applyMatrix4(local);if(b.isEmpty())return;
   const c=cajas[o.userData.sector]??={min:b.min.toArray(),max:b.max.toArray()};
   for(let i=0;i<3;i++){c.min[i]=Math.min(c.min[i],b.min.getComponent(i));c.max[i]=Math.max(c.max[i],b.max.getComponent(i));}
-  if(ES_PISO.test(o.userData.original_name||o.name))pisos.push({min:b.min.toArray(),max:b.max.toArray()});});
+  // El suelo unido guarda las cajas de cada losa original: las bombas se apoyan igual que antes.
+  if(Array.isArray(o.userData.pisos_cajas)){for(const c of o.userData.pisos_cajas){const k=new T.Box3(new T.Vector3(...c.min),new T.Vector3(...c.max)).applyMatrix4(o.matrixWorld).applyMatrix4(local);pisos.push({min:k.min.toArray(),max:k.max.toArray()});}}
+  else if(ES_PISO.test(o.userData.original_name||o.name))pisos.push({min:b.min.toArray(),max:b.max.toArray()});});
  const medida=medirDesplazamiento(cajas,info);
  aplicarDesplazamiento(info,grupos,cajas,medida.d);
  if(medida.residuo>.25)console.warn(`Modelo de Blender: los sectores no se movieron juntos (residuo ${medida.residuo.toFixed(2)} m); revisar ubicaciones.`);
