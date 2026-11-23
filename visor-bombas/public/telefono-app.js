@@ -191,8 +191,9 @@ function iniciar() {
    const t = document.createElement('b'); t.textContent = it.tag; const n = document.createElement('span'); n.textContent = it.nombre; b.append(t, n); b.onclick = it.abrir; return b; }));
   const cuenta = $('#tel-cuenta'); if (cuenta) cuenta.dataset.resultados = String(items.length);
  }
- function opciones(sel = '') {
-  return '<option value="">Elegí la bomba…</option>' + bombas().map(p => `<option value="${esc(p.tag)}" ${p.tag === sel ? 'selected' : ''}>${esc(p.tag)} · ${esc(p.nombre || p.ubicacion || '')}</option>`).join('');
+ function equiposParaReportar(){return V()?.reportEquipment||bombas();}
+ function opciones(sel = '', equipos = bombas()) {
+  return '<option value="">Elegí la bomba…</option>' + equipos.map(p => `<option value="${esc(p.tag)}" ${p.tag === sel ? 'selected' : ''}>${esc(p.tag)} · ${esc(p.nombre || p.ubicacion || '')}</option>`).join('');
  }
 
  // ---------- Formulario de Mantenimiento (incluye si se llevan la bomba) ----------
@@ -215,7 +216,7 @@ function iniciar() {
   <section class="report-step">${step('03','Estado al terminar')}<fieldset class="tel-campo tel-sino"><legend>¿El equipo quedó funcionando?</legend><label><input type="radio" name="mant-funcional" value="si"> Sí</label><label><input type="radio" name="mant-funcional" value="no"> No</label></fieldset>
   <fieldset class="tel-campo tel-sino"><legend>¿Se la llevan de su lugar?</legend><label><input type="radio" name="mant-retiro" value="si"> Sí</label><label><input type="radio" name="mant-retiro" value="no" checked> No</label><p class="tel-nota">Si se la llevan, queda «En reparación» hasta registrar su regreso.</p></fieldset></section>
   <section class="report-step">${step('04','Responsable y fecha')}${pie('mant')}</section></form>
-  <p class="tel-aviso" role="status" id="mant-aviso"></p><div class="tel-accion"><div class="tel-accion-fila"><span id="mant-resumen"></span><button class="tel-primario" type="submit" form="tel-mant" disabled>Consultando…</button></div></div>
+  <p class="tel-aviso" role="status" id="mant-aviso"></p><button id="mant-ver-historial" class="tel-sec" type="button" hidden>Ver historial de la bomba</button><div class="tel-accion"><div class="tel-accion-fila"><span id="mant-resumen"></span><button class="tel-primario" type="submit" form="tel-mant" disabled>Consultando…</button></div></div>
   <button type="button" class="tel-sec" id="mant-export">Descargar reporte con sus fotos para la computadora de planta</button><section id="mant-local" aria-label="Reportes guardados en este dispositivo"></section>
   <section id="mant-import" hidden><h2 class="tel-sub">Importar reportes del teléfono</h2><p class="tel-nota">Elegí el paquete, revisá equipos, fechas y fotos e importalo a Obsidian.</p><input id="mant-package" type="file" accept="application/json,.json" aria-label="Paquete de reportes de Vocatus"><div id="mant-import-preview"></div><button type="button" class="tel-sec" id="mant-import-confirm" disabled>Importar los reportes revisados</button></section>`;
  function syncReportButton(){const button=document.querySelector('button[form=tel-mant]');if(button)button.disabled=reportBusy||!storageReady||photoPicker.pending;}
@@ -290,12 +291,13 @@ function iniciar() {
    ${enReparacion.has(p.tag) ? '<p class="tr-alerta">En reparación</p>' : ''}
    <span class="tt-medidor"><i style="width:${pct}%"></i></span><p class="tr-linea">Ficha ${c.done}/${c.total} · ${v.verified ? 'verificada' : 'sin verificar en campo'}</p>
    <div class="tr-acciones"><button type="button" class="tel-sec" data-ver>Ver ficha</button><button type="button" class="tel-sec" data-ubicar>Ver en el 3D</button></div>`;
-  resumen.querySelector('[data-ver]').onclick = () => abrirFicha(p.tag, 'ficha');
+  resumen.querySelector('[data-ver]').onclick = () => abrirHistorialDelReporte(p.tag);
+  resumen.querySelector('[data-ubicar]').hidden=!bombas().some(bomba=>bomba.tag===p.tag);
   resumen.querySelector('[data-ubicar]').onclick = () => { document.body.classList.add('tel-3d'); V()?.select(p.tag); setTimeout(() => V()?.locate(), 600); };
  }
  function pintarElegida(id) {
   const sel = $('#' + id), card = $('#' + id + '-elegida'), fila = $('#' + id + '-fila'), tag = sel.value;
-  const p = bombas().find(x => x.tag === tag);
+  const p = (id==='mant-bomba'?equiposParaReportar():bombas()).find(x => x.tag === tag);
   card.hidden = !tag; fila.hidden = !!tag;
   pintarResumen();
   if (tag) { card.innerHTML = `<strong>${esc(tag)}</strong><span>${esc([p?.marca, p?.modelo].filter(Boolean).join(' ') || '')}${p?.nombre ? ' · ' + esc(p.nombre) : ''}</span><button type="button" class="tel-cambiar">Cambiar</button>`; card.querySelector('button').onclick = () => { card.hidden = true; fila.hidden = false; sel.focus(); }; }
@@ -317,7 +319,7 @@ function iniciar() {
  }
  function setReportTag(tag,force=false){
   if(tag===reportTag&&!force){$('#mant-bomba').value=tag;pintarElegida('mant-bomba');return;}
-  if(!force)saveReportDraft();reportTag=tag;photoPicker.load(tag);let draft=null;
+  if(!force)saveReportDraft();$('#mant-ver-historial').hidden=true;reportTag=tag;photoPicker.load(tag);let draft=null;
   try{draft=draftStore.read(tag);}catch(error){aviso('mant','No se pudo recuperar el borrador de '+(tag||'este equipo')+'. '+error.message,'error');}
   applyingDraft=true;$('#tel-mant').dataset.workOrderId=draft?.workOrderId||'';reportId=draft?.id||nextReportId();$('#mant-bomba').value=tag;
   $('#mant-problema').value=draft?.problema||'';$('#mant-comentario').value=draft?.comentario||'';$('#mant-autor').value=draft?.author??leer('vocatus-responsable');$('#mant-fecha').value=draft?.date??hoy();
@@ -330,6 +332,12 @@ function iniciar() {
   const d=snapshotReport(),tag=$('#mant-bomba').value;
   if(tag!==reportTag)throw new Error('El equipo cambió. Volvé a seleccionarlo antes de guardar.');
   return normalizeFieldReport({id:reportId,tag,...(d.workOrderId?{workOrderId:d.workOrderId}:{}),date:d.date,author:d.author,title:'Mantenimiento: '+d.problema.split('\n')[0].slice(0,80),symptoms:d.problema,text:d.comentario||d.problema,parts:d.parts.filter(r=>r.code.trim()||r.name.trim()).map(r=>[r.code.trim()&&'Código '+r.code.trim(),r.name.trim()].filter(Boolean).join(' · ')).join('\n'),operativo:d.operativo,retirado:d.retiro==='si',evidence:photoPicker.images});
+ }
+ function abrirHistorialDelReporte(tag){
+  mostrar('historial');
+  if(bombas().some(p=>p.tag===tag)){abrirFicha(tag,'historial');return;}
+  const reference=V()?.historyReferences?.find(p=>p.tagAsignado===tag);
+  if(reference)abrirFicha('','historial',reference);
  }
  function downloadReports(records){const pkg=fieldReportPackage(records),blob=new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Reportes_Vocatus_'+records[0].tag+'_'+hoy()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);}
  $('#mant-export').onclick=()=>{try{downloadReports([reportInput()]);aviso('mant','Paquete descargado. Importalo desde el visor de la computadora de planta.','ok');}catch(error){aviso('mant',error.message,'error');}};
@@ -359,6 +367,7 @@ function iniciar() {
    else{
     await importFieldReports([record],(path,body)=>V().api(path,body));aviso('mant','Reporte de '+tag+' guardado en Obsidian.','ok');leerPendientes();
    }
+   const historial=$('#mant-ver-historial');historial.textContent='Ver historial de '+tag;historial.onclick=()=>abrirHistorialDelReporte(tag);historial.hidden=false;
    document.dispatchEvent(new CustomEvent('vocatus:informe-guardado',{detail:{tag,workOrderId:record.workOrderId||''}}));
    await photoPicker.clear(tag);draftStore.remove(tag);
    if(reportTag===tag){applyingDraft=true;$('#tel-mant').dataset.workOrderId='';reportId=nextReportId();$('#mant-problema').value='';$('#mant-comentario').value='';$('#mant-repuestos').innerHTML='';repuestoFila();document.querySelectorAll('[name=mant-funcional]').forEach(r=>r.checked=false);document.querySelector('[name=mant-retiro][value=no]').checked=true;applyingDraft=false;}
@@ -408,9 +417,9 @@ function iniciar() {
  const areasMenu = () => [...document.querySelectorAll('#area-menu [data-area]')].map(b => [b.dataset.area, [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() || b.textContent.trim()]);
  const areaDeMenu = id => !id || id === 'integrado' || id === 'planta' ? '' : id.replace(/^sector:/, '');
  function pintarHistorial() {
-  const referencias=(V()?.references||[]).map(reference=>{
+  const referencias=(V()?.historyReferences||V()?.references||[]).map(reference=>{
    let local={};try{local=JSON.parse(localStorage.getItem('integrado:'+reference.sector+':'+reference.nombre))||{};}catch{}
-   return {...local,tag:'Sin TAG',nombre:local.nombre||reference.nombre,reference};
+   return {...local,tag:reference.tagAsignado||'Sin TAG',nombre:local.nombre||reference.excel?.nombre||reference.nombre,reference};
   });
   const todas=[...bombas(),...referencias],areaDe=p=>p.reference?(p.reference.standalone?'torre':sectorDe(p.reference.sector)):V()?.areaDe(p);
   const areas=areasMenu(),marcaSel=$('#hist-marca'),actual=marcaSel.value;
@@ -424,7 +433,7 @@ function iniciar() {
   if(!todas.length){$('#hist-tarjetas').innerHTML='<p class="tel-vacio">Cargando las bombas y referencias del modelo…</p>';return;}
   if(!lista.length){$('#hist-tarjetas').innerHTML=`<div class="tel-vacio-ilus tt-ancho">${ILUS.buscar}<p>Ninguna ficha o referencia coincide con los filtros.</p></div>`;return;}
   $('#hist-tarjetas').innerHTML=lista.map(p=>{
-   if(p.reference)return `<button type="button" class="tel-tarjeta" data-reference="${esc(selectionIdentity({pending:p.reference}))}"><span class="tt-cab"><strong>${esc(p.nombre&&p.nombre!==p.reference.nombre?p.nombre:p.reference.numero?'Bomba '+p.reference.numero:'Sin TAG')}</strong></span><span>${esc(p.nombre&&p.nombre!==p.reference.nombre?(p.reference.numero?'Bomba '+p.reference.numero+' · ':'')+p.reference.nombre:p.nombre)}</span><small>${p.nombre&&p.nombre!==p.reference.nombre?'Nombre asignado · tocá para editar':'Sin nombre · tocá para poner nombre o código'}</small></button>`;
+   if(p.reference)return `<button type="button" class="tel-tarjeta" data-reference="${esc(selectionIdentity({pending:p.reference}))}" data-reference-tag="${esc(p.reference.tagAsignado||'')}"><span class="tt-cab"><strong>${esc(p.reference.tagAsignado||(p.nombre&&p.nombre!==p.reference.nombre?p.nombre:p.reference.numero?'Bomba '+p.reference.numero:'Sin TAG'))}</strong></span><span>${esc(p.nombre&&p.nombre!==p.reference.nombre?(p.reference.numero?'Bomba '+p.reference.numero+' · ':'')+p.reference.nombre:p.nombre)}</span><small>${p.reference.sinUbicacion?'Ubicación 3D pendiente':p.nombre&&p.nombre!==p.reference.nombre?'Nombre asignado · tocá para editar':'Sin nombre · tocá para poner nombre o código'}</small></button>`;
    const c=completeness(p),pct=c.total?Math.round(c.done/c.total*100):0,marcaP=String(p.marca||'').trim();
    return `<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><span class="tt-cab"><strong>${esc(p.tag)}</strong>${marcaP&&!/por confirmar/i.test(marcaP)?`<em>${esc(marcaP)}</em>`:''}</span><span>${esc(p.nombre||p.ubicacion||'')}</span><span class="tt-medidor" title="Ficha completa ${c.done} de ${c.total}"><i style="width:${pct}%"></i></span><small>Ficha ${c.done}/${c.total}</small></button>`;
   }).join('');
@@ -445,7 +454,7 @@ function iniciar() {
   const elegida=()=>selectionIdentity(V()?.pump)===key;
   if(!elegida()){if(reference)V()?.selectReference(reference);else V()?.select(tag);}
   const vigente=()=>viendoFicha&&request===fichaRequest&&ficha.dataset.selection===key;
-  const aplicar=()=>{if(!vigente()||!elegida())return;const tab=reference?'ficha':pestana;if(reference){if(!$('#maquina-pendiente'))V()?.tab(tab);}else V()?.tab(tab);if(tab==='historial')V()?.explode(0);pintarRegreso();pintarPiezas();};
+  const aplicar=()=>{if(!vigente()||!elegida())return;const tab=reference&&!reference.tagAsignado?'ficha':pestana;if(!reference||tab!=='ficha'||!$('#maquina-pendiente'))V()?.tab(tab);if(tab==='historial')V()?.explode(0);pintarRegreso();pintarPiezas();};
   // Espera a que el visor termine de cargar esa bomba (con el 3D real puede tardar varios segundos);
   // si se aplica antes, al terminar la carga el visor vuelve a juntar las piezas.
   const inicio = Date.now();
@@ -472,7 +481,12 @@ function iniciar() {
   const reference=event.detail,key=selectionIdentity({pending:reference});
   if(key&&(!viendoFicha||ficha.dataset.selection!==key))abrirFicha('', 'ficha',reference);
  });
- document.addEventListener('vocatus:referencias',()=>{pintarFranja();if(seccion==='historial')pintarHistorial();});
+ document.addEventListener('vocatus:referencias',()=>{
+  pintarFranja();
+  const selector=$('#mant-bomba');selector.innerHTML=opciones(reportTag||leer('vocatus-reporte-tag'),equiposParaReportar());
+  if(!reportTag&&selector.value)setReportTag(selector.value);else pintarElegida('mant-bomba');
+  if(seccion==='historial')pintarHistorial();
+ });
  // Una bomba tocada en el 3D llega por este aviso del visor.
  document.addEventListener('vocatus:bomba', e => {
   pintarFranja();
@@ -515,7 +529,7 @@ function iniciar() {
   if(!V()?.pumps?.length)return;
   pintarMarcas(); pintarFranja(); leerPendientes();
   const sel=V()?.pump?.tag||'',previous=reportTag||leer('vocatus-reporte-tag')||sel;
-  const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(previous);$('#bod-bomba').innerHTML=opciones(bodega||sel);
+  const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(previous,equiposParaReportar());$('#bod-bomba').innerHTML=opciones(bodega||sel);
   if(!draftRestored){setReportTag($('#mant-bomba').value,true);draftRestored=true;}else if(previous!==reportTag)setReportTag($('#mant-bomba').value);else pintarElegida('mant-bomba');
   if($('#bod-bomba').value)elegirBodega();storageMode();
   if(seccion==='historial'){pintarHistorial();if(V()?.pump&&!viendoFicha){if(V().pump.pending)abrirFicha('','ficha',V().pump.pending);else if(V().pump.tag)abrirFicha(V().pump.tag,'historial');}}

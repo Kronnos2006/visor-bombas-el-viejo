@@ -12,7 +12,7 @@ const allReferences=[...references,...standalone];
 const phoneSource=await readFile(new URL('./public/telefono-app.js',import.meta.url),'utf8');
 const opener=phoneSource.slice(phoneSource.indexOf('function abrirFicha('),phoneSource.indexOf("\n ficha.querySelector('.tel-volver')",phoneSource.indexOf('function abrirFicha(')));
 const appSource=await readFile(new URL('./public/app.js',import.meta.url),'utf8');
-const pendingSelector=appSource.slice(appSource.indexOf('function selectPendingPump('),appSource.indexOf('\nfunction renderPendingPanel('));
+const pendingSelector=appSource.slice(appSource.indexOf('function selectPendingPump('),appSource.indexOf('\nasync function cargarDetallesFBX('));
 function phone(){
  const scheduled=[],tabs=[],selections=[],calls={};
  const api={pump:null,listo:true,select(tag){this.pump={tag};selections.push(tag);},selectReference(reference){this.pump={tag:'Sin TAG',pending:reference};selections.push(reference);},tab(tab){tabs.push({key:selectionIdentity(this.pump),tab});},explode(){}};
@@ -41,7 +41,7 @@ test('guardas reales cancelan apertura antigua entre referencias Sin TAG y al sa
 test('selección real anuncia cada referencia y transforma centro integrado una sola vez; torre ya está en mundo',()=>{
  const events=[],centers=[];let transformed=0;
  class Vector3{constructor(x,y,z){Object.assign(this,{x,y,z});}add(other){this.x+=other.x;this.y+=other.y;this.z+=other.z;return this;}multiplyScalar(k){this.x*=k;this.y*=k;this.z*=k;return this;}}
- const context=vm.createContext({state:{loading:0},rememberDetailOrigin(){},history:{replaceState(){}},location:{pathname:'/',search:'?s=historial'},document:{dispatchEvent(event){events.push(event);}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},$:()=>({}),SECTORES_INT:[],sectorDe:()=>null,THREE:{Vector3},integrado:{g:{updateMatrixWorld(){},localToWorld(center){transformed++;center.x+=100;}}},transitionToPump(_ticket,center){centers.push(center);},renderList(){},renderPanel(){}});
+ const context=vm.createContext({state:{loading:0},bombaParaResumen:reference=>({tag:reference.tagAsignado||'Sin TAG'}),rememberDetailOrigin(){},history:{replaceState(){}},location:{pathname:'/',search:'?s=historial'},document:{dispatchEvent(event){events.push(event);}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},$:()=>({}),SECTORES_INT:[],sectorDe:()=>null,THREE:{Vector3},integrado:{g:{updateMatrixWorld(){},localToWorld(center){transformed++;center.x+=100;}}},transitionToPump(_ticket,center){centers.push(center);},renderList(){},renderPanel(){}});
  const select=vm.runInContext('('+pendingSelector+')',context);
  for(const reference of allReferences){select(reference);const event=events.at(-1);assert.equal(event.type,'vocatus:referencia');assert.equal(event.detail,reference);assert.equal(context.state.pump.pending,reference);const center=centers.at(-1);assert.equal(center.x,(reference.min[0]+reference.max[0])/2+(reference.standalone?0:100));}
  assert.equal(transformed,references.length);assert.equal(events.length,allReferences.length);

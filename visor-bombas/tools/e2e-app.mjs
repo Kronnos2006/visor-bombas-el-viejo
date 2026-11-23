@@ -43,7 +43,7 @@ async function main(){
   const bootstrap=await(await fetch(base+'/api/bootstrap')).json();assert.equal(bootstrap.maintenanceWritable,false);
   browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{}),args:['--enable-unsafe-swiftshader']});
   const context=await browser.newContext({viewport:{width:1560,height:800},reducedMotion:'reduce'});
-  await context.addInitScript(()=>sessionStorage.setItem('vocatus-portada','1'));
+  await context.addInitScript(()=>sessionStorage.setItem('vocatus-portada-3d-5','1'));
   await context.route('https://fonts.googleapis.com/**',r=>r.abort());
   await context.route('**/*.supabase.co/**',r=>r.abort());
   await context.route('**/api/**',async r=>{const request=r.request();if(['POST','DELETE'].includes(request.method())&&/\/api\/(maintenance|equipment|survey)(?:\?|$)/.test(request.url())){blockedWrites.push(request.url());await r.abort();}else await r.continue();});
@@ -109,6 +109,86 @@ async function main(){
     checks.push({name:route+'-'+size.width,ok:true});if(size.width===390)await shot(route+'-movil');
    }
   }
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(base+'/?s=historial&medir=1',{waitUntil:'domcontentloaded'});
+  await page.locator('#hist-tarjetas [data-reference-tag]').first().waitFor({timeout:60000});
+  const tags=await page.locator('#hist-tarjetas button').evaluateAll(rows=>rows.map(row=>row.dataset.tag||row.dataset.referenceTag));
+  for(let i=1;i<=90;i++)assert.ok(tags.includes('B'+i),'Falta B'+i+' en Historial');
+  await page.locator('#hist-buscar').fill('B43');
+  await page.locator('#hist-tarjetas [data-reference-tag=B43]').click({timeout:60000});
+  await page.getByRole('link',{name:'Manuales y CAD'}).click();
+  await page.locator('#documentos-bomba a[href$="Goulds-eSH-repuestos.pdf"]').waitFor();
+  await page.locator('#tabs [data-tab=historial]').click();
+  await page.getByRole('heading',{name:'Historial de mantenimiento · B43'}).waitFor();
+  await page.locator('#rep-list').waitFor();
+  assert.equal(await page.locator('#history-equipment,#history-photos,#documentos-bomba,#rep-form').count(),0);
+  assert.ok(await page.locator('#tabs [data-tab=ficha]').isVisible());
+  await page.route('**/api/ask',async route=>{
+   assert.equal(route.request().postDataJSON().tag,'B43');
+   await route.fulfill({json:{answer:'Respuesta simulada para verificar la interfaz',source:'Prueba local'}});
+  });
+  await page.locator('#tabs [data-tab=ia]').click();
+  await page.locator('#question').fill('Pregunta de comprobación');
+  await page.locator('#ask-form button').click();
+  await page.locator('#ai-output').getByText('Respuesta simulada para verificar la interfaz').waitFor();
+  checks.push({name:'B43-documentos-historial-y-preguntar',ok:true});
+  await page.locator('.tel-volver').click();
+  await page.locator('#hist-buscar').fill('B48');
+  await page.locator('#hist-tarjetas [data-reference-tag=B48]').click();
+  await page.getByRole('link',{name:'Manuales y CAD'}).click();
+  const dxf=page.locator('#documentos-bomba a[href$="Multisteel-RA65-300-rodamientos-referencia.dxf"]');
+  await dxf.waitFor();
+  assert.equal((await page.request.get(base+await dxf.getAttribute('href'))).status(),200);
+  const verificarCadB48=()=>page.waitForFunction(()=>window.vocatus?.pump?.tag==='B48'&&window.__visor?.scene?.getObjectByName('Perno de bancada'));
+  await verificarCadB48();
+  await page.locator('.tel-volver').click();
+  await navigate('areas');
+  await page.locator('#labels [title^="B48 ·"]').waitFor({state:'attached',timeout:60000});
+  await page.locator('#tel-buscar').fill('B48');
+  await page.locator('#tel-resultados button').filter({hasText:'B48'}).click();
+  await verificarCadB48();
+  checks.push({name:'B48-CAD-detallado-desde-historial-y-areas',ok:true});
+  const estructuraFicha=()=>page.locator('#panel').evaluate(panel=>({
+   secciones:[...panel.children].slice(0,4).map(el=>el.id),
+   edicion:[...panel.querySelectorAll('.equipment-primary-actions a')].map(el=>el.textContent.replace(/B\d+/g,'TAG')),
+   acciones:[...panel.querySelectorAll('.quick-actions button')].map(el=>el.textContent.trim()),
+   componentes:[...panel.querySelectorAll('.equipment-components a')].map(el=>el.textContent.trim()),
+   bloques:['#editar-datos','#ficha-fotos','#documentos-bomba','.interactive-part-block[data-part="9"]','.interactive-part-block[data-part="5"]','.interactive-part-block[data-part="7"]'].map(selector=>panel.querySelector(selector)?.tagName)
+  }));
+  await page.locator('#ficha-fotos #fotos-actualizar').waitFor({state:'attached'});
+  const referencia=await estructuraFicha();
+  await page.locator('.tel-volver').click();
+  await page.locator('#tel-buscar').fill('B22');
+  await page.locator('#tel-resultados button').filter({hasText:'B22'}).click();
+  await page.locator('#editar-equipo').getByRole('heading',{name:'Datos y fotos de B22'}).waitFor();
+  await page.locator('#ficha-fotos #fotos-actualizar').waitFor({state:'attached'});
+  const ficha=await estructuraFicha();
+  assert.deepEqual(ficha,referencia);
+  assert.deepEqual(ficha.secciones,['editar-equipo','pump-resumen','mobile-actions','documentos-bomba']);
+  checks.push({name:'B22-y-B48-comparten-estructura-y-acciones',ok:true});
+
+  await navigate('mantenimiento');
+  const equipoReporte=page.locator('#mant-bomba');
+  const tagsReporte=await equipoReporte.locator('option').evaluateAll(rows=>rows.map(row=>row.value));
+  for(let i=1;i<=90;i++)assert.ok(tagsReporte.includes('B'+i),'Falta B'+i+' en Reportar');
+  if(!await equipoReporte.isVisible())await page.locator('#mant-bomba-elegida .tel-cambiar').click();
+  await equipoReporte.selectOption('B90');
+  await page.locator('#mant-problema').fill('REGISTRO ÚNICO B90');
+  await page.locator('#mant-autor').fill('PRUEBA AUTOMATICA');
+  await page.locator('#mant-fecha').fill('2026-10-30');
+  await page.locator('[name=mant-funcional][value=si]').check();
+  await page.getByRole('button',{name:'Guardar en este dispositivo',exact:true}).click();
+  await page.getByRole('button',{name:'Ver historial de B90'}).click();
+  await page.getByRole('heading',{name:'Historial de mantenimiento · B90'}).waitFor();
+  const registro=page.locator('#rep-list .record').filter({hasText:'REGISTRO ÚNICO B90'});
+  await registro.waitFor();
+  assert.equal(await registro.count(),1);
+  await page.locator('.tel-volver').click();
+  await page.locator('#hist-buscar').fill('B48');
+  await page.locator('#hist-tarjetas [data-reference-tag=B48]').click();
+  await page.locator('#tabs [data-tab=historial]').click();
+  await page.locator('#rep-list').getByText('Todavía no hay reportes de campo para esta bomba.').waitFor();
+  checks.push({name:'reportar-b1-b90-y-registro-unico-por-tag',ok:true});
   const flat=await context.newPage();flat.on('pageerror',e=>errors.push(e.stack||e.message));
   await flat.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/i.test(type)?null:original.call(this,type,...args);};});
   await flat.goto(base+'/?s=areas',{waitUntil:'networkidle'});assert.equal(await flat.evaluate(()=>document.createElement('canvas').getContext('webgl2')),null);

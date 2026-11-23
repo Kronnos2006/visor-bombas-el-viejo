@@ -97,7 +97,7 @@ const HID_PIEZA=[
 export const expedienteDe=p=>p?.reemplazo?{placas:[],fotos:[],fab:[],rod:[],nota:`Bomba reemplazada el ${p.reemplazo}: el expediente anterior está archivado.`}:(expediente[p?.tag]||{placas:[],fotos:[],fab:[],rod:[]});
 const fabDe=p=>expedienteDe(p).fab||[];
 const esHid=p=>/HIDROMAC/i.test(p.marca||'')&&(/^2196\b/.test(String(p.modelo||'').trim())||fabDe(p).includes('hidromac'));
-const esGoulds=p=>/GOULDS/i.test(p.marca||'')&&(/SH/i.test(p.modelo||'')||fabDe(p).includes('goulds'));
+const esGoulds=p=>/GOULDS/i.test(p.marca||'')&&(/SH/i.test(p.modelo||'')||/\b15SH06/i.test(String(p.catalogo||p.documental?.catalogo||''))||fabDe(p).includes('goulds'));
 export function linksBomba(p){
   if(p.inactive)return null;
   if(esHid(p))return{alcance:'modelo',
@@ -109,6 +109,52 @@ export function linksBomba(p){
     planos:{t:'Goulds e-SH · guía de partes y vistas del kit (PDF, referencia de familia)',u:GOULDS.guia},
     extra:[{t:'Brochure técnico Goulds e-SH',u:GOULDS.bro}]};
   return null;
+}
+export function documentosBomba(p){
+ const documentacion=linksBomba(p);
+ const links=documentacion?[documentacion.manual,documentacion.planos,...documentacion.extra]:[];
+ if(p.reemplazo)return links;
+ const {marca='',modelo=''}=p;
+ const base='/referencias/bombas/';
+ if(esGoulds(p)){
+  links.push({t:'Goulds e-SH · catálogo (PDF)',u:base+'Goulds-eSH-ficha.pdf'},
+   {t:'Goulds e-SH · despiece y repuestos (PDF)',u:base+'Goulds-eSH-repuestos.pdf'},
+   {t:'Goulds 15SH06 / 02SH06 · comparación CAD (DXF)',u:base+'Goulds-eSH-15SH06-02SH06-comparacion.dxf',nota:'Referencia comparativa. Confirmar la variante instalada.'});
+ }
+ const archivosExternos={
+  "Hidromac-2196-catalogo.pdf": "https://bomeq.com.co/assets/catalogos/Catalogo%20-%20HIDROMAC.pdf",
+  "Titan-4196-manual.pdf": "https://www.titanpumpsinc.com/titan_pdfs/Titan_4196_Ansi_Pump_Maintenance_Manual.pdf",
+  "Titan-4196-catalogo.pdf": "https://www.titanpumpsinc.com/download",
+  "Ebara-EVM-repuestos.pdf": "https://www.pumpsebara.com/resources/",
+  "Ebara-EVMSU-ficha.pdf": "https://www.pumpsebara.com/wp-content/uploads/EVMSU_tech.pdf"
+};
+ const equipo=marca+' '+modelo;
+ const familias=[
+  [/HIDROMAC/i, /2196/i, [['Hidromac-2196-catalogo.pdf','Hidromac 2196 · catálogo'],['Hidromac-2196-interfaces-montaje-3D.dxf','Hidromac 2196 · interfaces de montaje']]],
+  [/HIDROMAC/i,/3\s*X\s*4\s*X\s*12A|\bAZ\b/i,[['Hidromac-AZ-catalogo.pdf','Hidromac AZ · catálogo'],['Hidromac-AZ-80-315A-esquema.dxf','Hidromac AZ · esquema candidato 80-315A']]],
+  [/MULTISTEEL/i,/RA\s*65\s*[/ -]\s*300/i,[['Multisteel-RA-RT-catalogo.pdf','Multisteel RA/RT · catálogo'],['Multisteel-RA65-300-rodamientos-referencia.dxf','Multisteel RA65/300 · referencia de rodamientos']]],
+  [/MULTISTEEL/i,/RSA/i,[['Multisteel-RSA-catalogo.pdf','Multisteel RSA · catálogo'],['Multisteel-RSA-rodamientos-referencia.dxf','Multisteel RSA · referencia de rodamientos']]],
+  [/TITAN/i,/4196/i,[['Titan-4196-manual.pdf','Titan 4196 · manual'],['Titan-4196-catalogo.pdf','Titan 4196 · catálogo']]],
+  [/DURCO/i,/6239[12]|MARK\s*3|LF-?82/i,[['Durco-Mark3-manual.pdf','Durco Mark 3 · manual']]],
+  [/EBARA/i,/EVMSU/i,[['Ebara-EVMSU-ficha.pdf','Ebara EVMSU · ficha'],['Ebara-EVM-repuestos.pdf','Ebara EVM · repuestos'],['Ebara-EVMSU5-9-F-esquema.dxf','Ebara EVMSU 5-9 · esquema de referencia']]],
+  [/GRUNDFOS/i,/CR\s*15/i,[['Grundfos-CR-10-15-20-servicio.pdf','Grundfos CR 10/15/20 · servicio'],['Grundfos-CR15-GJ-interfaz.dxf','Grundfos CR15 GJ · interfaz de referencia']]],
+  [/MOVITEC|KSB/i,/VF\s*4[/ -]8/i,[['KSB-Movitec-B-libro-tecnico.pdf','KSB Movitec B · libro técnico'],['B73-KSB-Movitec-VF-4-8B-60Hz-referencia.dxf','KSB Movitec VF 4/8B · CAD de referencia']]],
+  [/STAIRS|ABS|\bSB\b/i,/\b(?:SB\s*)?(?:15\s*[-/]\s*5|20\s*[-/]\s*6)\b/i,[['STAIRS-SB-10-15-20-manual.pdf','STAIRS SB 10/15/20 · manual de familia']]]
+ ];
+ for(const [fabricante,serie,archivos] of familias)if(fabricante.test(equipo)&&serie.test(equipo)){
+  for(const [archivo,titulo] of archivos){
+   const dxf=archivo.endsWith('.dxf');
+   const url=archivosExternos[archivo]||base+archivo;
+   links.push({t:titulo+(dxf?' (DXF)':' (PDF)'),u:url,nota:dxf?'Referencia dimensional. Verificar variante y medidas del equipo instalado.':'Documentación de la familia registrada. Verificar la variante en la placa.'});
+  }
+  break;
+ }
+ return links;
+}
+export function renderDocumentosBomba(p){
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const links=documentosBomba(p);
+ return '<section class="block exp-block" id="documentos-bomba"><h3>Manuales, repuestos y CAD</h3>'+(links.length?'<ul class="doc-links">'+links.map(l=>'<li><a href="'+esc(l.u)+'" target="_blank" rel="noopener noreferrer">'+esc(l.t)+' ↗</a>'+(l.nota?'<small>'+esc(l.nota)+'</small>':'')+'</li>').join('')+'</ul>':'<p>Documentación pendiente de asociar al equipo.</p>')+'</section>';
 }
 export function linkPieza(p,i){
   if(p.inactive)return [];

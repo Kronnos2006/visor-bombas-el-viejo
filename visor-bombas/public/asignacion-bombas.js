@@ -26,6 +26,6 @@ export function datosDeExcel(e){
  const partes=String(e.bomba||'').split('·').map(x=>x.trim()).filter(Boolean),valor=n=>partes.find(x=>x.toLowerCase().startsWith(n.toLowerCase()+':'))?.split(':').slice(1).join(':').trim()||'';
  const libres=partes.filter(x=>!x.includes(':')),inicio=libres[0]?.split(/\s+/)||[];
  const conMarca=libres.length>1||inicio.length>1;
- const d={marca:conMarca?inicio[0]:libres[0]||'',modelo:libres.length>1?libres.slice(1).join(' '):inicio.slice(1).join(' '),servicio:e.liquido,size:e.tamano,caudal:valor('GPM'),altura:valor('HD [m]'),rpm:valor('RPM'),impulsor:valor('Ø Imp [mm]')||(valor('Ø Imp [pulg]')?valor('Ø Imp [pulg]')+' pulg':''),motor:e.motor,acople:e.acople,rodamiento_delantero:e.rodDel,rodamiento_trasero:e.rodTra,sello:e.sello};
+ const d={marca:conMarca?inicio[0]:libres[0]||'',modelo:valor('#Mod')||valor('Mod')||(valor('SB Model')?'SB '+valor('SB Model'):'')||(libres.length>1?libres.slice(1).join(' '):inicio.slice(1).join(' ')),catalogo:valor('Cat'),servicio:e.liquido,size:e.tamano,caudal:valor('GPM'),altura:valor('HD [m]'),rpm:valor('RPM'),impulsor:valor('Ø Imp [mm]')||(valor('Ø Imp [pulg]')?valor('Ø Imp [pulg]')+' pulg':''),motor:e.motor,acople:e.acople,rodamiento_delantero:e.rodDel,rodamiento_trasero:e.rodTra,sello:e.sello};
  return Object.fromEntries(Object.entries(d).filter(([,v])=>v));
 }

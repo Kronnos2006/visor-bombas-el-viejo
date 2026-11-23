@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const m=new Map();globalThis.localStorage={getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,v)};
-const {bombaParaResumen,clavePendiente}=await import('./public/ficha-pendiente.js');
+const {bombaParaResumen,clavePendiente,renderEquipmentEdit}=await import('./public/ficha-pendiente.js');
 
 test('el resumen de una bomba sin ficha usa los mismos campos que una ficha completa',()=>{
  const s={sector:'torre',nombre:'Ref 1',tagAsignado:'B14',excel:{liquido:'Alcohol',tamano:'1X1.5-8',bomba:'Hidromac 2196 · GPM: 8 · HD [m]: 30 · RPM: 3500',motor:'WEG 5 HP',sello:'Tipo 1'}};
@@ -13,12 +13,12 @@ test('el resumen de una bomba sin ficha usa los mismos campos que una ficha comp
  assert.deepEqual(p.specs.find(([k])=>k==='Caudal'),['Caudal','8 GPM']);
  assert.equal(p.motor.marca,'WEG 5 HP');assert.equal(p.seal.tipo,'Tipo 1');assert.equal(p.rodamientos.delantero,'6207');assert.equal(p.temperaturaTexto,'40 °C');
 });
-test('la ficha sin ficha completa empieza con Datos y fotos y deja el formulario plegado',async()=>{
- const src=await readFile(new URL('./public/ficha-pendiente.js',import.meta.url),'utf8');
- const i=src.indexOf('Datos y fotos de'),j=src.indexOf('id="resumen-pendiente"'),k=src.indexOf('id="editar-datos"');
- assert.ok(i>0&&i<j&&j<k);assert.match(src,/Editar datos de \$\{esc\(titulo\)\}/);assert.match(src,/Editar fotos de \$\{esc\(titulo\)\}/);
- const app=await readFile(new URL('./public/app.js',import.meta.url),'utf8');
- assert.match(app,/paintPumpSummary\(bombaParaResumen\(reference\),\{pendiente:true\}\)/);
+test('la tarjeta compartida conserva las mismas acciones para una ficha y una referencia',()=>{
+ const ficha=renderEquipmentEdit('B22',grupo=>({href:'/levantamiento.html#editar-'+grupo}));
+ const referencia=renderEquipmentEdit('B48',grupo=>({href:'#editar-datos',ir:grupo}));
+ const labels=html=>[...html.matchAll(/<a[^>]*>([^<]+)<\/a>/g)].map(([,label])=>label.replace(/B(?:22|48)/g,'TAG'));
+ assert.deepEqual(labels(ficha),labels(referencia));
+ assert.deepEqual(labels(ficha).slice(0,3),['Editar datos de TAG','Editar fotos de TAG','Manuales y CAD']);
 });
 test('Bodega quedó fuera: no aparece en la barra ni se puede abrir, y no hay «Pedir repuestos»',async()=>{
  const app=await readFile(new URL('./public/telefono-app.js',import.meta.url),'utf8');
