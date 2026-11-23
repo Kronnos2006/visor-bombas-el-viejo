@@ -538,9 +538,9 @@ body.app-tel[data-tel-seccion="historial"].tel-con-ficha:not(.hist-model-open) #
 
 body.app-tel[data-tel-seccion="historial"] .tel-fab{display:none}
 
-/* La sección Historial muestra el registro de mantenimiento de la bomba. */
-body.app-tel[data-tel-seccion="historial"]{--escena:0px!important;--panel:100vw}
-body.app-tel[data-tel-seccion="historial"] main,body.app-tel[data-tel-seccion="historial"].tel-con-ficha :is(#tel-vistas,.inspector-heading,#tabs,.sheet-bar){display:none!important}
+/* La pestaña de mantenimiento de una bomba deja sitio para los reportes. */
+body.app-tel.tel-con-ficha.pump-history-only{--escena:0px!important}
+body.app-tel.tel-con-ficha.pump-history-only :is(main,#tel-vistas){display:none!important}
 
 /* Acceso directo a la edición por TAG y cambios locales visibles. */
 .edit-equipment,.local-survey{min-width:0;margin:0 0 16px;padding:16px;border:1px solid var(--borde-fuerte);border-radius:12px;background:var(--superficie)}

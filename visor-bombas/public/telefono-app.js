@@ -417,7 +417,7 @@ function iniciar() {
  const areasMenu = () => [...document.querySelectorAll('#area-menu [data-area]')].map(b => [b.dataset.area, [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() || b.textContent.trim()]);
  const areaDeMenu = id => !id || id === 'integrado' || id === 'planta' ? '' : id.replace(/^sector:/, '');
  function pintarHistorial() {
-  const referencias=(V()?.historyReferences||V()?.references||[]).filter(r=>r.tagAsignado).map(reference=>{
+  const referencias=(V()?.historyReferences||V()?.references||[]).map(reference=>{
    let local={};try{local=JSON.parse(localStorage.getItem('integrado:'+reference.sector+':'+reference.nombre))||{};}catch{}
    return {...local,tag:reference.tagAsignado||'Sin TAG',nombre:local.nombre||reference.excel?.nombre||reference.nombre,reference};
   });
@@ -429,13 +429,13 @@ function iniciar() {
   $('#hist-area').innerHTML=(areas.length?areas:[['','Toda la planta']]).map(([id,n])=>`<option value="${esc(id)}"${areaDeMenu(id)===areaDeMenu(filtroHist)?' selected':''}>${esc(n)} (${cuantas(id)})</option>`).join('');
   const fluido=$('#hist-fluido').value,marca=marcaSel.value,area=areaDeMenu(filtroHist),enArea=todas.filter(p=>!area||areaDe(p)===area);
   const lista=filtrarHistorial(enArea,{query:$('#hist-buscar').value},areaDe).filter(p=>(!fluido||(V()?.tipos(p)||[]).includes(fluido))&&(!marca||String(p.marca||'').trim()===marca));
-  $('#hist-cuenta').textContent=lista.length+' equipos. Elegí una bomba para ver sus reportes de mantenimiento.';
+  $('#hist-cuenta').textContent=lista.length+' fichas y referencias de bomba. Las referencias sin TAG también se pueden abrir y completar.';
   if(!todas.length){$('#hist-tarjetas').innerHTML='<p class="tel-vacio">Cargando las bombas y referencias del modelo…</p>';return;}
   if(!lista.length){$('#hist-tarjetas').innerHTML=`<div class="tel-vacio-ilus tt-ancho">${ILUS.buscar}<p>Ninguna ficha o referencia coincide con los filtros.</p></div>`;return;}
   $('#hist-tarjetas').innerHTML=lista.map(p=>{
-   if(p.reference)return `<button type="button" class="tel-tarjeta" data-reference="${esc(selectionIdentity({pending:p.reference}))}" data-reference-tag="${esc(p.reference.tagAsignado||'')}"><span class="tt-cab"><strong>${esc(p.reference.tagAsignado||(p.nombre&&p.nombre!==p.reference.nombre?p.nombre:p.reference.numero?'Bomba '+p.reference.numero:'Sin TAG'))}</strong></span><span>${esc(p.nombre&&p.nombre!==p.reference.nombre?(p.reference.numero?'Bomba '+p.reference.numero+' · ':'')+p.reference.nombre:p.nombre)}</span><small>${'Ver mantenimiento'}</small></button>`;
-   const marcaP=String(p.marca||'').trim();
-   return `<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><span class="tt-cab"><strong>${esc(p.tag)}</strong>${marcaP&&!/por confirmar/i.test(marcaP)?`<em>${esc(marcaP)}</em>`:''}</span><span>${esc(p.nombre||p.ubicacion||'')}</span><small>Ver mantenimiento</small></button>`;
+   if(p.reference)return `<button type="button" class="tel-tarjeta" data-reference="${esc(selectionIdentity({pending:p.reference}))}" data-reference-tag="${esc(p.reference.tagAsignado||'')}"><span class="tt-cab"><strong>${esc(p.reference.tagAsignado||(p.nombre&&p.nombre!==p.reference.nombre?p.nombre:p.reference.numero?'Bomba '+p.reference.numero:'Sin TAG'))}</strong></span><span>${esc(p.nombre&&p.nombre!==p.reference.nombre?(p.reference.numero?'Bomba '+p.reference.numero+' · ':'')+p.reference.nombre:p.nombre)}</span><small>${p.reference.sinUbicacion?'Ubicación 3D pendiente':p.nombre&&p.nombre!==p.reference.nombre?'Nombre asignado · tocá para editar':'Sin nombre · tocá para poner nombre o código'}</small></button>`;
+   const c=completeness(p),pct=c.total?Math.round(c.done/c.total*100):0,marcaP=String(p.marca||'').trim();
+   return `<button type="button" class="tel-tarjeta" data-tag="${esc(p.tag)}"><span class="tt-cab"><strong>${esc(p.tag)}</strong>${marcaP&&!/por confirmar/i.test(marcaP)?`<em>${esc(marcaP)}</em>`:''}</span><span>${esc(p.nombre||p.ubicacion||'')}</span><span class="tt-medidor" title="Ficha completa ${c.done} de ${c.total}"><i style="width:${pct}%"></i></span><small>Ficha ${c.done}/${c.total}</small></button>`;
   }).join('');
   $('#hist-tarjetas').querySelectorAll('[data-tag]').forEach(b=>b.onclick=()=>abrirFicha(b.dataset.tag,'historial'));
   $('#hist-tarjetas').querySelectorAll('[data-reference]').forEach(b=>b.onclick=()=>{const p=referencias.find(p=>selectionIdentity({pending:p.reference})===b.dataset.reference);if(p)abrirFicha('','ficha',p.reference);});
@@ -443,14 +443,6 @@ function iniciar() {
 
  // ---------- Ficha dentro de la app ----------
  function abrirFicha(tag, pestana = 'ficha', reference = null) {
-  if(seccion==='historial'&&V()?.openHistory){
-   const equipo=reference?.tagAsignado||tag;if(!equipo)return;
-   ++fichaRequest;viendoFicha=true;ficha.hidden=false;fab.hidden=true;
-   ficha.dataset.tag=equipo;ficha.dataset.selection=selectionIdentity({tag:equipo});
-   paneles.historial.hidden=true;document.body.classList.add('tel-con-ficha');
-   ficha.querySelector('.tel-volver').textContent='← Historial';
-   V().openHistory(equipo);contenido.scrollTop=0;return;
-  }
   const key=selectionIdentity(reference?{pending:reference}:{tag});if(!key)return;
   const request=++fichaRequest;ficha.dataset.selection=key;ficha.dataset.tag=reference?'':tag;document.body.classList.remove('hist-model-open');
   mostrarMapaAmplio(false);
@@ -483,7 +475,6 @@ function iniciar() {
   }
   if(seccion==='areas'||seccion==='historial')abrirFicha(tag,seccion==='historial'?'historial':'ficha');else V()?.select(tag);
  }
- document.addEventListener('vocatus:abrir-historial',({detail})=>{if(seccion==='historial'&&!viendoFicha)abrirFicha(detail,'historial');});
  document.addEventListener('vocatus:pieza',()=>{if(viendoFicha)++fichaRequest;});
  document.addEventListener('vocatus:referencia',event=>{
   if(!['areas','historial'].includes(seccion))return;
@@ -506,7 +497,7 @@ function iniciar() {
   if (!$('#bod-bomba').value) { $('#bod-bomba').value = e.detail; elegirBodega(); }
  });
 
- const sectionCopy={areas:['EXPLORAR','La planta, por áreas','Buscá un equipo o elegí un sector del modelo.'],pendientes:['SEGUIMIENTO','Pendientes de planta','Revisá el estado documentado y las fichas por completar.'],historial:['EQUIPOS','Historial de mantenimiento','Filtrá, elegí una bomba y consultá sus intervenciones.'],bodega:['REPUESTOS','Preparar solicitud','Elegí la bomba y añadí los repuestos que necesitás.']};
+ const sectionCopy={areas:['EXPLORAR','La planta, por áreas','Buscá un equipo o elegí un sector del modelo.'],pendientes:['SEGUIMIENTO','Pendientes de planta','Revisá el estado documentado y las fichas por completar.'],historial:['EQUIPOS','Historial y fichas','Filtrá, elegí una bomba y consultá sus intervenciones.'],bodega:['REPUESTOS','Preparar solicitud','Elegí la bomba y añadí los repuestos que necesitás.']};
  for(const [id,[kicker,title,description]] of Object.entries(sectionCopy)){const head=document.createElement('div');head.className='tel-section-head';head.innerHTML=`<span>${kicker}</span><h2>${title}</h2><p>${description}</p>`;paneles[id].prepend(head);}
 
  // ---------- Navegación ----------
@@ -527,7 +518,7 @@ function iniciar() {
   if (id === 'bodega') pintarBodega();
   if (id === 'mantenimiento' || id === 'bodega') pintarResumen();
   if(id==='mantenimiento'){resumenMant();paintLocalReports();}
-  if(id==='areas')V()?.ensure3D?.();
+  if(id==='areas'||(id==='historial'&&!V()?.pumps?.some(p=>p.tag===location.hash.slice(1).toUpperCase())))V()?.ensure3D?.();
   if (id === 'historial') pintarHistorial();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }

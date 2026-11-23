@@ -9,7 +9,7 @@ import {cajaVisible,extraerBomba} from './planta-encuadre.js';
 import {crearModeloCaldera,buildCalderaReference,buildSeparatedReference,esModeloCaldera} from './bombas-calderas.js';
 import {detallarBombaPasarela} from './detalles-bombas.js';
 import {agregarNaves} from './naves-sitio.js?v=20261109d';
-import {abrirFichaPendiente,clavePendiente,bombaParaResumen,fotoClavePendiente} from './ficha-pendiente.js?v=20261123-fichas';
+import {abrirFichaPendiente,clavePendiente,bombaParaResumen} from './ficha-pendiente.js?v=20261123-fichas';
 import {pumpNames} from './pump-names.js';
 import {startPumpData} from './pump-data.js';
 import {crearPaleta} from './paleta-bombas.js';
@@ -29,14 +29,14 @@ import {GLTFLoader} from '/vendor/GLTFLoader.js';
 import {MeshoptDecoder} from '/vendor/meshopt_decoder.module.js';
 import {AREAS, PENDIENTES, sueloSitio, ubicar, pxAMundo} from './planta-general.js';
 import {INFO_URL,SECTORES_INT,visibleCon,torreAIntegrado,cajaSector,sectorDe,ubicarTanques} from './planta-integrada.js';
-import {ligarFotosAPosicion,fotosActualizadas, guardarFoto, originales, htmlFotos, bindPhotoTransfers, photoTransferHTML} from './fotos-bomba.js?v=20261111-fotos-v2';
+import {ligarFotosAPosicion,fotosActualizadas, guardarFoto, originales, htmlFotos, bindPhotoTransfers} from './fotos-bomba.js?v=20261111-fotos-v2';
 import {photoInputStarted,setPhotoInputStatus} from './fotos-bomba.js?v=20261111-fotos-v2';
 import {componentRows, sectorCorners} from './equipos-sector.js';
 import { plantLayout } from './plant-layout.js';
 import {expediente, expedienteDe, enlaces, linksBomba, documentosBomba, renderDocumentosBomba, linkPieza} from './expediente.js';
 import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
-import {listReports, addReport, deleteReport, configureReports, reportsInObsidian, reportsInCloud, importReports} from './reportes.js';
+import {listReports, deleteReport, configureReports, reportsInObsidian, reportsInCloud, importReports} from './reportes.js';
 import {reportMeasurements} from './measurements.js';
 import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
@@ -131,7 +131,7 @@ let simRig=null;const sims={};
 let n32Load, n32Model, activePumpReference;
 let areaGroups={},torre=null;const pumpObjects={};
 let plantRequested=false;
-function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';return params.get('vista')==='clasica'||section==='areas'||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
+function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';const directHistory=section==='historial'&&plantPumps.some(p=>p.tag===location.hash.slice(1).toUpperCase());return params.get('vista')==='clasica'||(['areas','historial'].includes(section)&&!directHistory)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
 function ensurePlant(){if(!plant||plantRequested)return;plantRequested=true;rebuildPlant();}
 function cargarTorre(g=areaGroups.torre){
  if(!g||torre?.root.parent===g)return torre;
@@ -386,7 +386,14 @@ function ponerPlaca(){
 }
 cargarPlacas().then(()=>{if(state.pump)ponerPlaca();});
 function renderPanel(){
- if(state.pump?.historyOnly){renderMaintenanceHistory(state.pump);return;}
+ const pumpHistory=state.tab==='historial'&&state.sector&&/^B\d+$/.test(state.pump?.tag||'');
+ document.body.classList.toggle('pump-history-only',pumpHistory);
+ if(pumpHistory){
+  $('#pump-links')?.remove();$('#pump-meta')?.remove();
+  renderPumpMaintenance(state.pump);
+  inspectorUI.enhance();
+  return;
+ }
  const previousLinks=$("#pump-links");if(previousLinks&&$("#panel").contains(previousLinks))$("#source-status").after(previousLinks);
  const requestLink=document.querySelector('header a[href^="/solicitud.html"]');if(requestLink)requestLink.href="/solicitud.html"+(state.pump?.tag?"?tag="+encodeURIComponent(state.pump.tag):"");
  renderPanelContent();
@@ -733,23 +740,6 @@ function showHistoryLoadError(error,tag){
  notice.querySelector('p').textContent=error.message||'No se pudo leer el historial. Tus reportes se conservan.';
  notice.querySelector('button').onclick=()=>{notice.remove();const pump=state.pump;if(pump?.tag!==tag||state.tab!=='historial')return;if($('#rep-list'))refreshPhotoHistory(pump);else mountHistoryChart(pump);};
 }
-function renderMaintenanceHistory(pump){
- const panel=$('#panel');
- panel.innerHTML=`<h2>Historial de mantenimiento · ${esc(pump.tag)}</h2>${pump.history?.trim()?'<section class="history-note"><h3>Intervenciones documentadas</h3><pre>'+esc(pump.history)+'</pre></section>':''}<div id="rep-list" class="report-history-list" aria-live="polite"><p>Leyendo reportes…</p></div>`;
- paintReports(pump.tag);
-}
-function openMaintenanceHistory(tag){
- if(!/^B(?:[1-9]|[1-8]\d|90)$/.test(tag))return;
- ++state.loading;
- const pump=state.pump={tag,historyOnly:true};
- state.tab='historial';
- history.replaceState(null,'',location.pathname+location.search+'#'+tag);
- renderPanel();
- api('/api/pump?tag='+encodeURIComponent(tag)).then(ficha=>{
-  if(state.pump!==pump||!ficha.history?.trim())return;
-  pump.history=ficha.history;renderPanel();
- }).catch(()=>{});
-}
 function refreshPhotoHistory(pump){
  $('#history-load-error')?.remove();
  const reports=listReports(pump.tag||pump.data?.tag);
@@ -797,7 +787,6 @@ async function mountHistoryChart(pump,reports){
  renderRechartsHistory(mount,{pumpTag:tag,records,nominalPressure,nominalFlow,ambiguos});
 }
 
-function reportUI(){return `<div id="rep-list" class="report-history-list"></div><section class="block report-box" id="report-box"><h3>Agregar reporte</h3><form id="rep-form" autocomplete="off"><label>Fecha<input type="date" name="date" required></label><label>Responsable<input name="author" maxlength="200" ${reportsInObsidian()?'required':''}></label><label>Título<input name="title" maxlength="160" placeholder="Ej. cambio de sello mecánico" required></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label>Presión medida (bar)<input name="pressure" type="number" step="0.1" placeholder="Ej. 2.1"></label><label>Caudal medido (m³/h)<input name="flow" type="number" step="0.1" placeholder="Ej. 18.0"></label></div><label>Reporte<textarea name="text" rows="5" maxlength="7500" placeholder="Observaciones, trabajo realizado, repuestos y pendientes…"></textarea></label><label>o subir un PDF<input type="file" name="file" accept="application/pdf,.pdf"></label><p class="muted">${reportsInObsidian()?'Se guarda en Obsidian, en '+esc(state.vaultName)+'. El PDF queda adjunto al informe.':'Se guarda en este navegador. Los reportes no se comparten entre equipos.'}${state.demo?' Registro marcado DEMO.':''}</p><p id="rep-error" class="form-error" role="alert"></p><button class="primary wide">${reportsInObsidian()?'Guardar en Obsidian':'Guardar en este navegador'}</button></form></section>`;}
 async function paintReports(tag,reports){
  const box=$('#rep-list');if(!box)return;
  let items=[];try{items=await (reports||listReports(tag));}catch(e){if(box.isConnected&&state.pump?.tag===tag){box.replaceChildren();showHistoryLoadError(e,tag);}return;}
@@ -808,28 +797,14 @@ async function paintReports(tag,reports){
  box.querySelectorAll('[data-pdf]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=items.find(x=>x.id===a.dataset.pdf);if(r?.pdf?.url){const link=document.createElement('a');link.href=r.pdf.url;link.download=r.pdf.name;link.click();return;}if(r?.pdf?.blob){const u=URL.createObjectURL(r.pdf.blob);const link=document.createElement('a');link.href=u;link.download=r.pdf.name||'documento.pdf';link.target='_blank';link.rel='noopener';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}});
  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{try{const record=items.find(r=>r.id===b.dataset.del);await deleteReport(record);toast(record.source==='obsidian'?'Informe enviado a la papelera de Obsidian.':record.source==='supabase'?'Informe archivado; sus datos se conservan.':'Reporte eliminado del navegador.');await paintReports(tag);if(state.pump?.tag===tag)mountHistoryChart(state.pump);}catch(e){toast(e.message);}});
 }
-function initReports(tag,load=true){
- const f=$('#rep-form');if(!f)return;reportsInCloud().then(ready=>{if(ready&&f.isConnected){f.author.required=true;f.querySelector('p.muted').textContent='Se comparte con tu cuenta de Vocatus. Los reportes anteriores de este navegador se conservan.';f.querySelector('button').textContent='Guardar y compartir reporte';}}).catch(()=>{});const d=new Date();f.date.value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
- f.onsubmit=async e=>{e.preventDefault();const err=$('#rep-error');err.textContent='';const btn=f.querySelector('button');btn.disabled=true;
-  const pres=f.pressure?.value?f.pressure.value+' bar':'';
-  const flow=f.flow?.value?f.flow.value+' m3/h':'';
-  const extra=[pres&&`Presión: ${pres}`,flow&&`Caudal: ${flow}`].filter(Boolean).join(' · ');
-  const fullText=[f.text.value,extra].filter(Boolean).join('\n\n');
-  try{const saved=await addReport({tag,date:f.date.value,title:f.title.value,author:f.author.value,text:fullText,file:f.file.files[0]||null,pressure:f.pressure?.value,flow:f.flow?.value});f.title.value='';f.text.value='';f.file.value='';if(f.pressure)f.pressure.value='';if(f.flow)f.flow.value='';toast(saved.source==='supabase'?'Reporte compartido en Vocatus.':reportsInObsidian()?'Informe guardado en Obsidian.':'Reporte guardado en este navegador.');await paintReports(tag);if(state.pump)mountHistoryChart(state.pump);}
-  catch(x){err.textContent=x.message||'No se pudo guardar el reporte.';}finally{btn.disabled=false;}};
- if(load)paintReports(tag);
-}
-async function renderHistoryPhotos(p){
- const root=$('#history-photos');if(!root)return;const target=root.querySelector('[data-history-images]'),tag=p.tag;
- const reference=state.pump?.pending;
- const key=reference?fotoClavePendiente(reference):tag;
- const paint=async()=>{try{const act=await fotosActualizadas(key,{writable:!reference&&!!state.writable});if(!root.isConnected||state.pump?.tag!==tag)return;const orig=reference?(reference.imagenesLugar?originales(reference.imagenesLugar,reference.imagenesLugar):{}):originales(p,expedienteDe(p));const labels={placa1:'Placa de la bomba',placa2:'Placa del motor',bomba:'Foto de la bomba',posicion:'Posición',motor:'Motor',sello:'Sello mecánico',empaque:'Empaque',orings:'O-rings',rodamientos:'Rodamientos',acople:'Acople'};const entries=Object.entries(labels).flatMap(([slot,label])=>{const a=act[slot],o=orig[slot],src=a?.url||o?.src;if(!src)return[];return`<figure><a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(label)} de ${esc(tag)}" loading="lazy"></a><figcaption>${esc(label)}<small>${a?(a.cloud?'Compartida en línea':a.local?'Guardada en este navegador':'Obsidian'):'Original del expediente · asociación por revisar'}</small></figcaption></figure>`;});target.innerHTML=entries.length?'<div class="history-photo-grid">'+entries.join('')+'</div>':'<p>No hay fotos asociadas en este navegador. Si las tomaste en el teléfono, descargalas allí y cargá el archivo aquí.</p>';if(act.warning){const warning=document.createElement('p');warning.className='form-error';warning.textContent=act.warning;target.prepend(warning);}}catch(error){if(root.isConnected){target.replaceChildren();const text=document.createElement('p');text.className='form-error';text.textContent=error.message;const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar leer fotos';retry.onclick=paint;target.append(text,retry);}}};
- bindPhotoTransfers(root,key,{writable:!reference&&!!state.writable,token:state.token,reference:!!reference},paint);await paint();
+function renderPumpMaintenance(pump){
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='historial'));
+ const nota=pump.history?.trim();
+ $('#panel').innerHTML=`<h2>Historial de mantenimiento · ${esc(pump.tag)}</h2>${nota?'<section class="history-note"><h3>Intervenciones documentadas</h3><pre>'+esc(nota)+'</pre></section>':''}<div id="rep-list" class="report-history-list" aria-live="polite"><p>Leyendo reportes…</p></div>`;
+ refreshPhotoHistory(pump);
 }
 document.addEventListener('vocatus:informe-guardado',({detail})=>{
- if(state.tab==='historial'&&state.pump?.tag===detail?.tag){
-  if(state.pump.historyOnly)paintReports(detail.tag);else refreshPhotoHistory(state.pump);
- }
+ if(state.tab==='historial'&&state.pump?.tag===detail?.tag)refreshPhotoHistory(state.pump);
 });
 function representedSubparts(index){
  const names=componentGroups[index]?.userData.subcomponents||[];
@@ -843,9 +818,6 @@ function renderPhotoPanel(p=state.pump?.data){
 
  const demo=state.demo?'<span class="demo-chip">DEMO · POR CONFIRMAR</span>':'<span class="demo-chip">DATOS DOCUMENTALES / POR CONFIRMAR</span>';
  const fieldRows=rows=>'<dl class="fields">'+rows.map(([key,value])=>`<div class="field"><dt>${esc(key)}</dt><dd>${esc(value)}</dd></div>`).join('')+'</dl>';
- if(state.tab==='historial'){
-  $('#panel').innerHTML=`<p class="eyebrow">HISTORIAL · ${esc(p.tag)}</p><h2>${esc(p.tag)} · ${esc(p.marca)} ${esc(p.modelo)}</h2><nav class="history-nav" aria-label="Apartados de la bomba"><button type="button" data-history-jump="history-equipment">Ficha</button><button type="button" data-history-jump="rep-list">Registros</button><button type="button" data-history-jump="history-photos">Fotos</button></nav><p class="notice">Aquí se reúnen las intervenciones de ${esc(p.tag)}. Cada reporte indica si está en Obsidian, compartido en Vocatus o guardado en este dispositivo.</p><section class="history-equipment" id="history-equipment"><h3>Ficha de ${esc(p.tag)}</h3>${fieldRows([['Ubicación',p.nombre||p.ubicacion||'Por confirmar'],['Fabricante',p.marca||'Por confirmar'],['Modelo',p.modelo||'Por confirmar'],['Serie',p.serie||'Por confirmar'],['Servicio',p.servicio||p.fluido||'Por confirmar'],...(p.specs||[])])}<a class="button-link" href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}">Actualizar datos y componentes</a><button type="button" class="wide" id="history-model">${document.body.classList.contains('hist-model-open')?'Volver a la ficha':'Ver despiece 3D'}</button></section>${state.pump.history?.trim()?'<section class="history-note"><h3>Historial escrito en la ficha</h3><pre class="markdown-text">'+esc(state.pump.history)+'</pre><small>Fuente: '+esc(state.pump.source||'Ficha del equipo')+'</small></section>':''}${reportUI()}<section class="history-photos" id="history-photos"><h3>Fotos de ${esc(p.tag)}</h3><div data-history-images>Leyendo fotos guardadas…</div><a class="button-link" href="/levantamiento.html?tag=${encodeURIComponent(p.tag)}#editar-fotos">Actualizar fotos y componentes</a>${photoTransferHTML(state.pump.pending?fotoClavePendiente(state.pump.pending):p.tag,{writable:!state.pump.pending&&!!state.writable,reference:!!state.pump.pending})}</section><details class="history-measurements"><summary>Ver gráfico de mediciones registradas</summary><div id="chart-mount"></div></details><div class="block"><h3>Posibles fallas a vigilar ${demo}</h3><ul><li>Fuga progresiva en el sello mecánico.</li><li>Elastómero hinchado, endurecido o incompatible con el fluido.</li><li>Vibración por desalineación del acople.</li><li>Ruido de cavitación por restricción en succión.</li><li>Temperatura anormal en rodamientos.</li></ul></div>`;initReports(p.tag,false);refreshPhotoHistory(state.pump);renderHistoryPhotos(p);$('#panel').querySelectorAll('[data-history-jump]').forEach(button=>button.onclick=()=>document.getElementById(button.dataset.historyJump)?.scrollIntoView({block:'start',behavior:'auto'}));const modelButton=$('#history-model');if(modelButton)modelButton.onclick=()=>{const open=!document.body.classList.contains('hist-model-open');document.body.classList.toggle('hist-model-open',open);window.vocatus.explode(open?100:0);window.dispatchEvent(new Event('resize'));};return;
- }
  if(state.tab==='ia'){
   $('#panel').innerHTML=`<p class="eyebrow">GEMINI / CONTEXTO: ${esc(p.tag)}</p><h2>${esc(p.marca)} ${esc(p.modelo)}</h2><p class="notice">Gemini analiza solamente el expediente de esta bomba seleccionada. Distingue los datos aportados de los ejemplos DEMO y de los campos pendientes.</p>${fieldRows([['Fluido registrado',p.servicio],['Sellado',p.seal.tipo],['Elastómero',p.seal.elastomero],['Registros de demo',String(p.history?.length||0)]])}<div class="notice ${state.configured?'green':''}">${state.configured?'Gemini configurado. La consulta enviará a Google el expediente de esta bomba, con los ejemplos DEMO identificados.':'Falta conectar tu clave API. No se generan respuestas simuladas.'}</div><button id="configure" class="wide">${state.configured?'Configurar Gemini':'Conectar Gemini'}</button><div class="suggestions"><button data-question="¿Qué sello y o-rings aparecen en este expediente y qué datos faltan confirmar?">¿Qué sello y o-rings usa? ↗</button><button data-question="Resumí el historial DEMO de esta bomba, separado por fechas.">Resumir el mantenimiento ↗</button><button data-question="¿Qué posibles fallas conviene investigar? Separá evidencia, hipótesis y comprobaciones.">Analizar posibles fallas ↗</button></div><form id="ask-form"><textarea id="question" placeholder="Ej. ¿Qué revisamos si aparece una fuga?" maxlength="4000" required aria-label="Pregunta para Gemini"></textarea><button class="primary wide" ${busyAI?'disabled':''}>${busyAI?'Consultando…':'Consultar Gemini →'}</button></form><div id="ai-output"></div>`;
   $('#configure').onclick=()=>{$('#config-form [name=model]').value=state.model;$('#settings').showModal();};document.querySelectorAll('[data-question]').forEach(b=>b.onclick=()=>{$('#question').value=b.dataset.question;$('#question').focus();});$('#ask-form').onsubmit=ask;const answer=state.answers[p.tag];if(answer)showAnswer(answer);return;
@@ -876,7 +848,6 @@ await refresh();
 function selectFromHash(){
  const tag=location.hash.slice(1).toUpperCase();
  if(!/^B\d+$/.test(tag))return;
- if(document.body.dataset.telSeccion==='historial'){document.dispatchEvent(new CustomEvent('vocatus:abrir-historial',{detail:tag}));return;}
  if(state.pumps.some(p=>p.tag===tag))selectPhotoPump(tag);
  else {
   const reference=integrado?.references.find(p=>p.tagAsignado===tag)||referenciasDeInventario().find(p=>p.tagAsignado===tag);
@@ -1506,7 +1477,6 @@ window.vocatus={
   return [...equipos.values()];
  },
  get pumps(){return state.pumps;},get pump(){return state.pump;},get token(){return state.token;},get writable(){return !!state.writable;},get demo(){return !!state.demo;},
- openHistory:openMaintenanceHistory,
  select:tag=>selectPhotoPump(tag),
  selectReference:reference=>selectPendingPump(reference),
  tab:name=>{state.tab=name;renderPanel();},
