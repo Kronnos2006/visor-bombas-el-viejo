@@ -23,6 +23,8 @@ function familyOf(text) {
 
 export function pumpReference(pump, plate) {
   const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  if(pump.identificacion&&/^LL-124\b/i.test(pump.modelo||''))return {kind:'exterior',label:'Hidromac LL-124 · despiece pendiente'};
+  if(pump.tag==='B88'&&!pump.reemplazo)return {kind:'vertical',label:'Bomba vertical multietapa · etapas por confirmar',stages:6,finish:0x244d63};
   const evidence = /^Placa(?:$| \()/.test(plate?.fuente ?? '') ? plate.placa : '';
   const catalog = [pump.marca,pump.modelo,pump.size,pump.tipo,pump.tipo_bomba,pump.nombre].filter(Boolean).join(' ');
   const plateFamily=familyOf(normalize(evidence));
@@ -31,6 +33,7 @@ export function pumpReference(pump, plate) {
   const tag = Number(pump.tag?.slice(1));
   // La placa y el tipo registrado prevalecen sobre las referencias históricas por TAG.
   let kind = plateFamily||recordedFamily||familyOf(text);
+  if(pump.identificacion?.bloqueo&&[57,58,61,62].includes(tag))return {kind:'exterior',label:'Despiece pendiente de verificar'};
   if(!kind){
     if ([59,69,70,71,72,73,77,78,79,80].includes(tag)) kind = 'vertical';
     else if (pump.variant==='goulds' || (tag >= 39 && tag <= 43) || tag === 56) kind = 'compact';

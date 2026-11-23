@@ -96,10 +96,10 @@ const HID_PIEZA=[
 // posición: si la bomba se reemplazó desde el visor, ya no aplican.
 export const expedienteDe=p=>p?.reemplazo?{placas:[],fotos:[],fab:[],rod:[],nota:`Bomba reemplazada el ${p.reemplazo}: el expediente anterior está archivado.`}:(expediente[p?.tag]||{placas:[],fotos:[],fab:[],rod:[]});
 const fabDe=p=>expedienteDe(p).fab||[];
-const esHid=p=>/HIDROMAC/i.test(p.marca||'')&&(/^2196\b/.test(String(p.modelo||'').trim())||fabDe(p).includes('hidromac'));
-const esGoulds=p=>/GOULDS/i.test(p.marca||'')&&(/SH/i.test(p.modelo||'')||/\b15SH06/i.test(String(p.catalogo||p.documental?.catalogo||''))||fabDe(p).includes('goulds'));
+const esHid=p=>/HIDROMAC/i.test(p.marca||'')&&(/^2196\b/.test(String(p.modelo||'').trim()));
+const esGoulds=p=>/GOULDS/i.test(p.marca||'')&&(/\b(?:e-SH|\d{2}SH\d{2})\b/i.test(p.modelo||'')||/\b15SH06/i.test(String(p.catalogo||p.documental?.catalogo||''))||(!p.identificacion&&String(p.modelo||'').trim()==='2X2 1/2-6-2P'&&fabDe(p).includes('goulds')));
 export function linksBomba(p){
-  if(p.inactive)return null;
+  if(p.inactive||p.identificacion?.bloqueo)return null;
   if(esHid(p))return{alcance:'modelo',
     manual:{t:'Manual de instalación y mantenimiento Hidromac 2196 (112 pág.)',u:MAN},
     planos:{t:'Planos: corte, lista de partes y dimensiones (manual pág. 87–99)',u:pag(90)},
@@ -111,9 +111,10 @@ export function linksBomba(p){
   return null;
 }
 export function documentosBomba(p){
+ if(p.inactive||p.identificacion?.bloqueo)return [];
  const documentacion=linksBomba(p);
  const links=documentacion?[documentacion.manual,documentacion.planos,...documentacion.extra]:[];
- if(p.reemplazo)return links;
+
  const {marca='',modelo=''}=p;
  const base='/referencias/bombas/';
  if(esGoulds(p)){
@@ -122,14 +123,16 @@ export function documentosBomba(p){
    {t:'Goulds 15SH06 / 02SH06 · comparación CAD (DXF)',u:base+'Goulds-eSH-15SH06-02SH06-comparacion.dxf',nota:'Referencia comparativa. Confirmar la variante instalada.'});
  }
  const archivosExternos={
+  "Goulds-NPE-catalogo.pdf": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/brochure/brnpe-r2.pdf",
+  "Goulds-NPE-manual.pdf": "https://www.xylem.com/siteassets/brand/goulds-water-technology/resources/manual/im013r11.pdf",
   "Hidromac-2196-catalogo.pdf": "https://bomeq.com.co/assets/catalogos/Catalogo%20-%20HIDROMAC.pdf",
-  "Titan-4196-manual.pdf": "https://www.titanpumpsinc.com/titan_pdfs/Titan_4196_Ansi_Pump_Maintenance_Manual.pdf",
+  "Titan-4196-manual.pdf": "https://titanpumpsinc.com/titan_pdfs/TITAN_ANSI_Pump_Manual_4196_4796_April_23_2023.pdf",
   "Titan-4196-catalogo.pdf": "https://www.titanpumpsinc.com/download",
   "Ebara-EVM-repuestos.pdf": "https://www.pumpsebara.com/resources/",
   "Ebara-EVMSU-ficha.pdf": "https://www.pumpsebara.com/wp-content/uploads/EVMSU_tech.pdf"
 };
- const equipo=marca+' '+modelo;
  const familias=[
+  [/GOULDS/i,/\bNPE\b/i,[['Goulds-NPE-catalogo.pdf','Goulds NPE · catálogo'],['Goulds-NPE-manual.pdf','Goulds NPE/NPE-F · manual']]],
   [/HIDROMAC/i, /2196/i, [['Hidromac-2196-catalogo.pdf','Hidromac 2196 · catálogo'],['Hidromac-2196-interfaces-montaje-3D.dxf','Hidromac 2196 · interfaces de montaje']]],
   [/HIDROMAC/i,/3\s*X\s*4\s*X\s*12A|\bAZ\b/i,[['Hidromac-AZ-catalogo.pdf','Hidromac AZ · catálogo'],['Hidromac-AZ-80-315A-esquema.dxf','Hidromac AZ · esquema candidato 80-315A']]],
   [/MULTISTEEL/i,/RA\s*65\s*[/ -]\s*300/i,[['Multisteel-RA-RT-catalogo.pdf','Multisteel RA/RT · catálogo'],['Multisteel-RA65-300-rodamientos-referencia.dxf','Multisteel RA65/300 · referencia de rodamientos']]],
@@ -139,9 +142,9 @@ export function documentosBomba(p){
   [/EBARA/i,/EVMSU/i,[['Ebara-EVMSU-ficha.pdf','Ebara EVMSU · ficha'],['Ebara-EVM-repuestos.pdf','Ebara EVM · repuestos'],['Ebara-EVMSU5-9-F-esquema.dxf','Ebara EVMSU 5-9 · esquema de referencia']]],
   [/GRUNDFOS/i,/CR\s*15/i,[['Grundfos-CR-10-15-20-servicio.pdf','Grundfos CR 10/15/20 · servicio'],['Grundfos-CR15-GJ-interfaz.dxf','Grundfos CR15 GJ · interfaz de referencia']]],
   [/MOVITEC|KSB/i,/VF\s*4[/ -]8/i,[['KSB-Movitec-B-libro-tecnico.pdf','KSB Movitec B · libro técnico'],['B73-KSB-Movitec-VF-4-8B-60Hz-referencia.dxf','KSB Movitec VF 4/8B · CAD de referencia']]],
-  [/STAIRS|ABS|\bSB\b/i,/\b(?:SB\s*)?(?:15\s*[-/]\s*5|20\s*[-/]\s*6)\b/i,[['STAIRS-SB-10-15-20-manual.pdf','STAIRS SB 10/15/20 · manual de familia']]]
+  [/^STAIRS$/i,/\b(?:SB\s*)?(?:15\s*[-/]\s*5|20\s*[-/]\s*6)\b/i,[['STAIRS-SB-10-15-20-manual.pdf','STAIRS SB 10/15/20 · manual de familia']]]
  ];
- for(const [fabricante,serie,archivos] of familias)if(fabricante.test(equipo)&&serie.test(equipo)){
+ for(const [fabricante,serie,archivos] of familias)if(fabricante.test(marca)&&serie.test(modelo)){
   for(const [archivo,titulo] of archivos){
    const dxf=archivo.endsWith('.dxf');
    const url=archivosExternos[archivo]||base+archivo;
@@ -154,10 +157,10 @@ export function documentosBomba(p){
 export function renderDocumentosBomba(p){
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const links=documentosBomba(p);
- return '<section class="block exp-block" id="documentos-bomba"><h3>Manuales, repuestos y CAD</h3>'+(links.length?'<ul class="doc-links">'+links.map(l=>'<li><a href="'+esc(l.u)+'" target="_blank" rel="noopener noreferrer">'+esc(l.t)+' ↗</a>'+(l.nota?'<small>'+esc(l.nota)+'</small>':'')+'</li>').join('')+'</ul>':'<p>Documentación pendiente de asociar al equipo.</p>')+'</section>';
+ return '<section class="block exp-block" id="documentos-bomba"><h3>Manuales, repuestos y CAD</h3>'+(p.identificacion?.nota?'<p class="notice">'+esc(p.identificacion.nota)+'</p>':'')+(links.length?'<ul class="doc-links">'+links.map(l=>'<li><a href="'+esc(l.u)+'" target="_blank" rel="noopener noreferrer">'+esc(l.t)+' ↗</a>'+(l.nota?'<small>'+esc(l.nota)+'</small>':'')+'</li>').join('')+'</ul>':'<p>Documentación pendiente de asociar al equipo.</p>')+'</section>';
 }
 export function linkPieza(p,i){
-  if(p.inactive)return [];
+  if(p.inactive||p.identificacion?.bloqueo)return [];
   const out=[];
   if(esHid(p)){const h=HID_PIEZA[i];if(h)out.push({t:`Manual Hidromac 2196 · ${h[0]} (${h[2]})`,u:h[1]});out.push({t:'Catálogo Hidromac · corte y lista de partes',u:CAT_H});}
   else if(esGoulds(p)){out.push({t:'Goulds e-SH · guía de partes del kit (PDF, referencia de familia)',u:GOULDS.guia},{t:'Goulds e-SH · brochure técnico',u:GOULDS.bro});}
