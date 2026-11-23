@@ -40,3 +40,30 @@ test('genera resumen en PDF para bombas del sector y de la bóveda',async()=>{
  assert.equal(pdfP1401.status,200);
  assert.ok(pdfP1401.raw.toString().startsWith('%PDF-'));
 });
+
+test('Gemini reintenta una saturación temporal y conserva los errores de credenciales',async t=>{
+ const boot=await request('/api/bootstrap');
+ const config=apiKey=>request('/api/config',{method:'POST',token:boot.data.token,body:{apiKey}});
+ const configured=await config('clave-ficticia-para-prueba');
+ assert.equal(configured.status,200);
+ t.after(()=>config(process.env.GEMINI_API_KEY||''));
+ const ask=()=>request('/api/ask',{method:'POST',token:boot.data.token,body:{tag:'P-1401',question:'Prueba sintética'}});
+ let calls=0,statuses=[503,200];
+ t.mock.method(globalThis,'fetch',async url=>{
+  assert.match(url,/^https:\/\/generativelanguage\.googleapis\.com\//);
+  const status=statuses[calls++];
+  assert.ok(status,'se hizo un reintento adicional');
+  return Response.json(status===200?{candidates:[{content:{parts:[{text:'OK'}]}}]}:{error:{code:status}},{status});
+ });
+ const recovered=await ask();
+ assert.equal(recovered.status,200);
+ assert.equal(recovered.data.answer,'OK');
+ assert.equal(calls,2);
+ statuses=[503,503];calls=0;
+ const busy=await ask();
+ assert.equal(busy.status,503);
+ assert.equal(calls,2);
+ statuses=[403];calls=0;
+ assert.equal((await ask()).status,502);
+ assert.equal(calls,1);
+});

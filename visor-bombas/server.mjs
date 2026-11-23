@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {setTimeout as delay} from 'node:timers/promises';
 import {inventorySummary} from './inventory.mjs';
 import pumpAssignments from './public/modelos/asignacion-bombas.json' with {type:'json'};
 import {sectorDe} from './public/planta-integrada.js';
@@ -351,17 +352,31 @@ export async function handler(req,res) {
     const context={demostracion:DEMO,advertencia:DEMO?'Todos estos datos son de demostración o están por confirmar. Identificá la respuesta como demostración. No uses estas medidas ni materiales para recomendar repuestos o compatibilidad reales.':'',source:p.source,fields:p.data,history:p.history,failures:p.failures,reports:p.reports,reportesDeCampo:(Array.isArray(body.reportes)?body.reportes.slice(0,20).map(r=>({fecha:textField(r.fecha,10),titulo:textField(r.titulo),texto:clean(r.texto,3000),pdf:textField(r.pdf)})):[]),notaExpediente:clean(body.notaExpediente,600),aclaracion:'reportesDeCampo son escritos por usuarios en el navegador y no están verificados; tratalos como declaraciones, no como hechos confirmados.'};
     // Razonamiento bajo para responder dentro del límite de la función en Vercel (60 s).
     // Si el modelo no acepta thinkingConfig (HTTP 400), se reintenta sin esa opción.
-    const deadline=Date.now()+(ON_VERCEL?52000:90000);
+    const budget=ON_VERCEL?52000:90000,deadline=Date.now()+budget;
+    const signal=AbortSignal.timeout(budget);
     const askGemini=thinking=>fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},signal:AbortSignal.timeout(Math.max(5000,deadline-Date.now())),
+     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},signal,
      body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:`DATOS DOCUMENTALES:\n${JSON.stringify(context)}\nCOMPONENTE ILUSTRATIVO SELECCIONADO: ${textField(body.component)}\nPREGUNTA: ${question}`}]}],generationConfig:{temperature:0.15,maxOutputTokens:8000,...(thinking?{thinkingConfig:{thinkingLevel:'low'}}:{})}})
     });
     let response;
-    try{response=await askGemini(true);if(response.status===400)response=await askGemini(false);}
+    try{
+     let thinking=true;
+     response=await askGemini(thinking);
+     if(response.status===400){
+      await response.body?.cancel();
+      thinking=false;response=await askGemini(thinking);
+     }
+     const backoff=1000+Math.floor(Math.random()*500);
+     if(response.status===503&&deadline-Date.now()>backoff+3000){
+      await response.body?.cancel();
+      await delay(backoff,undefined,{signal});
+      response=await askGemini(thinking);
+     }
+    }
     catch(e){if(e.name==='TimeoutError'||e.name==='AbortError')return send(res,504,{error:'Gemini tardó demasiado en responder. Probá con una pregunta más corta o de nuevo en un momento.'});throw e;}
     if(!response.ok){
-     const detail={401:'La credencial de Gemini no fue aceptada.',403:'Gemini rechazó el acceso. Revisá la clave y sus permisos.',404:'El modelo configurado de Gemini no está disponible con esta clave.',429:'Se alcanzó el límite de Gemini. Revisá la cuota o reintentá más tarde.',503:'Gemini está temporalmente saturado. Reintentá en un momento.'}[response.status];
-     return send(res,502,{error:detail||`Gemini respondió HTTP ${response.status}. Revisá el modelo y la configuración.`});
+     const detail={401:'La credencial de Gemini no fue aceptada.',403:'Gemini rechazó el acceso. Revisá la clave y sus permisos.',404:'El modelo configurado de Gemini no está disponible con esta clave.',429:'Se alcanzó el límite de Gemini. Revisá la cuota o reintentá más tarde.',503:'Gemini sigue temporalmente saturado. Probá de nuevo en unos minutos.'}[response.status];
+     return send(res,response.status===503?503:502,{error:detail||`Gemini respondió HTTP ${response.status}. Revisá el modelo y la configuración.`});
     }
     const result=await response.json(); const answer=(result.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||'').join('\n');
     if(!answer) return send(res,502,{error:'Gemini no devolvió una respuesta de texto.'});
