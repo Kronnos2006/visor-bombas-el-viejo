@@ -43,7 +43,7 @@ import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js?v=montaje-monobloque';
 import {buildN32Unit} from './bomba-n32-125-unidad.js?v=proporciones';
-import {pumpReference,buildVerticalReference,buildInstalledReference} from './pump-reference.js?v=20261123-fichas';
+import {pumpReference,buildVerticalReference,buildInstalledReference} from './pump-reference.js?v=proporciones';
 import {createPumpModel,simParams} from './pump-sim.js';
 import {createSimRig,simPanelHTML,updateSimPanel,drawSimChart} from './sim-view.js';
 
@@ -593,7 +593,7 @@ async function loadPumpReference(pump){
   const modelo=esModeloCaldera(pump.tipo)?pump.tipo:asignacion?.nuevas.find(n=>n.tag===pump.tag)?.modelo;
   if(esModeloCaldera(modelo))return {profile:{kind:'caldera',modelo,label:'Conjunto de bomba de combustible · forma de la planta'}};
  }
- if(!profile||['vertical','compact'].includes(profile.kind)||profile.referenciaRA)return {profile};
+ if(!profile||['vertical','compact'].includes(profile.kind))return {profile};
  n32Load??=new GLTFLoader().loadAsync('/modelos/bomba-n32-125.glb').catch(error=>{n32Load=null;throw error;});
  try{return {profile,cad:(await n32Load).scene};}
  catch(error){console.warn('No se pudo cargar el CAD de referencia',error);return {profile};}
@@ -1053,7 +1053,7 @@ function selectPendingPump(reference){
   });
   if(ticket!==state.loading)return;
   const source=!reference.standalone&&!reference.sinUbicacion&&integrado?.escena?extraerBomba(THREE,integrado.escena,reference):null;
-  const separable=!['compact','vertical'].includes(profile?.kind)&&source?.children.length&&source.children.every(o=>Number.isInteger(o.userData.part));
+  const separable=source?.children.length&&source.children.every(o=>Number.isInteger(o.userData.part));
   const prepared=separable?buildSeparatedReference(THREE,extraerBomba(THREE,integrado.escena,reference)):null;
   if(separable)profile={kind:'caldera',label:'Bomba de la pasarela · geometría del FBX'};
   state.view='pump';$('#torre-planta-tools').hidden=true;$('#torre-tools').hidden=true;$('#integrado-tools').hidden=true;

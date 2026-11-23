@@ -110,7 +110,7 @@ async function main(){
    }
   }
   await page.setViewportSize({width:390,height:844});
-  await page.goto(base+'/?s=historial',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'/?s=historial&medir=1',{waitUntil:'domcontentloaded'});
   await page.locator('#hist-tarjetas [data-reference-tag]').first().waitFor({timeout:60000});
   const tags=await page.locator('#hist-tarjetas button').evaluateAll(rows=>rows.map(row=>row.dataset.tag||row.dataset.referenceTag));
   for(let i=1;i<=90;i++)assert.ok(tags.includes('B'+i),'Falta B'+i+' en Historial');
@@ -137,7 +137,15 @@ async function main(){
   const dxf=page.locator('#documentos-bomba a[href$="Multisteel-RA65-300-rodamientos-referencia.dxf"]');
   await dxf.waitFor();
   assert.equal((await page.request.get(base+await dxf.getAttribute('href'))).status(),200);
-  checks.push({name:'B48-referencia-CAD-disponible',ok:true});
+  const verificarCadB48=()=>page.waitForFunction(()=>window.vocatus?.pump?.tag==='B48'&&window.__visor?.scene?.getObjectByName('Perno de bancada'));
+  await verificarCadB48();
+  await page.locator('.tel-volver').click();
+  await navigate('areas');
+  await page.locator('#labels [title^="B48 ·"]').waitFor({state:'attached',timeout:60000});
+  await page.locator('#tel-buscar').fill('B48');
+  await page.locator('#tel-resultados button').filter({hasText:'B48'}).click();
+  await verificarCadB48();
+  checks.push({name:'B48-CAD-detallado-desde-historial-y-areas',ok:true});
   const flat=await context.newPage();flat.on('pageerror',e=>errors.push(e.stack||e.message));
   await flat.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/i.test(type)?null:original.call(this,type,...args);};});
   await flat.goto(base+'/?s=areas',{waitUntil:'networkidle'});assert.equal(await flat.evaluate(()=>document.createElement('canvas').getContext('webgl2')),null);
