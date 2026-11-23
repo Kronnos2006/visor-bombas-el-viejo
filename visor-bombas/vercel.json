@@ -1,4 +1,5 @@
 {
+  "git": { "deploymentEnabled": { "codex/respaldo-local-visor": false } },
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "outputDirectory": "public",

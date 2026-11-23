@@ -75,14 +75,17 @@ test('correcciones de campo preservan TAG y claves, cajas de selección y extrac
  const material=new T.MeshStandardMaterial(),cube=name=>{const o=new T.Mesh(new T.BoxGeometry(1,1,1),material);o.userData={sector:'REF Detalle',original_name:name};scene.add(o);return o;};
  const old=[cube('Cuadro electrico general con botoneras'),cube('Deposito auxiliar rectangular'),cube('Deposito vertical azul auxiliar')],keep=cube('Caldera 1 - panel local de control');old[1].userData.sector='REF Plano ampliacion';
  const cooling=cube('Equipo unico grande de enfriamiento');cooling.userData.sector='REF Agua y enfriamiento';const fixed=cube('Tuberias exteriores conectadas a tanques');fixed.userData.sector='REF Agua y enfriamiento';
+ const smallCooling=cube('Torre de enfriamiento pequena');smallCooling.userData.sector='REF Torre pequena';smallCooling.position.set(-17,1,38);
  const pump=photoPumps.find(p=>p.tag==='B30'),body=exterior(T,pump.scale,pump.variant);body.userData.tag=pump.tag;body.position.set(7,1,3);scene.add(body);scene.updateMatrixWorld(true);
  const before=new T.Box3().setFromObject(body),info={torre:{giro:0},sectores:{}},report=aplicarCambiosCampo(T,{scene,grupos:data,tankBodies:{B30:body},info,exterior,photoPumps});
  assert.equal(report.conjuntosCalderas,1);assert.equal(report.bombasVerticales,3);assert.equal(report.cubiertas,1);
- assert.deepEqual(data.map(g=>[g.sector,g.nombre]),names);assert.equal(body.userData.tag,'B30');
+ assert.deepEqual(data.slice(0,names.length).map(g=>[g.sector,g.nombre]),names);assert.equal(body.userData.tag,'B30');
+ assert.equal(report.bombasVentiladoresAnadidas,2);
+ assert.deepEqual(data.slice(names.length).map(g=>g.nombre),['Bomba junto a ventiladores 1','Bomba junto a ventiladores 2']);
  for(const o of old)assert.equal(o.parent,null);assert.equal(keep.parent,scene);assert.equal(cooling.position.x,3);assert.equal(fixed.position.x,0);
  const after=new T.Box3().setFromObject(body);assert.ok(Math.abs(before.min.y-after.min.y)<1e-6);assert.ok(before.getCenter(new T.Vector3()).distanceTo(after.getCenter(new T.Vector3()))<.3);
  let count=0;body.traverse(o=>{if(o.isMesh){count++;assert.equal(o.userData.tag,'B30');}});assert.ok(count<=8,'el exterior debe estar compactado para móviles');
- for(const group of data.filter(g=>/Conjunto compartido|Bombas adicionales de tanques de agua/.test(g.nombre)))for(const [i,bounds] of group.bombas.entries()){
+ for(const group of data.filter(g=>/Conjunto compartido|Bombas adicionales de tanques de agua|Bomba junto a ventiladores/.test(g.nombre)))for(const [i,bounds] of group.bombas.entries()){
  const reference={...bounds,grupo:group.nombre,nombre:group.nombre+' · Bomba '+(i+1),sector:group.sector};
  const extracted=extraerBomba(T,scene,reference);assert.ok(extracted,'toda bomba nueva debe tener geometría individual, sin caer al genérico');
  const dimensions=new T.Box3().setFromObject(extracted).getSize(new T.Vector3());assert.ok(dimensions.x>0&&dimensions.y>.5&&dimensions.z>0);

@@ -63,6 +63,30 @@ export function aplicarCambiosCampo(T,{scene,grupos,tankBodies,desplazamiento=[0
  for(const o of moved)o.position.x+=3;
  for(const g of grupos)if(moved.length&&g.sector==='REF Agua y enfriamiento'&&/Tres bombas de circulacion|Canaleta con rejilla/.test(g.nombre))for(const b of g.bombas)for(const k of ['min','max'])b[k][0]+=3;
  result.separacionVisualAdicional=moved.length?3:0;result.desplazamiento=desplazamiento;
+ // Dos posiciones señaladas junto a los extremos del equipo de ventiladores.
+ // Referencias independientes: permiten completar fotos y datos sin inventar un TAG.
+ scene.updateWorldMatrix(true,true);
+ const coolingBox=new T.Box3(),coolingInverse=new T.Matrix4().copy(scene.matrixWorld).invert();
+ scene.traverse(o=>{if(o.isMesh&&o.userData.sector==='REF Torre pequena'&&/Torre de enfriamiento pequena/.test(o.userData.original_name||o.name))coolingBox.union(new T.Box3().setFromObject(o).applyMatrix4(coolingInverse));});
+ if(!coolingBox.isEmpty()){
+  const center=coolingBox.getCenter(new T.Vector3()),size=coolingBox.getSize(new T.Vector3()),axis=size.x>=size.z?'x':'z';
+  for(const [index,side] of [-1,1].entries()){
+   const nombre='Bomba junto a ventiladores '+(index+1),model=compactar(T,exterior(T,.55,'lf'));
+   model.rotation.y=axis==='x'?Math.PI/2:0;
+   const bounds=new T.Box3().setFromObject(model),mid=bounds.getCenter(new T.Vector3()),target=center.clone();
+   // El pasillo marcado está del lado de los tanques pequeños, junto a las
+   // dos esquinas del equipo, no en el centro de sus extremos.
+   const crossAxis=axis==='x'?'z':'x';
+   target[axis]=side<0?coolingBox.min[axis]+.7:coolingBox.max[axis]-.7;
+   target[crossAxis]=coolingBox.max[crossAxis]+.8;
+   model.position.set(target.x-mid.x,coolingBox.min.y-bounds.min.y,target.z-mid.z);
+   model.name=nombre;model.traverse(o=>{if(o.isMesh)Object.assign(o.userData,{sector:'REF Torre pequena',bomba:nombre});});
+   scene.add(model);scene.updateWorldMatrix(true,true);
+   const box=new T.Box3().setFromObject(model).applyMatrix4(coolingInverse);
+   grupos.push({nombre,sector:'REF Torre pequena',nota:'Posición aproximada indicada por el usuario el 2 de noviembre de 2026. Fotos, TAG y datos pendientes.',bombas:[{min:box.min.toArray(),max:box.max.toArray()}]});
+  }
+  result.bombasVentiladoresAnadidas=2;
+ }
  scene.updateWorldMatrix(true,true);const inv=new T.Matrix4().copy(scene.matrixWorld).invert();
  for(const sector of ['REF Detalle','REF Plano ampliacion','REF Agua y enfriamiento','Sector de tanques']){const box=new T.Box3();if(sector==='Sector de tanques'&&info.sectores[sector])box.union(new T.Box3(new T.Vector3(...info.sectores[sector].min),new T.Vector3(...info.sectores[sector].max)));scene.traverse(o=>{if(o.isMesh&&o.userData.sector===sector)box.union(new T.Box3().setFromObject(o).applyMatrix4(inv));});if(!box.isEmpty())info.sectores[sector]={min:box.min.toArray(),max:box.max.toArray()};}
  scene.userData.cambiosCampo={...result,removedMeshes:undefined};return result;
