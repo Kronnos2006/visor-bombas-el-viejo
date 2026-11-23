@@ -67,3 +67,28 @@ test('Gemini reintenta una saturación temporal y conserva los errores de creden
  assert.equal((await ask()).status,502);
  assert.equal(calls,1);
 });
+
+test('Gemini consulta cada TAG B1–B90 con el inventario y sin contactar a Google',async t=>{
+ const boot=await request('/api/bootstrap');
+ const config=apiKey=>request('/api/config',{method:'POST',token:boot.data.token,body:{apiKey}});
+ assert.equal((await config('clave-ficticia-para-prueba')).status,200);
+ t.after(()=>config(process.env.GEMINI_API_KEY||''));
+ let context;
+ const fetchMock=t.mock.method(globalThis,'fetch',async (url,options)=>{
+  assert.match(url,/generativelanguage\.googleapis\.com/);
+  const prompt=JSON.parse(options.body).contents[0].parts[0].text;
+  context=JSON.parse(prompt.split('\n')[1]);
+  return Response.json({candidates:[{content:{parts:[{text:'OK'}]}}]});
+ });
+ for(let n=1;n<=90;n++){
+  const tag='B'+n;
+  const reply=await request('/api/ask',{method:'POST',token:boot.data.token,body:{tag,question:'Prueba sintética'}});
+  assert.equal(reply.status,200,tag);
+  assert.equal(reply.data.answer,'OK',tag);
+  assert.equal(context.fields.tag,tag);
+  if(n===17)assert.equal(context.fields.marca,'TITAN');
+  if(n===69)assert.equal(context.fields.marca,'EBARA');
+  if(n===71)assert.equal(context.fields.marca,'GRUNDFOS');
+ }
+ assert.equal(fetchMock.mock.callCount(),90);
+});

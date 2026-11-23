@@ -1,6 +1,8 @@
 import http from 'node:http';
 import {setTimeout as delay} from 'node:timers/promises';
 import {inventorySummary} from './inventory.mjs';
+import {identificarBomba} from './public/identidad-bomba.js';
+import {datosDeExcel} from './public/asignacion-bombas.js';
 import pumpAssignments from './public/modelos/asignacion-bombas.json' with {type:'json'};
 import {sectorDe} from './public/planta-integrada.js';
 import { readFile, readdir } from 'node:fs/promises';
@@ -349,7 +351,11 @@ export async function handler(req,res) {
     const question=clean(body.question,4000);
     if(!question) throw new Error('Escribí una pregunta.');
     const p=await readPumpForMaintenance(body.tag);
-    const context={demostracion:DEMO,advertencia:DEMO?'Todos estos datos son de demostración o están por confirmar. Identificá la respuesta como demostración. No uses estas medidas ni materiales para recomendar repuestos o compatibilidad reales.':'',source:p.source,fields:p.data,history:p.history,failures:p.failures,reports:p.reports,reportesDeCampo:(Array.isArray(body.reportes)?body.reportes.slice(0,20).map(r=>({fecha:textField(r.fecha,10),titulo:textField(r.titulo),texto:clean(r.texto,3000),pdf:textField(r.pdf)})):[]),notaExpediente:clean(body.notaExpediente,600),aclaracion:'reportesDeCampo son escritos por usuarios en el navegador y no están verificados; tratalos como declaraciones, no como hechos confirmados.'};
+    const excel=pumpAssignments.excel[p.tag];
+    const fields=excel?identificarBomba(p.data.reemplazo?{...p.data,tag:p.tag}:{...datosDeExcel(excel),tag:p.tag,ubicacion:excel.nombre},excel):p.data;
+    const canonical=value=>String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const fichaCompatible=!excel||p.data.reemplazo||!!fields.marca&&!!fields.modelo&&!fields.identificacion.bloqueo&&canonical(fields.marca)===canonical(p.data.marca)&&canonical(fields.modelo)===canonical(p.data.modelo);
+    const context={demostracion:DEMO,advertencia:DEMO?'Todos estos datos son de demostración o están por confirmar. Identificá la respuesta como demostración. No uses estas medidas ni materiales para recomendar repuestos o compatibilidad reales.':'',source:excel&&!p.data.reemplazo?'Inventario actual y revisión documental · '+p.tag:p.source,fields,history:fichaCompatible?p.history:undefined,failures:fichaCompatible?p.failures:undefined,reports:p.reports,reportesDeCampo:(Array.isArray(body.reportes)?body.reportes.slice(0,20).map(r=>({fecha:textField(r.fecha,10),titulo:textField(r.titulo),texto:clean(r.texto,3000),pdf:textField(r.pdf)})):[]),notaExpediente:clean(body.notaExpediente,600),aclaracion:'reportesDeCampo son escritos por usuarios en el navegador y no están verificados; tratalos como declaraciones, no como hechos confirmados.'};
     // Razonamiento bajo para responder dentro del límite de la función en Vercel (60 s).
     // Si el modelo no acepta thinkingConfig (HTTP 400), se reintenta sin esa opción.
     const budget=ON_VERCEL?52000:90000,deadline=Date.now()+budget;
