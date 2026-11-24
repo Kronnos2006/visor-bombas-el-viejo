@@ -2,28 +2,52 @@
 <html lang="es"><head>
  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
  <title>Control de bombas · Vocatus</title>
- <link rel="icon" href="/marca/vocatus.png">
- <link rel="stylesheet" href="/acceso.css"><link rel="stylesheet" href="/admin-planta.css">
+ <link rel="icon" href="./marca/vocatus.png">
+ <link rel="stylesheet" href="./acceso.css"><link rel="stylesheet" href="./admin-planta.css">
 </head><body>
- <main class="control" aria-labelledby="control-title">
+ <main id="local-access" class="acceso" hidden>
+  <img class="acceso-logo" src="./marca/vocatus.png" width="96" height="96" alt="Destilería Vocatus">
+  <section class="tarjeta" aria-labelledby="local-title">
+   <h1 id="local-title">Control de bombas</h1>
+   <p class="ayuda">Para consultar los avisos y exportar informes, abrí el visor en línea con tu cuenta administradora.</p>
+   <a class="boton" href="https://visor-bombas-el-viejo.vercel.app/admin-planta.html">Abrir panel del administrador</a>
+  </section>
+ </main>
+ <main id="admin-panel" class="control" aria-labelledby="control-title">
   <a href="/?s=areas" class="volver">← Volver a Áreas</a>
   <header class="control-heading">
-   <div><h1 id="control-title">Control de bombas</h1><p>Inventario, fallas y mantenimiento de la planta.</p></div>
-   <div class="control-actions"><button type="button" class="boton" id="refresh">Actualizar</button><button type="button" class="boton exportar" id="export" disabled>Exportar a Excel</button></div>
+   <div class="control-brand"><img src="./marca/vocatus.png" width="62" height="62" alt="Destilería Vocatus"><div><h1 id="control-title">Control de bombas</h1><p>Inventario, fallas y mantenimiento de Planta El Viejo.</p></div></div>
+   <div class="control-actions"><button type="button" id="refresh">Actualizar datos</button></div>
   </header>
-  <section class="control-card" aria-labelledby="report-notices-title">
+  <section class="control-card control-notices" aria-labelledby="report-notices-title">
    <h2 id="report-notices-title">Avisos de mantenimiento</h2>
    <p id="report-notice" role="status">Consultando los reportes recibidos…</p>
-   <button type="button" class="boton" id="mark-reports" disabled>Marcar reportes como revisados</button>
+   <button type="button" id="mark-reports" disabled>Marcar reportes como revisados</button>
   </section>
+  <section class="control-card" aria-labelledby="monthly-title">
+  <div class="control-heading control-period">
+   <h2 id="monthly-title">Informe de mantenimiento</h2>
+   <button type="button" class="boton exportar" id="export" disabled>Exportar período a Excel</button>
+  </div>
   <form id="filters" class="control-filtros">
    <label>Mes de mantenimiento<input id="report-month" type="month"></label>
    <label>Desde<input name="from" type="date"></label>
    <label>Hasta<input name="until" type="date"></label>
    <label>Buscar en el inventario<input type="search" id="search" placeholder="TAG, área, líquido o modelo"></label>
   </form>
+  </section>
   <p id="status" role="status">Cargando los datos compartidos…</p>
   <div id="results" hidden></div>
  </main>
- <script type="module" src="/admin-planta.js"></script>
+ <script>
+  if(location.protocol==='file:'){
+   document.getElementById('admin-panel').hidden=true;
+   document.getElementById('local-access').hidden=false;
+  }else{
+   const script=document.createElement('script');
+   script.type='module';
+   script.src='./admin-planta.js';
+   document.body.append(script);
+  }
+ </script>
 </body></html>

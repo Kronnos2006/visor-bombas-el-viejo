@@ -1,4 +1,12 @@
 .control{width:min(100% - 2rem,1280px);margin:2rem auto 4rem}
+#local-access[hidden],#admin-panel[hidden]{display:none}
+.control-brand{display:flex;align-items:center;gap:1rem}
+.control-brand img{object-fit:contain;flex:none}
+.control-heading{padding:clamp(1rem,3vw,1.75rem);border:1px solid var(--borde);border-radius:16px;background:var(--superficie)}
+.control-heading.control-period{margin:0;padding:0;border:0;background:transparent}
+.control-period h2{margin:0}
+.control-notices{border-inline-start:3px solid var(--accent)}
+.control-notices p{color:var(--tinta-2);margin:.5rem 0 .85rem}
 .control-heading,.control-actions{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
 .control-heading{justify-content:space-between;margin:1.2rem 0}
 .control-heading h1{font-size:clamp(2rem,5vw,3.25rem)}
