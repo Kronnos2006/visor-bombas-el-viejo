@@ -128,6 +128,7 @@ function iniciar() {
   <div class="tel-dos"><div class="tel-campo"><label for="tel-fluido">Fluido</label><select id="tel-fluido"><option value="">Todos</option><option value="alcohol">Alcohol</option><option value="agua">Agua</option><option value="mosto">Mosto / vinaza</option><option value="sin-uso">Sin uso</option></select></div>
   <div class="tel-campo"><label for="tel-marca">Marca</label><select id="tel-marca"><option value="">Todas</option></select></div></div>
   <p id="tel-cuenta" class="tel-cuenta" aria-live="polite"></p>
+  <div class="tel-atajos"><a href="/guias.html">Guías del visor</a></div>
   <div id="tel-resultados" class="tel-resultados" hidden></div>
  ${VISTA_FBX_AGUA?'<p class="notice">Vista de prueba del tanque de agua. Las bombas del FBX están pendientes de vincular a sus fichas. <a href="/?s=areas">Volver al modelo habitual</a></p>':''}
   <h2 class="tel-sub">Áreas de la planta</h2><div id="tel-areas"></div>
