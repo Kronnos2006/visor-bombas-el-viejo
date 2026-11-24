@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {photoPumps} from './public/equipos-sector.js';
 import * as torre from './public/equipos-torre.js';
-import {linksBomba,linkPieza,documentosBomba} from './public/expediente.js';
+import {linksBomba,linkPieza,documentosBomba,renderDocumentosBomba} from './public/expediente.js';
 import inventory from './public/modelos/asignacion-bombas.json' with {type:'json'};
 import {identificarBomba} from './public/identidad-bomba.js';
 import {existsSync} from 'node:fs';
@@ -40,6 +40,15 @@ const audit = Array.from({length:90}, (_, i) => {
  return [tag,{bomba,docs}];
 });
 const byTag=Object.fromEntries(audit);
+for(const [tag,{bomba,docs}] of audit){
+ const html=renderDocumentosBomba(bomba);
+ assert.match(html,/Identificación registrada/,tag);
+ assert.equal(html.includes('Manual, despiece y lista de repuestos pendientes.'),docs.length===0,tag);
+}
+assert.match(renderDocumentosBomba(byTag.B22.bomba),/foto legible de la placa/);
+assert.match(renderDocumentosBomba(byTag.B51.bomba),/solicitá el manual/);
+assert.match(renderDocumentosBomba(byTag.B17.bomba),/Posición 168A/);
+assert.doesNotMatch(renderDocumentosBomba(byTag.B62.bomba),/Posiciones del despiece Titan/);
 for(const tag of ['B17','B18','B20','B21','B81','B83']) {
  assert.equal(byTag[tag].bomba.marca,'TITAN');
  assert.ok(byTag[tag].docs.length>=2);
