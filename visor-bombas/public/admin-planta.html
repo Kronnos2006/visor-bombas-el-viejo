@@ -11,7 +11,13 @@
    <div><h1 id="control-title">Control de bombas</h1><p>Inventario, fallas y mantenimiento de la planta.</p></div>
    <div class="control-actions"><button type="button" class="boton" id="refresh">Actualizar</button><button type="button" class="boton exportar" id="export" disabled>Exportar a Excel</button></div>
   </header>
+  <section class="control-card" aria-labelledby="report-notices-title">
+   <h2 id="report-notices-title">Avisos de mantenimiento</h2>
+   <p id="report-notice" role="status">Consultando los reportes recibidos…</p>
+   <button type="button" class="boton" id="mark-reports" disabled>Marcar reportes como revisados</button>
+  </section>
   <form id="filters" class="control-filtros">
+   <label>Mes de mantenimiento<input id="report-month" type="month"></label>
    <label>Desde<input name="from" type="date"></label>
    <label>Hasta<input name="until" type="date"></label>
    <label>Buscar en el inventario<input type="search" id="search" placeholder="TAG, área, líquido o modelo"></label>

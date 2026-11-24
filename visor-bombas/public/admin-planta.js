@@ -5,7 +5,27 @@ const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 const normalize=value=>String(value??'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
 const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Costa_Rica',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const filters=$('#filters'),out=$('#results'),status=$('#status'),refresh=$('#refresh'),exportButton=$('#export');
-let data=null, summary=null;
+const notice=$('#report-notice'),markReports=$('#mark-reports'),month=$('#report-month');
+const reviewedKey='vocatus-admin-reports-reviewed';
+let data=null, summary=null, lastRecords='';
+let reviewed=0;
+try{reviewed=Number(localStorage.getItem(reviewedKey))||0;}catch{}
+
+function updateNotices(){
+ const received=data.reports.filter(row=>!row.archived_at&&Date.parse(row.created_at)>reviewed);
+ markReports.disabled=received.length===0;
+ notice.textContent=received.length
+  ? `${received.length} ${received.length===1?'reporte por revisar':'reportes por revisar'}. Consultá Informes de trabajo y ajustá las fechas si el informe es de otro mes.`
+  : 'Estás al día con los reportes recibidos.';
+}
+
+function applyMonth(){
+ const value=month.value;
+ const [year,number]=value.split('-').map(Number);
+ filters.elements.from.value=value?`${value}-01`:'';
+ filters.elements.until.value=value?`${value}-${new Date(Date.UTC(year,number,0)).getUTCDate()}`:'';
+ render();
+}
 
 async function json(path){
  const response=await fetch(path,{cache:'no-store'});
@@ -49,21 +69,43 @@ function render(){
  out.hidden=false;
  exportButton.disabled=false;
 }
-async function load(){
+async function load({background=false}={}){
+ if(refresh.disabled)return;
  refresh.disabled=true;exportButton.disabled=true;
- status.textContent='Cargando inventario e historial compartido…';
+ if(!background)status.textContent='Cargando inventario e historial compartido…';
  try{
   const [records,inventory,plates]=await Promise.all([
-   json('/api/admin/plant'),json('/modelos/asignacion-bombas.json'),json('/modelos/placas-bombas.json'),
+   json('/api/admin/plant'),data?.catalog||json('/modelos/asignacion-bombas.json').then(value=>value.excel),data?.plates||json('/modelos/placas-bombas.json'),
   ]);
-  data={...records,catalog:inventory.excel,plates};
-  render();
- }catch(error){data=null;summary=null;out.hidden=true;status.textContent=error.message;}
+  const snapshot=JSON.stringify(records);
+  const changed=!data||snapshot!==lastRecords;
+  lastRecords=snapshot;
+  data={...records,catalog:inventory,plates};
+  updateNotices();
+  if(!background||changed){
+   const open=[...out.querySelectorAll('details')].map(element=>element.open);
+   render();
+   out.querySelectorAll('details').forEach((element,index)=>{element.open=Boolean(open[index]);});
+  }else exportButton.disabled=!summary;
+ }catch(error){
+  data=null;summary=null;out.hidden=true;status.textContent=error.message;
+  notice.textContent='No se pudieron consultar los reportes recibidos.';
+  markReports.disabled=true;
+ }
  finally{refresh.disabled=false;}
 }
 filters.addEventListener('submit',event=>event.preventDefault());
-filters.addEventListener('input',render);
-refresh.onclick=load;
+filters.addEventListener('input',event=>{
+ if(event.target===month){applyMonth();return;}
+ if(event.target.name==='from'||event.target.name==='until')month.value='';
+ render();
+});
+markReports.onclick=()=>{
+ for(const row of data.reports)reviewed=Math.max(reviewed,Date.parse(row.created_at)||0);
+ try{localStorage.setItem(reviewedKey,String(reviewed));}catch{}
+ updateNotices();
+};
+refresh.onclick=()=>load();
 exportButton.onclick=async()=>{
  if(!summary)return;
  const snapshot=summary;
@@ -71,10 +113,13 @@ exportButton.onclick=async()=>{
  try{
   const {plantWorkbook}=await import('./admin-planta-xlsx.js');
   const url=URL.createObjectURL(plantWorkbook(plantSheets(snapshot)));
-  const link=document.createElement('a');link.href=url;link.download='vocatus-control-bombas-'+today()+'.xlsx';
+  const link=document.createElement('a');link.href=url;link.download='vocatus-mantenimiento-'+(month.value||today())+'.xlsx';
   document.body.append(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch{status.textContent='No se pudo generar el libro de Excel. Intentá de nuevo.';}
  finally{exportButton.disabled=!summary;}
 };
+month.value=today().slice(0,7);
+applyMonth();
 load();
+setInterval(()=>{if(!document.hidden)void load({background:true});},60000);
