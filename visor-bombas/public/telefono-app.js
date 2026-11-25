@@ -189,8 +189,21 @@ function iniciar() {
    .sort((a, b) => (parseInt(a.tag.slice(1)) || 999) - (parseInt(b.tag.slice(1)) || 999));
   caja.hidden = false;
   if (!items.length) { caja.innerHTML = '<p class="tel-cuenta">Ninguna bomba coincide con la búsqueda.</p>'; return; }
-  caja.replaceChildren(...items.slice(0, 40).map(it => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tel-resultado';
-   const t = document.createElement('b'); t.textContent = it.tag; const n = document.createElement('span'); n.textContent = it.nombre; b.append(t, n); b.onclick = it.abrir; return b; }));
+  const visibles = items.slice(0, 40);
+  if (caja.firstElementChild && !caja.firstElementChild.matches('button')) caja.replaceChildren();
+  while (caja.children.length > visibles.length) caja.lastElementChild.remove();
+  visibles.forEach((it, index) => {
+   let b = caja.children[index];
+   if (!b) {
+    b = document.createElement('button'); b.type = 'button'; b.className = 'tel-resultado';
+    b.append(document.createElement('b'), document.createElement('span'));
+    caja.append(b);
+   }
+   const [tag, nombre] = b.children;
+   if (tag.textContent !== it.tag) tag.textContent = it.tag;
+   if (nombre.textContent !== it.nombre) nombre.textContent = it.nombre;
+   b.onclick = it.abrir;
+  });
   const cuenta = $('#tel-cuenta'); if (cuenta) cuenta.dataset.resultados = String(items.length);
  }
  function equiposParaReportar(){return V()?.reportEquipment||bombas();}
