@@ -18,9 +18,23 @@ function iniciar(){
  const vista=(()=>{try{return parent!==window&&parent.location.origin===location.origin&&parent.location.pathname==='/diseno.html';}catch{return false;}})();
  // El visor arma la barra y los paneles después de cargar y los redibuja al navegar:
  // se vuelve a aplicar (con pausa) cada vez que cambia la página. Se desconecta mientras aplica para no repetirse.
- let actual={},espera=0;
- const observador=new MutationObserver(()=>{if(!espera)espera=setTimeout(()=>{espera=0;poner(actual);},200);});
- const poner=cfg=>{actual=cfg;observador.disconnect();try{aplicarDiseno(document,cfg);}catch{}observador.observe(document.body,{childList:true,subtree:true});};
+ const sinCambios=JSON.stringify(limpiarDiseno({}));
+ let actual=null,espera=0;
+ const observador=new MutationObserver(cambios=>{
+  if(!espera&&cambios.some(({target})=>!target.closest('#labels, #pump-list, #tel-resultados'))){
+   espera=setTimeout(()=>{espera=0;poner(actual);},200);
+  }
+ });
+ const poner=raw=>{
+  const cfg=limpiarDiseno(raw);
+  const personalizado=JSON.stringify(cfg)!==sinCambios;
+  if(!vista&&!personalizado&&!actual)return;
+  clearTimeout(espera);espera=0;
+  observador.disconnect();
+  try{aplicarDiseno(document,cfg);}catch{}
+  actual=personalizado?cfg:null;
+  if(vista||personalizado)observador.observe(document.body,{childList:true,subtree:true});
+ };
  try{poner(JSON.parse(localStorage.getItem(CACHE)||'{}'));}catch{}
  // Vista previa del editor: recibe el borrador sin guardar nada.
  if(vista){addEventListener('message',e=>{if(e.origin===location.origin&&e.data?.tipo==='vocatus-diseno')poner(e.data.diseno);});parent.postMessage({tipo:'vocatus-diseno-lista'},location.origin);return;}
