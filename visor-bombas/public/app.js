@@ -39,7 +39,6 @@ import {sealTitle, sealRecord, sealReference} from './sellos-fabricante.js';
 import {rangoTemperaturaTrabajo, formatoRangoTemperatura} from './temperatura-trabajo.js';
 import {listReports, deleteReport, configureReports, reportsInObsidian, reportsInCloud, importReports} from './reportes.js';
 import {reportMeasurements} from './measurements.js';
-import {renderRechartsHistory} from './vendor/history-chart.js';
 import {demoReadings} from './historial-demo.js';
 import {createAnatomyView,labelPositions} from './anatomy-view.js';
 import {buildPumpModel} from './pump-model.js?v=montaje-monobloque';
@@ -838,7 +837,17 @@ async function mountHistoryChart(pump,reports){
  }catch(error){if(mount.isConnected&&state.pump?.tag===tag){mount.replaceChildren();showHistoryLoadError(error,tag);}return;}
  records.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
  if(!mount.isConnected||state.pump?.tag!==tag)return;
- renderRechartsHistory(mount,{pumpTag:tag,records,nominalPressure,nominalFlow,ambiguos});
+ try {
+  const {renderRechartsHistory}=await import('./vendor/history-chart.js');
+  if(mount.isConnected&&state.pump?.tag===tag){
+   renderRechartsHistory(mount,{pumpTag:tag,records,nominalPressure,nominalFlow,ambiguos});
+  }
+ } catch(error) {
+  if(mount.isConnected&&state.pump?.tag===tag){
+   mount.replaceChildren();
+   showHistoryLoadError(error,tag);
+  }
+ }
 }
 
 async function paintReports(tag,reports){
