@@ -6,7 +6,7 @@ import {selectionIdentity} from './selection-core.js';
 import {sectorDe} from './planta-integrada.js';
 import {VISTA_FBX_AGUA} from './blender-local.js';
 import {iniciarEstadisticas} from './estadisticas.js?v=20261112b';
-import {completeness, verificationOf} from './interfaz-core.js';
+import {completeness, verificationOf, comparePumpTags} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
 import {addReport,listReports,reportsInCloud} from './reportes.js';
@@ -144,7 +144,10 @@ function iniciar() {
  // «Ocultar nombres» y la lista «Bombas» van en Herramientas, no encima del 3D.
  const moverPaleta=()=>{const paleta=$('#paleta-bombas');if(!paleta)return false;if(paleta.parentElement!==$('#tel-herramientas'))$('#tel-herramientas').prepend(paleta);return true;};
  if(!moverPaleta()){const espera=new MutationObserver(()=>{if(moverPaleta())espera.disconnect();});espera.observe(document.body,{childList:true,subtree:true});}
- $('#tel-buscar').oninput = pintarFranja;
+ $('#tel-buscar').oninput = () => {
+  pintarFranja();
+  V()?.schedule3D?.();
+ };
  $('#tel-fluido').onchange = pintarFranja; $('#tel-marca').onchange = pintarFranja;
  document.addEventListener('vocatus:lista', pintarFranja);
  function pintarMarcas() {
@@ -154,7 +157,7 @@ function iniciar() {
   sel.value = marcas.includes(actual) ? actual : '';
  }
 
- function bombas() { return (V()?.pumps || []).filter(p => p.tag); }
+ function bombas() { return (V()?.pumps || []).filter(p => p.tag).sort((a,b)=>comparePumpTags(a.tag,b.tag)); }
  // Franja: con «Toda la planta» se ven todas las bombas; con un área, solo las de esa área.
  function pintarFranja() {
   const q = ($('#tel-buscar')?.value || '').toUpperCase().replace(/[\s-]/g, '');
@@ -186,11 +189,24 @@ function iniciar() {
    && limpio((r.tagAsignado || '') + (r.excel?.nombre || '') + (r.nombre || '') + (r.excel?.bomba || '')).includes(q));
   const items = [...lista.map(p => ({tag: p.tag, nombre: p.nombre || p.ubicacion || '', abrir: () => abrirFicha(p.tag, 'ficha')})),
    ...refs.map(r => ({tag: r.tagAsignado || 'Sin TAG', nombre: r.excel?.nombre || r.nombre || '', abrir: () => abrirFicha('', 'ficha', r)}))]
-   .sort((a, b) => (parseInt(a.tag.slice(1)) || 999) - (parseInt(b.tag.slice(1)) || 999));
+   .sort((a, b) => comparePumpTags(a.tag,b.tag));
   caja.hidden = false;
   if (!items.length) { caja.innerHTML = '<p class="tel-cuenta">Ninguna bomba coincide con la búsqueda.</p>'; return; }
-  caja.replaceChildren(...items.slice(0, 40).map(it => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tel-resultado';
-   const t = document.createElement('b'); t.textContent = it.tag; const n = document.createElement('span'); n.textContent = it.nombre; b.append(t, n); b.onclick = it.abrir; return b; }));
+  const visibles = items;
+  if (caja.firstElementChild && !caja.firstElementChild.matches('button')) caja.replaceChildren();
+  while (caja.children.length > visibles.length) caja.lastElementChild.remove();
+  visibles.forEach((it, index) => {
+   let b = caja.children[index];
+   if (!b) {
+    b = document.createElement('button'); b.type = 'button'; b.className = 'tel-resultado';
+    b.append(document.createElement('b'), document.createElement('span'));
+    caja.append(b);
+   }
+   const [tag, nombre] = b.children;
+   if (tag.textContent !== it.tag) tag.textContent = it.tag;
+   if (nombre.textContent !== it.nombre) nombre.textContent = it.nombre;
+   b.onclick = it.abrir;
+  });
   const cuenta = $('#tel-cuenta'); if (cuenta) cuenta.dataset.resultados = String(items.length);
  }
  function equiposParaReportar(){return V()?.reportEquipment||bombas();}
@@ -461,9 +477,11 @@ function iniciar() {
   Object.entries(paneles).forEach(([k, p]) => p.hidden = !(ladoALado && k === 'pendientes'));
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
   const elegida=()=>selectionIdentity(V()?.pump)===key;
-  if(!elegida()){if(reference)V()?.selectReference(reference);else V()?.select(tag);}
+  const yaElegida=elegida();
+  if(!yaElegida){if(reference)V()?.selectReference(reference);else V()?.select(tag);}
   const vigente=()=>viendoFicha&&request===fichaRequest&&ficha.dataset.selection===key;
   const aplicar=()=>{if(!vigente()||!elegida())return;const tab=reference&&!reference.tagAsignado?'ficha':pestana;if(!reference||tab!=='ficha'||!$('#maquina-pendiente'))V()?.tab(tab);if(tab==='historial')V()?.explode(0);pintarRegreso();pintarPiezas();};
+  if(yaElegida&&!reference&&pestana==='ficha')aplicar();
   // Espera a que el visor termine de cargar esa bomba (con el 3D real puede tardar varios segundos);
   // si se aplica antes, al terminar la carga el visor vuelve a juntar las piezas.
   const inicio = Date.now();
@@ -502,7 +520,10 @@ function iniciar() {
   if (eligiendo) { const tag = e.detail, campo = eligiendo; eligiendo = null; document.body.classList.remove('tel-eligiendo'); if(campo==='mant-bomba')setReportTag(tag);else{$('#'+campo).value=tag;pintarElegida(campo);} aviso('mant', `Equipo elegido: ${tag}.`, 'ok'); return; }
   if(['areas','historial'].includes(seccion)&&(!viendoFicha||ficha.dataset.tag!==e.detail))abrirFicha(e.detail,seccion==='historial'?'historial':'ficha');
   pintarRegreso();
-  if (!$('#bod-bomba').value) { $('#bod-bomba').value = e.detail; elegirBodega(); }
+  if (!$('#bod-bomba').value) {
+   $('#bod-bomba').value = e.detail;
+   if(seccion==='bodega')elegirBodega();
+  }
  });
 
  const sectionCopy={areas:['EXPLORAR','La planta, por áreas','Buscá un equipo o elegí un sector del modelo.'],pendientes:['SEGUIMIENTO','Pendientes de planta','Revisá el estado documentado y las fichas por completar.'],historial:['EQUIPOS','Historial y fichas','Filtrá, elegí una bomba y consultá sus intervenciones.'],bodega:['REPUESTOS','Preparar solicitud','Elegí la bomba y añadí los repuestos que necesitás.']};
@@ -526,7 +547,7 @@ function iniciar() {
   if (id === 'bodega') pintarBodega();
   if (id === 'mantenimiento' || id === 'bodega') pintarResumen();
   if(id==='mantenimiento'){resumenMant();paintLocalReports();}
-  if(id==='areas'||(id==='historial'&&!V()?.pumps?.some(p=>p.tag===location.hash.slice(1).toUpperCase())))V()?.ensure3D?.();
+  if(id==='areas'||(id==='historial'&&!V()?.pumps?.some(p=>p.tag===location.hash.slice(1).toUpperCase())))V()?.schedule3D?.();
   if (id === 'historial') pintarHistorial();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
@@ -539,7 +560,7 @@ function iniciar() {
   const sel=V()?.pump?.tag||'';
   const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(reportTag,equiposParaReportar());$('#bod-bomba').innerHTML=opciones(bodega||sel);
   if(!draftRestored){setReportTag(reportTag,true);draftRestored=true;}else pintarElegida('mant-bomba');
-  if($('#bod-bomba').value)elegirBodega();storageMode();
+  if(seccion==='bodega'&&$('#bod-bomba').value)elegirBodega();storageMode();
   if(seccion==='historial'){pintarHistorial();if(V()?.pump&&!viendoFicha){if(V().pump.pending)abrirFicha('','ficha',V().pump.pending);else if(V().pump.tag)abrirFicha(V().pump.tag,'historial');}}
   if (seccion === 'pendientes') pintarPendientes();
  }

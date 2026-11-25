@@ -87,7 +87,7 @@ export function safeVaultFile(relative) {
  if (candidate !== VAULT && !candidate.startsWith(VAULT+path.sep)) throw new Error('Ruta fuera de la bóveda.');
  return candidate;
 }
-export async function readPump(tag) {
+export async function readPump(tag, {dataOnly=false}={}) {
  if (!tagPattern.test(tag)) throw new Error('TAG inválido.');
  if (tag.startsWith('B')) {
   const base = plantPumps.find(p => p.tag === tag);
@@ -97,17 +97,20 @@ export async function readPump(tag) {
   try { note = parseNote(await readFile(path.join(VAULT, source), 'utf8')); }
   catch (e) {
    if (e.code !== 'ENOENT') throw e;
-   if (DEMO) {const integrated=readIntegratedPump(tag);if(integrated)return {...integrated,demo:true,reports:await maintenance.list(tag)};throw Error('No hay ficha para este TAG.');}
+   if (DEMO) {const integrated=readIntegratedPump(tag);if(integrated)return dataOnly?{tag,data:integrated.data}:{...integrated,demo:true,reports:await maintenance.list(tag)};throw Error('No hay ficha para este TAG.');}
    const missing = new Error(`Falta la ficha ${source} en la bóveda ${path.basename(VAULT)}.`);
    missing.code = 'PUMP_NOT_AVAILABLE'; throw missing;
   }
   if (note.data.id !== tag) throw new Error('El identificador de la ficha no coincide con el equipo.');
-  return {tag, data: equipmentData(base||{tag}, note.data), photo: true, demo: DEMO, history: section(note.body, 'Historial de intervenciones'), observations: section(note.body, 'Observaciones'), reports: await maintenance.list(tag), files: [], source};
+  const data = equipmentData(base||{tag}, note.data);
+  if(dataOnly)return {tag,data};
+  return {tag, data, photo: true, demo: DEMO, history: section(note.body, 'Historial de intervenciones'), observations: section(note.body, 'Observaciones'), reports: await maintenance.list(tag), files: [], source};
  }
  let note;
  try { note=await readFile(path.join(NOTES,tag+'.md'),'utf8'); }
  catch(e) { if(e.code==='ENOENT'){const missing=new Error(`La bomba ${tag} no está disponible en ${DEMO?'la demostración':'la bóveda actual'}. Actualizá la lista de equipos.`);missing.code='PUMP_NOT_AVAILABLE';throw missing;}throw e; }
  const {data,body} = parseNote(note);
+ if(dataOnly)return {tag,data};
  const history = section(body,'Historial de intervenciones');
  const reports = await maintenance.list(tag);
  const files=[];
@@ -202,15 +205,20 @@ export async function handler(req,res) {
    return send(res,body.id?200:201,{order:await workOrders.save(body)});
   }
   if(req.method==='GET' && url.pathname==='/api/bootstrap') {
-   const pumps=[],errors=[];
-   for(const name of (await readdir(NOTES)).filter(n=>/^P-\d{4}[A-Z]?\.md$/.test(n)).sort()) {
-    try { const p=await readPump(name.slice(0,-3)); pumps.push({tag:p.tag,...p.data}); } catch(e) {errors.push({file:name,error:e.message});}
-   }
-   const sectorPumps = [];
-   for (const base of plantPumps) {
-    try { const p = await readPump(base.tag); sectorPumps.push(p.data); }
-    catch (e) { errors.push({file:`equipos/${base.tag}.md`, error:e.message}); }
-   }
+   const files = (await readdir(NOTES)).filter(n=>/^P-\d{4}[A-Z]?\.md$/.test(n)).sort();
+   const entries = [
+    ...files.map(file=>({file,tag:file.slice(0,-3),sector:false})),
+    ...plantPumps.map(({tag})=>({file:`equipos/${tag}.md`,tag,sector:true}))
+   ];
+   const results = await Promise.allSettled(entries.map(({tag})=>readPump(tag,{dataOnly:true})));
+   const pumps=[],sectorPumps=[],errors=[];
+   results.forEach((result,index)=>{
+    const {file,sector}=entries[index];
+    if(result.status==='rejected'){errors.push({file,error:result.reason.message});return;}
+    const {tag,data}=result.value;
+    if(sector)sectorPumps.push(data);
+    else pumps.push({tag,...data});
+   });
    return send(res,200,{pumps,sectorPumps,errors,token:TOKEN,geminiConfigured:!!apiKey,model,demo:DEMO,vaultName:path.basename(VAULT),maintenanceWritable:configuration.writable});
   }
   if(req.method==='GET' && url.pathname==='/api/survey-catalog') {

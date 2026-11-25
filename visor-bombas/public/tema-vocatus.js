@@ -6,6 +6,13 @@
   const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const body = document.body;
 
+  const fuentes = document.querySelector('link[rel="stylesheet"][media="print"][href^="https://fonts.googleapis.com/"]');
+  if (fuentes) {
+    const activar = () => { fuentes.media = 'all'; };
+    if (fuentes.sheet) activar();
+    else fuentes.addEventListener('load', activar, { once: true });
+  }
+
   // 46 · Modo claro / oscuro
   // Vista simple / completa (también en las páginas de campo)
   const vistaBtn = document.getElementById('vista-toggle');

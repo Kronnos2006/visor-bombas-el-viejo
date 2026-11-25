@@ -23,7 +23,7 @@ export async function cargarModeloPlanta({GLTFLoader,MeshoptDecoder,area,onProgr
  try{
   let glb;
   if(typeof DecompressionStream==='function'){
-   const url='/modelos/blender-local/planta-blender-local.glb.gz?v='+PLANTA_BLENDER_CACHE,response=await fetch(url);
+   const url='/modelos/blender-local/planta-blender-local.glb.gz?v='+PLANTA_BLENDER_CACHE,response=await fetch(url,{priority:'low'});
    if(response.status===404)glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
    else if(!response.ok)throw new Error('No se pudo descargar el modelo comprimido ('+response.status+')');
    else if(!response.body)glb=await loader.loadAsync('/modelos/blender-local/planta-blender-local.glb?v='+PLANTA_BLENDER_CACHE,onProgress);
