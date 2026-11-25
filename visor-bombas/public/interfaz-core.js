@@ -13,3 +13,11 @@ export function storageDescription({demo,writable,vaultName}){
  if(demo)return 'Demostración · informes en la bóveda de prueba; rangos de temperatura en este navegador';
  return 'Obsidian · '+(vaultName||'bóveda local');
 }
+
+const tagCollator = new Intl.Collator('es', {numeric:true, sensitivity:'base'});
+export function comparePumpTags(a, b) {
+ const left = /^[A-Z]+-?\d+[A-Z]?$/i.test(a || '');
+ const right = /^[A-Z]+-?\d+[A-Z]?$/i.test(b || '');
+ if(left!==right)return left?-1:1;
+ return left?tagCollator.compare(a,b):0;
+}

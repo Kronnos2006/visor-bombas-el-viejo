@@ -6,7 +6,7 @@ import {selectionIdentity} from './selection-core.js';
 import {sectorDe} from './planta-integrada.js';
 import {VISTA_FBX_AGUA} from './blender-local.js';
 import {iniciarEstadisticas} from './estadisticas.js?v=20261112b';
-import {completeness, verificationOf} from './interfaz-core.js';
+import {completeness, verificationOf, comparePumpTags} from './interfaz-core.js';
 import {partsOf,createRequestGate} from './request-core.js';
 import {createDraftStore,normalizeFieldReport,fieldReportPackage,parseFieldReportPackage,importFieldReports} from './field-report-core.js';
 import {addReport,listReports,reportsInCloud} from './reportes.js';
@@ -157,7 +157,7 @@ function iniciar() {
   sel.value = marcas.includes(actual) ? actual : '';
  }
 
- function bombas() { return (V()?.pumps || []).filter(p => p.tag); }
+ function bombas() { return (V()?.pumps || []).filter(p => p.tag).sort((a,b)=>comparePumpTags(a.tag,b.tag)); }
  // Franja: con «Toda la planta» se ven todas las bombas; con un área, solo las de esa área.
  function pintarFranja() {
   const q = ($('#tel-buscar')?.value || '').toUpperCase().replace(/[\s-]/g, '');
@@ -189,10 +189,10 @@ function iniciar() {
    && limpio((r.tagAsignado || '') + (r.excel?.nombre || '') + (r.nombre || '') + (r.excel?.bomba || '')).includes(q));
   const items = [...lista.map(p => ({tag: p.tag, nombre: p.nombre || p.ubicacion || '', abrir: () => abrirFicha(p.tag, 'ficha')})),
    ...refs.map(r => ({tag: r.tagAsignado || 'Sin TAG', nombre: r.excel?.nombre || r.nombre || '', abrir: () => abrirFicha('', 'ficha', r)}))]
-   .sort((a, b) => (parseInt(a.tag.slice(1)) || 999) - (parseInt(b.tag.slice(1)) || 999));
+   .sort((a, b) => comparePumpTags(a.tag,b.tag));
   caja.hidden = false;
   if (!items.length) { caja.innerHTML = '<p class="tel-cuenta">Ninguna bomba coincide con la búsqueda.</p>'; return; }
-  const visibles = items.slice(0, 40);
+  const visibles = items;
   if (caja.firstElementChild && !caja.firstElementChild.matches('button')) caja.replaceChildren();
   while (caja.children.length > visibles.length) caja.lastElementChild.remove();
   visibles.forEach((it, index) => {
