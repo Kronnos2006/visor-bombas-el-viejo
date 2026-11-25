@@ -464,6 +464,7 @@ function iniciar() {
   if(!elegida()){if(reference)V()?.selectReference(reference);else V()?.select(tag);}
   const vigente=()=>viendoFicha&&request===fichaRequest&&ficha.dataset.selection===key;
   const aplicar=()=>{if(!vigente()||!elegida())return;const tab=reference&&!reference.tagAsignado?'ficha':pestana;if(!reference||tab!=='ficha'||!$('#maquina-pendiente'))V()?.tab(tab);if(tab==='historial')V()?.explode(0);pintarRegreso();pintarPiezas();};
+  if(!reference&&pestana==='ficha')aplicar();
   // Espera a que el visor termine de cargar esa bomba (con el 3D real puede tardar varios segundos);
   // si se aplica antes, al terminar la carga el visor vuelve a juntar las piezas.
   const inicio = Date.now();
@@ -526,7 +527,7 @@ function iniciar() {
   if (id === 'bodega') pintarBodega();
   if (id === 'mantenimiento' || id === 'bodega') pintarResumen();
   if(id==='mantenimiento'){resumenMant();paintLocalReports();}
-  if(id==='areas'||(id==='historial'&&!V()?.pumps?.some(p=>p.tag===location.hash.slice(1).toUpperCase())))V()?.ensure3D?.();
+  if(id==='areas'||(id==='historial'&&!V()?.pumps?.some(p=>p.tag===location.hash.slice(1).toUpperCase())))V()?.schedule3D?.();
   if (id === 'historial') pintarHistorial();
   contenido.scrollTop = 0; window.dispatchEvent(new Event('resize'));
  }
