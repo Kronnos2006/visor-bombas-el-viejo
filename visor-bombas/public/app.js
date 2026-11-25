@@ -133,10 +133,21 @@ let n32Load, n32Model, activePumpReference;
 let areaGroups={},torre=null;const pumpObjects={};
 let plantRequested=false;
 let plantStartTimer;
+let sceneAttempted=false;
+let catalogReady=false;
+const deferMobileScene=matchMedia('(max-width:900px)').matches&&new URLSearchParams(location.search).get('vista')!=='clasica';
+function prepareScene(){if(!sceneAttempted)initScene();}
 function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';const directHistory=section==='historial'&&plantPumps.some(p=>p.tag===location.hash.slice(1).toUpperCase());return params.get('vista')==='clasica'||(['areas','historial'].includes(section)&&!directHistory)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
-function ensurePlant(){if(!plant||plantRequested)return;clearTimeout(plantStartTimer);plantRequested=true;rebuildPlant();}
-function schedulePlant(delay=250){
- if(!plant||plantRequested)return;
+function ensurePlant(){
+ if(plantRequested)return;
+ clearTimeout(plantStartTimer);
+ prepareScene();
+ if(!plant)return;
+ plantRequested=true;
+ rebuildPlant();
+}
+function schedulePlant(delay=deferMobileScene?1100:250){
+ if(!catalogReady||plantRequested)return;
  clearTimeout(plantStartTimer);
  plantStartTimer=setTimeout(()=>{if(needsPlant())ensurePlant();},delay);
 }
@@ -289,6 +300,7 @@ document.querySelectorAll('#camera-tools [data-camera]').forEach(button=>button.
 });
 
 function initScene(){
+ sceneAttempted=true;
  try{
  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);renderer.localClippingEnabled=true;if(new URLSearchParams(location.search).has('medir'))window.__visor={renderer,get scene(){return scene;},get camera(){return camera;}};viewport.prepend(renderer.domElement);
  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(43,1,.1,600);camera.position.set(-18,85,80);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=190;controls.maxPolarAngle=Math.PI*.49;controls.target.set(-18,0,8);controls.addEventListener('start',()=>cameraFlight=null);
@@ -531,7 +543,7 @@ $('#search').oninput=renderList;$('#area').onchange=()=>chooseArea($('#area').va
 $('#close-settings').onclick=()=>$('#settings').close();$('#close-report').onclick=()=>$('#report-dialog').close();
 $('#config-form').onsubmit=async e=>{e.preventDefault();const form=e.target;try{const r=await api('/api/config',Object.fromEntries(new FormData(form)));state.configured=r.configured;state.model=r.model;form.elements.apiKey.value='';$('#settings').close();renderPanel();toast('Clave guardada solo durante esta sesión.');}catch(e){$('#config-error').textContent=e.message;}};
 $('#report-form').onsubmit=async e=>{e.preventDefault();const tag=state.pump.tag,form=e.target,button=form.querySelector('button.primary');button.disabled=true;try{await api('/api/maintenance',{...Object.fromEntries(new FormData(form)),tag});$('#report-dialog').close();form.reset();if(state.pump?.tag===tag)state.pump=await api('/api/pump?tag='+encodeURIComponent(tag));renderPanel();toast(state.demo?'Informe de prueba guardado en la carpeta de demostración.':'Informe guardado en Obsidian.');}catch(e){$('#report-error').textContent=e.message;}finally{button.disabled=false;}};
-async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?r.sectorPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;state.writable=r.maintenanceWritable;configureReports({writable:r.maintenanceWritable,token:r.token});document.dispatchEvent(new CustomEvent('vocatus:listo'));if(state.pump&&state.sector){const current=state.pumps.find(p=>p.tag===state.pump.tag);if(current)state.pump={...state.pump,data:current};}fillFilters();document.querySelector('.local').textContent=r.maintenanceWritable?'● OBSIDIAN · '+r.vaultName:'● DEMO · REPORTES EN ESTE NAVEGADOR';$('#report-dialog .muted').textContent=r.maintenanceWritable?'Se guardará en la bóveda '+r.vaultName+'.':'Este alojamiento no guarda informes en Obsidian.';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plant){if(plantRequested)rebuildPlant();else if(needsPlant())schedulePlant();}if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
+async function refresh(){try{const r=await api('/api/bootstrap');state.pumps=state.sector?r.sectorPumps:r.pumps;state.demo=r.demo;state.vaultName=r.vaultName;state.token=r.token;state.writable=r.maintenanceWritable;configureReports({writable:r.maintenanceWritable,token:r.token});catalogReady=true;document.dispatchEvent(new CustomEvent('vocatus:listo'));if(state.pump&&state.sector){const current=state.pumps.find(p=>p.tag===state.pump.tag);if(current)state.pump={...state.pump,data:current};}fillFilters();document.querySelector('.local').textContent=r.maintenanceWritable?'● OBSIDIAN · '+r.vaultName:'● DEMO · REPORTES EN ESTE NAVEGADOR';$('#report-dialog .muted').textContent=r.maintenanceWritable?'Se guardará en la bóveda '+r.vaultName+'.':'Este alojamiento no guarda informes en Obsidian.';state.configured=r.geminiConfigured;state.model=r.model;renderList();if(plantRequested&&plant)rebuildPlant();else if(needsPlant())schedulePlant();if(state.pump)renderPanel();if(r.errors.length)console.warn('Fichas antiguas con YAML inválido:',r.errors);}catch(e){toast(e.message);$('#panel').innerHTML=`<p class="error">${esc(e.message)}</p>`;}}
 $('#refresh').onclick=async()=>{await refresh();toast('Expedientes actualizados.');};
 function compactPumpView(){
  return activePumpReference?activePumpReference.kind==='compact':state.pump?.data?.variant==='goulds';
@@ -635,6 +647,7 @@ function selectPhotoPump(tag){
  const show=async()=>{
   const actual=await fichaActual;
   if(ticket!==state.loading)return;
+  prepareScene();
   const {cad,profile}=await loadPumpReference(actual);
   if(ticket!==state.loading)return;
   state.view='pump';if($('#torre-planta-tools'))$('#torre-planta-tools').hidden=true;if(pumpGroup){clearGroup(pumpGroup);componentGroups.length=0;for(let i=markers.length-1;i>=0;i--)if(markers[i].kind==='part'){markers[i].el.remove();markers[i].leader?.remove();markers.splice(i,1);}buildPump(p.variant,cad,profile);}if($('#torre-tools'))$('#torre-tools').hidden=true;if($('#integrado-tools'))$('#integrado-tools').hidden=true;if(scene){if(photoDetail){clearGroup(photoDetail);scene.remove(photoDetail);}photoDetail=buildInstalledReference(THREE,profile)||crearModeloCaldera(THREE,profile?.modelo)||exterior(THREE,p.scale*1.7,p.variant);if(areaOf(p)==='tanques')cubiertaFotografica(THREE,photoDetail);scene.add(photoDetail);}setPhotoDetail(!!activePumpReference);renderPanel();};
@@ -1069,6 +1082,7 @@ function selectPendingPump(reference){
  $('#breadcrumb').textContent='PLANTA / '+(SECTORES_INT.find(x=>x.id===sectorDe(reference.sector))?.nombre||reference.sector);
  $('#back').hidden=false;
  const show=async()=>{
+  prepareScene();
   let {cad,profile}=await loadPumpReference({
    ...bombaParaResumen(reference),tag,
    tipo:reference.modelo,nombre:reference.nombre,
@@ -1559,7 +1573,8 @@ window.vocatus={
 const welcome=document.getElementById('portada');
 if(welcome&&!welcome.hidden)await new Promise(resolve=>{window.addEventListener('vocatus:entered',resolve,{once:true});if(welcome.hidden)resolve();});
 const cargaFichaInicial=refresh();
-initScene();renderPanel();
+if(!deferMobileScene)prepareScene();
+renderPanel();
 const cargaInventario=cargarAsignacion().then(datos=>{inventarioExcel=datos?.excel||{};document.dispatchEvent(new Event('vocatus:referencias'));if(state.pump)renderPanel();});
 await cargaFichaInicial;
 function selectFromHash(){

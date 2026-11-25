@@ -144,7 +144,10 @@ function iniciar() {
  // «Ocultar nombres» y la lista «Bombas» van en Herramientas, no encima del 3D.
  const moverPaleta=()=>{const paleta=$('#paleta-bombas');if(!paleta)return false;if(paleta.parentElement!==$('#tel-herramientas'))$('#tel-herramientas').prepend(paleta);return true;};
  if(!moverPaleta()){const espera=new MutationObserver(()=>{if(moverPaleta())espera.disconnect();});espera.observe(document.body,{childList:true,subtree:true});}
- $('#tel-buscar').oninput = pintarFranja;
+ $('#tel-buscar').oninput = () => {
+  pintarFranja();
+  V()?.schedule3D?.();
+ };
  $('#tel-fluido').onchange = pintarFranja; $('#tel-marca').onchange = pintarFranja;
  document.addEventListener('vocatus:lista', pintarFranja);
  function pintarMarcas() {
@@ -517,7 +520,10 @@ function iniciar() {
   if (eligiendo) { const tag = e.detail, campo = eligiendo; eligiendo = null; document.body.classList.remove('tel-eligiendo'); if(campo==='mant-bomba')setReportTag(tag);else{$('#'+campo).value=tag;pintarElegida(campo);} aviso('mant', `Equipo elegido: ${tag}.`, 'ok'); return; }
   if(['areas','historial'].includes(seccion)&&(!viendoFicha||ficha.dataset.tag!==e.detail))abrirFicha(e.detail,seccion==='historial'?'historial':'ficha');
   pintarRegreso();
-  if (!$('#bod-bomba').value) { $('#bod-bomba').value = e.detail; elegirBodega(); }
+  if (!$('#bod-bomba').value) {
+   $('#bod-bomba').value = e.detail;
+   if(seccion==='bodega')elegirBodega();
+  }
  });
 
  const sectionCopy={areas:['EXPLORAR','La planta, por áreas','Buscá un equipo o elegí un sector del modelo.'],pendientes:['SEGUIMIENTO','Pendientes de planta','Revisá el estado documentado y las fichas por completar.'],historial:['EQUIPOS','Historial y fichas','Filtrá, elegí una bomba y consultá sus intervenciones.'],bodega:['REPUESTOS','Preparar solicitud','Elegí la bomba y añadí los repuestos que necesitás.']};
@@ -554,7 +560,7 @@ function iniciar() {
   const sel=V()?.pump?.tag||'';
   const bodega=$('#bod-bomba').value;$('#mant-bomba').innerHTML=opciones(reportTag,equiposParaReportar());$('#bod-bomba').innerHTML=opciones(bodega||sel);
   if(!draftRestored){setReportTag(reportTag,true);draftRestored=true;}else pintarElegida('mant-bomba');
-  if($('#bod-bomba').value)elegirBodega();storageMode();
+  if(seccion==='bodega'&&$('#bod-bomba').value)elegirBodega();storageMode();
   if(seccion==='historial'){pintarHistorial();if(V()?.pump&&!viendoFicha){if(V().pump.pending)abrirFicha('','ficha',V().pump.pending);else if(V().pump.tag)abrirFicha(V().pump.tag,'historial');}}
   if (seccion === 'pendientes') pintarPendientes();
  }
