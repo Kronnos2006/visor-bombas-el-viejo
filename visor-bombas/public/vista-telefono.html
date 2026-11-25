@@ -5,4 +5,4 @@
 const stage=document.querySelector('.stage'),device=document.querySelector('.device'),holder=document.querySelector('.holder');let width=390;
 function resize(){const height=844,scale=Math.min(1,(stage.clientWidth-30)/width,(stage.clientHeight-30)/height);device.style.width=width+'px';device.style.transform='scale('+scale+')';holder.style.width=width*scale+'px';holder.style.height=height*scale+'px';}
 document.querySelectorAll('[data-width]').forEach(b=>b.onclick=()=>{width=Number(b.dataset.width);document.querySelectorAll('[data-width]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));resize();});new ResizeObserver(resize).observe(stage);resize();
-</script></body></html>
+</script><script type="module" src="/vendor/analytics.js"></script></body></html>
