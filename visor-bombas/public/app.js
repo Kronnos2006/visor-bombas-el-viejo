@@ -135,10 +135,10 @@ let plantRequested=false;
 let plantStartTimer;
 function needsPlant(){const params=new URLSearchParams(location.search),section=document.body.dataset.telSeccion||params.get('s')||'areas';const directHistory=section==='historial'&&plantPumps.some(p=>p.tag===location.hash.slice(1).toUpperCase());return params.get('vista')==='clasica'||(['areas','historial'].includes(section)&&!directHistory)||document.body.classList.contains('tel-eligiendo')||document.body.classList.contains('tel-3d');}
 function ensurePlant(){if(!plant||plantRequested)return;clearTimeout(plantStartTimer);plantRequested=true;rebuildPlant();}
-function schedulePlant(){
+function schedulePlant(delay=250){
  if(!plant||plantRequested)return;
  clearTimeout(plantStartTimer);
- plantStartTimer=setTimeout(()=>{if(needsPlant())ensurePlant();},250);
+ plantStartTimer=setTimeout(()=>{if(needsPlant())ensurePlant();},delay);
 }
 function cargarTorre(g=areaGroups.torre){
  if(!g||torre?.root.parent===g)return torre;
@@ -293,7 +293,7 @@ function initScene(){
  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0,0);renderer.localClippingEnabled=true;if(new URLSearchParams(location.search).has('medir'))window.__visor={renderer,get scene(){return scene;},get camera(){return camera;}};viewport.prepend(renderer.domElement);
  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(43,1,.1,600);camera.position.set(-18,85,80);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=190;controls.maxPolarAngle=Math.PI*.49;controls.target.set(-18,0,8);controls.addEventListener('start',()=>cameraFlight=null);
  scene.add(new THREE.HemisphereLight(0xd8efe6,0x263c40,2.5));const light=new THREE.DirectionalLight(0xffecd5,3.5);light.position.set(-5,12,8);scene.add(light);const rim=new THREE.DirectionalLight(0x95bcde,2);rim.position.set(5,3,-7);scene.add(rim);
- plant=new THREE.Group();pumpGroup=new THREE.Group();scene.add(plant,pumpGroup);pumpGroup.visible=false;buildPump();
+ plant=new THREE.Group();pumpGroup=new THREE.Group();scene.add(plant,pumpGroup);pumpGroup.visible=false;if(!state.sector)buildPump();
  try{render3D=aplicarRealismo({THREE,renderer,scene,camera});}catch(err){console.warn('Realismo no aplicado:',err.message);}
  anatomy=createAnatomyView({THREE,root:pumpGroup,renderer});anatomy.register(componentGroups);
  let resizeTimer=null,previousSize=null;const observer=new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(!w||!h)return;const changed=previousSize&&(previousSize[0]!==w||previousSize[1]!==h);previousSize=[w,h];renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(changed){clearTimeout(resizeTimer);resizeTimer=setTimeout(refitCurrentView,120);}});observer.observe(viewport);
@@ -305,6 +305,7 @@ function initScene(){
  });
  renderer.setAnimationLoop(()=>{
   if(document.hidden||!viewport.clientWidth||!viewport.clientHeight)return;
+  if(state.view==='plant'&&!plantRequested&&plant.children.length===0)return;
   if(cameraFlight){const f=cameraFlight,t=Math.min(1,(performance.now()-f.start)/f.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(f.from,f.to,ease);controls.target.lerpVectors(f.fromTarget,f.toTarget,ease);if(t===1)cameraFlight=null;}
   if(n32Model)n32Model.moveExplosion(state.explode/100,reducedMotion.matches,anatomy?.state.isolate);
   else componentGroups.forEach((g,i)=>{const x=g.userData.base+(i-4.5)*state.explode*.017;g.position.x=reducedMotion.matches?x:g.position.x+(x-g.position.x)*.12;});

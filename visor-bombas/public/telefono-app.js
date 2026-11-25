@@ -461,10 +461,11 @@ function iniciar() {
   Object.entries(paneles).forEach(([k, p]) => p.hidden = !(ladoALado && k === 'pendientes'));
   ficha.querySelector('.tel-volver').textContent = '← ' + SECCIONES.find(s => s.id === seccion).nombre;
   const elegida=()=>selectionIdentity(V()?.pump)===key;
-  if(!elegida()){if(reference)V()?.selectReference(reference);else V()?.select(tag);}
+  const yaElegida=elegida();
+  if(!yaElegida){if(reference)V()?.selectReference(reference);else V()?.select(tag);}
   const vigente=()=>viendoFicha&&request===fichaRequest&&ficha.dataset.selection===key;
   const aplicar=()=>{if(!vigente()||!elegida())return;const tab=reference&&!reference.tagAsignado?'ficha':pestana;if(!reference||tab!=='ficha'||!$('#maquina-pendiente'))V()?.tab(tab);if(tab==='historial')V()?.explode(0);pintarRegreso();pintarPiezas();};
-  if(!reference&&pestana==='ficha')aplicar();
+  if(yaElegida&&!reference&&pestana==='ficha')aplicar();
   // Espera a que el visor termine de cargar esa bomba (con el 3D real puede tardar varios segundos);
   // si se aplica antes, al terminar la carga el visor vuelve a juntar las piezas.
   const inicio = Date.now();
